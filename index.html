@@ -629,7 +629,7 @@
             <div class="progress-bar-track"><div class="progress-bar-fill"></div></div>
             <div class="time-row"><span class="time-label current">0:00</span></div>
           </div>
-          <a class="download-btn" href="https://wav-download.renedebos.workers.dev/stream?file=JerryHannan%20-%2019%20Broadway%202001-01-08%20SBD%20(Rugburns).wav" download="JerryHannan%20-%2019%20Broadway%202001-01-08%20SBD%20(Rugburns).wav" title="Download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M7 10l5 5 5-5"/><path d="M3 18h18"/></svg></a>
+          <a class="download-btn" data-free="true" href="https://wav-download.renedebos.workers.dev/stream?file=JerryHannan%20-%2019%20Broadway%202001-01-08%20SBD%20(Rugburns).wav" download="JerryHannan%20-%2019%20Broadway%202001-01-08%20SBD%20(Rugburns).wav" title="Download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M7 10l5 5 5-5"/><path d="M3 18h18"/></svg></a>
         </div>
       </div>
 
@@ -654,7 +654,7 @@
       <div class="recording-item">
         <div class="recording-meta">
           <div>
-            <div class="recording-title">Cafe Java &middot; The Patriot Game</div>
+            <div class="recording-title">The Patriot Game</div>
             <div class="recording-meta-grid"><span class="meta-label">Venue</span><span class="meta-value">Cafe Java, Larkspur</span><span class="meta-label">Source</span><span class="meta-value">WAV</span><span class="meta-label">Size</span><span class="meta-value">35 MB</span></div>
           </div>
           <span class="recording-badge">WAV</span>
@@ -665,7 +665,7 @@
             <div class="progress-bar-track"><div class="progress-bar-fill"></div></div>
             <div class="time-row"><span class="time-label current">0:00</span></div>
           </div>
-          <a class="download-btn" href="https://wav-download.renedebos.workers.dev/stream?file=Soundcloud/JerryHannan_CafeJava_ThePatriotGame.wav" download="JerryHannan_CafeJava_ThePatriotGame.wav" title="Download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M7 10l5 5 5-5"/><path d="M3 18h18"/></svg></a>
+          <a class="download-btn" data-free="true" href="https://wav-download.renedebos.workers.dev/stream?file=Soundcloud/JerryHannan_CafeJava_ThePatriotGame.wav" download="JerryHannan_CafeJava_ThePatriotGame.wav" title="Download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M7 10l5 5 5-5"/><path d="M3 18h18"/></svg></a>
         </div>
       </div>
 
@@ -1337,7 +1337,7 @@
       <div class="recording-item">
         <div class="recording-meta">
           <div>
-            <div class="recording-title">19 Broadway &middot; Have You Ever Seen The Rain</div>
+            <div class="recording-title">Have You Ever Seen The Rain</div>
             <div class="recording-meta-grid"><span class="meta-label">Venue</span><span class="meta-value">19 Broadway, Fairfax</span><span class="meta-label">Date</span><span class="meta-value">January 24, 2000</span><span class="meta-label">Source</span><span class="meta-value">WAV</span><span class="meta-label">Size</span><span class="meta-value">30 MB</span></div>
           </div>
           <span class="recording-badge">WAV</span>
@@ -1355,7 +1355,7 @@
       <div class="recording-item">
         <div class="recording-meta">
           <div>
-            <div class="recording-title">19 Broadway &middot; Angel From Montgomery</div>
+            <div class="recording-title">Angel From Montgomery</div>
             <div class="recording-meta-grid"><span class="meta-label">Venue</span><span class="meta-value">19 Broadway, Fairfax</span><span class="meta-label">Date</span><span class="meta-value">January 24, 2000</span><span class="meta-label">Source</span><span class="meta-value">MP3</span><span class="meta-label">Size</span><span class="meta-value">10 MB</span></div>
           </div>
           <span class="recording-badge">MP3</span>
@@ -1427,7 +1427,7 @@
       <div class="recording-item">
         <div class="recording-meta">
           <div>
-            <div class="recording-title">4th Street Tavern &middot; Thought I Was You</div>
+            <div class="recording-title">Thought I Was You</div>
             <div class="recording-meta-grid"><span class="meta-label">Source</span><span class="meta-value">Live</span></div>
           </div>
           <span class="recording-badge">MP3</span>
@@ -2260,8 +2260,9 @@ document.querySelectorAll('a.download-btn').forEach(btn => {
   }
 
   const isWav = btn.href && btn.href.toLowerCase().includes('.wav');
+  const isFree = btn.dataset.free === 'true';
 
-  if (isWav) {
+  if (isWav && !isFree) {
     btn.classList.add('wav-protected');
     if (!btn.querySelector('.lock-icon')) {
       const lockSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');

@@ -1,5 +1,10 @@
 const WORKER_ORIGIN = 'https://wav-download.renedebos.workers.dev';
 
+const FREE_FILES = new Set([
+  'JerryHannan - 19 Broadway 2001-01-08 SBD (Rugburns).wav',
+  'Soundcloud/JerryHannan_CafeJava_ThePatriotGame.wav',
+]);
+
 function corsHeaders(origin) {
   const allowed = ['https://renedebos.com', 'https://www.renedebos.com'];
   const allowedOrigin = allowed.includes(origin) ? origin : allowed[0];
@@ -119,7 +124,7 @@ async function handleDownload(request, env, url, origin) {
 
   const isWav = file.toLowerCase().endsWith('.wav');
 
-  if (isWav) {
+  if (isWav && !FREE_FILES.has(file)) {
     const token = url.searchParams.get('token');
     const expires = parseInt(url.searchParams.get('expires') || '0', 10);
 
