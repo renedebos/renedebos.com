@@ -3,6 +3,8 @@ const WORKER_ORIGIN = 'https://wav-download.renedebos.workers.dev';
 const FREE_FILES = new Set([
   'JerryHannan - 19 Broadway 2001-01-08 SBD (Rugburns).wav',
   'Soundcloud/JerryHannan_CafeJava_ThePatriotGame.wav',
+  'MadHannans_Sweetwater_2000-02-17 CLEAR HEADED Normalized -3.wav',
+  'MadHannans_Sweetwater_2000-02-17 DA DA DA Normalized.wav',
 ]);
 
 function corsHeaders(origin) {
