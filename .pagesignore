@@ -1,0 +1,6 @@
+worker/
+Makefile
+*.txt
+*.aup3
+*.wav
+*.mp3
