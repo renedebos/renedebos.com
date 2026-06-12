@@ -1,0 +1,7 @@
+.git
+.wrangler
+.assetsignore
+worker
+Makefile
+drive_names.txt
+r2_names.txt
