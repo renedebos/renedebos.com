@@ -1,0 +1,1650 @@
+{
+  "worker": "https://wav-download.renedebos.workers.dev",
+  "artists": [
+    {
+      "id": "jerry",
+      "name": "Jerry Hannan",
+      "note": "For news and tour dates, visit <a href=\"https://jerryhannan.com\" target=\"_blank\" rel=\"noopener\">jerryhannan.com</a>."
+    },
+    {
+      "id": "sean",
+      "name": "Sean Hannan",
+      "note": null
+    },
+    {
+      "id": "mad",
+      "name": "Mad Hannans",
+      "note": null
+    },
+    {
+      "id": "seanjerry",
+      "name": "Sean & Jerry Hannan",
+      "note": null
+    }
+  ],
+  "featured": [
+    "jerry-19-broadway-2001-01-08"
+  ],
+  "shows": [
+    {
+      "slug": "jerry-19-broadway-1999-02-01",
+      "artist": "jerry",
+      "venue": "19 Broadway, Fairfax",
+      "venue_short": "19 Broadway",
+      "date": "1999-02-01",
+      "date_display": "February 1, 1999",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": null,
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.99 GB",
+          "file": "JerryHannan - 19 Broadway 1999-02-01.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "2nd Transfer",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "905 MB",
+          "file": "WAV_Files/JerryHannan - 19 Broadway 1999-02-01 2nd transfer.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "Incl. Dropouts",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.98 GB",
+          "file": "WAV_Files/JerryHannan - 19 Broadway 1999-02-01 incl dropouts.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "Complete with Splits",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.33 GB",
+          "file": "WAV_Files/JerryHannan_19Broadway_1999-02-01 complete with splits.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "Part 1",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "730 MB",
+          "file": "WAV_Files/JerryHannan_19Broadway_1999-02-01 part1.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "jerry-19-broadway-1999-03-29",
+      "artist": "jerry",
+      "venue": "19 Broadway, Fairfax",
+      "venue_short": "19 Broadway",
+      "date": "1999-03-29",
+      "date_display": "March 29, 1999",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": null,
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.81 GB",
+          "file": "JerryHannan - 19 Broadway 1999-03-29.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "Again",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.11 GB",
+          "file": "WAV_Files/JerryHannan - 19 Broadway 1999-03-29 again.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "Digital Complete",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.48 GB",
+          "file": "WAV_Files/JerryHannan_19Broadway_1999-03-29 DIGITAL Complete.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "Digital Try 2 Part 1",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "768 MB",
+          "file": "WAV_Files/JerryHannan_19Broadway_1999-03-29 DIGITAL Try2 Part1.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "Digital",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "868 MB",
+          "file": "WAV_Files/JerryHannan_19Broadway_1999-03-29 DIGITAL.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "jerry-19-broadway-1999-05-10",
+      "artist": "jerry",
+      "venue": "19 Broadway, Fairfax",
+      "venue_short": "19 Broadway",
+      "date": "1999-05-10",
+      "date_display": "May 10, 1999",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": null,
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.22 GB",
+          "file": "JerryHannan - 19 Broadway 1999-05-10.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "jerry-19-broadway-1999-06-07",
+      "artist": "jerry",
+      "venue": "19 Broadway, Fairfax",
+      "venue_short": "19 Broadway",
+      "date": "1999-06-07",
+      "date_display": "June 7, 1999",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": "Part 1",
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.29 GB",
+          "file": "JerryHannan - 19 Broadway 1999-06-07 Pt 1.wav",
+          "free": false
+        },
+        {
+          "label": "Part 2",
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.01 GB",
+          "file": "JerryHannan - 19 Broadway 1999-06-07 Pt 2.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "Digital Part 1",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "2.95 GB",
+          "file": "WAV_Files/JerryHannan_19Broadway_1999-06-07 DIGITAL Part1.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "Digital Part 2",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.18 GB",
+          "file": "WAV_Files/JerryHannan_19Broadway_1999-06-07 DIGITAL Part2.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "jerry-19-broadway-1999-06-21",
+      "artist": "jerry",
+      "venue": "19 Broadway, Fairfax",
+      "venue_short": "19 Broadway",
+      "date": "1999-06-21",
+      "date_display": "June 21, 1999",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": null,
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "2.18 GB",
+          "file": "JerryHannan - 19 Broadway 1999-06-21.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "Digital Part 1 (Dropouts)",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "682 MB",
+          "file": "WAV_Files/JerryHannan_19Broadway_1999-06-21 DIGITAL Part1 Dropouts 1-02.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "jerry-19-broadway-1999-07-19",
+      "artist": "jerry",
+      "venue": "19 Broadway, Fairfax",
+      "venue_short": "19 Broadway",
+      "date": "1999-07-19",
+      "date_display": "July 19, 1999",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": null,
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.63 GB",
+          "file": "JerryHannan - 19 Broadway 1999-07-19.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "Again",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.52 GB",
+          "file": "WAV_Files/JerryHannan - 19 Broadway 1999-07-19 again.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "Digital",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "2.24 GB",
+          "file": "WAV_Files/JerryHannan_19Broadway_1999-07-19.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "jerry-19-broadway-1999-08-23",
+      "artist": "jerry",
+      "venue": "19 Broadway, Fairfax",
+      "venue_short": "19 Broadway",
+      "date": "1999-08-23",
+      "date_display": "August 23, 1999",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": "Part 2",
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.01 GB",
+          "file": "JerryHannan - 19 Broadway 1999-08-23 Pt 2.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "Digital Part 2",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.11 GB",
+          "file": "WAV_Files/JerryHannan_19Broadway_1999-08-23 DIGITAL part 2.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "Part 2 (Distortion)",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "596 MB",
+          "file": "WAV_Files/JerryHannnan - 19 Broadway 1999-08-23 Pt2 distortion.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "jerry-19-broadway-1999-10-25",
+      "artist": "jerry",
+      "venue": "19 Broadway, Fairfax",
+      "venue_short": "19 Broadway",
+      "date": "1999-10-25",
+      "date_display": "October 25, 1999",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": null,
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "2.01 GB",
+          "file": "JerryHannan - 19 Broadway 1999-10-25.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "jerry-19-broadway-1999-11-15",
+      "artist": "jerry",
+      "venue": "19 Broadway, Fairfax",
+      "venue_short": "19 Broadway",
+      "date": "1999-11-15",
+      "date_display": "November 15, 1999",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": null,
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.22 GB",
+          "file": "JerryHannan - 19 Broadway 1999-11-15.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "MT2",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1015 MB",
+          "file": "WAV_Files/JerryHannan - 19 Broadway 1999-11-15 MT2.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "jerry-19-broadway-2001-01-08",
+      "artist": "jerry",
+      "venue": "19 Broadway, Fairfax",
+      "venue_short": "19 Broadway",
+      "date": "2001-01-08",
+      "date_display": "January 8, 2001",
+      "subtitle": null,
+      "source": "SBD",
+      "recordings": [
+        {
+          "label": null,
+          "alt_label": null,
+          "alternate": false,
+          "source": "SBD",
+          "format": "WAV",
+          "size": "3.54 GB",
+          "file": "JerryHannan - 19 Broadway 2001-01-08 SBD.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "SBD (1)",
+          "alternate": true,
+          "source": "SBD",
+          "format": "WAV",
+          "size": "3.3 GB",
+          "file": "WAV_Files/JerryHannan - 19 Broadway 2001-01-08 SBD (1).wav",
+          "free": false
+        }
+      ],
+      "tracks": [
+        {
+          "num": 1,
+          "title": "My Father's House",
+          "duration": "5:43",
+          "size_mb": 14,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 01 My Father's House.mp3"
+        },
+        {
+          "num": 2,
+          "title": "Black Is The Color",
+          "duration": "4:04",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 02 Black Is The Color.mp3"
+        },
+        {
+          "num": 3,
+          "title": "I Thought I Was You",
+          "duration": "3:45",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 03 I Thought I Was You.mp3"
+        },
+        {
+          "num": 4,
+          "title": "Open Door",
+          "duration": "2:24",
+          "size_mb": 6,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 04 Open Door.mp3"
+        },
+        {
+          "num": 5,
+          "title": "Plastic Lemons",
+          "duration": "3:04",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 05 Plastic Lemons.mp3"
+        },
+        {
+          "num": 6,
+          "title": "Scallywag",
+          "duration": "2:17",
+          "size_mb": 6,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 06 Scallywag.mp3"
+        },
+        {
+          "num": 7,
+          "title": "Hollywood",
+          "duration": "4:15",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 07 Hollywood.mp3"
+        },
+        {
+          "num": 8,
+          "title": "The Wind",
+          "duration": "2:15",
+          "size_mb": 5,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 08 The Wind.mp3"
+        },
+        {
+          "num": 9,
+          "title": "Everything",
+          "duration": "3:12",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 09 Everything.mp3"
+        },
+        {
+          "num": 10,
+          "title": "This World (Early Version)",
+          "duration": "3:14",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 10 This World (Early Version).mp3"
+        },
+        {
+          "num": 11,
+          "title": "Smoke in Heaven",
+          "duration": "3:01",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 11 Smoke in Heaven.mp3"
+        },
+        {
+          "num": 12,
+          "title": "My Dog",
+          "duration": "0:23",
+          "size_mb": 1,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 12 My Dog.mp3"
+        },
+        {
+          "num": 13,
+          "title": "Truck",
+          "duration": "3:56",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 13 Truck.mp3"
+        },
+        {
+          "num": 14,
+          "title": "The Bold Fenian Men",
+          "duration": "3:12",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 14 The Bold Fenian Men.mp3"
+        },
+        {
+          "num": 15,
+          "title": "El Paso",
+          "duration": "4:47",
+          "size_mb": 12,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 15 El Paso.mp3"
+        },
+        {
+          "num": 16,
+          "title": "Rugburns",
+          "duration": "4:40",
+          "size_mb": 11,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 16 Rugburns.mp3"
+        },
+        {
+          "num": 17,
+          "title": "Elephant Shoes",
+          "duration": "3:47",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 17 Elephant Shoes.mp3"
+        },
+        {
+          "num": 18,
+          "title": "Tougher Than The Rest",
+          "duration": "3:33",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 18 Tougher Than The Rest.mp3"
+        },
+        {
+          "num": 19,
+          "title": "Model Family Man",
+          "duration": "3:17",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 19 Model Family Man.mp3"
+        },
+        {
+          "num": 20,
+          "title": "The Crystal Rose",
+          "duration": "5:12",
+          "size_mb": 12,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 20 The Crystal Rose.mp3"
+        },
+        {
+          "num": 21,
+          "title": "That's The Way The World Goes 'Round",
+          "duration": "3:49",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 21 That's The Way The World Goes 'Round.mp3"
+        },
+        {
+          "num": 22,
+          "title": "Ride On",
+          "duration": "3:32",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 22 Ride On.mp3"
+        },
+        {
+          "num": 23,
+          "title": "Anna May",
+          "duration": "3:20",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 23 Anna May.mp3"
+        },
+        {
+          "num": 24,
+          "title": "War",
+          "duration": "3:04",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 24 War.mp3"
+        },
+        {
+          "num": 25,
+          "title": "Woman (Early Version)",
+          "duration": "3:21",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 25 Woman (Early Version).mp3"
+        },
+        {
+          "num": 26,
+          "title": "Kilkelly Ireland",
+          "duration": "6:02",
+          "size_mb": 14,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 26 Kilkelly Ireland.mp3"
+        },
+        {
+          "num": 27,
+          "title": "Butter",
+          "duration": "4:18",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 27 Butter.mp3"
+        },
+        {
+          "num": 28,
+          "title": "Luxury of Murder",
+          "duration": "3:05",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 28 Luxury of Murder.mp3"
+        },
+        {
+          "num": 29,
+          "title": "ABC",
+          "duration": "2:12",
+          "size_mb": 5,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 29 ABC.mp3"
+        },
+        {
+          "num": 30,
+          "title": "The Parting Glass",
+          "duration": "4:34",
+          "size_mb": 11,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 30 The Parting Glass.mp3"
+        }
+      ],
+      "description": [
+        "Unlike most recordings in this archive, which were captured from the audience on a small microphone, this one was recorded directly from the soundboard to DAT — so the sound is unusually clear and close.",
+        "The full tape has been split into its 30 individual songs: Jerry’s originals alongside traditional Irish songs and a handful of covers. Each track can be played right here or downloaded as a 320 kbps MP3."
+      ],
+      "page": "jerry-hannan-19-broadway-2001"
+    },
+    {
+      "slug": "jerry-19-broadway-2001-01-15",
+      "artist": "jerry",
+      "venue": "19 Broadway, Fairfax",
+      "venue_short": "19 Broadway",
+      "date": "2001-01-15",
+      "date_display": "January 15, 2001",
+      "subtitle": null,
+      "source": "SBD",
+      "recordings": [
+        {
+          "label": "Part 1",
+          "alt_label": null,
+          "alternate": false,
+          "source": "SBD",
+          "format": "WAV",
+          "size": "2.63 GB",
+          "file": "JerryHannan - 19 Broadway 2001-01-15 Pt 1 SBD.wav",
+          "free": false
+        },
+        {
+          "label": "Part 2",
+          "alt_label": null,
+          "alternate": false,
+          "source": "SBD",
+          "format": "WAV",
+          "size": "828 MB",
+          "file": "JerryHannan - 19 Broadway 2001-01-15 Pt 2 SBD.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "Part 1",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "2.45 GB",
+          "file": "WAV_Files/JerryHannan - 19 Broadway 2001-01-15 Pt 1.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "Part 2",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.73 GB",
+          "file": "WAV_Files/JerryHannan_19Broadway_2001-01-15 part2.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "Alternate transfer",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.18 GB",
+          "file": "WAV_Files/JerryHannan_19Broadway_2001-01-15.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "jerry-cafe-java-1999-03-25",
+      "artist": "jerry",
+      "venue": "Cafe Java, Larkspur",
+      "venue_short": "Cafe Java",
+      "date": "1999-03-25",
+      "date_display": "March 25 & April 8, 1999",
+      "subtitle": "Two nights on one tape",
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": "Complete tape (both nights)",
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.48 GB",
+          "file": "WAV_Files/JerryHannan - Cafe Java 1999-03-25 1999-04-08.wav",
+          "free": false
+        },
+        {
+          "label": "March 25 (digital transfer)",
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "876 MB",
+          "file": "WAV_Files/JerryHannan_CafeJava_1999-03-25 DIGITAL.wav",
+          "free": false
+        },
+        {
+          "label": "April 8 (digital transfer)",
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.1 GB",
+          "file": "WAV_Files/JerryHannan_CafeJava_1999-04-08 DIGITAL.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "jerry-cafe-java-1999-04-29",
+      "artist": "jerry",
+      "venue": "Cafe Java, Larkspur",
+      "venue_short": "Cafe Java",
+      "date": "1999-04-29",
+      "date_display": "April 29, 1999",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": null,
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.06 GB",
+          "file": "WAV_Files/JerryHannan - Cafe Java 1999-04-29.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "Alternate transfer",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.54 GB",
+          "file": "WAV_Files/JerryHannan_CafeJava_1999-04-29.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "jerry-cafe-java-1999-05-27",
+      "artist": "jerry",
+      "venue": "Cafe Java, Larkspur",
+      "venue_short": "Cafe Java",
+      "date": "1999-05-27",
+      "date_display": "May 27, 1999",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": null,
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.99 GB",
+          "file": "WAV_Files/JerryHannan - Cafe Java 1999-05-27.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "jerry-cafe-java-1999-05-10",
+      "artist": "jerry",
+      "venue": "Cafe Java, Larkspur",
+      "venue_short": "Cafe Java",
+      "date": "1999-05-10",
+      "date_display": "May 10, 1999",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": "Digital",
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "2.2 GB",
+          "file": "WAV_Files/JerryHannan_CafeJava_1999-05-10 DIGITAL.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "jerry-cafe-java-1999-06-17",
+      "artist": "jerry",
+      "venue": "Cafe Java, Larkspur",
+      "venue_short": "Cafe Java",
+      "date": "1999-06-17",
+      "date_display": "June 17, 1999",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": null,
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.23 GB",
+          "file": "WAV_Files/JerryHannan - Cafe Java 1999-06-17.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "jerry-western-saloon-2025-07-03",
+      "artist": "jerry",
+      "venue": "Western Saloon",
+      "venue_short": "Western Saloon",
+      "date": "2025-07-03",
+      "date_display": "July 3, 2025",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": "Part 1",
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "631 MB",
+          "file": "WAV_Files/JerryHannan_WesternSaloon_20250703 Part1.wav",
+          "free": false
+        },
+        {
+          "label": "Part 2",
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "966 MB",
+          "file": "WAV_Files/JerryHannan_WesternSaloon_20250703 Part2.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "sean-19-broadway-1999-11-29",
+      "artist": "sean",
+      "venue": "19 Broadway, Fairfax",
+      "venue_short": "19 Broadway",
+      "date": "1999-11-29",
+      "date_display": "November 29, 1999",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": null,
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "2.44 GB",
+          "file": "WAV_Files/SeanHannan - 19 Broadway 1999-11-29.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "sean-19-broadway-2000-01-24",
+      "artist": "sean",
+      "venue": "19 Broadway, Fairfax",
+      "venue_short": "19 Broadway",
+      "date": "2000-01-24",
+      "date_display": "January 24, 2000",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": null,
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "2.75 GB",
+          "file": "WAV_Files/SeanHannan - 19 Broadway 2000-01-24.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "sean-19-broadway-2000-02-21",
+      "artist": "sean",
+      "venue": "19 Broadway, Fairfax",
+      "venue_short": "19 Broadway",
+      "date": "2000-02-21",
+      "date_display": "February 21, 2000",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": null,
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.92 GB",
+          "file": "WAV_Files/SeanHannan - 19 Broadway 2000-02-21.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "sean-19-broadway-unknown-1",
+      "artist": "sean",
+      "venue": "19 Broadway, Fairfax",
+      "venue_short": "19 Broadway",
+      "date": null,
+      "date_display": "Unknown date",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": "Unknown Date, Part 1",
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.07 GB",
+          "file": "WAV_Files/SeanHannan - 19 Broadway unknown date pt1.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "sean-19-broadway-unknown-2",
+      "artist": "sean",
+      "venue": "19 Broadway, Fairfax",
+      "venue_short": "19 Broadway",
+      "date": null,
+      "date_display": "Unknown date",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": "Unknown Date",
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "2.17 GB",
+          "file": "WAV_Files/SeanHannan - 19 Broadway unknown date.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "mad-sweetwater-2000-02-17",
+      "artist": "mad",
+      "venue": "Sweetwater Music Hall, Mill Valley",
+      "venue_short": "Sweetwater",
+      "date": "2000-02-17",
+      "date_display": "February 17, 2000",
+      "subtitle": null,
+      "source": "SBD",
+      "recordings": [
+        {
+          "label": null,
+          "alt_label": null,
+          "alternate": false,
+          "source": "SBD",
+          "format": "WAV",
+          "size": "2.4 GB",
+          "file": "MadHannans - Sweetwater 2000-02-17 SBD.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "Noise Reduction / Normalized",
+          "alternate": true,
+          "source": "SBD",
+          "format": "WAV",
+          "size": "2.19 GB",
+          "file": "WAV_Files/MadHannans_Sweetwater_2000-02-17 Noise Reduction_Normalized -1.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "mad-sweetwater-2000-10-17",
+      "artist": "mad",
+      "venue": "Sweetwater Music Hall, Mill Valley",
+      "venue_short": "Sweetwater",
+      "date": "2000-10-17",
+      "date_display": "October 17, 2000",
+      "subtitle": "Birthday Show",
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": null,
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.34 GB",
+          "file": "MadHannans - Sweetwater 2000-10-17 Birthday Show.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "mad-4th-street-tavern-1999-05-01",
+      "artist": "mad",
+      "venue": "4th Street Tavern",
+      "venue_short": "4th Street Tavern",
+      "date": "1999-05-01",
+      "date_display": "May 1, 1999",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": "Part 1",
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.57 GB",
+          "file": "WAV_Files/MadHannans - 4th Street Tavern 1999-05-01 Pt 1.wav",
+          "free": false
+        },
+        {
+          "label": "Part 2",
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.24 GB",
+          "file": "WAV_Files/MadHannans - 4th Street Tavern 1999-05-01 Pt 2.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "mad-cafe-java-1999-09-09",
+      "artist": "mad",
+      "venue": "Cafe Java, Larkspur",
+      "venue_short": "Cafe Java",
+      "date": "1999-09-09",
+      "date_display": "September 9, 1999",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": null,
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.12 GB",
+          "file": "WAV_Files/MadHannans - Cafe Java 1999-09-09.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "MT2",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.43 GB",
+          "file": "MadHannans - Cafe Java 1999-09-09 MT2.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "mad-marin-brewing-co-1999-04-01",
+      "artist": "mad",
+      "venue": "Marin Brewing Co., Larkspur",
+      "venue_short": "Marin Brewing Co.",
+      "date": "1999-04-01",
+      "date_display": "April 1, 1999",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": null,
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1004 MB",
+          "file": "WAV_Files/MadHannans - Marin Brewing Co 1999-04-01.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "Alternate transfer",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.08 GB",
+          "file": "WAV_Files/MadHannans_MarinBrewCo_1999-04-01.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "mad-new-georges-1999-10-13",
+      "artist": "mad",
+      "venue": "New George's, San Rafael",
+      "venue_short": "New George's",
+      "date": "1999-10-13",
+      "date_display": "October 13, 1999",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": null,
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "737 MB",
+          "file": "WAV_Files/MadHannans - New George's 1999-10-13.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "MT2",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "815 MB",
+          "file": "WAV_Files/MadHannans - New George's 1999-10-13 MT2.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "Alternate transfer",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "734 MB",
+          "file": "WAV_Files/MadHannans_NewGeorges_1999-10-13.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "mad-sweetwater-1999-05-18",
+      "artist": "mad",
+      "venue": "Sweetwater Music Hall, Mill Valley",
+      "venue_short": "Sweetwater",
+      "date": "1999-05-18",
+      "date_display": "May 18, 1999",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": null,
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "2.01 GB",
+          "file": "WAV_Files/MadHannans - Sweetwater 1999-05-18.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "mad-sweetwater-2001-01-06",
+      "artist": "mad",
+      "venue": "Sweetwater Music Hall, Mill Valley",
+      "venue_short": "Sweetwater",
+      "date": "2001-01-06",
+      "date_display": "January 6, 2001",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": null,
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "2.91 GB",
+          "file": "WAV_Files/MadHannans - Sweetwater 2001-01-06.wav",
+          "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "Alternate transfer",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "2.18 GB",
+          "file": "WAV_Files/MadHannans_Sweetwater_2001-01-06.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "seanjerry-19-broadway-1999-12",
+      "artist": "seanjerry",
+      "venue": "19 Broadway, Fairfax",
+      "venue_short": "19 Broadway",
+      "date": "1999-12",
+      "date_display": "December 1999",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": "Part 1 <span style=\"font-size:11px;color:var(--muted);font-weight:300;\">(48KHz)</span>",
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.93 GB",
+          "file": "JerrySeanHannan - 19 Broadway 1999-12 pt1 (48KHz).wav",
+          "free": false
+        },
+        {
+          "label": "Part 2 <span style=\"font-size:11px;color:var(--muted);font-weight:300;\">(32KHz)</span>",
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "216 MB",
+          "file": "JerrySeanHannan - 19 Broadway 1999-12 pt2 (32KHz).wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    },
+    {
+      "slug": "mad-marin-brewing-co-1998-04-01",
+      "artist": "mad",
+      "venue": "Marin Brewing Co., Larkspur",
+      "venue_short": "Marin Brewing Co.",
+      "date": "1998-04-01",
+      "date_display": "April 1, 1998",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": null,
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.43 GB",
+          "file": "WAV_Files/MadHannans - Marin Brewing Co 1998-04-01.wav",
+          "free": false
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null
+    }
+  ],
+  "singles": [
+    {
+      "artist": "jerry",
+      "title": "Rugburns",
+      "venue": "19 Broadway, Fairfax",
+      "date": "2001-01-08",
+      "date_display": "January 8, 2001",
+      "source": "SBD",
+      "format": "WAV",
+      "size": "54 MB",
+      "file": "JerryHannan - 19 Broadway 2001-01-08 SBD (Rugburns).wav",
+      "free": true
+    },
+    {
+      "artist": "jerry",
+      "title": "Kilkelly, Ireland",
+      "venue": "19 Broadway, Fairfax",
+      "date": "2001-01-08",
+      "date_display": "January 8, 2001",
+      "source": "AUD",
+      "format": "MP3",
+      "size": "6 MB",
+      "file": "Soundcloud/JerryHannan_2001-01-8_KilkellyIreland.mp3",
+      "free": false
+    },
+    {
+      "artist": "jerry",
+      "title": "The Patriot Game",
+      "venue": "Cafe Java, Larkspur",
+      "date": null,
+      "date_display": null,
+      "source": "AUD",
+      "format": "WAV",
+      "size": "35 MB",
+      "file": "Soundcloud/JerryHannan_CafeJava_ThePatriotGame.wav",
+      "free": true
+    },
+    {
+      "artist": "sean",
+      "title": "Have You Ever Seen The Rain",
+      "venue": "19 Broadway, Fairfax",
+      "date": "2000-01-24",
+      "date_display": "January 24, 2000",
+      "source": "AUD",
+      "format": "WAV",
+      "size": "30 MB",
+      "file": "SeanHannan 19 Broadway 2000-01-24 (Have You Ever Seen The Rain).wav",
+      "free": false
+    },
+    {
+      "artist": "sean",
+      "title": "Angel From Montgomery",
+      "venue": "19 Broadway, Fairfax",
+      "date": "2000-01-24",
+      "date_display": "January 24, 2000",
+      "source": "AUD",
+      "format": "MP3",
+      "size": "10 MB",
+      "file": "Soundcloud/SeanHannan_19BW_2000-01-24_AngelFromMontgomery.mp3",
+      "free": false
+    },
+    {
+      "artist": "sean",
+      "title": "The One I Love",
+      "venue": "19 Broadway, Fairfax",
+      "date": "2000-01-24",
+      "date_display": "January 24, 2000",
+      "source": "AUD",
+      "format": "MP3",
+      "size": null,
+      "file": "Soundcloud/SeanHannan_ 2000-01-24 (The_One_I_Love).mp3",
+      "free": false
+    },
+    {
+      "artist": "sean",
+      "title": "Learn About Love",
+      "venue": "19 Broadway, Fairfax",
+      "date": "2000-01-24",
+      "date_display": "January 24, 2000",
+      "source": "AUD",
+      "format": "MP3",
+      "size": null,
+      "file": "Soundcloud/SeanHannan_2000-01-24_LearnAboutLove.mp3",
+      "free": false
+    },
+    {
+      "artist": "sean",
+      "title": "Model Family Man",
+      "venue": "19 Broadway, Fairfax",
+      "date": "2000-01-24",
+      "date_display": "January 24, 2000",
+      "source": "AUD",
+      "format": "MP3",
+      "size": null,
+      "file": "Soundcloud/SeanHannan_2000_01_24 (Model Family Man).mp3",
+      "free": false
+    },
+    {
+      "artist": "sean",
+      "title": "Thought I Was You",
+      "venue": null,
+      "date": null,
+      "date_display": null,
+      "source": "AUD",
+      "format": "MP3",
+      "size": null,
+      "file": "Soundcloud/SeanHannan_4thStreetTavern_ThoughtIwasYou.mp3",
+      "free": false
+    },
+    {
+      "artist": "sean",
+      "title": "Gold's Gym Guy",
+      "venue": null,
+      "date": null,
+      "date_display": null,
+      "source": "AUD",
+      "format": "MP3",
+      "size": null,
+      "file": "Soundcloud/SeanHannan_GoldsGymGuy.mp3",
+      "free": false
+    },
+    {
+      "artist": "sean",
+      "title": "Good Life",
+      "venue": null,
+      "date": null,
+      "date_display": null,
+      "source": "AUD",
+      "format": "MP3",
+      "size": null,
+      "file": "Soundcloud/SeanHannan_GoodLife.mp3",
+      "free": false
+    },
+    {
+      "artist": "sean",
+      "title": "Lay Down Your Weary Tune",
+      "venue": null,
+      "date": null,
+      "date_display": null,
+      "source": "AUD",
+      "format": "MP3",
+      "size": null,
+      "file": "Soundcloud/SeanHannan_LayDownYourWearyTune.mp3",
+      "free": false
+    },
+    {
+      "artist": "sean",
+      "title": "Open Door",
+      "venue": "19 Broadway, Fairfax",
+      "date": "1999-12",
+      "date_display": "December 1999",
+      "source": "AUD",
+      "format": "MP3",
+      "size": null,
+      "file": "Soundcloud/SeanHannan_OpenDoor_Dec1999.mp3",
+      "free": false
+    },
+    {
+      "artist": "mad",
+      "title": "Clear Headed",
+      "venue": "Sweetwater Music Hall, Mill Valley",
+      "date": "2000-02-17",
+      "date_display": "February 17, 2000",
+      "source": "AUD",
+      "format": "WAV",
+      "size": "87 MB",
+      "file": "MadHannans_Sweetwater_2000-02-17 CLEAR HEADED Normalized -3.wav",
+      "free": true
+    },
+    {
+      "artist": "mad",
+      "title": "Da Da Da",
+      "venue": "Sweetwater Music Hall, Mill Valley",
+      "date": "2000-02-17",
+      "date_display": "February 17, 2000",
+      "source": "AUD",
+      "format": "WAV",
+      "size": "129 MB",
+      "file": "MadHannans_Sweetwater_2000-02-17 DA DA DA Normalized.wav",
+      "free": true
+    },
+    {
+      "artist": "mad",
+      "title": "Elephant Shoes",
+      "venue": "Sweetwater Music Hall, Mill Valley",
+      "date": "2000-02-17",
+      "date_display": "February 17, 2000",
+      "source": "AUD",
+      "format": "MP3",
+      "size": "9 MB",
+      "file": "Soundcloud/MadHannans_Sweetwater_2000-02-17_Elephant_Shoes_Kristen_McNamera.mp3",
+      "free": false
+    },
+    {
+      "artist": "mad",
+      "title": "Hard Drinkin'",
+      "venue": "Sweetwater Music Hall, Mill Valley",
+      "date": "2000-10-17",
+      "date_display": "October 17, 2000",
+      "source": "AUD",
+      "format": "MP3",
+      "size": "3 MB",
+      "file": "Soundcloud/MadHannans_2000-10-17_HardDrinkin' (Sweetwater).mp3",
+      "free": false
+    },
+    {
+      "artist": "mad",
+      "title": "Nicolai",
+      "venue": "Sweetwater Music Hall, Mill Valley",
+      "date": "2000-10-17",
+      "date_display": "October 17, 2000",
+      "source": "AUD",
+      "format": "MP3",
+      "size": null,
+      "file": "Soundcloud/MadHannans_Sweetwater_2000_10_17 (Nicolai).mp3",
+      "free": false
+    },
+    {
+      "artist": "mad",
+      "title": "You Piss Me Off",
+      "venue": null,
+      "date": null,
+      "date_display": null,
+      "source": "AUD",
+      "format": "M4A",
+      "size": null,
+      "file": "Soundcloud/MadHannans_YouPissMeOff.m4a",
+      "free": false
+    },
+    {
+      "artist": "seanjerry",
+      "title": "Don't Think Twice",
+      "venue": "19 Broadway, Fairfax",
+      "date": "1999-12",
+      "date_display": "December 1999",
+      "source": "AUD",
+      "format": "MP3",
+      "size": "6 MB",
+      "file": "Soundcloud/SeanandJerryHannan_1999December_Don'tThinkTwice.mp3",
+      "free": false
+    },
+    {
+      "artist": "seanjerry",
+      "title": "Van Morrison",
+      "venue": "19 Broadway, Fairfax",
+      "date": "1999-12",
+      "date_display": "December 1999",
+      "source": "AUD",
+      "format": "MP3",
+      "size": null,
+      "file": "Soundcloud/SeanandJerryHannan_1999December_VanMorrison.mp3",
+      "free": false
+    },
+    {
+      "artist": "seanjerry",
+      "title": "Woman",
+      "venue": "19 Broadway, Fairfax",
+      "date": "1999-12",
+      "date_display": "December 1999",
+      "source": "AUD",
+      "format": "MP3",
+      "size": null,
+      "file": "Soundcloud/SeanandJerryHannan_1999December_Woman.mp3",
+      "free": false
+    }
+  ]
+}
