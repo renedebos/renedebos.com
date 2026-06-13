@@ -7,6 +7,13 @@ const FREE_FILES = new Set([
   'MadHannans_Sweetwater_2000-02-17 DA DA DA Normalized.wav',
 ]);
 
+function audioType(file) {
+  const f = file.toLowerCase();
+  if (f.endsWith('.wav')) return 'audio/wav';
+  if (f.endsWith('.flac')) return 'audio/flac';
+  return 'audio/mpeg';
+}
+
 function corsHeaders(origin) {
   const allowed = ['https://renedebos.com', 'https://www.renedebos.com'];
   const allowedOrigin = allowed.includes(origin) ? origin : allowed[0];
@@ -57,9 +64,8 @@ async function handleStream(request, env, url, origin) {
   const object = await env.R2_BUCKET.get(file, rangeOpt ? { range: rangeOpt } : undefined);
   if (!object) return new Response('Not found', { status: 404 });
 
-  const isWav = file.toLowerCase().endsWith('.wav');
   const headers = new Headers(corsHeaders(origin));
-  headers.set('Content-Type', isWav ? 'audio/wav' : 'audio/mpeg');
+  headers.set('Content-Type', audioType(file));
   headers.set('Accept-Ranges', 'bytes');
   headers.set('Cache-Control', 'no-store');
 
@@ -124,9 +130,10 @@ async function handleDownload(request, env, url, origin) {
   const file = url.searchParams.get('file');
   if (!file) return new Response('Missing file', { status: 400 });
 
-  const isWav = file.toLowerCase().endsWith('.wav');
+  const lower = file.toLowerCase();
+  const isLossless = lower.endsWith('.wav') || lower.endsWith('.flac');
 
-  if (isWav && !FREE_FILES.has(file)) {
+  if (isLossless && !FREE_FILES.has(file)) {
     const token = url.searchParams.get('token');
     const expires = parseInt(url.searchParams.get('expires') || '0', 10);
 
@@ -157,9 +164,8 @@ async function handleDownload(request, env, url, origin) {
   if (!object) return new Response('Not found', { status: 404 });
 
   const filename = file.split('/').pop();
-  const contentType = isWav ? 'audio/wav' : 'audio/mpeg';
   const headers = new Headers(corsHeaders(origin));
-  headers.set('Content-Type', contentType);
+  headers.set('Content-Type', audioType(file));
   headers.set('Content-Disposition', `attachment; filename="${filename}"`);
   headers.set('Content-Length', String(object.size));
 

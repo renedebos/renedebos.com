@@ -104,8 +104,9 @@ document.addEventListener('keydown', e => {
 });
 
 // ── downloads ────────────────────────────────────────────────────────────────
-// MP3/M4A and free WAVs download directly through the Worker; protected WAVs
-// go through the password modal (/auth issues an HMAC token for /download).
+// MP3/M4A and free files download directly through the Worker; protected
+// lossless files (WAV/FLAC) go through the password modal (/auth issues an
+// HMAC token for /download).
 
 const modal = document.createElement('div');
 modal.className = 'pw-overlay';
@@ -113,7 +114,7 @@ modal.id = 'pwOverlay';
 modal.innerHTML = `
   <div class="pw-modal">
     <h3>Protected Download</h3>
-    <p>This full-show recording is password protected. Enter the password to download.</p>
+    <p>This recording is password protected. Enter the password to download.</p>
     <input type="password" id="pwInput" placeholder="Password" autocomplete="off">
     <div class="pw-modal-error" id="pwError"></div>
     <div class="pw-modal-actions">
@@ -202,10 +203,11 @@ document.querySelectorAll('a.download-btn').forEach(btn => {
     btn.appendChild(label);
   }
 
-  const isWav = btn.href && btn.href.toLowerCase().includes('.wav');
+  const href = (btn.href || '').toLowerCase();
+  const isProtected = href.includes('.wav') || href.includes('.flac');
   const isFree = btn.dataset.free === 'true';
 
-  if (isWav && !isFree) {
+  if (isProtected && !isFree) {
     btn.classList.add('wav-protected');
     if (!btn.querySelector('.lock-icon')) {
       const lockSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');

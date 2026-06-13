@@ -68,19 +68,25 @@ DL_SVG = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wid
 PLAY_SVG = '<svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg>'
 
 
-def player(file, free=False, duration=None):
-    """A custom-player row: play button, progress bar, download button."""
-    url = stream_url(file)
-    name = file.split("/")[-1]
+def player(file, free=False, duration=None, download_file=None):
+    """A custom-player row: play button, progress bar, download button.
+
+    Streams `file`; downloads `download_file` if given (e.g. stream MP3 but
+    download lossless FLAC), otherwise downloads the streamed file.
+    """
+    stream = stream_url(file)
+    dl = download_file or file
+    dl_url = stream_url(dl)
+    name = dl.split("/")[-1]
     end_label = f'<span class="time-label">{esc(duration)}</span>' if duration else ""
     free_attr = ' data-free="true"' if free else ""
-    return f'''<div class="custom-player" data-src="{esc(url)}">
+    return f'''<div class="custom-player" data-src="{esc(stream)}">
           <button class="play-btn" aria-label="Play">{PLAY_SVG}</button>
           <div class="progress-wrap">
             <div class="progress-bar-track"><div class="progress-bar-fill"></div></div>
             <div class="time-row"><span class="time-label current">0:00</span>{end_label}</div>
           </div>
-          <a class="download-btn"{free_attr} href="{esc(url)}" download="{esc(name)}" title="Download">{DL_SVG}</a>
+          <a class="download-btn"{free_attr} href="{esc(dl_url)}" download="{esc(name)}" title="Download">{DL_SVG}</a>
         </div>'''
 
 
@@ -316,14 +322,18 @@ def build_show(show):
     if show.get("tracks"):
         cards = []
         for t in show["tracks"]:
+            if t.get("flac"):
+                detail = f'{esc(t["duration"])} &middot; Stream MP3 &middot; Download FLAC &middot; {t["flac_size_mb"]} MB'
+            else:
+                detail = f'{esc(t["duration"])} &middot; MP3 320 kbps &middot; {t["size_mb"]} MB'
             cards.append(f'''      <div class="recording-item">
         <div class="recording-meta">
           <div>
             <div class="recording-title"><span class="track-num">{t["num"]:02d}</span>{esc(t["title"])}</div>
-            <div class="recording-detail">{esc(t["duration"])} &middot; MP3 320 kbps &middot; {t["size_mb"]} MB</div>
+            <div class="recording-detail">{detail}</div>
           </div>
         </div>
-        {player(t["file"], duration=t["duration"])}
+        {player(t["file"], duration=t["duration"], download_file=t.get("flac"))}
       </div>''')
         parts.append(f'''
   <section id="tracks">
