@@ -252,6 +252,49 @@ main {
   margin: 1.8rem 0 0.7rem;
 }
 
+/* ── updates / changelog ─────────────────────────────────────────────────── */
+
+.updates { margin-bottom: 5rem; }
+
+.update-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.update-item {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 1rem;
+  align-items: baseline;
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--border);
+}
+.update-item:first-child { border-top: none; }
+
+.update-date {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.update-text {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 300;
+}
+.update-text a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--accent);
+}
+.update-text .src-tag { margin-left: 0.45rem; white-space: nowrap; }
+
+@media (max-width: 600px) {
+  .update-item { grid-template-columns: 1fr; gap: 0.2rem; }
+}
+
 /* ── show index rows ─────────────────────────────────────────────────────── */
 
 .show-list {
@@ -312,12 +355,22 @@ main {
   font-weight: 300;
 }
 
-.show-src {
+.show-src,
+.src-tag {
   font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
   font-weight: 500;
+}
+
+/* Soundboard recordings stand out; audience recordings stay quiet. */
+.show-src.src-sbd,
+.src-tag.src-sbd {
+  color: #fff;
+  background: var(--accent);
+  padding: 2px 7px;
+  border-radius: 3px;
 }
 
 .show-arrow {

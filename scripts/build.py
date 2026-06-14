@@ -168,6 +168,30 @@ def build_home():
     <span class="featured-cta">Listen &rarr;</span>
   </a>'''
 
+    updates_html = ""
+    if M.get("updates"):
+        items = []
+        for u in M["updates"]:
+            show = next((s for s in M["shows"] if s["slug"] == u["slug"]), None)
+            if not show:
+                continue
+            artist = next(a for a in M["artists"] if a["id"] == show["artist"])
+            label = f'{esc(artist["name"])} &middot; {esc(show["venue_short"])} &middot; {esc(show["date"] or "")}'
+            src = show["source"]
+            src_tag = f'<span class="src-tag src-{src.lower()}">{esc(src)}</span>'
+            items.append(f'''      <li class="update-item">
+        <span class="update-date">{esc(u["date"])}</span>
+        <div class="update-text">Added <a href="{show_url(show)}">{label}</a> &mdash; {u["tracks"]} split tracks {src_tag}</div>
+      </li>''')
+        updates_html = f'''
+  <section class="updates" id="updates">
+    <div class="artist-header"><h2 class="artist-name">Updates</h2></div>
+    <div class="artist-divider"></div>
+    <ul class="update-list">
+{chr(10).join(items)}
+    </ul>
+  </section>'''
+
     sections = []
     for artist in M["artists"]:
         shows = sorted((s for s in M["shows"] if s["artist"] == artist["id"]), key=sort_key)
@@ -198,7 +222,7 @@ def build_home():
             rows.append(f'''      <a class="show-row" href="{show_url(show)}" data-info="{info}">
         <span class="show-date">{esc(show["date"] or "Unknown date")}</span>
         <span class="show-venue">{esc(show["venue"] or "")}{subtitle}</span>
-        <span class="show-meta">{marker}{extra_html}<span class="show-src">{esc(show["source"])}</span><span class="show-arrow">&rarr;</span></span>
+        <span class="show-meta">{marker}{extra_html}<span class="show-src src-{show["source"].lower()}">{esc(show["source"])}</span><span class="show-arrow">&rarr;</span></span>
       </a>''')
 
         sections.append(f'''
@@ -282,7 +306,10 @@ def build_home():
   });
   </script>'''
 
-    nav = "\n".join(f'  <a href="#{a["id"]}">{esc(a["name"])}</a>' for a in M["artists"])
+    nav = ""
+    if M.get("updates"):
+        nav += '  <a href="#updates">Updates</a>\n'
+    nav += "\n".join(f'  <a href="#{a["id"]}">{esc(a["name"])}</a>' for a in M["artists"])
     nav += '\n  <a href="#contact">Contact</a>'
 
     return page_shell(
@@ -293,7 +320,7 @@ def build_home():
         heading="The <em>Hannan</em><br>Recordings",
         tagline="Live performances &mdash; San Francisco Bay Area",
         nav=nav,
-        main=about + feat + "".join(sections) + contact,
+        main=about + feat + updates_html + "".join(sections) + contact,
     )
 
 

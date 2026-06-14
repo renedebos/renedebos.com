@@ -25,6 +25,28 @@
   "featured": [
     "jerry-19-broadway-2001-01-08"
   ],
+  "updates": [
+    {
+      "date": "2026-06-14",
+      "slug": "sean-19-broadway-2000-02-21",
+      "tracks": 11
+    },
+    {
+      "date": "2026-06-14",
+      "slug": "sean-19-broadway-2000-01-24",
+      "tracks": 31
+    },
+    {
+      "date": "2026-06-12",
+      "slug": "mad-sweetwater-2000-02-17",
+      "tracks": 21
+    },
+    {
+      "date": "2026-06-11",
+      "slug": "jerry-19-broadway-2001-01-08",
+      "tracks": 30
+    }
+  ],
   "shows": [
     {
       "slug": "jerry-19-broadway-1999-02-01",
