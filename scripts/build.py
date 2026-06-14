@@ -446,15 +446,17 @@ def build_show(show):
                 sizes.append(f'FLAC {t["flac_size_mb"]} MB')
             if t.get("size_mb"):
                 sizes.append(f'MP3 {t["size_mb"]} MB')
+            # A track may override the show artist (e.g. a guest singer).
+            track_artist = t.get("artist") or artist["name"]
             info = esc(json.dumps([
-                ["Artist", artist["name"]],
+                ["Artist", track_artist],
                 ["Song", t["title"]],
                 ["Venue", show["venue"] or "—"],
                 ["Date", show["date"] or "Unknown date"],
                 ["Format", "FLAC + MP3" if t.get("flac") else "MP3"],
                 ["Size", " · ".join(sizes) or "—"],
             ], ensure_ascii=False))
-            share = esc(f'{artist["name"]} — “{t["title"]}” ({show["venue_short"]} · {show["date"] or "live"})')
+            share = esc(f'{track_artist} — “{t["title"]}” ({show["venue_short"]} · {show["date"] or "live"})')
             # Download button only for tracks with a lossless FLAC. MP3 is
             # play-only, so MP3-only tracks show no download icon.
             dl_btn = ""

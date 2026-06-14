@@ -666,7 +666,9 @@
       ],
       "description": [
         "Unlike most recordings in this archive, which were captured from the audience on a small microphone, this one was recorded directly from the soundboard to DAT — so the sound is unusually clear and close.",
-        "The full tape has been split into its 30 individual songs: Jerry’s originals alongside traditional Irish songs and a handful of covers. Each track can be streamed right here."
+        "The full tape has been split into its 30 individual songs: Jerry’s originals alongside traditional Irish songs and a handful of covers. Each track can be streamed right here.",
+        "These tracks have not been normalized yet, so they may sound a little low in volume — that will be fixed later.",
+        "A couple of notes on the set: the song listed as “Scallywag” (track 6) is a placeholder — I can no longer recall its real name. The tape also captures early versions of “This World” and “Woman.”"
       ],
       "page": "jerry-hannan-19-broadway-2001",
       "added": "2026-06-11"
@@ -1255,7 +1257,9 @@
       ],
       "description": [
         "19 Broadway is a small, famously loud bar in Fairfax, and this night was no exception — the room was packed and talking straight through the set. The tape was captured from the audience on a DAT recorder, so you’ll hear the crowd, the clink of glasses, and the bar’s heavy front door banging open and shut between songs.",
-        "Despite the racket, Sean played a long, generous set. The full tape has been split into its 31 individual songs — Sean’s originals alongside traditional tunes and a handful of covers. Each track streams here for free as a 320 kbps MP3, or can be downloaded as a lossless FLAC (password protected)."
+        "Despite the racket, Sean played a long, generous set. The full tape has been split into its 31 individual songs — Sean’s originals alongside traditional tunes and a handful of covers. Each track streams here for free as a 320 kbps MP3, or can be downloaded as a lossless FLAC (password protected).",
+        "The songs from this show have not been normalized yet, so they may sound a little low in volume — that will be fixed later.",
+        "“Model Family Man” was originally written by the Hannans’ friend Paddy Nash in Ireland."
       ],
       "page": null,
       "added": "2026-06-14"
@@ -1361,7 +1365,8 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/09 Plastic Lemons.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/09 Plastic Lemons.flac",
-          "flac_size_mb": 36
+          "flac_size_mb": 36,
+          "artist": "Jerry Hannan"
         },
         {
           "num": 10,
@@ -1384,7 +1389,10 @@
       ],
       "description": [
         "Unlike the audience tapes that make up most of this archive, this February 2000 set at 19 Broadway was recorded straight off the soundboard — so it’s unusually clean and close, with Sean’s voice and guitar right up front.",
-        "The tape has been split into its 11 songs — Sean’s originals alongside a few traditional Irish tunes and covers. Each track streams here for free as a 320 kbps MP3, or can be downloaded as a lossless FLAC (password protected)."
+        "The tape has been split into its 11 songs — Sean’s originals alongside a few traditional Irish tunes and covers. Each track streams here for free as a 320 kbps MP3, or can be downloaded as a lossless FLAC (password protected).",
+        "In all this is a relatively short set for Sean. Both the streaming MP3s and the lossless FLAC files have been normalized in Audacity for a more even listening level.",
+        "On “Plastic Lemons” it is actually Jerry Hannan singing — he stepped in for a song while Sean, who was quite tired this night, took a break.",
+        "The full tape also includes some guitar music from an unidentified musician, and has not yet been fully audited."
       ],
       "page": null,
       "added": "2026-06-14"
@@ -1661,7 +1669,10 @@
           "flac_size_mb": 81
         }
       ],
-      "description": null,
+      "description": [
+        "This Mad Hannans set at the Sweetwater features a few guest singers. A 14-year-old (!) Kristen McNamara sings “Plastic Lemons,” “Elephant Shoes,” and “Everything Reminds Me of You,” and an unidentified singer takes “Angel from Montgomery.”",
+        "The songs have not been normalized in Audacity yet — that will be done later."
+      ],
       "page": null,
       "added": "2026-06-12"
     },
