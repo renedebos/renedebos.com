@@ -311,9 +311,9 @@ main {
 
 .show-row {
   display: grid;
-  grid-template-columns: 140px 1fr auto;
+  grid-template-columns: 116px 1fr 56px 52px 14px;
   align-items: center;
-  gap: 1.2rem;
+  gap: 1rem;
   padding: 0.95rem 1.5rem;
   background: var(--player-bg);
   text-decoration: none;
@@ -336,22 +336,21 @@ main {
   font-size: 13px;
   color: var(--muted);
   font-weight: 300;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .show-venue em { font-style: italic; color: var(--text); }
 
-.show-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  white-space: nowrap;
-}
-
 .show-tracks {
+  justify-self: end;
   font-size: 12px;
   color: var(--accent);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .show-extra {
@@ -369,6 +368,11 @@ main {
   font-weight: 500;
 }
 
+.show-src {
+  justify-self: end;
+  white-space: nowrap;
+}
+
 /* Soundboard recordings stand out; audience recordings stay quiet. */
 .show-src.src-sbd,
 .src-tag.src-sbd {
@@ -379,6 +383,7 @@ main {
 }
 
 .show-arrow {
+  justify-self: end;
   font-size: 14px;
   color: var(--border);
 }
@@ -387,15 +392,19 @@ main {
 
 @media (max-width: 640px) {
   .show-row {
-    grid-template-columns: 1fr auto;
-    grid-template-areas: "date meta" "venue venue";
+    grid-template-columns: 1fr auto auto;
+    grid-template-areas:
+      "date tracks src"
+      "venue venue venue";
     row-gap: 4px;
     column-gap: 0.8rem;
     padding: 0.85rem 1.1rem;
   }
   .show-date { grid-area: date; }
-  .show-venue { grid-area: venue; }
-  .show-meta { grid-area: meta; }
+  .show-venue { grid-area: venue; white-space: normal; }
+  .show-tracks { grid-area: tracks; }
+  .show-src { grid-area: src; }
+  .show-arrow { display: none; }
 }
 
 /* ── compact track list (show pages) ─────────────────────────────────────── */

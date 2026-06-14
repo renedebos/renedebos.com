@@ -214,9 +214,12 @@ def show_row(show):
         extra.append(f"{n_can} parts")
     if n_alt:
         extra.append(f"{n_alt} alt transfer{'s' if n_alt > 1 else ''}")
-    extra_html = f'<span class="show-extra">{" · ".join(extra)}</span>' if extra else ""
-    marker = (f'<span class="show-tracks" title="{len(show["tracks"])} songs available">&#9834; {len(show["tracks"])}</span>'
-              if show.get("tracks") else "")
+    extra_html = f' <span class="show-extra">&middot; {" &middot; ".join(extra)}</span>' if extra else ""
+    if show.get("tracks"):
+        n = len(show["tracks"])
+        marker = f'<span class="show-tracks" title="{n} songs available">&#9834; {n}</span>'
+    else:
+        marker = '<span class="show-tracks"></span>'
     subtitle = f' &middot; <em>{esc(show["subtitle"])}</em>' if show.get("subtitle") else ""
     primary_size = next((r["size"] for r in show["recordings"] if not r["alternate"]), "—")
     info = esc(json.dumps([
@@ -229,8 +232,10 @@ def show_row(show):
     ], ensure_ascii=False))
     return f'''      <a class="show-row" href="{show_url(show)}" data-info="{info}">
         <span class="show-date">{esc(show["date"] or "Unknown date")}</span>
-        <span class="show-venue">{esc(show["venue"] or "")}{subtitle}</span>
-        <span class="show-meta">{marker}{extra_html}<span class="show-src src-{show["source"].lower()}">{esc(show["source"])}</span><span class="show-arrow">&rarr;</span></span>
+        <span class="show-venue">{esc(show["venue"] or "")}{subtitle}{extra_html}</span>
+        {marker}
+        <span class="show-src src-{show["source"].lower()}">{esc(show["source"])}</span>
+        <span class="show-arrow">&rarr;</span>
       </a>'''
 
 
