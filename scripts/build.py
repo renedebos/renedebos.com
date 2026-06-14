@@ -9,6 +9,7 @@ Reads data/recordings.json and writes:
 
 Usage: python3 scripts/build.py
 """
+import datetime
 import html
 import json
 import os
@@ -533,7 +534,24 @@ def write(path, content):
         f.write(content)
 
 
+def stamp_added_dates():
+    """Stamp today's date on any show that has tracks but no `added` date yet,
+    and persist it to recordings.json so the Updates page is hands-off."""
+    today = datetime.date.today().isoformat()
+    stamped = [s["slug"] for s in M["shows"] if s.get("tracks") and not s.get("added")]
+    for s in M["shows"]:
+        if s.get("tracks") and not s.get("added"):
+            s["added"] = today
+    if stamped:
+        with open(os.path.join(ROOT, "data", "recordings.json"), "w") as f:
+            json.dump(M, f, indent=2, ensure_ascii=False)
+            f.write("\n")
+        print(f"Stamped added={today} on: {', '.join(stamped)}")
+    return stamped
+
+
 def main():
+    stamp_added_dates()
     here = os.path.dirname(os.path.abspath(__file__))
     write("assets/site.css", open(os.path.join(here, "site.css")).read())
     write("assets/player.js", open(os.path.join(here, "player.js")).read())
