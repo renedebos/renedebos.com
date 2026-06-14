@@ -179,10 +179,13 @@ def about_block():
   <section class="about">
     <h2>About This Archive</h2>
     <p>
-      These recordings were captured on a Sony portable DAT recorder at clubs in Marin and the Bay Area in the late 1990s and early 2000s. Audio quality varies &mdash; the tapes have aged, the microphone was small, and some shows had significant background noise. They are presented here as-is.
+      These recordings were captured on a Sony portable DAT recorder at clubs in Marin and the Bay Area in the late 1990s and early 2000s. Audio quality varies &mdash; the tapes have aged, the microphone was small, and some shows had significant background noise.
     </p>
     <p>
-      Every show has its own page with streaming players and downloads. The lossless WAV files are password protected; free MP3 versions are gradually being added as the tapes get split into individual, titled songs.
+      This is very much a work in progress. I&rsquo;m steadily working through the show tapes &mdash; splitting them into individual songs and, where it helps the listening experience, cleaning up the free MP3 versions: normalizing the volume, adding gentle fades, and removing clicks where possible.
+    </p>
+    <p>
+      The lossless files are kept close to the original transfer: the full-show WAV downloads and the individual-song FLAC downloads are only minimally processed, for anyone who wants the rawest version. All lossless downloads are password protected.
     </p>
     <p class="about-note">
       Most full-show recordings are large lossless WAV files (1&ndash;3 GB) and may take a moment to begin playing.
@@ -423,7 +426,6 @@ def build_show(show):
     artist = next(a for a in M["artists"] if a["id"] == show["artist"])
     canon = [r for r in show["recordings"] if not r["alternate"]]
     alts = [r for r in show["recordings"] if r["alternate"]]
-    related = singles_for_show(show)
 
     parts = []
 
@@ -473,20 +475,6 @@ def build_show(show):
     <p class="track-hint">Play streams free (MP3) &middot; download is lossless FLAC, password protected</p>
     <div class="track-list" data-autoplay-next>
 {chr(10).join(rows)}
-    </div>
-  </section>''')
-
-    if related:
-        cards = []
-        for s in related:
-            meta = [("Source", s["source"]), ("Format", s["format"]), ("Size", s["size"])]
-            badge = f'{s["source"]}/{s["format"]}' if s["format"] != "WAV" else s["source"]
-            cards.append(recording_card(s["title"], meta, badge, s["file"], s["free"]))
-        parts.append(f'''
-  <section>
-    <div class="group-label-bare">Songs From This Show</div>
-    <div class="recording-list">
-{chr(10).join(cards)}
     </div>
   </section>''')
 
