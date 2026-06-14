@@ -202,7 +202,7 @@ def featured_card():
       <p class="featured-eyebrow">Featured &middot; Curated Show</p>
       <p class="featured-title">{esc(show_title(featured))}</p>
       <p class="featured-sub">{esc(date_with_subtitle(featured))} &middot; {SOURCE_LABEL.get(featured["source"], featured["source"])} &middot; {len(tracks)} tracks &middot; {track_total(tracks)}</p>
-      <p class="featured-note">Every song split out, streamable, and free to download in MP3.</p>
+      <p class="featured-note">Every song split out and streamable.</p>
     </div>
     <span class="featured-cta">Listen &rarr;</span>
   </a>'''
@@ -437,15 +437,10 @@ def build_show(show):
   </section>''')
 
     if show.get("tracks"):
+        has_flac = any(t.get("flac") for t in show["tracks"])
         rows = []
         for t in show["tracks"]:
             stream = stream_url(t["file"])
-            dl = t.get("flac") or t["file"]
-            dl_url = stream_url(dl)
-            name = dl.split("/")[-1]
-            size = t.get("flac_size_mb") or t.get("size_mb")
-            fmt = "FLAC" if t.get("flac") else "MP3"
-            dl_title = f"Download {fmt}" + (f" · {size} MB" if size else "")
             sizes = []
             if t.get("flac_size_mb"):
                 sizes.append(f'FLAC {t["flac_size_mb"]} MB')
@@ -460,19 +455,28 @@ def build_show(show):
                 ["Size", " · ".join(sizes) or "—"],
             ], ensure_ascii=False))
             share = esc(f'{artist["name"]} — “{t["title"]}” ({show["venue_short"]} · {show["date"] or "live"})')
+            # Download button only for tracks with a lossless FLAC; MP3-only
+            # tracks are stream-only (no free download).
+            dl_btn = ""
+            if t.get("flac"):
+                dl_url = stream_url(t["flac"])
+                name = t["flac"].split("/")[-1]
+                dl_title = "Download FLAC" + (f" · {t['flac_size_mb']} MB" if t.get("flac_size_mb") else "")
+                dl_btn = f'\n        <a class="download-btn" href="{esc(dl_url)}" download="{esc(name)}" title="{esc(dl_title)}">{DL_SVG}</a>'
             rows.append(f'''      <div class="track-row custom-player" id="track-{t["num"]}" data-src="{esc(stream)}">
         <button class="play-btn" aria-label="Play">{PLAY_SVG}</button>
         <span class="track-num">{t["num"]:02d}</span>
         <span class="track-title" data-info="{info}">{esc(t["title"])}</span>
         <span class="time-label current" data-duration="{esc(t["duration"])}">{esc(t["duration"])}</span>
-        <button class="share-btn" data-text="{share}" aria-label="Share">{SHARE_SVG}</button>
-        <a class="download-btn" href="{esc(dl_url)}" download="{esc(name)}" title="{esc(dl_title)}">{DL_SVG}</a>
+        <button class="share-btn" data-text="{share}" aria-label="Share">{SHARE_SVG}</button>{dl_btn}
         <div class="progress-bar-track"><div class="progress-bar-fill"></div></div>
       </div>''')
+        hint = ("Play streams free (MP3) &middot; download is lossless FLAC, password protected"
+                if has_flac else "Play streams each song free (MP3)")
         parts.append(f'''
   <section id="tracks">
     <div class="group-label-bare">Tracks &middot; {len(show["tracks"])} songs &middot; {track_total(show["tracks"])}</div>
-    <p class="track-hint">Play streams free (MP3) &middot; download is lossless FLAC, password protected</p>
+    <p class="track-hint">{hint}</p>
     <div class="track-list" data-autoplay-next>
 {chr(10).join(rows)}
     </div>
