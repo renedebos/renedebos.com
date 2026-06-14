@@ -438,6 +438,7 @@ def build_show(show):
 
     if show.get("tracks"):
         has_flac = any(t.get("flac") for t in show["tracks"])
+        downloads = has_flac and show.get("track_downloads", True)
         rows = []
         for t in show["tracks"]:
             stream = stream_url(t["file"])
@@ -455,10 +456,10 @@ def build_show(show):
                 ["Size", " · ".join(sizes) or "—"],
             ], ensure_ascii=False))
             share = esc(f'{artist["name"]} — “{t["title"]}” ({show["venue_short"]} · {show["date"] or "live"})')
-            # Download button only for tracks with a lossless FLAC; MP3-only
-            # tracks are stream-only (no free download).
+            # Download button only when the show offers downloads and the
+            # track has a lossless FLAC; otherwise the track is stream-only.
             dl_btn = ""
-            if t.get("flac"):
+            if downloads and t.get("flac"):
                 dl_url = stream_url(t["flac"])
                 name = t["flac"].split("/")[-1]
                 dl_title = "Download FLAC" + (f" · {t['flac_size_mb']} MB" if t.get("flac_size_mb") else "")
@@ -472,7 +473,7 @@ def build_show(show):
         <div class="progress-bar-track"><div class="progress-bar-fill"></div></div>
       </div>''')
         hint = ("Play streams free (MP3) &middot; download is lossless FLAC, password protected"
-                if has_flac else "Play streams each song free (MP3)")
+                if downloads else "Play streams each song free (MP3)")
         parts.append(f'''
   <section id="tracks">
     <div class="group-label-bare">Tracks &middot; {len(show["tracks"])} songs &middot; {track_total(show["tracks"])}</div>
