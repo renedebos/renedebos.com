@@ -971,8 +971,291 @@
           "free": false
         }
       ],
-      "tracks": null,
-      "description": null,
+      "tracks": [
+        {
+          "num": 1,
+          "title": "The One I Love",
+          "duration": "2:34",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/01 the one i love.mp3",
+          "size_mb": 6,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/01 the one i love.flac",
+          "flac_size_mb": 25
+        },
+        {
+          "num": 2,
+          "title": "Model Family Man",
+          "duration": "3:28",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/02 model family man.mp3",
+          "size_mb": 8,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/02 model family man.flac",
+          "flac_size_mb": 35
+        },
+        {
+          "num": 3,
+          "title": "Woman",
+          "duration": "3:43",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/03 Woman.mp3",
+          "size_mb": 9,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/03 Woman.flac",
+          "flac_size_mb": 37
+        },
+        {
+          "num": 4,
+          "title": "The Good Life",
+          "duration": "2:00",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/04 The Good Life.mp3",
+          "size_mb": 7,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/04 The Good Life.flac",
+          "flac_size_mb": 31
+        },
+        {
+          "num": 5,
+          "title": "Father and Son",
+          "duration": "3:40",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/05 Father and Son.mp3",
+          "size_mb": 8,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/05 Father and Son.flac",
+          "flac_size_mb": 37
+        },
+        {
+          "num": 6,
+          "title": "Galway Shawl",
+          "duration": "2:59",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/06 Galway Shawl.mp3",
+          "size_mb": 7,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/06 Galway Shawl.flac",
+          "flac_size_mb": 30
+        },
+        {
+          "num": 7,
+          "title": "I Thought I Was You",
+          "duration": "4:11",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/07 I Thought I Was You.mp3",
+          "size_mb": 10,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/07 I Thought I Was You.flac",
+          "flac_size_mb": 42
+        },
+        {
+          "num": 8,
+          "title": "Have You Ever Seen the Rain",
+          "duration": "2:37",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/08 Have You Ever Seen The Rain.mp3",
+          "size_mb": 6,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/08 Have You Ever Seen The Rain.flac",
+          "flac_size_mb": 27
+        },
+        {
+          "num": 9,
+          "title": "Smoke in Heaven",
+          "duration": "2:52",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/09 Smoke in Heaven.mp3",
+          "size_mb": 7,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/09 Smoke in Heaven.flac",
+          "flac_size_mb": 31
+        },
+        {
+          "num": 10,
+          "title": "Beverley",
+          "duration": "0:18",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/10 Beverley.mp3",
+          "size_mb": 1,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/10 Beverley.flac",
+          "flac_size_mb": 3
+        },
+        {
+          "num": 11,
+          "title": "Yer So Bad",
+          "duration": "3:04",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/11 Yer So Bad.mp3",
+          "size_mb": 7,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/11 Yer So Bad.flac",
+          "flac_size_mb": 33
+        },
+        {
+          "num": 12,
+          "title": "Angel from Montgomery",
+          "duration": "3:56",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/12 Angel From Montgomery.mp3",
+          "size_mb": 9,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/12 Angel From Montgomery.flac",
+          "flac_size_mb": 40
+        },
+        {
+          "num": 13,
+          "title": "Hide Your Love Away",
+          "duration": "2:20",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/13 Hide Your Love Away.mp3",
+          "size_mb": 5,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/13 Hide Your Love Away.flac",
+          "flac_size_mb": 24
+        },
+        {
+          "num": 14,
+          "title": "You Don't Know How It Feels",
+          "duration": "3:21",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/14 You Don't Know How It Feels.mp3",
+          "size_mb": 8,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/14 You Don't Know How It Feels.flac",
+          "flac_size_mb": 35
+        },
+        {
+          "num": 15,
+          "title": "The Black Velvet Band",
+          "duration": "2:19",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/15 The Black Velvet Band.mp3",
+          "size_mb": 5,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/15 The Black Velvet Band.flac",
+          "flac_size_mb": 24
+        },
+        {
+          "num": 16,
+          "title": "Moon Shadow",
+          "duration": "3:06",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/16 Moon Shadow.mp3",
+          "size_mb": 7,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/16 Moon Shadow.flac",
+          "flac_size_mb": 31
+        },
+        {
+          "num": 17,
+          "title": "Wild World",
+          "duration": "3:24",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/17 Wild World.mp3",
+          "size_mb": 8,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/17 Wild World.flac",
+          "flac_size_mb": 35
+        },
+        {
+          "num": 18,
+          "title": "Me and Eddie Vedder",
+          "duration": "3:13",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/17 Me And Eddie Vedder.mp3",
+          "size_mb": 7,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/17 Me And Eddie Vedder.flac",
+          "flac_size_mb": 34
+        },
+        {
+          "num": 19,
+          "title": "Gold's Gym Guy",
+          "duration": "3:16",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/18 Gold's Gym Guy.mp3",
+          "size_mb": 7,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/18 Gold's Gym Guy.flac",
+          "flac_size_mb": 35
+        },
+        {
+          "num": 20,
+          "title": "Never Know Love",
+          "duration": "3:28",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/19 Never Know Love.mp3",
+          "size_mb": 8,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/19 Never Know Love.flac",
+          "flac_size_mb": 36
+        },
+        {
+          "num": 21,
+          "title": "Little Number Four",
+          "duration": "1:49",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/20 Little Number Four.mp3",
+          "size_mb": 4,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/20 Little Number Four.flac",
+          "flac_size_mb": 19
+        },
+        {
+          "num": 22,
+          "title": "Maids When You're Young Never Wed an Old Man",
+          "duration": "3:41",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/21 Maids When You're Young Never Wed an Old Man.mp3",
+          "size_mb": 8,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/21 Maids When You're Young Never Wed an Old Man.flac",
+          "flac_size_mb": 39
+        },
+        {
+          "num": 23,
+          "title": "Long Black Veil",
+          "duration": "2:44",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/22 Long Black Veil.mp3",
+          "size_mb": 6,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/22 Long Black Veil.flac",
+          "flac_size_mb": 29
+        },
+        {
+          "num": 24,
+          "title": "Learn About Love",
+          "duration": "3:08",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/23 Learn About Love.mp3",
+          "size_mb": 7,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/23 Learn About Love.flac",
+          "flac_size_mb": 32
+        },
+        {
+          "num": 25,
+          "title": "Lay Down Your Weary Tune",
+          "duration": "3:28",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/24 Lay Down Your Weary Tune.mp3",
+          "size_mb": 8,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/24 Lay Down Your Weary Tune.flac",
+          "flac_size_mb": 34
+        },
+        {
+          "num": 26,
+          "title": "Looking Out My Backdoor",
+          "duration": "0:49",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/25 Looking Out My Backdoor.mp3",
+          "size_mb": 2,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/25 Looking Out My Backdoor.flac",
+          "flac_size_mb": 8
+        },
+        {
+          "num": 27,
+          "title": "Some Get Married for Love",
+          "duration": "1:19",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/26 Some Get Married For Love.mp3",
+          "size_mb": 3,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/26 Some Get Married For Love.flac",
+          "flac_size_mb": 14
+        },
+        {
+          "num": 28,
+          "title": "Did You Ever See",
+          "duration": "1:55",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/27 Did You Ever See.mp3",
+          "size_mb": 4,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/27 Did You Ever See.flac",
+          "flac_size_mb": 19
+        },
+        {
+          "num": 29,
+          "title": "Don't Think Twice It's All Right",
+          "duration": "3:55",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/28 Don't Think Twice It's All Right.mp3",
+          "size_mb": 9,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/28 Don't Think Twice It's All Right.flac",
+          "flac_size_mb": 39
+        },
+        {
+          "num": 30,
+          "title": "Let It Be",
+          "duration": "1:06",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/29 Let It Be.mp3",
+          "size_mb": 3,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/29 Let It Be.flac",
+          "flac_size_mb": 11
+        },
+        {
+          "num": 31,
+          "title": "The Patriot Game",
+          "duration": "3:15",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/30 The Patriot Game.mp3",
+          "size_mb": 7,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/30 The Patriot Game.flac",
+          "flac_size_mb": 32
+        }
+      ],
+      "description": [
+        "19 Broadway is a small, famously loud bar in Fairfax, and this night was no exception — the room was packed and talking straight through the set. The tape was captured from the audience on a DAT recorder, so you’ll hear the crowd, the clink of glasses, and the bar’s heavy front door banging open and shut between songs.",
+        "Despite the racket, Sean played a long, generous set. The full tape has been split into its 31 individual songs — Sean’s originals alongside traditional tunes and a handful of covers. Each track streams here for free as a 320 kbps MP3, or can be downloaded as a lossless FLAC (password protected)."
+      ],
       "page": null
     },
     {
