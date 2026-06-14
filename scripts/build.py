@@ -152,92 +152,29 @@ def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main)
 '''
 
 
-# ── homepage ──────────────────────────────────────────────────────────────────
+# ── site navigation ─────────────────────────────────────────────────────────
 
-def build_home():
-    featured = next(s for s in M["shows"] if s["slug"] in M["featured"])
-    tracks = featured["tracks"]
-    feat = f'''
-  <a class="featured-card" href="{show_url(featured)}">
-    <div>
-      <p class="featured-eyebrow">Featured &middot; Curated Show</p>
-      <p class="featured-title">{esc(show_title(featured))}</p>
-      <p class="featured-sub">{esc(date_with_subtitle(featured))} &middot; {SOURCE_LABEL.get(featured["source"], featured["source"])} &middot; {len(tracks)} tracks &middot; {track_total(tracks)}</p>
-      <p class="featured-note">Every song split out, streamable, and free to download in MP3.</p>
-    </div>
-    <span class="featured-cta">Listen &rarr;</span>
-  </a>'''
+SITE_PAGES = [
+    ("Home", "/"),
+    ("Archive", "/archive/"),
+    ("Shows", "/shows/"),
+    ("Updates", "/updates/"),
+    ("Contact", "/contact/"),
+]
 
-    updates_html = ""
-    if M.get("updates"):
-        items = []
-        for u in M["updates"]:
-            show = next((s for s in M["shows"] if s["slug"] == u["slug"]), None)
-            if not show:
-                continue
-            artist = next(a for a in M["artists"] if a["id"] == show["artist"])
-            label = f'{esc(artist["name"])} &middot; {esc(show["venue_short"])} &middot; {esc(show["date"] or "")}'
-            src = show["source"]
-            src_tag = f'<span class="src-tag src-{src.lower()}">{esc(src)}</span>'
-            items.append(f'''      <li class="update-item">
-        <span class="update-date">{esc(u["date"])}</span>
-        <div class="update-text">Added <a href="{show_url(show)}">{label}</a> &mdash; {u["tracks"]} split tracks {src_tag}</div>
-      </li>''')
-        updates_html = f'''
-  <section class="updates" id="updates">
-    <div class="artist-header"><h2 class="artist-name">Updates</h2></div>
-    <div class="artist-divider"></div>
-    <ul class="update-list">
-{chr(10).join(items)}
-    </ul>
-  </section>'''
 
-    sections = []
-    for artist in M["artists"]:
-        shows = sorted((s for s in M["shows"] if s["artist"] == artist["id"]), key=sort_key)
-        note = f'\n    <p class="artist-note">{artist["note"]}</p>' if artist.get("note") else ""
+def site_nav(active=None):
+    links = []
+    for label, href in SITE_PAGES:
+        cls = ' class="active"' if label == active else ""
+        links.append(f'  <a href="{href}"{cls}>{label}</a>')
+    return "\n".join(links)
 
-        rows = []
-        for show in shows:
-            n_alt = sum(1 for r in show["recordings"] if r["alternate"])
-            n_can = len(show["recordings"]) - n_alt
-            extra = []
-            if n_can > 1:
-                extra.append(f"{n_can} parts")
-            if n_alt:
-                extra.append(f"{n_alt} alt transfer{'s' if n_alt > 1 else ''}")
-            extra_html = f'<span class="show-extra">{" · ".join(extra)}</span>' if extra else ""
-            marker = (f'<span class="show-tracks" title="{len(show["tracks"])} songs available">&#9834; {len(show["tracks"])}</span>'
-                      if show.get("tracks") else "")
-            subtitle = f' &middot; <em>{esc(show["subtitle"])}</em>' if show.get("subtitle") else ""
-            primary_size = next((r["size"] for r in show["recordings"] if not r["alternate"]), "—")
-            info = esc(json.dumps([
-                ["Artist", artist["name"]],
-                ["Venue", show["venue"] or "—"],
-                ["Date", show["date"] or "Unknown date"],
-                ["Source", SOURCE_LABEL.get(show["source"], show["source"])],
-                ["Tracks", str(len(show["tracks"])) if show.get("tracks") else "—"],
-                ["Size", primary_size],
-            ], ensure_ascii=False))
-            rows.append(f'''      <a class="show-row" href="{show_url(show)}" data-info="{info}">
-        <span class="show-date">{esc(show["date"] or "Unknown date")}</span>
-        <span class="show-venue">{esc(show["venue"] or "")}{subtitle}</span>
-        <span class="show-meta">{marker}{extra_html}<span class="show-src src-{show["source"].lower()}">{esc(show["source"])}</span><span class="show-arrow">&rarr;</span></span>
-      </a>''')
 
-        sections.append(f'''
-  <section class="artist-section" id="{artist["id"]}">
-    <div class="artist-header">
-      <h2 class="artist-name">{esc(artist["name"])}</h2>
-      <span class="recording-count">{len(shows)} show{"s" if len(shows) != 1 else ""}</span>
-    </div>
-    <div class="artist-divider"></div>{note}
-    <div class="show-list">
-{chr(10).join(rows)}
-    </div>
-  </section>''')
+# ── reusable content fragments ──────────────────────────────────────────────
 
-    about = '''
+def about_block():
+    return '''
   <section class="about">
     <h2>About This Archive</h2>
     <p>
@@ -251,12 +188,95 @@ def build_home():
     </p>
   </section>'''
 
-    contact = '''
-  <section class="contact-section" id="contact">
-    <div class="artist-header">
-      <h2 class="artist-name">Contact</h2>
+
+def featured_card():
+    featured = next(s for s in M["shows"] if s["slug"] in M["featured"])
+    tracks = featured["tracks"]
+    return f'''
+  <a class="featured-card" href="{show_url(featured)}">
+    <div>
+      <p class="featured-eyebrow">Featured &middot; Curated Show</p>
+      <p class="featured-title">{esc(show_title(featured))}</p>
+      <p class="featured-sub">{esc(date_with_subtitle(featured))} &middot; {SOURCE_LABEL.get(featured["source"], featured["source"])} &middot; {len(tracks)} tracks &middot; {track_total(tracks)}</p>
+      <p class="featured-note">Every song split out, streamable, and free to download in MP3.</p>
     </div>
-    <div class="artist-divider"></div>
+    <span class="featured-cta">Listen &rarr;</span>
+  </a>'''
+
+
+def show_row(show):
+    artist = next(a for a in M["artists"] if a["id"] == show["artist"])
+    n_alt = sum(1 for r in show["recordings"] if r["alternate"])
+    n_can = len(show["recordings"]) - n_alt
+    extra = []
+    if n_can > 1:
+        extra.append(f"{n_can} parts")
+    if n_alt:
+        extra.append(f"{n_alt} alt transfer{'s' if n_alt > 1 else ''}")
+    extra_html = f'<span class="show-extra">{" · ".join(extra)}</span>' if extra else ""
+    marker = (f'<span class="show-tracks" title="{len(show["tracks"])} songs available">&#9834; {len(show["tracks"])}</span>'
+              if show.get("tracks") else "")
+    subtitle = f' &middot; <em>{esc(show["subtitle"])}</em>' if show.get("subtitle") else ""
+    primary_size = next((r["size"] for r in show["recordings"] if not r["alternate"]), "—")
+    info = esc(json.dumps([
+        ["Artist", artist["name"]],
+        ["Venue", show["venue"] or "—"],
+        ["Date", show["date"] or "Unknown date"],
+        ["Source", SOURCE_LABEL.get(show["source"], show["source"])],
+        ["Tracks", str(len(show["tracks"])) if show.get("tracks") else "—"],
+        ["Size", primary_size],
+    ], ensure_ascii=False))
+    return f'''      <a class="show-row" href="{show_url(show)}" data-info="{info}">
+        <span class="show-date">{esc(show["date"] or "Unknown date")}</span>
+        <span class="show-venue">{esc(show["venue"] or "")}{subtitle}</span>
+        <span class="show-meta">{marker}{extra_html}<span class="show-src src-{show["source"].lower()}">{esc(show["source"])}</span><span class="show-arrow">&rarr;</span></span>
+      </a>'''
+
+
+def artist_sections(only_tracks=False):
+    out = []
+    for artist in M["artists"]:
+        shows = sorted((s for s in M["shows"]
+                        if s["artist"] == artist["id"] and (s.get("tracks") if only_tracks else True)),
+                       key=sort_key)
+        if not shows:
+            continue
+        note = f'\n    <p class="artist-note">{artist["note"]}</p>' if artist.get("note") else ""
+        rows = "\n".join(show_row(s) for s in shows)
+        out.append(f'''
+  <section class="artist-section" id="{artist["id"]}">
+    <div class="artist-header">
+      <h2 class="artist-name">{esc(artist["name"])}</h2>
+      <span class="recording-count">{len(shows)} show{"s" if len(shows) != 1 else ""}</span>
+    </div>
+    <div class="artist-divider"></div>{note}
+    <div class="show-list">
+{rows}
+    </div>
+  </section>''')
+    return "".join(out)
+
+
+def updates_list():
+    shows = sorted((s for s in M["shows"] if s.get("added")),
+                   key=lambda s: (s["added"], s["slug"]), reverse=True)
+    items = []
+    for show in shows:
+        artist = next(a for a in M["artists"] if a["id"] == show["artist"])
+        label = f'{esc(artist["name"])} &middot; {esc(show["venue_short"])} &middot; {esc(show["date"] or "")}'
+        src = show["source"]
+        src_tag = f'<span class="src-tag src-{src.lower()}">{esc(src)}</span>'
+        n = len(show["tracks"]) if show.get("tracks") else 0
+        items.append(f'''      <li class="update-item">
+        <span class="update-date">{esc(show["added"])}</span>
+        <div class="update-text">Added <a href="{show_url(show)}">{label}</a> &mdash; {n} split tracks {src_tag}</div>
+      </li>''')
+    return "\n".join(items)
+
+
+def contact_block():
+    return '''
+  <section class="contact-section">
     <p class="contact-sub">Questions or comments about the recordings? Send a message below.</p>
     <form class="contact-form" id="contactForm">
       <div class="form-group">
@@ -306,12 +326,10 @@ def build_home():
   });
   </script>'''
 
-    nav = ""
-    if M.get("updates"):
-        nav += '  <a href="#updates">Updates</a>\n'
-    nav += "\n".join(f'  <a href="#{a["id"]}">{esc(a["name"])}</a>' for a in M["artists"])
-    nav += '\n  <a href="#contact">Contact</a>'
 
+# ── top-level pages ─────────────────────────────────────────────────────────
+
+def build_home():
     return page_shell(
         title="The Hannan Recordings",
         description="Live recordings archive — Jerry Hannan, Sean Hannan, and Mad Hannans performing at clubs in Marin and the Bay Area in the late 1990s and early 2000s.",
@@ -319,8 +337,65 @@ def build_home():
         eyebrow="Live Recordings Archive",
         heading="The <em>Hannan</em><br>Recordings",
         tagline="Live performances &mdash; San Francisco Bay Area",
-        nav=nav,
-        main=about + feat + updates_html + "".join(sections) + contact,
+        nav=site_nav("Home"),
+        main=about_block() + featured_card(),
+    )
+
+
+def build_archive():
+    return page_shell(
+        title="Archive — The Hannan Recordings",
+        description="Every Jerry Hannan, Sean Hannan, and Mad Hannans recording in the archive, grouped by artist.",
+        url="https://renedebos.com/archive/",
+        eyebrow="The Hannan Recordings",
+        heading="Archive",
+        tagline="Every show &middot; grouped by artist",
+        nav=site_nav("Archive"),
+        main=artist_sections(only_tracks=False),
+    )
+
+
+def build_shows():
+    return page_shell(
+        title="Shows — The Hannan Recordings",
+        description="Shows that have been split into individual, streamable songs.",
+        url="https://renedebos.com/shows/",
+        eyebrow="The Hannan Recordings",
+        heading="Shows",
+        tagline="Split into individual songs &middot; by artist",
+        nav=site_nav("Shows"),
+        main=artist_sections(only_tracks=True),
+    )
+
+
+def build_updates():
+    return page_shell(
+        title="Updates — The Hannan Recordings",
+        description="Recently added to the Hannan Recordings archive.",
+        url="https://renedebos.com/updates/",
+        eyebrow="The Hannan Recordings",
+        heading="Updates",
+        tagline="Recently added to the archive",
+        nav=site_nav("Updates"),
+        main=f'''
+  <section class="updates">
+    <ul class="update-list">
+{updates_list()}
+    </ul>
+  </section>''',
+    )
+
+
+def build_contact():
+    return page_shell(
+        title="Contact — The Hannan Recordings",
+        description="Questions or comments about the recordings? Get in touch.",
+        url="https://renedebos.com/contact/",
+        eyebrow="The Hannan Recordings",
+        heading="Contact",
+        tagline="Questions or comments about the recordings",
+        nav=site_nav("Contact"),
+        main=contact_block(),
     )
 
 
@@ -444,7 +519,7 @@ def build_show(show):
         eyebrow="The Hannan Recordings",
         heading=f"{esc(artist['name'])}<br><em>Live at {esc(show['venue_short'])}</em>",
         tagline=" &middot; ".join(esc(b) for b in tagline_bits),
-        nav=f'  <a href="/#{ show["artist"] }">&larr; Back to the Archive</a>',
+        nav=site_nav(),
         main="".join(parts) + wav_note,
     )
 
@@ -463,13 +538,17 @@ def main():
     write("assets/site.css", open(os.path.join(here, "site.css")).read())
     write("assets/player.js", open(os.path.join(here, "player.js")).read())
     write("index.html", build_home())
+    write("archive/index.html", build_archive())
+    write("shows/index.html", build_shows())
+    write("updates/index.html", build_updates())
+    write("contact/index.html", build_contact())
     n = 0
     for show in M["shows"]:
         out = (show["page"] or f"shows/{show['slug']}") + "/index.html"
         write(out, build_show(show))
         n += 1
     total = sum(len(s["recordings"]) for s in M["shows"]) + len(M["singles"])
-    print(f"Built homepage + {n} show pages ({total} recordings, "
+    print(f"Built 5 site pages + {n} show pages ({total} recordings, "
           f"{sum(len(s['tracks'] or []) for s in M['shows'])} curated tracks)")
 
 

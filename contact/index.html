@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact — The Hannan Recordings</title>
+<meta name="description" content="Questions or comments about the recordings? Get in touch.">
+<meta property="og:title" content="Contact — The Hannan Recordings">
+<meta property="og:description" content="Questions or comments about the recordings? Get in touch.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://renedebos.com/contact/">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♪</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header>
+  <p class="site-eyebrow">The Hannan Recordings</p>
+  <h1>Contact</h1>
+  <p class="site-tagline">Questions or comments about the recordings</p>
+</header>
+
+<nav>
+  <a href="/">Home</a>
+  <a href="/archive/">Archive</a>
+  <a href="/shows/">Shows</a>
+  <a href="/updates/">Updates</a>
+  <a href="/contact/" class="active">Contact</a>
+</nav>
+
+<main>
+
+  <section class="contact-section">
+    <p class="contact-sub">Questions or comments about the recordings? Send a message below.</p>
+    <form class="contact-form" id="contactForm">
+      <div class="form-group">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" required autocomplete="name">
+      </div>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label for="message">Message</label>
+        <textarea id="message" name="message" required></textarea>
+      </div>
+      <button type="submit" class="form-submit" id="submitBtn">Send Message</button>
+      <p id="formStatus"></p>
+    </form>
+  </section>
+  <script>
+  document.getElementById('contactForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    const status = document.getElementById('formStatus');
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    status.textContent = '';
+    status.className = '';
+    try {
+      const res = await fetch('https://contact-form.renedebos.workers.dev', {
+        method: 'POST',
+        body: new FormData(this)
+      });
+      if (res.ok) {
+        status.textContent = 'Message sent — thank you!';
+        status.className = 'success';
+        this.reset();
+      } else {
+        throw new Error();
+      }
+    } catch {
+      status.textContent = 'Something went wrong. Please try again.';
+      status.className = 'error';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Send Message';
+    }
+  });
+  </script>
+</main>
+
+<footer>
+  Part of <a href="/">The Hannan Recordings</a> archive
+</footer>
+
+<script src="/assets/player.js"></script>
+</body>
+</html>
