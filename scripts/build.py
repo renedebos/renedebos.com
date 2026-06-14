@@ -40,7 +40,7 @@ def show_title(show):
 
 
 def date_with_subtitle(show):
-    d = show["date_display"] or "Unknown date"
+    d = show["date"] or "Unknown date"
     return f"{d} · {show['subtitle']}" if show.get("subtitle") else d
 
 
@@ -167,52 +167,34 @@ def build_home():
     sections = []
     for artist in M["artists"]:
         shows = sorted((s for s in M["shows"] if s["artist"] == artist["id"]), key=sort_key)
-        singles = [s for s in M["singles"] if s["artist"] == artist["id"]]
         note = f'\n    <p class="artist-note">{artist["note"]}</p>' if artist.get("note") else ""
 
         rows = []
         for show in shows:
             n_alt = sum(1 for r in show["recordings"] if r["alternate"])
             n_can = len(show["recordings"]) - n_alt
-            bits = []
-            if show.get("tracks"):
-                bits.append(f'<span class="show-badge accent">{len(show["tracks"])} tracks &middot; MP3</span>')
-            bits.append(f'<span class="show-badge">{esc(show["source"])}</span>')
             extra = []
             if n_can > 1:
                 extra.append(f"{n_can} parts")
             if n_alt:
-                extra.append(f"{n_alt} alternate transfer{'s' if n_alt > 1 else ''}")
+                extra.append(f"{n_alt} alt transfer{'s' if n_alt > 1 else ''}")
             extra_html = f'<span class="show-extra">{" · ".join(extra)}</span>' if extra else ""
+            marker = (f'<span class="show-tracks" title="{len(show["tracks"])} songs available">&#9834; {len(show["tracks"])}</span>'
+                      if show.get("tracks") else "")
+            subtitle = f' &middot; <em>{esc(show["subtitle"])}</em>' if show.get("subtitle") else ""
             rows.append(f'''      <a class="show-row" href="{show_url(show)}">
-        <span class="show-date">{esc(show["date_display"] or "Unknown date")}</span>
-        <span class="show-venue">{esc(show["venue"] or "")}{f' &middot; <em>{esc(show["subtitle"])}</em>' if show.get("subtitle") else ""}</span>
-        <span class="show-badges">{"".join(bits)}{extra_html}</span>
-        <span class="show-arrow">&rarr;</span>
+        <span class="show-date">{esc(show["date"] or "Unknown date")}</span>
+        <span class="show-venue">{esc(show["venue"] or "")}{subtitle}</span>
+        <span class="show-meta">{marker}{extra_html}<span class="show-src">{esc(show["source"])}</span><span class="show-arrow">&rarr;</span></span>
       </a>''')
-
-        singles_html = ""
-        if singles:
-            cards = []
-            for s in singles:
-                meta = [("Venue", s["venue"]), ("Date", s["date_display"]),
-                        ("Source", s["source"]), ("Format", s["format"]), ("Size", s["size"])]
-                badge = f'{s["source"]}/{s["format"]}' if s["format"] != "WAV" else s["source"]
-                cards.append(recording_card(s["title"], meta, badge, s["file"], s["free"]))
-            singles_html = f'''
-    <div class="group-label-bare">Individual Songs</div>
-    <div class="recording-list">
-{chr(10).join(cards)}
-    </div>'''
 
         sections.append(f'''
   <section class="artist-section" id="{artist["id"]}">
     <div class="artist-header">
       <h2 class="artist-name">{esc(artist["name"])}</h2>
-      <span class="recording-count">{len(shows)} show{"s" if len(shows) != 1 else ""}{f" &middot; {len(singles)} songs" if singles else ""}</span>
+      <span class="recording-count">{len(shows)} show{"s" if len(shows) != 1 else ""}</span>
     </div>
-    <div class="artist-divider"></div>{note}{singles_html}
-    <div class="group-label-bare">Shows</div>
+    <div class="artist-divider"></div>{note}
     <div class="show-list">
 {chr(10).join(rows)}
     </div>
@@ -320,26 +302,29 @@ def build_show(show):
   </section>''')
 
     if show.get("tracks"):
-        cards = []
+        rows = []
         for t in show["tracks"]:
-            if t.get("flac"):
-                detail = f'{esc(t["duration"])} &middot; Stream MP3 &middot; Download FLAC &middot; {t["flac_size_mb"]} MB'
-            else:
-                detail = f'{esc(t["duration"])} &middot; MP3 320 kbps &middot; {t["size_mb"]} MB'
-            cards.append(f'''      <div class="recording-item">
-        <div class="recording-meta">
-          <div>
-            <div class="recording-title"><span class="track-num">{t["num"]:02d}</span>{esc(t["title"])}</div>
-            <div class="recording-detail">{detail}</div>
-          </div>
-        </div>
-        {player(t["file"], duration=t["duration"], download_file=t.get("flac"))}
+            stream = stream_url(t["file"])
+            dl = t.get("flac") or t["file"]
+            dl_url = stream_url(dl)
+            name = dl.split("/")[-1]
+            size = t.get("flac_size_mb") or t.get("size_mb")
+            fmt = "FLAC" if t.get("flac") else "MP3"
+            dl_title = f"Download {fmt}" + (f" · {size} MB" if size else "")
+            rows.append(f'''      <div class="track-row custom-player" data-src="{esc(stream)}">
+        <button class="play-btn" aria-label="Play">{PLAY_SVG}</button>
+        <span class="track-num">{t["num"]:02d}</span>
+        <span class="track-title">{esc(t["title"])}</span>
+        <span class="time-label current" data-duration="{esc(t["duration"])}">{esc(t["duration"])}</span>
+        <a class="download-btn" href="{esc(dl_url)}" download="{esc(name)}" title="{esc(dl_title)}">{DL_SVG}</a>
+        <div class="progress-bar-track"><div class="progress-bar-fill"></div></div>
       </div>''')
         parts.append(f'''
   <section id="tracks">
     <div class="group-label-bare">Tracks &middot; {len(show["tracks"])} songs &middot; {track_total(show["tracks"])}</div>
-    <div class="recording-list" data-autoplay-next>
-{chr(10).join(cards)}
+    <p class="track-hint">Play streams free (MP3) &middot; download is lossless FLAC, password protected</p>
+    <div class="track-list" data-autoplay-next>
+{chr(10).join(rows)}
     </div>
   </section>''')
 
@@ -398,7 +383,7 @@ def build_show(show):
     ] if b]
 
     return page_shell(
-        title=f"{show_title(show)} — {show['date_display'] or 'Unknown date'}",
+        title=f"{show_title(show)} — {show['date'] or 'Unknown date'}",
         description=f"{show_title(show)}, {date_with_subtitle(show)} — {SOURCE_LABEL.get(show['source'], show['source'])}. Stream or download.",
         url=f"https://renedebos.com{show_url(show)}",
         eyebrow="The Hannan Recordings",

@@ -45,10 +45,14 @@ document.querySelectorAll('.custom-player').forEach(player => {
     activePlayer = player;
   });
 
+  audio.addEventListener('play', () => player.classList.add('playing'));
+  audio.addEventListener('pause', () => player.classList.remove('playing'));
+
   audio.addEventListener('ended', () => {
     btn.innerHTML = playIcon;
     fill.style.width = '0%';
-    currentEl.textContent = '0:00';
+    currentEl.textContent = currentEl.dataset.duration || '0:00';
+    player.classList.remove('playing');
     if (activePlayer === player) activePlayer = null;
     // Auto-advance within lists that opt in (the curated track lists)
     const list = player.closest('[data-autoplay-next]');
