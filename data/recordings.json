@@ -1266,21 +1266,124 @@
       "date": "2000-02-21",
       "date_display": "February 21, 2000",
       "subtitle": null,
-      "source": "AUD",
+      "source": "SBD",
       "recordings": [
         {
           "label": null,
           "alt_label": null,
           "alternate": false,
-          "source": "AUD",
+          "source": "SBD",
           "format": "WAV",
           "size": "1.92 GB",
           "file": "WAV_Files/SeanHannan - 19 Broadway 2000-02-21.wav",
           "free": false
         }
       ],
-      "tracks": null,
-      "description": null,
+      "tracks": [
+        {
+          "num": 1,
+          "title": "Open Door",
+          "duration": "2:50",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/01 Open Door.mp3",
+          "size_mb": 6,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/01 Open Door.flac",
+          "flac_size_mb": 30
+        },
+        {
+          "num": 2,
+          "title": "Woman",
+          "duration": "3:35",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/02 Woman.mp3",
+          "size_mb": 8,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/02 Woman.flac",
+          "flac_size_mb": 36
+        },
+        {
+          "num": 3,
+          "title": "Galway Shawl",
+          "duration": "4:44",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/03 Galway Shawl.mp3",
+          "size_mb": 11,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/03 Galway Shawl.flac",
+          "flac_size_mb": 48
+        },
+        {
+          "num": 4,
+          "title": "I Thought I Was You",
+          "duration": "4:54",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/04 I Thought I Was You.mp3",
+          "size_mb": 11,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/04 I Thought I Was You.flac",
+          "flac_size_mb": 49
+        },
+        {
+          "num": 5,
+          "title": "Irish Song",
+          "duration": "3:35",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/05 Irish Song.mp3",
+          "size_mb": 8,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/05 Irish Song.flac",
+          "flac_size_mb": 36
+        },
+        {
+          "num": 6,
+          "title": "The German Clock Winder",
+          "duration": "2:29",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/06 The German Clock Winder.mp3",
+          "size_mb": 6,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/06 The German Clock Winder.flac",
+          "flac_size_mb": 25
+        },
+        {
+          "num": 7,
+          "title": "Why Don't You Love Me",
+          "duration": "0:37",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/07 Why Don't You Love Me.mp3",
+          "size_mb": 1,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/07 Why Don't You Love Me.flac",
+          "flac_size_mb": 6
+        },
+        {
+          "num": 8,
+          "title": "Don't Think Twice It's Allright",
+          "duration": "3:23",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/08 Don't Think Twice It's Allright.mp3",
+          "size_mb": 8,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/08 Don't Think Twice It's Allright.flac",
+          "flac_size_mb": 33
+        },
+        {
+          "num": 9,
+          "title": "Plastic Lemons",
+          "duration": "3:40",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/09 Plastic Lemons.mp3",
+          "size_mb": 8,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/09 Plastic Lemons.flac",
+          "flac_size_mb": 36
+        },
+        {
+          "num": 10,
+          "title": "Gold's Gym Guy",
+          "duration": "3:12",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/10 Gold's Gym Guy.mp3",
+          "size_mb": 7,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/10 Gold's Gym Guy.flac",
+          "flac_size_mb": 33
+        },
+        {
+          "num": 11,
+          "title": "Lay Down Your Weary Tune",
+          "duration": "4:15",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/11 Lay Down Your Weary Tune.mp3",
+          "size_mb": 10,
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/11 Lay Down Your Weary Tune.flac",
+          "flac_size_mb": 44
+        }
+      ],
+      "description": [
+        "Unlike the audience tapes that make up most of this archive, this February 2000 set at 19 Broadway was recorded straight off the soundboard — so it’s unusually clean and close, with Sean’s voice and guitar right up front.",
+        "The tape has been split into its 11 songs — Sean’s originals alongside a few traditional Irish tunes and covers. Each track streams here for free as a 320 kbps MP3, or can be downloaded as a lossless FLAC (password protected)."
+      ],
       "page": null
     },
     {
