@@ -247,7 +247,6 @@ def artist_sections(only_tracks=False):
                        key=sort_key)
         if not shows:
             continue
-        note = f'\n    <p class="artist-note">{artist["note"]}</p>' if artist.get("note") else ""
         rows = "\n".join(show_row(s) for s in shows)
         out.append(f'''
   <section class="artist-section" id="{artist["id"]}">
@@ -255,12 +254,25 @@ def artist_sections(only_tracks=False):
       <h2 class="artist-name">{esc(artist["name"])}</h2>
       <span class="recording-count">{len(shows)} show{"s" if len(shows) != 1 else ""}</span>
     </div>
-    <div class="artist-divider"></div>{note}
+    <div class="artist-divider"></div>
     <div class="show-list">
 {rows}
     </div>
   </section>''')
     return "".join(out)
+
+
+def artist_notes_block():
+    notes = [a for a in M["artists"] if a.get("note")]
+    if not notes:
+        return ""
+    lines = "\n".join(
+        f'    <p class="artist-note"><strong>{esc(a["name"])}</strong> &mdash; {a["note"]}</p>'
+        for a in notes)
+    return f'''
+  <section class="home-notes">
+{lines}
+  </section>'''
 
 
 def updates_list():
@@ -344,7 +356,7 @@ def build_home():
         heading="The <em>Hannan</em><br>Recordings",
         tagline="Live performances &mdash; San Francisco Bay Area",
         nav=site_nav("Home"),
-        main=about_block() + featured_card(),
+        main=about_block() + featured_card() + artist_notes_block(),
     )
 
 

@@ -242,6 +242,16 @@ main {
   margin-bottom: 1.2rem;
 }
 
+.home-notes {
+  max-width: 620px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.home-notes .artist-note { margin: 0 0 0.6rem; }
+.home-notes .artist-note:last-child { margin-bottom: 0; }
+.home-notes .artist-note strong { color: var(--text); font-weight: 500; }
+
 .artist-note a {
   color: var(--accent);
   text-decoration: none;
