@@ -380,11 +380,17 @@ main {
 
 .show-src {
   justify-self: end;
+  width: 48px;
+  padding: 2px 0;
+  text-align: center;
+  border-radius: 3px;
   white-space: nowrap;
 }
 
-/* Soundboard recordings stand out; audience recordings stay quiet. */
-.show-src.src-sbd,
+/* Soundboard recordings stand out; audience recordings stay quiet.
+   Both tags share an identical box so AUD and SBD line up in a column. */
+.show-src.src-sbd { color: #fff; background: var(--accent); }
+
 .src-tag.src-sbd {
   color: #fff;
   background: var(--accent);
