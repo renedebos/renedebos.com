@@ -66,6 +66,10 @@ DL_SVG = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wid
           'stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/>'
           '<path d="M7 10l5 5 5-5"/><path d="M3 18h18"/></svg>')
 PLAY_SVG = '<svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg>'
+SHARE_SVG = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" '
+             'stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.6"/>'
+             '<circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/>'
+             '<path d="M8.2 13.3l7.6 4.4M15.8 6.3l-7.6 4.4"/></svg>')
 
 
 def player(file, free=False, duration=None, download_file=None):
@@ -182,7 +186,16 @@ def build_home():
             marker = (f'<span class="show-tracks" title="{len(show["tracks"])} songs available">&#9834; {len(show["tracks"])}</span>'
                       if show.get("tracks") else "")
             subtitle = f' &middot; <em>{esc(show["subtitle"])}</em>' if show.get("subtitle") else ""
-            rows.append(f'''      <a class="show-row" href="{show_url(show)}">
+            primary_size = next((r["size"] for r in show["recordings"] if not r["alternate"]), "—")
+            info = esc(json.dumps([
+                ["Artist", artist["name"]],
+                ["Venue", show["venue"] or "—"],
+                ["Date", show["date"] or "Unknown date"],
+                ["Source", SOURCE_LABEL.get(show["source"], show["source"])],
+                ["Tracks", str(len(show["tracks"])) if show.get("tracks") else "—"],
+                ["Size", primary_size],
+            ], ensure_ascii=False))
+            rows.append(f'''      <a class="show-row" href="{show_url(show)}" data-info="{info}">
         <span class="show-date">{esc(show["date"] or "Unknown date")}</span>
         <span class="show-venue">{esc(show["venue"] or "")}{subtitle}</span>
         <span class="show-meta">{marker}{extra_html}<span class="show-src">{esc(show["source"])}</span><span class="show-arrow">&rarr;</span></span>
@@ -311,11 +324,26 @@ def build_show(show):
             size = t.get("flac_size_mb") or t.get("size_mb")
             fmt = "FLAC" if t.get("flac") else "MP3"
             dl_title = f"Download {fmt}" + (f" · {size} MB" if size else "")
-            rows.append(f'''      <div class="track-row custom-player" data-src="{esc(stream)}">
+            sizes = []
+            if t.get("flac_size_mb"):
+                sizes.append(f'FLAC {t["flac_size_mb"]} MB')
+            if t.get("size_mb"):
+                sizes.append(f'MP3 {t["size_mb"]} MB')
+            info = esc(json.dumps([
+                ["Artist", artist["name"]],
+                ["Song", t["title"]],
+                ["Venue", show["venue"] or "—"],
+                ["Date", show["date"] or "Unknown date"],
+                ["Format", "FLAC + MP3" if t.get("flac") else "MP3"],
+                ["Size", " · ".join(sizes) or "—"],
+            ], ensure_ascii=False))
+            share = esc(f'{artist["name"]} — “{t["title"]}” ({show["venue_short"]} · {show["date"] or "live"})')
+            rows.append(f'''      <div class="track-row custom-player" id="track-{t["num"]}" data-src="{esc(stream)}">
         <button class="play-btn" aria-label="Play">{PLAY_SVG}</button>
         <span class="track-num">{t["num"]:02d}</span>
-        <span class="track-title">{esc(t["title"])}</span>
+        <span class="track-title" data-info="{info}">{esc(t["title"])}</span>
         <span class="time-label current" data-duration="{esc(t["duration"])}">{esc(t["duration"])}</span>
+        <button class="share-btn" data-text="{share}" aria-label="Share">{SHARE_SVG}</button>
         <a class="download-btn" href="{esc(dl_url)}" download="{esc(name)}" title="{esc(dl_title)}">{DL_SVG}</a>
         <div class="progress-bar-track"><div class="progress-bar-fill"></div></div>
       </div>''')

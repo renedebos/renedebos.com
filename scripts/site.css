@@ -274,7 +274,8 @@ main {
 }
 
 .show-row:first-child { border-top: none; }
-.show-row:hover { background: var(--surface); }
+.show-row:hover { background: var(--accent-light); }
+.show-row:hover .show-date { color: var(--accent); }
 
 .show-date {
   font-size: 14px;
@@ -366,8 +367,9 @@ main {
 }
 
 .track-row:first-child { border-top: none; }
-.track-row:hover { background: var(--surface); }
-.track-row.playing { background: var(--accent-light); }
+.track-row:hover { background: var(--accent-light); }
+.track-row:hover .track-title { color: var(--accent); }
+.track-row.playing { background: var(--accent-light); box-shadow: inset 3px 0 0 var(--accent); }
 
 .track-row .play-btn { width: 30px; height: 30px; }
 .track-row .play-btn svg { width: 12px; height: 12px; }
@@ -407,6 +409,22 @@ main {
 .track-row .download-btn:hover { background: var(--accent-light); color: var(--accent); }
 .track-row .dl-label,
 .track-row .lock-icon { display: none; }
+
+.share-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s, color 0.2s;
+}
+.share-btn:hover { background: var(--accent-light); color: var(--accent); }
+.share-btn svg { width: 14px; height: 14px; display: block; }
 
 .track-row .progress-bar-track {
   position: absolute;
@@ -833,6 +851,86 @@ footer {
 }
 
 footer a { color: var(--accent); text-decoration: none; }
+
+/* ── hover info tooltip ──────────────────────────────────────────────────── */
+
+.info-tooltip {
+  position: fixed;
+  z-index: 200;
+  max-width: 300px;
+  padding: 0.65rem 0.8rem;
+  background: var(--text);
+  color: #fff;
+  border-radius: 6px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.18);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+.info-tooltip.show { opacity: 1; transform: translateY(0); }
+
+.info-tooltip dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 12px;
+  margin: 0;
+}
+.info-tooltip dt {
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: rgba(255,255,255,0.55);
+  white-space: nowrap;
+}
+.info-tooltip dd {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 300;
+  color: #fff;
+}
+
+/* ── share popover ───────────────────────────────────────────────────────── */
+
+.share-pop {
+  position: fixed;
+  z-index: 210;
+  min-width: 168px;
+  padding: 0.35rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.16);
+  display: none;
+}
+.share-pop.open { display: block; }
+.share-pop a,
+.share-pop button {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  border: none;
+  border-radius: 5px;
+  background: none;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.share-pop a:hover,
+.share-pop button:hover { background: var(--accent-light); color: var(--accent); }
+
+/* ── deep-linked track flash ─────────────────────────────────────────────── */
+
+@keyframes track-flash {
+  0%, 100% { background: var(--player-bg); }
+  25%, 65% { background: var(--accent-light); }
+}
+.track-row.target { animation: track-flash 1.9s ease 1; }
 
 @media (max-width: 600px) {
   header { padding: 3rem 1.5rem 2.5rem; }
