@@ -278,9 +278,15 @@ def artist_notes_block():
   </section>'''
 
 
+def added_sort_key(s):
+    # Order by full timestamp when available so same-day additions sort
+    # most-recent-first; fall back to the date (treated as midnight).
+    return (s.get("added_ts") or f'{s["added"]}T00:00:00', s["slug"])
+
+
 def updates_list():
     shows = sorted((s for s in M["shows"] if s.get("added")),
-                   key=lambda s: (s["added"], s["slug"]), reverse=True)
+                   key=added_sort_key, reverse=True)
     items = []
     for show in shows:
         artist = next(a for a in M["artists"] if a["id"] == show["artist"])
@@ -546,19 +552,27 @@ def write(path, content):
 
 
 def stamp_added_dates():
-    """Stamp today's date on any show that has tracks but no `added` date yet,
-    and persist it to recordings.json so the Updates page is hands-off."""
+    """Stamp any show that has tracks but no `added` date yet, recording both a
+    display date (`added`) and a full timestamp (`added_ts`) so same-day
+    additions sort most-recent-first on the Updates page. Older shows stamped
+    before `added_ts` existed are backfilled to midnight. Persists to
+    recordings.json so the Updates page is hands-off."""
     today = datetime.date.today().isoformat()
-    stamped = [s["slug"] for s in M["shows"] if s.get("tracks") and not s.get("added")]
+    changed = []
     for s in M["shows"]:
         if s.get("tracks") and not s.get("added"):
             s["added"] = today
-    if stamped:
+            s["added_ts"] = datetime.datetime.now().isoformat(timespec="microseconds")
+            changed.append(s["slug"])
+        elif s.get("added") and not s.get("added_ts"):
+            s["added_ts"] = f'{s["added"]}T00:00:00'
+            changed.append(s["slug"])
+    if changed:
         with open(os.path.join(ROOT, "data", "recordings.json"), "w") as f:
             json.dump(M, f, indent=2, ensure_ascii=False)
             f.write("\n")
-        print(f"Stamped added={today} on: {', '.join(stamped)}")
-    return stamped
+        print(f"Stamped/backfilled added_ts on: {', '.join(changed)}")
+    return changed
 
 
 def main():
