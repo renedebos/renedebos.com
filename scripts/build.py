@@ -284,19 +284,43 @@ def added_sort_key(s):
     return (s.get("added_ts") or f'{s["added"]}T00:00:00', s["slug"])
 
 
+def _show_label(show):
+    artist = next(a for a in M["artists"] if a["id"] == show["artist"])
+    return f'{esc(artist["name"])} &middot; {esc(show["venue_short"])} &middot; {esc(show["date"] or "")}'
+
+
+def _src_tag(show):
+    src = show["source"]
+    return f'<span class="src-tag src-{src.lower()}">{esc(src)}</span>'
+
+
 def updates_list():
-    shows = sorted((s for s in M["shows"] if s.get("added")),
-                   key=added_sort_key, reverse=True)
+    # Two kinds of events share the Updates feed, sorted most-recent-first by
+    # timestamp: auto-stamped show additions and manual entries (e.g. a later
+    # re-normalization pass) listed under the top-level "updates" key.
+    by_slug = {s["slug"]: s for s in M["shows"]}
+    events = []  # (sort_ts, slug, date, html)
+    for show in M["shows"]:
+        if show.get("added"):
+            ts = show.get("added_ts") or f'{show["added"]}T00:00:00'
+            n = len(show["tracks"]) if show.get("tracks") else 0
+            link = f'<a href="{show_url(show)}">{_show_label(show)}</a>'
+            html = f'Added {link} &mdash; {n} split tracks {_src_tag(show)}'
+            events.append((ts, show["slug"], show["added"], html))
+    for upd in M.get("updates", []):
+        show = by_slug.get(upd["slug"])
+        if not show:
+            continue
+        ts = upd.get("ts") or f'{upd["date"]}T00:00:00'
+        link = f'<a href="{show_url(show)}">{_show_label(show)}</a>'
+        html = f'{esc(upd["text"])} &mdash; {link} {_src_tag(show)}'
+        events.append((ts, upd["slug"], upd["date"], html))
+    events.sort(key=lambda e: (e[0], e[1]), reverse=True)
     items = []
-    for show in shows:
-        artist = next(a for a in M["artists"] if a["id"] == show["artist"])
-        label = f'{esc(artist["name"])} &middot; {esc(show["venue_short"])} &middot; {esc(show["date"] or "")}'
-        src = show["source"]
-        src_tag = f'<span class="src-tag src-{src.lower()}">{esc(src)}</span>'
-        n = len(show["tracks"]) if show.get("tracks") else 0
+    for _ts, _slug, date, html in events:
         items.append(f'''      <li class="update-item">
-        <span class="update-date">{esc(show["added"])}</span>
-        <div class="update-text">Added <a href="{show_url(show)}">{label}</a> &mdash; {n} split tracks {src_tag}</div>
+        <span class="update-date">{esc(date)}</span>
+        <div class="update-text">{html}</div>
       </li>''')
     return "\n".join(items)
 
