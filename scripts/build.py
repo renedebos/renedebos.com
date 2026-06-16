@@ -543,9 +543,9 @@ def build_show(show):
     </details>
   </section>''')
 
-    wav_note = ('\n  <p class="wav-note">Full-show WAV downloads are password protected. '
+    wav_note = ('\n  <p class="wav-note">Full-show downloads are password protected. '
                 'Streaming is free, and may take a moment to start for large files.</p>'
-                if any(r["format"] == "WAV" and not r["free"] for r in show["recordings"]) else "")
+                if any(r["format"] in ("WAV", "FLAC") and not r["free"] for r in show["recordings"]) else "")
 
     venue_city = show["venue"].split(", ")[-1] if show["venue"] and ", " in show["venue"] else None
     tagline_bits = [b for b in [

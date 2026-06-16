@@ -1986,6 +1986,16 @@
           "size": "1.34 GB",
           "file": "MadHannans - Sweetwater 2000-10-17 Birthday Show.wav",
           "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "Lossless FLAC",
+          "alternate": true,
+          "source": "SBD",
+          "format": "FLAC",
+          "size": "600 MB",
+          "file": "MadHannans - Sweetwater 2000-10-17 Birthday Show.flac",
+          "free": false
         }
       ],
       "tracks": [
@@ -2751,6 +2761,12 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-06-15",
+      "ts": "2026-06-15T23:35:00",
+      "slug": "mad-sweetwater-2000-10-17",
+      "text": "Added a lossless full-show FLAC download"
+    },
     {
       "date": "2026-06-15",
       "ts": "2026-06-15T23:30:00",
