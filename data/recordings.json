@@ -2206,7 +2206,9 @@
           "flac_size_mb": 71
         }
       ],
-      "description": "Recorded at the famous Sweetwater in Mill Valley on Jerry Hannan's birthday. Kelly Peterson joins Jerry for a cover of John Prine's “Angel from Montgomery.”",
+      "description": [
+        "Recorded at the famous Sweetwater in Mill Valley on Jerry Hannan's birthday. Kelly Peterson joins Jerry for a cover of John Prine's “Angel from Montgomery.”"
+      ],
       "page": null,
       "added": "2026-06-15",
       "added_ts": "2026-06-15T23:17:08.167571"
