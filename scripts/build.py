@@ -182,7 +182,7 @@ def about_block():
       These recordings were captured on a Sony portable DAT recorder at clubs in Marin and the Bay Area in the late 1990s and early 2000s. Audio quality varies &mdash; the tapes have aged, the microphone was small, and some shows had significant background noise.
     </p>
     <p>
-      This is very much a work in progress. I&rsquo;m steadily working through the show tapes &mdash; splitting them into individual songs and, where it helps the listening experience, cleaning up the free MP3 versions: normalizing the volume, adding gentle fades, and removing clicks where possible.
+      This is very much a work in progress. I&rsquo;m steadily working through the show tapes &mdash; splitting them into individual songs and, where it helps the listening experience, cleaning up the MP3 versions: normalizing the volume, adding gentle fades, and removing clicks where possible.
     </p>
     <p>
       The lossless files are kept close to the original transfer: the full-show WAV downloads and the individual-song FLAC downloads are only minimally processed, for anyone who wants the rawest version. All lossless downloads are password protected.
