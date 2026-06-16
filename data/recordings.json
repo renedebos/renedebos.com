@@ -1975,22 +1975,241 @@
       "date": "2000-10-17",
       "date_display": "October 17, 2000",
       "subtitle": "Birthday Show",
-      "source": "AUD",
+      "source": "SBD",
       "recordings": [
         {
           "label": null,
           "alt_label": null,
           "alternate": false,
-          "source": "AUD",
+          "source": "SBD",
           "format": "WAV",
           "size": "1.34 GB",
           "file": "MadHannans - Sweetwater 2000-10-17 Birthday Show.wav",
           "free": false
         }
       ],
-      "tracks": null,
-      "description": null,
-      "page": null
+      "tracks": [
+        {
+          "num": 1,
+          "title": "I Thought I Was You",
+          "duration": "3:39",
+          "file": "MP3/MadHannans - Sweetwater 2000-10-17/01 I Thought I Was You.mp3",
+          "size_mb": 8,
+          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/01 I Thought I Was You.flac",
+          "flac_size_mb": 38
+        },
+        {
+          "num": 2,
+          "title": "Plastic Lemons",
+          "duration": "2:37",
+          "file": "MP3/MadHannans - Sweetwater 2000-10-17/02 Plastic Lemons.mp3",
+          "size_mb": 6,
+          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/02 Plastic Lemons.flac",
+          "flac_size_mb": 26
+        },
+        {
+          "num": 3,
+          "title": "Model Family Man",
+          "duration": "3:14",
+          "file": "MP3/MadHannans - Sweetwater 2000-10-17/03 Model Family Man  .mp3",
+          "size_mb": 7,
+          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/03 Model Family Man  .flac",
+          "flac_size_mb": 35
+        },
+        {
+          "num": 4,
+          "title": "Blahana",
+          "duration": "4:41",
+          "file": "MP3/MadHannans - Sweetwater 2000-10-17/04 Blahana.mp3",
+          "size_mb": 11,
+          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/04 Blahana.flac",
+          "flac_size_mb": 50
+        },
+        {
+          "num": 5,
+          "title": "Luxury of Murder",
+          "duration": "2:50",
+          "file": "MP3/MadHannans - Sweetwater 2000-10-17/05 Luxury of Murder.mp3",
+          "size_mb": 6,
+          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/05 Luxury of Murder.flac",
+          "flac_size_mb": 30
+        },
+        {
+          "num": 6,
+          "title": "Blind Man",
+          "duration": "3:08",
+          "file": "MP3/MadHannans - Sweetwater 2000-10-17/06 Blind Man.mp3",
+          "size_mb": 7,
+          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/06 Blind Man.flac",
+          "flac_size_mb": 35
+        },
+        {
+          "num": 7,
+          "title": "Good Life",
+          "duration": "3:22",
+          "file": "MP3/MadHannans - Sweetwater 2000-10-17/07 Good Life.mp3",
+          "size_mb": 8,
+          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/07 Good Life.flac",
+          "flac_size_mb": 37
+        },
+        {
+          "num": 8,
+          "title": "Hard Drinkin'",
+          "duration": "3:27",
+          "file": "MP3/MadHannans - Sweetwater 2000-10-17/08 Hard Drinkin'.mp3",
+          "size_mb": 8,
+          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/08 Hard Drinkin'.flac",
+          "flac_size_mb": 38
+        },
+        {
+          "num": 9,
+          "title": "Clear Headed",
+          "duration": "5:02",
+          "file": "MP3/MadHannans - Sweetwater 2000-10-17/09 Clear Headed.mp3",
+          "size_mb": 12,
+          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/09 Clear Headed.flac",
+          "flac_size_mb": 54
+        },
+        {
+          "num": 10,
+          "title": "Recycle",
+          "duration": "5:44",
+          "file": "MP3/MadHannans - Sweetwater 2000-10-17/10 Recycle.mp3",
+          "size_mb": 13,
+          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/10 Recycle.flac",
+          "flac_size_mb": 61
+        },
+        {
+          "num": 11,
+          "title": "Nicolai",
+          "duration": "2:41",
+          "file": "MP3/MadHannans - Sweetwater 2000-10-17/11 Nicolai.mp3",
+          "size_mb": 6,
+          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/11 Nicolai.flac",
+          "flac_size_mb": 28
+        },
+        {
+          "num": 12,
+          "title": "Rugburns",
+          "duration": "4:47",
+          "file": "MP3/MadHannans - Sweetwater 2000-10-17/12 Rugburns.mp3",
+          "size_mb": 11,
+          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/12 Rugburns.flac",
+          "flac_size_mb": 51
+        },
+        {
+          "num": 13,
+          "title": "Baby",
+          "duration": "4:27",
+          "file": "MP3/MadHannans - Sweetwater 2000-10-17/13 Baby.mp3",
+          "size_mb": 10,
+          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/13 Baby.flac",
+          "flac_size_mb": 48
+        },
+        {
+          "num": 14,
+          "title": "Dysfunctional Guy",
+          "duration": "4:31",
+          "file": "MP3/MadHannans - Sweetwater 2000-10-17/14 Dysfunctional Guy.mp3",
+          "size_mb": 10,
+          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/14 Dysfunctional Guy.flac",
+          "flac_size_mb": 51
+        },
+        {
+          "num": 15,
+          "title": "Truck",
+          "duration": "3:38",
+          "file": "MP3/MadHannans - Sweetwater 2000-10-17/15 Truck.mp3",
+          "size_mb": 8,
+          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/15 Truck.flac",
+          "flac_size_mb": 41
+        },
+        {
+          "num": 16,
+          "title": "Madeline",
+          "duration": "2:44",
+          "file": "MP3/MadHannans - Sweetwater 2000-10-17/16 Madeline.mp3",
+          "size_mb": 6,
+          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/16 Madeline.flac",
+          "flac_size_mb": 31
+        },
+        {
+          "num": 17,
+          "title": "ABC's",
+          "duration": "4:20",
+          "file": "MP3/MadHannans - Sweetwater 2000-10-17/17 ABC's.mp3",
+          "size_mb": 10,
+          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/17 ABC's.flac",
+          "flac_size_mb": 48
+        },
+        {
+          "num": 18,
+          "title": "Everything Reminds Me of You",
+          "duration": "2:47",
+          "file": "MP3/MadHannans - Sweetwater 2000-10-17/18 Everything Reminds Me of You.mp3",
+          "size_mb": 6,
+          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/18 Everything Reminds Me of You.flac",
+          "flac_size_mb": 29
+        },
+        {
+          "num": 19,
+          "title": "Angel from Montgomery",
+          "duration": "3:52",
+          "file": "MP3/MadHannans - Sweetwater 2000-10-17/19 Angel of Montgomery.mp3",
+          "size_mb": 9,
+          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/19 Angel of Montgomery.flac",
+          "flac_size_mb": 40
+        },
+        {
+          "num": 20,
+          "title": "Smoke in Heaven",
+          "duration": "2:57",
+          "file": "MP3/MadHannans - Sweetwater 2000-10-17/20 Smoke in Heaven.mp3",
+          "size_mb": 7,
+          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/20 Smoke in Heaven.flac",
+          "flac_size_mb": 32
+        },
+        {
+          "num": 21,
+          "title": "Hollywood",
+          "duration": "4:33",
+          "file": "MP3/MadHannans - Sweetwater 2000-10-17/21 Hollywood.mp3",
+          "size_mb": 10,
+          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/21 Hollywood.flac",
+          "flac_size_mb": 49
+        },
+        {
+          "num": 22,
+          "title": "Anna May",
+          "duration": "2:53",
+          "file": "MP3/MadHannans - Sweetwater 2000-10-17/22 Anna May.mp3",
+          "size_mb": 7,
+          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/22 Anna May.flac",
+          "flac_size_mb": 30
+        },
+        {
+          "num": 23,
+          "title": "Scallywag",
+          "duration": "2:15",
+          "file": "MP3/MadHannans - Sweetwater 2000-10-17/23 Scallywag.mp3",
+          "size_mb": 5,
+          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/23 Scallywag.flac",
+          "flac_size_mb": 24
+        },
+        {
+          "num": 24,
+          "title": "The Kiss_DaDaDa (Slave to an Angel)",
+          "duration": "6:31",
+          "file": "MP3/MadHannans - Sweetwater 2000-10-17/24 The Kiss_DaDaDa (Slave to an Angel).mp3",
+          "size_mb": 15,
+          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/24 The Kiss_DaDaDa (Slave to an Angel).flac",
+          "flac_size_mb": 71
+        }
+      ],
+      "description": "Recorded at the famous Sweetwater in Mill Valley on Jerry Hannan's birthday. Kelly Peterson joins Jerry for a cover of John Prine's “Angel from Montgomery.”",
+      "page": null,
+      "added": "2026-06-15",
+      "added_ts": "2026-06-15T23:17:08.167571"
     },
     {
       "slug": "mad-4th-street-tavern-1999-05-01",
@@ -2530,6 +2749,12 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-06-15",
+      "ts": "2026-06-15T23:30:00",
+      "slug": "mad-sweetwater-2000-10-17",
+      "text": "Added the full 24-track listing (MP3 stream + FLAC download)"
+    },
     {
       "date": "2026-06-15",
       "ts": "2026-06-15T16:45:00",
