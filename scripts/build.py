@@ -185,6 +185,9 @@ def about_block():
       This is very much a work in progress. I&rsquo;m steadily working through the show tapes &mdash; splitting them into individual songs and, where it helps the listening experience, cleaning up the MP3 versions: normalizing the volume, adding gentle fades, and removing clicks where possible.
     </p>
     <p>
+      Most of these tracks have <em>not</em> been processed to bring them up to the loudness you&rsquo;d expect from a normal streaming service, so when you play a song or a show you may need to turn the volume on your device up &mdash; or down &mdash; to taste. The main goal of this site is simply to give these tapes a home. As time allows, the recordings may get a proper cleanup down the road.
+    </p>
+    <p>
       The lossless files are kept close to the original transfer: the full-show WAV downloads and the individual-song FLAC downloads are only minimally processed, for anyone who wants the rawest version. All lossless downloads are password protected.
     </p>
     <p class="about-note">
