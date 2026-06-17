@@ -265,11 +265,216 @@
           "size": "682 MB",
           "file": "WAV_Files/JerryHannan_19Broadway_1999-06-21 DIGITAL Part1 Dropouts 1-02.wav",
           "free": false
+        },
+        {
+          "label": null,
+          "alt_label": "Whole show, loudness normalized (FLAC)",
+          "alternate": true,
+          "source": "AUD",
+          "format": "FLAC",
+          "size": "993 MB",
+          "file": "JerryHannan - 19 Broadway 1999-06-21 LoudnessNormalization23.flac",
+          "free": false
         }
       ],
-      "tracks": null,
-      "description": null,
-      "page": null
+      "tracks": [
+        {
+          "num": 1,
+          "title": "Recycle (incomplete)",
+          "duration": "3:58",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/01 Recycle (incomplete).mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/01 Recycle (incomplete).flac",
+          "flac_size_mb": 45
+        },
+        {
+          "num": 2,
+          "title": "ABC",
+          "duration": "1:47",
+          "size_mb": 4,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/02 ABC.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/02 ABC.flac",
+          "flac_size_mb": 19
+        },
+        {
+          "num": 3,
+          "title": "Ride On",
+          "duration": "3:19",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/03 Ride On.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/03 Ride On.flac",
+          "flac_size_mb": 37
+        },
+        {
+          "num": 4,
+          "title": "Blind Man",
+          "duration": "2:56",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/04 Blind Man.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/04 Blind Man.flac",
+          "flac_size_mb": 33
+        },
+        {
+          "num": 5,
+          "title": "I Think She Was You",
+          "duration": "3:17",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/05 I Think She Was You.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/05 I Think She Was You.flac",
+          "flac_size_mb": 35
+        },
+        {
+          "num": 6,
+          "title": "Anna May",
+          "duration": "2:56",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/06 Anna May.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/06 Anna May.flac",
+          "flac_size_mb": 31
+        },
+        {
+          "num": 7,
+          "title": "Luxury of Murder",
+          "duration": "2:53",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/07 Luxury of Murder.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/07 Luxury of Murder.flac",
+          "flac_size_mb": 31
+        },
+        {
+          "num": 8,
+          "title": "Black is The Color",
+          "duration": "3:28",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/08 Black is The Color.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/08 Black is The Color.flac",
+          "flac_size_mb": 36
+        },
+        {
+          "num": 9,
+          "title": "Clear Headed",
+          "duration": "4:53",
+          "size_mb": 11,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/09 Clear Headed.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/09 Clear Headed.flac",
+          "flac_size_mb": 55
+        },
+        {
+          "num": 10,
+          "title": "Learn About Love",
+          "duration": "3:03",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/10 Learn About Love.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/10 Learn About Love.flac",
+          "flac_size_mb": 31
+        },
+        {
+          "num": 11,
+          "title": "Good Life",
+          "duration": "3:47",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/11 Good Life.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/11 Good Life.flac",
+          "flac_size_mb": 42
+        },
+        {
+          "num": 12,
+          "title": "Everything Reminds Me of You",
+          "duration": "2:37",
+          "size_mb": 6,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/12 Everything Reminds Me of You.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/12 Everything Reminds Me of You.flac",
+          "flac_size_mb": 28
+        },
+        {
+          "num": 13,
+          "title": "Lover",
+          "duration": "3:11",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/13 Lover.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/13 Lover.flac",
+          "flac_size_mb": 35
+        },
+        {
+          "num": 14,
+          "title": "Hard Drinkin'",
+          "duration": "3:11",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/14 Hard Drinkin'.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/14 Hard Drinkin'.flac",
+          "flac_size_mb": 35
+        },
+        {
+          "num": 15,
+          "title": "Still I Love Him",
+          "duration": "1:58",
+          "size_mb": 4,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/15 Still I Love Him.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/15 Still I Love Him.flac",
+          "flac_size_mb": 21
+        },
+        {
+          "num": 16,
+          "title": "You're Pulling Me Leg / The Ted Kennedy Song",
+          "duration": "1:24",
+          "size_mb": 3,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/16 You're Pulling Me Leg _ The Ted Kennedy Song.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/16 You're Pulling Me Leg _ The Ted Kennedy Song.flac",
+          "flac_size_mb": 15
+        },
+        {
+          "num": 17,
+          "title": "Dysfuctional Guy",
+          "duration": "5:04",
+          "size_mb": 12,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/17 Dysfuctional Guy.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/17 Dysfuctional Guy.flac",
+          "flac_size_mb": 56
+        },
+        {
+          "num": 18,
+          "title": "Nicolai",
+          "duration": "2:51",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/18 Nicolai.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/18 Nicolai.flac",
+          "flac_size_mb": 30
+        },
+        {
+          "num": 19,
+          "title": "Please Don't Bury Me",
+          "duration": "2:41",
+          "size_mb": 6,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/19 Please Don't Bury Me.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/19 Please Don't Bury Me.flac",
+          "flac_size_mb": 30
+        },
+        {
+          "num": 20,
+          "title": "Model Family Man",
+          "duration": "3:34",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/20 Model Family Man.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/20 Model Family Man.flac",
+          "flac_size_mb": 38
+        },
+        {
+          "num": 21,
+          "title": "The Kiss / DaDaDa (Salve to An Angel)",
+          "duration": "5:23",
+          "size_mb": 12,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/21 The Kiss _ DaDaDa (Salve to An Angel).mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/21 The Kiss _ DaDaDa (Salve to An Angel).flac",
+          "flac_size_mb": 61
+        }
+      ],
+      "description": [
+        "One of the first and early solo 19 Broadway shows &mdash; a loud and rowdy night in Fairfax.",
+        "The tracks have been given rudimentary loudness normalization (-23 LUFS) to even out the different sections of this tape, which were recorded at different microphone input levels (the change comes around the 45-minute mark). The loudness-normalized version of the whole show is also available below as a single lossless FLAC."
+      ],
+      "page": null,
+      "added": "2026-06-16",
+      "added_ts": "2026-06-16T21:59:18.887655"
     },
     {
       "slug": "jerry-19-broadway-1999-07-19",
