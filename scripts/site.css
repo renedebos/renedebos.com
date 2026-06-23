@@ -132,6 +132,29 @@ main {
   border-bottom: 1px solid var(--accent);
 }
 
+.about .reasons {
+  margin: 0.5rem 0 0;
+  padding-left: 1.4rem;
+  color: var(--muted);
+}
+
+.about .reasons li {
+  font-size: 14px;
+  line-height: 1.8;
+  font-weight: 300;
+  margin-bottom: 0.9rem;
+  padding-left: 0.4rem;
+}
+
+.about .reasons li:last-child {
+  margin-bottom: 0;
+}
+
+.about .reasons strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
 .about .about-note {
   font-size: 13px;
   font-style: italic;

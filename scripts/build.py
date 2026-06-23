@@ -196,6 +196,25 @@ def about_block():
   </section>'''
 
 
+def why_block():
+    return '''
+  <section class="about">
+    <h2>Why I&rsquo;m Doing This</h2>
+    <p>There are three reasons I keep working on this archive:</p>
+    <ol class="reasons">
+      <li>
+        <strong>To give these tapes a home.</strong> I want these old recordings to have a place where the people who were around in those days can stream them, enjoy them again, and relive those moments &mdash; back when Jerry and Sean were playing the local bars and venues.
+      </li>
+      <li>
+        <strong>To learn audio restoration.</strong> Working through these shows is teaching me how to improve recordings in Audacity &mdash; experimenting with normalization, limiters, filters, and the other tools it provides to get the best possible sound from aging tape.
+      </li>
+      <li>
+        <strong>To learn to work with AI.</strong> Building and maintaining this site is also how I&rsquo;m getting familiar with AI &mdash; learning to use a tool like Claude and figuring out how to make the most of it.
+      </li>
+    </ol>
+  </section>'''
+
+
 def featured_card():
     featured = next(s for s in M["shows"] if s["slug"] in M["featured"])
     tracks = featured["tracks"]
@@ -392,7 +411,7 @@ def build_home():
         heading="The <em>Hannan</em><br>Recordings",
         tagline="Live performances &mdash; San Francisco Bay Area",
         nav=site_nav("Home"),
-        main=about_block() + featured_card() + artist_notes_block(),
+        main=about_block() + why_block() + featured_card() + artist_notes_block(),
     )
 
 
