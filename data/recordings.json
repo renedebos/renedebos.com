@@ -1987,9 +1987,179 @@
           "stream": "MP3/Full/WAV_Files/SeanHannan - 19 Broadway unknown date.mp3"
         }
       ],
-      "tracks": null,
-      "description": null,
-      "page": null
+      "tracks": [
+        {
+          "num": 1,
+          "title": "Woman",
+          "duration": "2:55",
+          "size_mb": 7,
+          "file": "MP3/SeanHannan - 19 Broadway unknown date/01 Woman.mp3",
+          "flac": "FLAC/SeanHannan - 19 Broadway unknown date/01 Woman.flac",
+          "flac_size_mb": 32
+        },
+        {
+          "num": 2,
+          "title": "Long Black Veil",
+          "duration": "2:42",
+          "size_mb": 6,
+          "file": "MP3/SeanHannan - 19 Broadway unknown date/02 Long Black Veil.mp3",
+          "flac": "FLAC/SeanHannan - 19 Broadway unknown date/02 Long Black Veil.flac",
+          "flac_size_mb": 31
+        },
+        {
+          "num": 3,
+          "title": "Don't Think Twice It's Alright",
+          "duration": "3:34",
+          "size_mb": 8,
+          "file": "MP3/SeanHannan - 19 Broadway unknown date/03 Don't Think Twice It's Alright.mp3",
+          "flac": "FLAC/SeanHannan - 19 Broadway unknown date/03 Don't Think Twice It's Alright.flac",
+          "flac_size_mb": 39
+        },
+        {
+          "num": 4,
+          "title": "I Thought I Was You",
+          "duration": "4:10",
+          "size_mb": 10,
+          "file": "MP3/SeanHannan - 19 Broadway unknown date/04 I Thought I Was You.mp3",
+          "flac": "FLAC/SeanHannan - 19 Broadway unknown date/04 I Thought I Was You.flac",
+          "flac_size_mb": 46
+        },
+        {
+          "num": 5,
+          "title": "Gold's Gym Guy",
+          "duration": "2:33",
+          "size_mb": 6,
+          "file": "MP3/SeanHannan - 19 Broadway unknown date/05 Gold's Gym Guy.mp3",
+          "flac": "FLAC/SeanHannan - 19 Broadway unknown date/05 Gold's Gym Guy.flac",
+          "flac_size_mb": 29
+        },
+        {
+          "num": 6,
+          "title": "The German Clockwinder",
+          "duration": "2:43",
+          "size_mb": 6,
+          "file": "MP3/SeanHannan - 19 Broadway unknown date/06 The German Clockwinder.mp3",
+          "flac": "FLAC/SeanHannan - 19 Broadway unknown date/06 The German Clockwinder.flac",
+          "flac_size_mb": 31
+        },
+        {
+          "num": 7,
+          "title": "Model Family Man",
+          "duration": "3:39",
+          "size_mb": 8,
+          "file": "MP3/SeanHannan - 19 Broadway unknown date/07 Model Family Man.mp3",
+          "flac": "FLAC/SeanHannan - 19 Broadway unknown date/07 Model Family Man.flac",
+          "flac_size_mb": 41
+        },
+        {
+          "num": 8,
+          "title": "Flag Decal",
+          "duration": "3:33",
+          "size_mb": 8,
+          "file": "MP3/SeanHannan - 19 Broadway unknown date/08 Flag Decal.mp3",
+          "flac": "FLAC/SeanHannan - 19 Broadway unknown date/08 Flag Decal.flac",
+          "flac_size_mb": 41
+        },
+        {
+          "num": 9,
+          "title": "Galway Shawl",
+          "duration": "3:22",
+          "size_mb": 8,
+          "file": "MP3/SeanHannan - 19 Broadway unknown date/09 Galway Shawl.mp3",
+          "flac": "FLAC/SeanHannan - 19 Broadway unknown date/09 Galway Shawl.flac",
+          "flac_size_mb": 39
+        },
+        {
+          "num": 10,
+          "title": "The Grey Funnel Line (with Jerry)",
+          "duration": "4:24",
+          "size_mb": 10,
+          "file": "MP3/SeanHannan - 19 Broadway unknown date/10 The Grey Funnel Line.mp3",
+          "flac": "FLAC/SeanHannan - 19 Broadway unknown date/10 The Grey Funnel Line.flac",
+          "flac_size_mb": 51
+        },
+        {
+          "num": 11,
+          "title": "Rugburns (with Jerry)",
+          "duration": "5:10",
+          "size_mb": 12,
+          "file": "MP3/SeanHannan - 19 Broadway unknown date/11 Rugburns.mp3",
+          "flac": "FLAC/SeanHannan - 19 Broadway unknown date/11 Rugburns.flac",
+          "flac_size_mb": 60
+        },
+        {
+          "num": 12,
+          "title": "Elephant Shoes (with Jerry)",
+          "duration": "3:37",
+          "size_mb": 8,
+          "file": "MP3/SeanHannan - 19 Broadway unknown date/12 Elephant Shoes.mp3",
+          "flac": "FLAC/SeanHannan - 19 Broadway unknown date/12 Elephant Shoes.flac",
+          "flac_size_mb": 42
+        },
+        {
+          "num": 13,
+          "title": "Daddy (Kelly Peterson)",
+          "artist": "Kelly Peterson",
+          "duration": "2:53",
+          "size_mb": 7,
+          "file": "MP3/SeanHannan - 19 Broadway unknown date/13 Daddy.mp3",
+          "flac": "FLAC/SeanHannan - 19 Broadway unknown date/13 Daddy.flac",
+          "flac_size_mb": 33
+        },
+        {
+          "num": 14,
+          "title": "Angel from Montgomery (Kelly Peterson)",
+          "artist": "Kelly Peterson",
+          "duration": "4:27",
+          "size_mb": 10,
+          "file": "MP3/SeanHannan - 19 Broadway unknown date/14 Angel from Montgomery.mp3",
+          "flac": "FLAC/SeanHannan - 19 Broadway unknown date/14 Angel from Montgomery.flac",
+          "flac_size_mb": 50
+        },
+        {
+          "num": 15,
+          "title": "The Black Velvet Band",
+          "duration": "2:58",
+          "size_mb": 7,
+          "file": "MP3/SeanHannan - 19 Broadway unknown date/15 The Black Velvet Band.mp3",
+          "flac": "FLAC/SeanHannan - 19 Broadway unknown date/15 The Black Velvet Band.flac",
+          "flac_size_mb": 34
+        },
+        {
+          "num": 16,
+          "title": "The Good Life",
+          "duration": "3:00",
+          "size_mb": 7,
+          "file": "MP3/SeanHannan - 19 Broadway unknown date/16 The Good Life.mp3",
+          "flac": "FLAC/SeanHannan - 19 Broadway unknown date/16 The Good Life.flac",
+          "flac_size_mb": 33
+        },
+        {
+          "num": 17,
+          "title": "Ode to Billy McGee",
+          "duration": "2:55",
+          "size_mb": 7,
+          "file": "MP3/SeanHannan - 19 Broadway unknown date/17 Ode to Billy McGee.mp3",
+          "flac": "FLAC/SeanHannan - 19 Broadway unknown date/17 Ode to Billy McGee.flac",
+          "flac_size_mb": 33
+        },
+        {
+          "num": 18,
+          "title": "The One I Love",
+          "duration": "1:06",
+          "size_mb": 3,
+          "file": "MP3/SeanHannan - 19 Broadway unknown date/18 The One I Love.mp3",
+          "flac": "FLAC/SeanHannan - 19 Broadway unknown date/18 The One I Love.flac",
+          "flac_size_mb": 12
+        }
+      ],
+      "description": [
+        "Kelly Peterson sings two songs on this night — “Daddy” and “Angel from Montgomery.” “Daddy” is a Kelly Peterson original; you can find her on Facebook at <a href=\"https://www.facebook.com/KellyPetersonBand\" target=\"_blank\" rel=\"noopener\">@KellyPetersonBand</a>.",
+        "Jerry Hannan also sings a few tunes here, with Sean on percussion."
+      ],
+      "page": null,
+      "added": "2026-06-23",
+      "added_ts": "2026-06-23T23:48:36.656061"
     },
     {
       "slug": "mad-sweetwater-2000-02-17",

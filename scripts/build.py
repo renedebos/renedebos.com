@@ -530,14 +530,13 @@ def build_show(show):
                 ["Size", " · ".join(sizes) or "—"],
             ], ensure_ascii=False))
             share = esc(f'{track_artist} — “{t["title"]}” ({show["venue_short"]} · {show["date"] or "live"})')
-            # Download button only for tracks with a lossless FLAC. MP3 is
-            # play-only, so MP3-only tracks show no download icon.
-            dl_btn = ""
+            # Free MP3 download, plus a password-protected lossless FLAC
+            # download when a FLAC exists.
+            mp3_title = "Download MP3" + (f" · {t['size_mb']} MB" if t.get("size_mb") else "")
+            dl_btn = "\n        " + dl_button(t["file"], free=True, label="MP3", title=mp3_title)
             if t.get("flac"):
-                dl_url = stream_url(t["flac"])
-                name = t["flac"].split("/")[-1]
-                dl_title = "Download FLAC" + (f" · {t['flac_size_mb']} MB" if t.get("flac_size_mb") else "")
-                dl_btn = f'\n        <a class="download-btn" href="{esc(dl_url)}" download="{esc(name)}" title="{esc(dl_title)}">{DL_SVG}</a>'
+                flac_title = "Download FLAC" + (f" · {t['flac_size_mb']} MB" if t.get("flac_size_mb") else "")
+                dl_btn += "\n        " + dl_button(t["flac"], free=False, label="FLAC", title=flac_title)
             rows.append(f'''      <div class="track-row custom-player" id="track-{t["num"]}" data-src="{esc(stream)}">
         <button class="play-btn" aria-label="Play">{PLAY_SVG}</button>
         <span class="track-num">{t["num"]:02d}</span>
