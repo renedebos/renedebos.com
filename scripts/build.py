@@ -131,7 +131,7 @@ def recording_card(title, meta_pairs, badge, file, free, stream_file=None):
       </div>'''
 
 
-def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main):
+def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main, extra_scripts=""):
     return f'''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -168,7 +168,7 @@ def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main)
   Part of <a href="/">The Hannan Recordings</a> archive
 </footer>
 
-<script src="/assets/player.js"></script>
+<script src="/assets/player.js"></script>{extra_scripts}
 </body>
 </html>
 '''
@@ -612,6 +612,69 @@ def build_show(show):
     )
 
 
+# ── wavesurfer.js prototype (unlinked /lab/ page) ─────────────────────────────
+
+WAVESURFER_LAB_SLUG = "sean-19-broadway-unknown"
+
+
+def build_wavesurfer_lab():
+    """Standalone prototype page rendering one show's tracks with wavesurfer.js
+    waveforms (drawn from pre-computed peaks). Non-destructive: not in nav, the
+    real show page is untouched."""
+    show = next(s for s in M["shows"] if s["slug"] == WAVESURFER_LAB_SLUG)
+    artist = next(a for a in M["artists"] if a["id"] == show["artist"])
+    peaks_json = open(os.path.join(ROOT, "data", "peaks", f"{WAVESURFER_LAB_SLUG}.json")).read()
+
+    rows = []
+    for t in show["tracks"]:
+        stream = stream_url(t["file"])
+        track_artist = t.get("artist") or artist["name"]
+        info = esc(json.dumps([
+            ["Artist", track_artist],
+            ["Song", t["title"]],
+            ["Venue", show["venue"] or "—"],
+            ["Date", show["date"] or "Unknown date"],
+        ], ensure_ascii=False))
+        mp3_title = "Download MP3" + (f" · {t['size_mb']} MB" if t.get("size_mb") else "")
+        dl = "\n        " + dl_button(t["file"], free=True, label="MP3", title=mp3_title)
+        if t.get("flac"):
+            flac_title = "Download FLAC" + (f" · {t['flac_size_mb']} MB" if t.get("flac_size_mb") else "")
+            dl += "\n        " + dl_button(t["flac"], free=False, label="FLAC", title=flac_title)
+        rows.append(f'''      <div class="ws-row" id="track-{t["num"]}" data-trackid="{t["num"]}" data-src="{esc(stream)}">
+        <button class="play-btn" aria-label="Play">{PLAY_SVG}</button>
+        <span class="track-num">{t["num"]:02d}</span>
+        <span class="track-title" data-info="{info}">{esc(t["title"])}</span>
+        <div class="ws-wave"></div>
+        <span class="time-label current" data-duration="{esc(t["duration"])}">{esc(t["duration"])}</span>{dl}
+      </div>''')
+
+    main = f'''
+  <section class="about">
+    <h2>wavesurfer.js prototype</h2>
+    <p>Experimental waveform player for the track rows. Compare it with the current player on the <a href="{show_url(show)}">live show page</a>. Each waveform is drawn instantly from pre-computed peaks; the audio itself only streams once you press play.</p>
+  </section>
+  <section>
+    <div class="ws-list" data-autoplay-next>
+{chr(10).join(rows)}
+    </div>
+  </section>'''
+
+    extra = (f'\n<script>window.LAB_PEAKS = {peaks_json};</script>\n'
+             f'<script type="module" src="/assets/wavesurfer-lab.js"></script>')
+
+    return page_shell(
+        title="Waveform prototype — The Hannan Recordings",
+        description="Experimental wavesurfer.js waveform player prototype.",
+        url="https://renedebos.com/lab/wavesurfer/",
+        eyebrow="Lab &middot; Prototype",
+        heading="Waveform <em>prototype</em>",
+        tagline=esc(show_title(show)),
+        nav=site_nav(),
+        main=main,
+        extra_scripts=extra,
+    )
+
+
 # ── write everything ──────────────────────────────────────────────────────────
 
 def write(path, content):
@@ -650,6 +713,9 @@ def main():
     here = os.path.dirname(os.path.abspath(__file__))
     write("assets/site.css", open(os.path.join(here, "site.css")).read())
     write("assets/player.js", open(os.path.join(here, "player.js")).read())
+    write("assets/wavesurfer.esm.js", open(os.path.join(here, "vendor", "wavesurfer.esm.js")).read())
+    write("assets/wavesurfer-lab.js", open(os.path.join(here, "wavesurfer-lab.js")).read())
+    write("lab/wavesurfer/index.html", build_wavesurfer_lab())
     write("index.html", build_home())
     write("archive/index.html", build_archive())
     write("shows/index.html", build_shows())
