@@ -73,25 +73,42 @@ SHARE_SVG = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-
              '<path d="M8.2 13.3l7.6 4.4M15.8 6.3l-7.6 4.4"/></svg>')
 
 
-def player(file, free=False, duration=None, download_file=None):
-    """A custom-player row: play button, progress bar, download button.
+def dl_button(file, *, free, label=None, title="Download"):
+    url = stream_url(file)
+    name = file.split("/")[-1]
+    free_attr = ' data-free="true"' if free else ""
+    label_html = f'<span class="dl-label">{esc(label)}</span>' if label else ""
+    return (f'<a class="download-btn"{free_attr} href="{esc(url)}" '
+            f'download="{esc(name)}" title="{esc(title)}">{DL_SVG}{label_html}</a>')
 
-    Streams `file`; downloads `download_file` if given (e.g. stream MP3 but
-    download lossless FLAC), otherwise downloads the streamed file.
+
+def player(file, free=False, duration=None, download_file=None):
+    """A custom-player row: play button, progress bar, download button(s).
+
+    Streams `file`. When `download_file` differs (e.g. stream a lossy 320 kbps
+    MP3 proxy but keep the lossless original available), the row offers two
+    downloads: the free MP3 and the lossless original. Otherwise a single
+    download button for the streamed file.
     """
     stream = stream_url(file)
-    dl = download_file or file
-    dl_url = stream_url(dl)
-    name = dl.split("/")[-1]
     end_label = f'<span class="time-label">{esc(duration)}</span>' if duration else ""
-    free_attr = ' data-free="true"' if free else ""
+    if download_file and download_file != file:
+        mp3_fmt = file.rsplit(".", 1)[-1].upper()
+        loss_fmt = download_file.rsplit(".", 1)[-1].upper()
+        downloads = (
+            dl_button(file, free=True, label=mp3_fmt, title="Download 320 kbps MP3")
+            + "\n          "
+            + dl_button(download_file, free=free, label=loss_fmt,
+                        title=f"Download lossless {loss_fmt}"))
+    else:
+        downloads = dl_button(download_file or file, free=free)
     return f'''<div class="custom-player" data-src="{esc(stream)}">
           <button class="play-btn" aria-label="Play">{PLAY_SVG}</button>
           <div class="progress-wrap">
             <div class="progress-bar-track"><div class="progress-bar-fill"></div></div>
             <div class="time-row"><span class="time-label current">0:00</span>{end_label}</div>
           </div>
-          <a class="download-btn"{free_attr} href="{esc(dl_url)}" download="{esc(name)}" title="Download">{DL_SVG}</a>
+          {downloads}
         </div>'''
 
 
@@ -546,9 +563,13 @@ def build_show(show):
         meta = [("Source", r["source"]), ("Format", r["format"]), ("Size", r["size"])]
         cards.append(recording_card(title, meta, r["source"], r["file"], r["free"], r.get("stream")))
     label = "Full Recording" if len(canon) == 1 else "Full Recording &middot; " + f"{len(canon)} parts"
+    streamed = any(r.get("stream") for r in canon)
+    hint = ('\n    <p class="track-hint">Full shows stream as 320&nbsp;kbps MP3 &mdash; '
+            'download the free MP3, or the lossless original (password protected).</p>'
+            if streamed else "")
     parts.append(f'''
   <section>
-    <div class="group-label-bare">{label}</div>
+    <div class="group-label-bare">{label}</div>{hint}
     <div class="recording-list">
 {chr(10).join(cards)}
     </div>
