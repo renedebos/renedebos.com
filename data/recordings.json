@@ -2697,6 +2697,17 @@
         },
         {
           "label": null,
+          "alt_label": "Whole show, Compressor + normalized (FLAC)",
+          "alternate": true,
+          "source": "AUD",
+          "format": "FLAC",
+          "size": "1.09 GB",
+          "file": "MadHannans - Cafe Java 1999-09-09 Compressor Normalize.flac",
+          "free": false,
+          "stream": "MP3/Full/MadHannans - Cafe Java 1999-09-09 Compressor Normalize.mp3"
+        },
+        {
+          "label": null,
           "alt_label": "MT2",
           "alternate": true,
           "source": "AUD",
@@ -2707,9 +2718,204 @@
           "stream": "MP3/Full/MadHannans - Cafe Java 1999-09-09 MT2.mp3"
         }
       ],
-      "tracks": null,
-      "description": null,
-      "page": null
+      "tracks": [
+        {
+          "num": 1,
+          "title": "Black is the Color",
+          "duration": "3:17",
+          "size_mb": 8,
+          "file": "MP3/MadHannans - Cafe Java 1999-09-09/01 Black is The Color.mp3",
+          "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/01 Black is The Color.flac",
+          "flac_size_mb": 42
+        },
+        {
+          "num": 2,
+          "title": "Smoke in Heaven",
+          "duration": "2:50",
+          "size_mb": 7,
+          "file": "MP3/MadHannans - Cafe Java 1999-09-09/02 Smoke in Heaven.mp3",
+          "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/02 Smoke in Heaven.flac",
+          "flac_size_mb": 37
+        },
+        {
+          "num": 3,
+          "title": "I Thought I Was You",
+          "duration": "3:43",
+          "size_mb": 9,
+          "file": "MP3/MadHannans - Cafe Java 1999-09-09/03 I Thought I Was You.mp3",
+          "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/03 I Thought I Was You.flac",
+          "flac_size_mb": 47
+        },
+        {
+          "num": 4,
+          "title": "Plastic Melons",
+          "duration": "3:15",
+          "size_mb": 8,
+          "file": "MP3/MadHannans - Cafe Java 1999-09-09/04 Plastic Melons.mp3",
+          "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/04 Plastic Melons.flac",
+          "flac_size_mb": 40
+        },
+        {
+          "num": 5,
+          "title": "Everything Reminds Me of You",
+          "duration": "5:39",
+          "size_mb": 14,
+          "file": "MP3/MadHannans - Cafe Java 1999-09-09/05 Everything Reminds Me of You.mp3",
+          "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/05 Everything Reminds Me of You.flac",
+          "flac_size_mb": 71
+        },
+        {
+          "num": 6,
+          "title": "ABC",
+          "duration": "3:41",
+          "size_mb": 9,
+          "file": "MP3/MadHannans - Cafe Java 1999-09-09/06 ABC.mp3",
+          "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/06 ABC.flac",
+          "flac_size_mb": 47
+        },
+        {
+          "num": 7,
+          "title": "Truck",
+          "duration": "3:43",
+          "size_mb": 9,
+          "file": "MP3/MadHannans - Cafe Java 1999-09-09/07 Truck.mp3",
+          "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/07 Truck.flac",
+          "flac_size_mb": 47
+        },
+        {
+          "num": 8,
+          "title": "Blahana",
+          "duration": "4:31",
+          "size_mb": 11,
+          "file": "MP3/MadHannans - Cafe Java 1999-09-09/08 Blahana.mp3",
+          "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/08 Blahana.flac",
+          "flac_size_mb": 58
+        },
+        {
+          "num": 9,
+          "title": "My Dear",
+          "duration": "2:57",
+          "size_mb": 7,
+          "file": "MP3/MadHannans - Cafe Java 1999-09-09/09 My Dear.mp3",
+          "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/09 My Dear.flac",
+          "flac_size_mb": 38
+        },
+        {
+          "num": 10,
+          "title": "Recycle",
+          "duration": "5:42",
+          "size_mb": 14,
+          "file": "MP3/MadHannans - Cafe Java 1999-09-09/10 Recycle.mp3",
+          "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/10 Recycle.flac",
+          "flac_size_mb": 73
+        },
+        {
+          "num": 11,
+          "title": "Luxury of Murder",
+          "duration": "2:47",
+          "size_mb": 7,
+          "file": "MP3/MadHannans - Cafe Java 1999-09-09/11 Luxery of Murder.mp3",
+          "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/11 Luxery of Murder.flac",
+          "flac_size_mb": 37
+        },
+        {
+          "num": 12,
+          "title": "Clear Headed",
+          "duration": "4:43",
+          "size_mb": 11,
+          "file": "MP3/MadHannans - Cafe Java 1999-09-09/12 Clear Headed.mp3",
+          "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/12 Clear Headed.flac",
+          "flac_size_mb": 62
+        },
+        {
+          "num": 13,
+          "title": "Baby",
+          "duration": "3:08",
+          "size_mb": 8,
+          "file": "MP3/MadHannans - Cafe Java 1999-09-09/13 Baby.mp3",
+          "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/13 Baby.flac",
+          "flac_size_mb": 41
+        },
+        {
+          "num": 14,
+          "title": "Butter",
+          "duration": "3:14",
+          "size_mb": 8,
+          "file": "MP3/MadHannans - Cafe Java 1999-09-09/14 Butter.mp3",
+          "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/14 Butter.flac",
+          "flac_size_mb": 40
+        },
+        {
+          "num": 15,
+          "title": "Anna May",
+          "duration": "3:02",
+          "size_mb": 7,
+          "file": "MP3/MadHannans - Cafe Java 1999-09-09/15 Anna May.mp3",
+          "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/15 Anna May.flac",
+          "flac_size_mb": 38
+        },
+        {
+          "num": 16,
+          "title": "Long Black Veil",
+          "duration": "2:43",
+          "size_mb": 7,
+          "file": "MP3/MadHannans - Cafe Java 1999-09-09/16 Long Black Veil.mp3",
+          "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/16 Long Black Veil.flac",
+          "flac_size_mb": 35
+        },
+        {
+          "num": 17,
+          "title": "Blind Man",
+          "duration": "3:13",
+          "size_mb": 8,
+          "file": "MP3/MadHannans - Cafe Java 1999-09-09/17 Blind Man.mp3",
+          "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/17 Blind Man.flac",
+          "flac_size_mb": 42
+        },
+        {
+          "num": 18,
+          "title": "Tougher Than the Rest",
+          "duration": "3:58",
+          "size_mb": 10,
+          "file": "MP3/MadHannans - Cafe Java 1999-09-09/18 Thougher Than the Rest.mp3",
+          "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/18 Thougher Than the Rest.flac",
+          "flac_size_mb": 51
+        },
+        {
+          "num": 19,
+          "title": "Model Family Man",
+          "duration": "3:52",
+          "size_mb": 9,
+          "file": "MP3/MadHannans - Cafe Java 1999-09-09/19 Model Family Man.mp3",
+          "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/19 Model Family Man.flac",
+          "flac_size_mb": 48
+        },
+        {
+          "num": 20,
+          "title": "Rocky Road to Dublin / Star of County Down",
+          "duration": "5:09",
+          "size_mb": 12,
+          "file": "MP3/MadHannans - Cafe Java 1999-09-09/20 Rocky Road to Dublin _ Star of County Down.mp3",
+          "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/20 Rocky Road to Dublin _ Star of County Down.flac",
+          "flac_size_mb": 66
+        },
+        {
+          "num": 21,
+          "title": "The Kiss - Da Da Da",
+          "duration": "6:21",
+          "size_mb": 15,
+          "file": "MP3/MadHannans - Cafe Java 1999-09-09/21 The Kiss - Da Da Da.mp3",
+          "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/21 The Kiss - Da Da Da.flac",
+          "flac_size_mb": 82
+        }
+      ],
+      "description": [
+        "Recorded live at Cafe Java in Larkspur.",
+        "<em>A note on the audio:</em> this recording has some audio issues, mainly from the loud drums and the applause from the audience. The whole show was treated with the Audacity Compressor, and the individual tracks have, for the most part, been loudness normalized to −16 LUFS."
+      ],
+      "page": null,
+      "added": "2026-06-24",
+      "added_ts": "2026-06-24T16:21:45.537920"
     },
     {
       "slug": "mad-marin-brewing-co-1999-04-01",
