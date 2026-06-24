@@ -95,9 +95,13 @@ def player(file, free=False, duration=None, download_file=None):
         </div>'''
 
 
-def recording_card(title, meta_pairs, badge, file, free):
+def recording_card(title, meta_pairs, badge, file, free, stream_file=None):
+    # If a lossy stream proxy exists (stream_file), play it for free and gate the
+    # lossless `file` behind the download/password flow; otherwise stream `file`.
     grid = "".join(f'<span class="meta-label">{esc(k)}</span><span class="meta-value">{esc(v)}</span>'
                    for k, v in meta_pairs if v)
+    play = player(stream_file or file, free,
+                  download_file=file if stream_file else None)
     return f'''      <div class="recording-item">
         <div class="recording-meta">
           <div>
@@ -106,7 +110,7 @@ def recording_card(title, meta_pairs, badge, file, free):
           </div>
           <span class="recording-badge">{esc(badge)}</span>
         </div>
-        {player(file, free)}
+        {play}
       </div>'''
 
 
@@ -540,7 +544,7 @@ def build_show(show):
     for r in canon:
         title = r["label"] or "Complete show"
         meta = [("Source", r["source"]), ("Format", r["format"]), ("Size", r["size"])]
-        cards.append(recording_card(title, meta, r["source"], r["file"], r["free"]))
+        cards.append(recording_card(title, meta, r["source"], r["file"], r["free"], r.get("stream")))
     label = "Full Recording" if len(canon) == 1 else "Full Recording &middot; " + f"{len(canon)} parts"
     parts.append(f'''
   <section>
@@ -554,7 +558,7 @@ def build_show(show):
         cards = []
         for r in alts:
             meta = [("Source", r["source"]), ("Format", r["format"]), ("Size", r["size"])]
-            cards.append(recording_card(r["alt_label"], meta, r["source"], r["file"], r["free"]))
+            cards.append(recording_card(r["alt_label"], meta, r["source"], r["file"], r["free"], r.get("stream")))
         parts.append(f'''
   <section>
     <details class="alt-details">

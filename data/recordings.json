@@ -44,7 +44,8 @@
           "format": "WAV",
           "size": "1.99 GB",
           "file": "JerryHannan - 19 Broadway 1999-02-01.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/JerryHannan - 19 Broadway 1999-02-01.mp3"
         },
         {
           "label": null,
@@ -54,7 +55,8 @@
           "format": "WAV",
           "size": "905 MB",
           "file": "WAV_Files/JerryHannan - 19 Broadway 1999-02-01 2nd transfer.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan - 19 Broadway 1999-02-01 2nd transfer.mp3"
         },
         {
           "label": null,
@@ -64,7 +66,8 @@
           "format": "WAV",
           "size": "1.98 GB",
           "file": "WAV_Files/JerryHannan - 19 Broadway 1999-02-01 incl dropouts.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan - 19 Broadway 1999-02-01 incl dropouts.mp3"
         },
         {
           "label": null,
@@ -74,7 +77,8 @@
           "format": "WAV",
           "size": "1.33 GB",
           "file": "WAV_Files/JerryHannan_19Broadway_1999-02-01 complete with splits.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan_19Broadway_1999-02-01 complete with splits.mp3"
         },
         {
           "label": null,
@@ -84,7 +88,8 @@
           "format": "WAV",
           "size": "730 MB",
           "file": "WAV_Files/JerryHannan_19Broadway_1999-02-01 part1.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan_19Broadway_1999-02-01 part1.mp3"
         }
       ],
       "tracks": null,
@@ -109,7 +114,8 @@
           "format": "WAV",
           "size": "1.81 GB",
           "file": "JerryHannan - 19 Broadway 1999-03-29.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/JerryHannan - 19 Broadway 1999-03-29.mp3"
         },
         {
           "label": null,
@@ -119,7 +125,8 @@
           "format": "WAV",
           "size": "1.11 GB",
           "file": "WAV_Files/JerryHannan - 19 Broadway 1999-03-29 again.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan - 19 Broadway 1999-03-29 again.mp3"
         },
         {
           "label": null,
@@ -129,7 +136,8 @@
           "format": "WAV",
           "size": "1.48 GB",
           "file": "WAV_Files/JerryHannan_19Broadway_1999-03-29 DIGITAL Complete.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan_19Broadway_1999-03-29 DIGITAL Complete.mp3"
         },
         {
           "label": null,
@@ -139,7 +147,8 @@
           "format": "WAV",
           "size": "768 MB",
           "file": "WAV_Files/JerryHannan_19Broadway_1999-03-29 DIGITAL Try2 Part1.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan_19Broadway_1999-03-29 DIGITAL Try2 Part1.mp3"
         },
         {
           "label": null,
@@ -149,7 +158,8 @@
           "format": "WAV",
           "size": "868 MB",
           "file": "WAV_Files/JerryHannan_19Broadway_1999-03-29 DIGITAL.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan_19Broadway_1999-03-29 DIGITAL.mp3"
         }
       ],
       "tracks": null,
@@ -174,7 +184,8 @@
           "format": "WAV",
           "size": "1.22 GB",
           "file": "JerryHannan - 19 Broadway 1999-05-10.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/JerryHannan - 19 Broadway 1999-05-10.mp3"
         }
       ],
       "tracks": null,
@@ -199,7 +210,8 @@
           "format": "WAV",
           "size": "1.29 GB",
           "file": "JerryHannan - 19 Broadway 1999-06-07 Pt 1.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/JerryHannan - 19 Broadway 1999-06-07 Pt 1.mp3"
         },
         {
           "label": "Part 2",
@@ -209,7 +221,8 @@
           "format": "WAV",
           "size": "1.01 GB",
           "file": "JerryHannan - 19 Broadway 1999-06-07 Pt 2.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/JerryHannan - 19 Broadway 1999-06-07 Pt 2.mp3"
         },
         {
           "label": null,
@@ -219,7 +232,8 @@
           "format": "WAV",
           "size": "2.95 GB",
           "file": "WAV_Files/JerryHannan_19Broadway_1999-06-07 DIGITAL Part1.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan_19Broadway_1999-06-07 DIGITAL Part1.mp3"
         },
         {
           "label": null,
@@ -229,7 +243,8 @@
           "format": "WAV",
           "size": "1.18 GB",
           "file": "WAV_Files/JerryHannan_19Broadway_1999-06-07 DIGITAL Part2.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan_19Broadway_1999-06-07 DIGITAL Part2.mp3"
         }
       ],
       "tracks": null,
@@ -254,7 +269,8 @@
           "format": "WAV",
           "size": "2.18 GB",
           "file": "JerryHannan - 19 Broadway 1999-06-21.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/JerryHannan - 19 Broadway 1999-06-21.mp3"
         },
         {
           "label": null,
@@ -264,7 +280,8 @@
           "format": "WAV",
           "size": "682 MB",
           "file": "WAV_Files/JerryHannan_19Broadway_1999-06-21 DIGITAL Part1 Dropouts 1-02.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan_19Broadway_1999-06-21 DIGITAL Part1 Dropouts 1-02.mp3"
         },
         {
           "label": null,
@@ -274,7 +291,8 @@
           "format": "FLAC",
           "size": "993 MB",
           "file": "JerryHannan - 19 Broadway 1999-06-21 LoudnessNormalization23.flac",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/JerryHannan - 19 Broadway 1999-06-21 LoudnessNormalization23.mp3"
         }
       ],
       "tracks": [
@@ -494,7 +512,8 @@
           "format": "WAV",
           "size": "1.63 GB",
           "file": "JerryHannan - 19 Broadway 1999-07-19.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/JerryHannan - 19 Broadway 1999-07-19.mp3"
         },
         {
           "label": null,
@@ -504,7 +523,8 @@
           "format": "WAV",
           "size": "1.52 GB",
           "file": "WAV_Files/JerryHannan - 19 Broadway 1999-07-19 again.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan - 19 Broadway 1999-07-19 again.mp3"
         },
         {
           "label": null,
@@ -514,7 +534,8 @@
           "format": "WAV",
           "size": "2.24 GB",
           "file": "WAV_Files/JerryHannan_19Broadway_1999-07-19.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan_19Broadway_1999-07-19.mp3"
         }
       ],
       "tracks": null,
@@ -539,7 +560,8 @@
           "format": "WAV",
           "size": "1.01 GB",
           "file": "JerryHannan - 19 Broadway 1999-08-23 Pt 2.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/JerryHannan - 19 Broadway 1999-08-23 Pt 2.mp3"
         },
         {
           "label": null,
@@ -549,7 +571,8 @@
           "format": "WAV",
           "size": "1.11 GB",
           "file": "WAV_Files/JerryHannan_19Broadway_1999-08-23 DIGITAL part 2.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan_19Broadway_1999-08-23 DIGITAL part 2.mp3"
         },
         {
           "label": null,
@@ -559,7 +582,8 @@
           "format": "WAV",
           "size": "596 MB",
           "file": "WAV_Files/JerryHannnan - 19 Broadway 1999-08-23 Pt2 distortion.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannnan - 19 Broadway 1999-08-23 Pt2 distortion.mp3"
         }
       ],
       "tracks": null,
@@ -584,7 +608,8 @@
           "format": "WAV",
           "size": "2.01 GB",
           "file": "JerryHannan - 19 Broadway 1999-10-25.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/JerryHannan - 19 Broadway 1999-10-25.mp3"
         }
       ],
       "tracks": null,
@@ -609,7 +634,8 @@
           "format": "WAV",
           "size": "1.22 GB",
           "file": "JerryHannan - 19 Broadway 1999-11-15.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/JerryHannan - 19 Broadway 1999-11-15.mp3"
         },
         {
           "label": null,
@@ -619,7 +645,8 @@
           "format": "WAV",
           "size": "1015 MB",
           "file": "WAV_Files/JerryHannan - 19 Broadway 1999-11-15 MT2.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan - 19 Broadway 1999-11-15 MT2.mp3"
         }
       ],
       "tracks": null,
@@ -644,7 +671,8 @@
           "format": "WAV",
           "size": "3.54 GB",
           "file": "JerryHannan - 19 Broadway 2001-01-08 SBD.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/JerryHannan - 19 Broadway 2001-01-08 SBD.mp3"
         },
         {
           "label": null,
@@ -654,7 +682,8 @@
           "format": "WAV",
           "size": "3.3 GB",
           "file": "WAV_Files/JerryHannan - 19 Broadway 2001-01-08 SBD (1).wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan - 19 Broadway 2001-01-08 SBD (1).mp3"
         }
       ],
       "tracks": [
@@ -897,7 +926,8 @@
           "format": "WAV",
           "size": "2.63 GB",
           "file": "JerryHannan - 19 Broadway 2001-01-15 Pt 1 SBD.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/JerryHannan - 19 Broadway 2001-01-15 Pt 1 SBD.mp3"
         },
         {
           "label": "Part 2",
@@ -907,7 +937,8 @@
           "format": "WAV",
           "size": "828 MB",
           "file": "JerryHannan - 19 Broadway 2001-01-15 Pt 2 SBD.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/JerryHannan - 19 Broadway 2001-01-15 Pt 2 SBD.mp3"
         },
         {
           "label": null,
@@ -917,7 +948,8 @@
           "format": "WAV",
           "size": "2.45 GB",
           "file": "WAV_Files/JerryHannan - 19 Broadway 2001-01-15 Pt 1.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan - 19 Broadway 2001-01-15 Pt 1.mp3"
         },
         {
           "label": null,
@@ -927,7 +959,8 @@
           "format": "WAV",
           "size": "1.73 GB",
           "file": "WAV_Files/JerryHannan_19Broadway_2001-01-15 part2.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan_19Broadway_2001-01-15 part2.mp3"
         },
         {
           "label": null,
@@ -937,7 +970,8 @@
           "format": "WAV",
           "size": "1.18 GB",
           "file": "WAV_Files/JerryHannan_19Broadway_2001-01-15.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan_19Broadway_2001-01-15.mp3"
         }
       ],
       "tracks": [
@@ -1249,7 +1283,8 @@
           "format": "WAV",
           "size": "1.48 GB",
           "file": "WAV_Files/JerryHannan - Cafe Java 1999-03-25 1999-04-08.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan - Cafe Java 1999-03-25 1999-04-08.mp3"
         },
         {
           "label": "March 25 (digital transfer)",
@@ -1259,7 +1294,8 @@
           "format": "WAV",
           "size": "876 MB",
           "file": "WAV_Files/JerryHannan_CafeJava_1999-03-25 DIGITAL.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan_CafeJava_1999-03-25 DIGITAL.mp3"
         },
         {
           "label": "April 8 (digital transfer)",
@@ -1269,7 +1305,8 @@
           "format": "WAV",
           "size": "1.1 GB",
           "file": "WAV_Files/JerryHannan_CafeJava_1999-04-08 DIGITAL.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan_CafeJava_1999-04-08 DIGITAL.mp3"
         }
       ],
       "tracks": null,
@@ -1294,7 +1331,8 @@
           "format": "WAV",
           "size": "1.06 GB",
           "file": "WAV_Files/JerryHannan - Cafe Java 1999-04-29.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan - Cafe Java 1999-04-29.mp3"
         },
         {
           "label": null,
@@ -1304,7 +1342,8 @@
           "format": "WAV",
           "size": "1.54 GB",
           "file": "WAV_Files/JerryHannan_CafeJava_1999-04-29.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan_CafeJava_1999-04-29.mp3"
         }
       ],
       "tracks": null,
@@ -1329,7 +1368,8 @@
           "format": "WAV",
           "size": "1.99 GB",
           "file": "WAV_Files/JerryHannan - Cafe Java 1999-05-27.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan - Cafe Java 1999-05-27.mp3"
         }
       ],
       "tracks": null,
@@ -1354,7 +1394,8 @@
           "format": "WAV",
           "size": "2.2 GB",
           "file": "WAV_Files/JerryHannan_CafeJava_1999-05-10 DIGITAL.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan_CafeJava_1999-05-10 DIGITAL.mp3"
         }
       ],
       "tracks": null,
@@ -1379,7 +1420,8 @@
           "format": "WAV",
           "size": "1.23 GB",
           "file": "WAV_Files/JerryHannan - Cafe Java 1999-06-17.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan - Cafe Java 1999-06-17.mp3"
         }
       ],
       "tracks": null,
@@ -1404,7 +1446,8 @@
           "format": "WAV",
           "size": "631 MB",
           "file": "WAV_Files/JerryHannan_WesternSaloon_20250703 Part1.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan_WesternSaloon_20250703 Part1.mp3"
         },
         {
           "label": "Part 2",
@@ -1414,7 +1457,8 @@
           "format": "WAV",
           "size": "966 MB",
           "file": "WAV_Files/JerryHannan_WesternSaloon_20250703 Part2.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan_WesternSaloon_20250703 Part2.mp3"
         }
       ],
       "tracks": null,
@@ -1439,7 +1483,8 @@
           "format": "WAV",
           "size": "2.44 GB",
           "file": "WAV_Files/SeanHannan - 19 Broadway 1999-11-29.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/SeanHannan - 19 Broadway 1999-11-29.mp3"
         }
       ],
       "tracks": null,
@@ -1464,7 +1509,8 @@
           "format": "WAV",
           "size": "2.75 GB",
           "file": "WAV_Files/SeanHannan - 19 Broadway 2000-01-24.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/SeanHannan - 19 Broadway 2000-01-24.mp3"
         }
       ],
       "tracks": [
@@ -1776,7 +1822,8 @@
           "format": "WAV",
           "size": "1.92 GB",
           "file": "WAV_Files/SeanHannan - 19 Broadway 2000-02-21.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/SeanHannan - 19 Broadway 2000-02-21.mp3"
         }
       ],
       "tracks": [
@@ -1910,7 +1957,8 @@
           "format": "WAV",
           "size": "1.07 GB",
           "file": "WAV_Files/SeanHannan - 19 Broadway unknown date pt1.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/SeanHannan - 19 Broadway unknown date pt1.mp3"
         }
       ],
       "tracks": null,
@@ -1935,7 +1983,8 @@
           "format": "WAV",
           "size": "2.17 GB",
           "file": "WAV_Files/SeanHannan - 19 Broadway unknown date.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/SeanHannan - 19 Broadway unknown date.mp3"
         }
       ],
       "tracks": null,
@@ -1960,7 +2009,8 @@
           "format": "WAV",
           "size": "2.4 GB",
           "file": "MadHannans - Sweetwater 2000-02-17 SBD.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/MadHannans - Sweetwater 2000-02-17 SBD.mp3"
         },
         {
           "label": null,
@@ -1970,7 +2020,8 @@
           "format": "WAV",
           "size": "2.19 GB",
           "file": "WAV_Files/MadHannans_Sweetwater_2000-02-17 Noise Reduction_Normalized -1.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/MadHannans_Sweetwater_2000-02-17 Noise Reduction_Normalized -1.mp3"
         }
       ],
       "tracks": [
@@ -2190,7 +2241,8 @@
           "format": "WAV",
           "size": "1.34 GB",
           "file": "MadHannans - Sweetwater 2000-10-17 Birthday Show.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/MadHannans - Sweetwater 2000-10-17 Birthday Show.mp3"
         },
         {
           "label": null,
@@ -2200,7 +2252,8 @@
           "format": "FLAC",
           "size": "600 MB",
           "file": "MadHannans - Sweetwater 2000-10-17 Birthday Show.flac",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/MadHannans - Sweetwater 2000-10-17 Birthday Show.mp3"
         }
       ],
       "tracks": [
@@ -2446,7 +2499,8 @@
           "format": "WAV",
           "size": "1.57 GB",
           "file": "WAV_Files/MadHannans - 4th Street Tavern 1999-05-01 Pt 1.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/MadHannans - 4th Street Tavern 1999-05-01 Pt 1.mp3"
         },
         {
           "label": "Part 2",
@@ -2456,7 +2510,8 @@
           "format": "WAV",
           "size": "1.24 GB",
           "file": "WAV_Files/MadHannans - 4th Street Tavern 1999-05-01 Pt 2.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/MadHannans - 4th Street Tavern 1999-05-01 Pt 2.mp3"
         }
       ],
       "tracks": null,
@@ -2481,7 +2536,8 @@
           "format": "WAV",
           "size": "1.12 GB",
           "file": "WAV_Files/MadHannans - Cafe Java 1999-09-09.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/MadHannans - Cafe Java 1999-09-09.mp3"
         },
         {
           "label": null,
@@ -2491,7 +2547,8 @@
           "format": "WAV",
           "size": "1.43 GB",
           "file": "MadHannans - Cafe Java 1999-09-09 MT2.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/MadHannans - Cafe Java 1999-09-09 MT2.mp3"
         }
       ],
       "tracks": null,
@@ -2516,7 +2573,8 @@
           "format": "WAV",
           "size": "1004 MB",
           "file": "WAV_Files/MadHannans - Marin Brewing Co 1999-04-01.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/MadHannans - Marin Brewing Co 1999-04-01.mp3"
         },
         {
           "label": null,
@@ -2526,7 +2584,8 @@
           "format": "WAV",
           "size": "1.08 GB",
           "file": "WAV_Files/MadHannans_MarinBrewCo_1999-04-01.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/MadHannans_MarinBrewCo_1999-04-01.mp3"
         }
       ],
       "tracks": null,
@@ -2551,7 +2610,8 @@
           "format": "WAV",
           "size": "737 MB",
           "file": "WAV_Files/MadHannans - New George's 1999-10-13.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/MadHannans - New George's 1999-10-13.mp3"
         },
         {
           "label": null,
@@ -2561,7 +2621,8 @@
           "format": "WAV",
           "size": "815 MB",
           "file": "WAV_Files/MadHannans - New George's 1999-10-13 MT2.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/MadHannans - New George's 1999-10-13 MT2.mp3"
         },
         {
           "label": null,
@@ -2571,7 +2632,8 @@
           "format": "WAV",
           "size": "734 MB",
           "file": "WAV_Files/MadHannans_NewGeorges_1999-10-13.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/MadHannans_NewGeorges_1999-10-13.mp3"
         }
       ],
       "tracks": null,
@@ -2596,7 +2658,8 @@
           "format": "WAV",
           "size": "2.01 GB",
           "file": "WAV_Files/MadHannans - Sweetwater 1999-05-18.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/MadHannans - Sweetwater 1999-05-18.mp3"
         }
       ],
       "tracks": null,
@@ -2621,7 +2684,8 @@
           "format": "WAV",
           "size": "2.91 GB",
           "file": "WAV_Files/MadHannans - Sweetwater 2001-01-06.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/MadHannans - Sweetwater 2001-01-06.mp3"
         },
         {
           "label": null,
@@ -2631,7 +2695,8 @@
           "format": "WAV",
           "size": "2.18 GB",
           "file": "WAV_Files/MadHannans_Sweetwater_2001-01-06.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/MadHannans_Sweetwater_2001-01-06.mp3"
         }
       ],
       "tracks": null,
@@ -2656,7 +2721,8 @@
           "format": "WAV",
           "size": "1.93 GB",
           "file": "JerrySeanHannan - 19 Broadway 1999-12 pt1 (48KHz).wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/JerrySeanHannan - 19 Broadway 1999-12 pt1 (48KHz).mp3"
         },
         {
           "label": "Part 2 <span style=\"font-size:11px;color:var(--muted);font-weight:300;\">(32KHz)</span>",
@@ -2666,7 +2732,8 @@
           "format": "WAV",
           "size": "216 MB",
           "file": "JerrySeanHannan - 19 Broadway 1999-12 pt2 (32KHz).wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/JerrySeanHannan - 19 Broadway 1999-12 pt2 (32KHz).mp3"
         }
       ],
       "tracks": null,
@@ -2691,7 +2758,8 @@
           "format": "WAV",
           "size": "1.43 GB",
           "file": "WAV_Files/MadHannans - Marin Brewing Co 1998-04-01.wav",
-          "free": false
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/MadHannans - Marin Brewing Co 1998-04-01.mp3"
         }
       ],
       "tracks": null,
