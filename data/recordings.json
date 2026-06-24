@@ -1940,32 +1940,6 @@
       "added_ts": "2026-06-14T00:00:00"
     },
     {
-      "slug": "sean-19-broadway-unknown-1",
-      "artist": "sean",
-      "venue": "19 Broadway, Fairfax",
-      "venue_short": "19 Broadway",
-      "date": null,
-      "date_display": "Unknown date",
-      "subtitle": null,
-      "source": "AUD",
-      "recordings": [
-        {
-          "label": "Unknown Date, Part 1",
-          "alt_label": null,
-          "alternate": false,
-          "source": "AUD",
-          "format": "WAV",
-          "size": "1.07 GB",
-          "file": "WAV_Files/SeanHannan - 19 Broadway unknown date pt1.wav",
-          "free": false,
-          "stream": "MP3/Full/WAV_Files/SeanHannan - 19 Broadway unknown date pt1.mp3"
-        }
-      ],
-      "tracks": null,
-      "description": null,
-      "page": null
-    },
-    {
       "slug": "sean-19-broadway-unknown-2",
       "artist": "sean",
       "venue": "19 Broadway, Fairfax",
@@ -1976,7 +1950,7 @@
       "source": "AUD",
       "recordings": [
         {
-          "label": "Unknown Date",
+          "label": "Complete show",
           "alt_label": null,
           "alternate": false,
           "source": "AUD",
@@ -1985,6 +1959,17 @@
           "file": "WAV_Files/SeanHannan - 19 Broadway unknown date.wav",
           "free": false,
           "stream": "MP3/Full/WAV_Files/SeanHannan - 19 Broadway unknown date.mp3"
+        },
+        {
+          "label": null,
+          "alt_label": "Partial transfer (Part 1)",
+          "alternate": true,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.07 GB",
+          "file": "WAV_Files/SeanHannan - 19 Broadway unknown date pt1.wav",
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/SeanHannan - 19 Broadway unknown date pt1.mp3"
         }
       ],
       "tracks": [
@@ -2155,7 +2140,8 @@
       ],
       "description": [
         "Kelly Peterson sings two songs on this night — “Daddy” and “Angel from Montgomery.” “Daddy” is a Kelly Peterson original; you can find her on Facebook at <a href=\"https://www.facebook.com/KellyPetersonBand\" target=\"_blank\" rel=\"noopener\">@KellyPetersonBand</a>.",
-        "Jerry Hannan also sings a few tunes here, with Sean on percussion."
+        "Jerry Hannan also sings a few tunes here, with Sean on percussion.",
+        "<em>Processing note:</em> these tracks were processed in Audacity with loudness normalization to −16 LUFS, recorded here to keep track of the changes made to the songs."
       ],
       "page": null,
       "added": "2026-06-23",
