@@ -61,8 +61,11 @@ rows.forEach((row, idx) => {
     row.classList.remove('playing');
     btn.innerHTML = PLAY;
     time.textContent = durLabel;
-    const next = rows[idx + 1];
-    if (next) next.querySelector('.play-btn').click();
+    // Natural end fires 'finish' twice (reactive duration check + media 'ended'),
+    // so advance with an idempotent play() — never the play/pause toggle, which a
+    // second finish would use to pause the next track right after starting it.
+    const next = instances[idx + 1];
+    if (next) next.play();
   });
 
   instances.push(ws);
