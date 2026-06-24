@@ -636,10 +636,12 @@ def build_wavesurfer_lab():
             ["Date", show["date"] or "Unknown date"],
         ], ensure_ascii=False))
         mp3_title = "Download MP3" + (f" · {t['size_mb']} MB" if t.get("size_mb") else "")
-        dl = "\n        " + dl_button(t["file"], free=True, label="MP3", title=mp3_title)
+        dl_btns = [dl_button(t["file"], free=True, label="MP3", title=mp3_title)]
         if t.get("flac"):
             flac_title = "Download FLAC" + (f" · {t['flac_size_mb']} MB" if t.get("flac_size_mb") else "")
-            dl += "\n        " + dl_button(t["flac"], free=False, label="FLAC", title=flac_title)
+            dl_btns.append(dl_button(t["flac"], free=False, label="FLAC", title=flac_title))
+        dl_inner = "".join("\n          " + b for b in dl_btns)
+        dl = f'\n        <div class="ws-dl">{dl_inner}\n        </div>'
         rows.append(f'''      <div class="ws-row" id="track-{t["num"]}" data-trackid="{t["num"]}" data-src="{esc(stream)}">
         <button class="play-btn" aria-label="Play">{PLAY_SVG}</button>
         <span class="track-num">{t["num"]:02d}</span>

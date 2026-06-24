@@ -621,10 +621,20 @@ main {
 .ws-row .download-btn svg { width: 12px; height: 12px; }
 .ws-row .lock-icon { display: inline-block; width: 9px; height: 9px; }
 
+/* download links share a wrapper; transparent to the flex layout on desktop */
+.ws-dl { display: contents; }
+
 @media (max-width: 600px) {
-  .ws-row { flex-wrap: wrap; }
+  .ws-row { flex-wrap: wrap; row-gap: 0.5rem; padding: 0.7rem 1.1rem; }
   .ws-row .track-title { flex: 1 1 auto; }
+  .ws-row .time-label { margin-left: auto; }
+  /* both downloads always sit together on their own full-width line */
+  .ws-dl { display: flex; flex: 1 1 100%; order: 4; gap: 8px; }
   .ws-wave { flex: 1 1 100%; order: 5; }
+  /* larger touch targets for thumbs */
+  .ws-row .play-btn { width: 44px; height: 44px; }
+  .ws-row .play-btn svg { width: 15px; height: 15px; }
+  .ws-row .download-btn { padding: 9px 11px; min-height: 40px; }
 }
 
 /* ── recording cards & player ────────────────────────────────────────────── */
