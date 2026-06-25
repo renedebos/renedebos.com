@@ -347,13 +347,18 @@ def updates_list():
             html = f'Added {link} &mdash; {n} split tracks {_src_tag(show)}'
             events.append((ts, show["slug"], show["added"], html))
     for upd in M.get("updates", []):
-        show = by_slug.get(upd["slug"])
-        if not show:
-            continue
         ts = upd.get("ts") or f'{upd["date"]}T00:00:00'
-        link = f'<a href="{show_url(show)}">{_show_label(show)}</a>'
-        html = f'{esc(upd["text"])} &mdash; {link} {_src_tag(show)}'
-        events.append((ts, upd["slug"], upd["date"], html))
+        slug = upd.get("slug")
+        if slug:
+            show = by_slug.get(slug)
+            if not show:
+                continue
+            link = f'<a href="{show_url(show)}">{_show_label(show)}</a>'
+            html = f'{esc(upd["text"])} &mdash; {link} {_src_tag(show)}'
+        else:
+            # Site-wide note (e.g. a feature change) — no show link or source tag.
+            html = esc(upd["text"])
+        events.append((ts, slug or "", upd["date"], html))
     events.sort(key=lambda e: (e[0], e[1]), reverse=True)
     items = []
     for _ts, _slug, date, html in events:
@@ -615,8 +620,10 @@ def build_show(show):
 
     extra_scripts = ""
     if has_waves:
-        peaks_json = open(peaks_path).read()
-        extra_scripts = (f'\n<script>window.WS_PEAKS = {peaks_json};</script>\n'
+        # Emit the peaks to a served, cacheable path (data/ is .assetsignore'd) and
+        # point wavesurfer.js at it, rather than inlining ~58 KB into every page.
+        write(f"assets/peaks/{show['slug']}.json", open(peaks_path).read())
+        extra_scripts = (f'\n<script>window.WS_PEAKS_URL = "/assets/peaks/{show["slug"]}.json";</script>\n'
                          f'<script type="module" src="/assets/wavesurfer.js"></script>')
 
     return page_shell(

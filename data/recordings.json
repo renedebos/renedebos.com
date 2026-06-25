@@ -3397,6 +3397,11 @@
   ],
   "updates": [
     {
+      "date": "2026-06-24",
+      "ts": "2026-06-24T17:30:00",
+      "text": "Enabled wavesurfer.js waveform graphics on the audio player as an experiment — to be determined whether it stays"
+    },
+    {
       "date": "2026-06-15",
       "ts": "2026-06-15T23:35:00",
       "slug": "mad-sweetwater-2000-10-17",
