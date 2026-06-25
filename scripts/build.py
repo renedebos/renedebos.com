@@ -247,7 +247,7 @@ def featured_card():
   </a>'''
 
 
-def show_row(show):
+def show_row(show, with_artist=False):
     artist = next(a for a in M["artists"] if a["id"] == show["artist"])
     n_alt = sum(1 for r in show["recordings"] if r["alternate"])
     n_can = len(show["recordings"]) - n_alt
@@ -272,9 +272,12 @@ def show_row(show):
         ["Tracks", str(len(show["tracks"])) if show.get("tracks") else "—"],
         ["Size", primary_size],
     ], ensure_ascii=False))
+    # In the cross-artist date view each row carries the artist, since the
+    # grouping header that would otherwise name it is gone.
+    artist_prefix = f'<span class="show-artist">{esc(artist["name"])}</span> &middot; ' if with_artist else ""
     return f'''      <a class="show-row" href="{show_url(show)}" data-info="{info}">
         <span class="show-date">{esc(show["date"] or "Unknown date")}</span>
-        <span class="show-venue">{esc(show["venue"] or "")}{subtitle}{extra_html}</span>
+        <span class="show-venue">{artist_prefix}{esc(show["venue"] or "")}{subtitle}{extra_html}</span>
         {marker}
         <span class="show-src src-{show["source"].lower()}">{esc(show["source"])}</span>
         <span class="show-arrow">&rarr;</span>
@@ -302,6 +305,19 @@ def artist_sections(only_tracks=False):
     </div>
   </section>''')
     return "".join(out)
+
+
+def date_sorted_list():
+    # One flat chronological list across all artists (oldest first; undated shows
+    # sort last via sort_key). Used by the Archive's "By date" view.
+    shows = sorted(M["shows"], key=sort_key)
+    rows = "\n".join(show_row(s, with_artist=True) for s in shows)
+    return f'''
+  <section class="artist-section">
+    <div class="show-list">
+{rows}
+    </div>
+  </section>'''
 
 
 def artist_notes_block():
@@ -438,15 +454,47 @@ def build_home():
 
 
 def build_archive():
+    toggle = '''
+  <div class="view-toggle" role="group" aria-label="Sort shows">
+    <button type="button" class="seg active" data-view="artist">By artist</button>
+    <button type="button" class="seg" data-view="date">By date</button>
+  </div>'''
+    views = f'''
+  <div class="archive-view" data-view="artist">{artist_sections(only_tracks=False)}
+  </div>
+  <div class="archive-view" data-view="date" hidden>{date_sorted_list()}
+  </div>'''
+    script = '''
+<script>
+(function () {
+  var KEY = 'archiveView';
+  var segs = document.querySelectorAll('.view-toggle .seg');
+  var views = document.querySelectorAll('.archive-view');
+  function apply(v) {
+    segs.forEach(function (s) { s.classList.toggle('active', s.dataset.view === v); });
+    views.forEach(function (x) { x.hidden = x.dataset.view !== v; });
+  }
+  segs.forEach(function (s) {
+    s.addEventListener('click', function () {
+      apply(s.dataset.view);
+      try { localStorage.setItem(KEY, s.dataset.view); } catch (e) {}
+    });
+  });
+  var saved;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  if (saved === 'date') apply('date');
+})();
+</script>'''
     return page_shell(
         title="Archive — The Hannan Recordings",
-        description="Every Jerry Hannan, Sean Hannan, and Mad Hannans recording in the archive, grouped by artist.",
+        description="Every Jerry Hannan, Sean Hannan, and Mad Hannans recording in the archive, by artist or by date.",
         url="https://renedebos.com/archive/",
         eyebrow="The Hannan Recordings",
         heading="Archive",
-        tagline="Every show &middot; grouped by artist",
+        tagline="Every show &middot; by artist or by date",
         nav=site_nav("Archive"),
-        main=artist_sections(only_tracks=False),
+        main=toggle + views,
+        extra_scripts=script,
     )
 
 
