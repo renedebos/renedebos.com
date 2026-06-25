@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Metadata Editor — Hannan Recordings</title>
+<style>
+  :root {
+    --bg: #f5f2ed; --surface: #faf8f5; --text: #1a1916; --muted: #6b6860;
+    --border: #dedad3; --accent: #2c4a3e; --accent-light: #e8efe8; --err: #b94a3a;
+    --sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--sans); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 1rem;
+    padding: 0.8rem 1.2rem; background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar h1 { font-size: 15px; font-weight: 600; }
+  .topbar .spacer { flex: 1; }
+  #status { font-size: 12px; color: var(--muted); max-width: 46ch; }
+  #status.ok { color: var(--accent); }
+  #status.err { color: var(--err); }
+  #saveBtn {
+    font-family: var(--sans); font-size: 13px; font-weight: 600;
+    color: #fff; background: var(--accent); border: none; border-radius: 4px;
+    padding: 0.5rem 1.1rem; cursor: pointer;
+  }
+  #saveBtn:disabled { opacity: 0.45; cursor: default; }
+  #filter {
+    font-family: var(--sans); font-size: 13px; width: 260px;
+    padding: 0.45rem 0.7rem; border: 1px solid var(--border); border-radius: 4px;
+    background: #fff; color: var(--text); outline: none;
+  }
+  #filter:focus { border-color: var(--accent); }
+
+  .wrap { max-width: 980px; margin: 0 auto; padding: 1.2rem; }
+  .note {
+    font-size: 12px; color: var(--muted); background: var(--accent-light);
+    border: 1px solid var(--border); border-radius: 5px;
+    padding: 0.6rem 0.8rem; margin-bottom: 1.2rem;
+  }
+  .note code { background: #fff; padding: 0 4px; border-radius: 3px; }
+
+  .sitenote {
+    display: flex; flex-direction: column; gap: 0.3rem;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 0.7rem 0.9rem; margin-bottom: 1.2rem;
+  }
+  /* the publish-affecting fields get an accent border so they read as "this goes public" */
+  .update-note, .sitenote input { border-color: var(--accent); }
+
+  .show {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; margin-bottom: 1rem; overflow: hidden;
+  }
+  .show > summary {
+    list-style: none; cursor: pointer; padding: 0.8rem 1rem;
+    display: flex; align-items: center; gap: 0.6rem;
+  }
+  .show > summary::-webkit-details-marker { display: none; }
+  .show > summary::before { content: "▸"; color: var(--muted); font-size: 11px; }
+  .show[open] > summary::before { content: "▾"; }
+  .summary-slug { font-weight: 600; }
+  .summary-meta { font-size: 12px; color: var(--muted); }
+  .summary-flag { font-size: 11px; color: var(--accent); font-weight: 600; }
+  .body { padding: 0.4rem 1rem 1.1rem; border-top: 1px solid var(--border); }
+
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.7rem 1.2rem; margin: 0.9rem 0; }
+  .field { display: flex; flex-direction: column; gap: 0.25rem; }
+  .field.full { grid-column: 1 / -1; }
+  label { font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  label .ro { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--muted); }
+  input, select, textarea {
+    font-family: var(--sans); font-size: 13px; color: var(--text);
+    background: #fff; border: 1px solid var(--border); border-radius: 4px;
+    padding: 0.4rem 0.55rem; outline: none; width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  input[readonly] { background: #f0ede8; color: var(--muted); }
+  textarea { min-height: 64px; resize: vertical; line-height: 1.5; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 0.6rem; }
+  th { text-align: left; font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 0.3rem 0.4rem; border-bottom: 1px solid var(--border); }
+  td { padding: 0.25rem 0.4rem; vertical-align: middle; border-bottom: 1px solid var(--border); }
+  td.num, td.dur { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; width: 1%; }
+  td .file { font-size: 11px; color: var(--muted); word-break: break-all; }
+  tr.tracks-head th { position: sticky; }
+  .section-label { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-top: 1rem; }
+  .empty { color: var(--muted); font-style: italic; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Metadata Editor</h1>
+  <input id="filter" type="search" placeholder="Filter shows / venues / songs…" autocomplete="off">
+  <div class="spacer"></div>
+  <span id="status">Loading…</span>
+  <button id="saveBtn" disabled>Save</button>
+</div>
+
+<div class="wrap">
+  <div class="note">
+    Edits only the <strong>editorial</strong> fields. Machine-derived fields (file paths, durations, sizes, track numbers) are shown read-only and ride through untouched.
+    After saving, run <code>python3 scripts/build.py</code> and commit. Every save writes a timestamped backup to <code>scripts/.metadata-backups/</code>.
+  </div>
+  <div class="sitenote">
+    <label>Site-wide update note <span class="ro" style="text-transform:none;letter-spacing:0;font-weight:400">(optional — posts a general entry to the Updates page, with no show link)</span></label>
+    <input id="siteNote" type="text" placeholder="e.g. Reworked the audio player">
+  </div>
+  <div id="shows"></div>
+</div>
+
+<script>
+let DATA = null, ARTISTS = [], artistName = {}, dirty = false;
+const el = (s) => document.querySelector(s);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function setDirty() {
+  dirty = true;
+  el("#saveBtn").disabled = false;
+  status("Unsaved changes", "");
+}
+function status(msg, cls) {
+  const s = el("#status"); s.textContent = msg; s.className = cls || "";
+}
+
+fetch("/api/data").then((r) => r.json()).then((d) => {
+  DATA = d;
+  ARTISTS = d.artists || [];
+  ARTISTS.forEach((a) => { artistName[a.id] = a.name; });
+  render();
+  status("Loaded " + DATA.shows.length + " shows", "");
+}).catch((e) => status("Failed to load: " + e, "err"));
+
+function render() {
+  const out = [];
+  DATA.shows.forEach((show, si) => {
+    const tracks = show.tracks || [];
+    const blob = [show.slug, show.venue, show.venue_short, show.date, artistName[show.artist],
+      ...tracks.map((t) => t.title)].join(" ").toLowerCase();
+    const artistOpts = ARTISTS.map((a) =>
+      `<option value="${esc(a.id)}"${a.id === show.artist ? " selected" : ""}>${esc(a.name)}</option>`).join("");
+    const srcOpts = ["AUD", "SBD"].map((s) =>
+      `<option value="${s}"${s === show.source ? " selected" : ""}>${s}</option>`).join("");
+    const trackRows = tracks.map((t, ti) => `
+      <tr>
+        <td class="num">${t.num}</td>
+        <td><input data-show="${si}" data-track="${ti}" data-field="title" value="${esc(t.title)}"></td>
+        <td><input data-show="${si}" data-track="${ti}" data-field="artist" value="${esc(t.artist || "")}" placeholder="${esc(artistName[show.artist] || "")}"></td>
+        <td><input data-show="${si}" data-track="${ti}" data-field="tags" value="${esc((t.tags || []).join(", "))}" placeholder="comma, separated"></td>
+        <td class="dur">${esc(t.duration || "")}</td>
+      </tr>`).join("");
+    const tracksBlock = tracks.length ? `
+      <div class="section-label">Tracks (${tracks.length})</div>
+      <table>
+        <tr class="tracks-head"><th>#</th><th>Title</th><th>Artist override</th><th>Tags</th><th>Dur</th></tr>
+        ${trackRows}
+      </table>` : `<p class="empty section-label" style="margin-top:.8rem">No split tracks for this show (full-show only).</p>`;
+
+    out.push(`
+    <details class="show" data-search="${esc(blob)}">
+      <summary>
+        <span class="summary-slug">${esc(show.slug)}</span>
+        <span class="summary-meta">${esc(artistName[show.artist] || show.artist)} · ${esc(show.venue_short || "")} · ${esc(show.date || "Unknown date")}</span>
+        ${tracks.length ? `<span class="summary-flag">♪ ${tracks.length}</span>` : ""}
+      </summary>
+      <div class="body">
+        <div class="grid">
+          <div class="field"><label>Artist</label>
+            <select data-show="${si}" data-field="artist_id">${artistOpts}</select></div>
+          <div class="field"><label>Source</label>
+            <select data-show="${si}" data-field="source">${srcOpts}</select></div>
+          <div class="field"><label>Venue</label>
+            <input data-show="${si}" data-field="venue" value="${esc(show.venue || "")}"></div>
+          <div class="field"><label>Venue (short)</label>
+            <input data-show="${si}" data-field="venue_short" value="${esc(show.venue_short || "")}"></div>
+          <div class="field"><label>Date <span class="ro">(YYYY-MM-DD, partial, or blank=unknown)</span></label>
+            <input data-show="${si}" data-field="date" value="${esc(show.date || "")}"></div>
+          <div class="field"><label>Date display <span class="ro">(optional override)</span></label>
+            <input data-show="${si}" data-field="date_display" value="${esc(show.date_display || "")}"></div>
+          <div class="field full"><label>Subtitle <span class="ro">(optional, e.g. Birthday Show)</span></label>
+            <input data-show="${si}" data-field="subtitle" value="${esc(show.subtitle || "")}"></div>
+          <div class="field full"><label>Description <span class="ro">(one paragraph per line)</span></label>
+            <textarea data-show="${si}" data-field="description">${esc((show.description || []).join("\n"))}</textarea></div>
+          <div class="field full"><label>Slug <span class="ro">(read-only — changing the URL is a separate task)</span></label>
+            <input value="${esc(show.slug)}" readonly></div>
+        </div>
+        ${tracksBlock}
+        <div class="field full" style="margin-top:1.1rem">
+          <label>Update note <span class="ro">(optional — posts to the Updates page, linked to this show)</span></label>
+          <input class="update-note" data-show="${si}" data-note="show" type="text" placeholder="e.g. Corrected song titles">
+        </div>
+      </div>
+    </details>`);
+  });
+  el("#shows").innerHTML = out.join("");
+}
+
+// One delegated handler mutates DATA in place; unmanaged fields are never touched.
+el("#shows").addEventListener("input", (e) => {
+  const t = e.target;
+  // Update-note fields are collected at save time, not bound into DATA.
+  if (t.classList && t.classList.contains("update-note")) { setDirty(); return; }
+  const f = t.dataset && t.dataset.field;
+  if (!f) return;
+  const show = DATA.shows[+t.dataset.show];
+  const obj = t.dataset.track !== undefined ? show.tracks[+t.dataset.track] : show;
+  const v = t.value;
+  apply(obj, f, v, show);
+  setDirty();
+});
+
+function apply(obj, field, v, show) {
+  const tv = v.trim();
+  switch (field) {
+    case "artist_id": show.artist = v; break;            // show artist = id
+    case "source": show.source = v; break;
+    case "venue": show.venue = v; break;
+    case "venue_short": show.venue_short = v; break;
+    case "title": obj.title = v; break;
+    case "date": show.date = tv || null; break;
+    case "date_display": setOrNull(show, "date_display", tv); break;
+    case "subtitle": setOrNull(show, "subtitle", tv); break;
+    case "description":
+      show.description = v.split("\n").map((s) => s.trim()).filter(Boolean); break;
+    case "artist": // track-level override; blank removes it (falls back to show artist)
+      if (tv) obj.artist = v; else delete obj.artist; break;
+    case "tags":
+      { const arr = v.split(",").map((s) => s.trim()).filter(Boolean);
+        if (arr.length) obj.tags = arr; else delete obj.tags; } break;
+  }
+}
+function setOrNull(o, k, tv) { o[k] = tv || null; }
+
+function nowParts() {
+  const d = new Date(), p = (n) => String(n).padStart(2, "0");
+  const date = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  return { date, ts: `${date}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}` };
+}
+
+// Turn any filled update-note fields into Updates-page entries (opt-in: blanks post nothing).
+function collectUpdateEntries() {
+  const out = [];
+  document.querySelectorAll("input.update-note[data-note='show']").forEach((inp) => {
+    const text = inp.value.trim();
+    if (!text) return;
+    const { date, ts } = nowParts();
+    out.push({ date, ts, slug: DATA.shows[+inp.dataset.show].slug, text });
+  });
+  const site = el("#siteNote").value.trim();
+  if (site) { const { date, ts } = nowParts(); out.push({ date, ts, text: site }); }
+  return out;
+}
+
+function clearNotes() {
+  el("#siteNote").value = "";
+  document.querySelectorAll("input.update-note").forEach((i) => { i.value = ""; });
+}
+
+el("#saveBtn").addEventListener("click", () => {
+  status("Saving…", "");
+  const entries = collectUpdateEntries();
+  // Prepend new entries (newest-first, matching the file's convention) without
+  // mutating DATA until the save succeeds, so a failed POST leaves state clean.
+  const merged = entries.concat(DATA.updates || []);
+  const payload = Object.assign({}, DATA, { updates: merged });
+  fetch("/api/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+    .then((r) => r.json())
+    .then((res) => {
+      if (res.ok) {
+        DATA.updates = merged;
+        clearNotes();
+        dirty = false; el("#saveBtn").disabled = true;
+        const posted = entries.length ? `${entries.length} update${entries.length > 1 ? "s" : ""} posted — ` : "";
+        status(`Saved ✓ — ${posted}backup ${res.backup}. Now run: python3 scripts/build.py`, "ok");
+      } else { status("Error: " + (res.error || "unknown"), "err"); }
+    })
+    .catch((e) => status("Error: " + e, "err"));
+});
+
+el("#siteNote").addEventListener("input", setDirty);
+
+el("#filter").addEventListener("input", (e) => {
+  const q = e.target.value.trim().toLowerCase();
+  document.querySelectorAll(".show").forEach((s) => {
+    s.style.display = !q || s.dataset.search.includes(q) ? "" : "none";
+  });
+});
+
+window.addEventListener("beforeunload", (e) => {
+  if (dirty) { e.preventDefault(); e.returnValue = ""; }
+});
+</script>
+</body>
+</html>

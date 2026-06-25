@@ -3,7 +3,13 @@ R2_BUCKET  := r2:hannan-audio
 DRIVE_FLAGS := --drive-shared-with-me
 R2_FLAGS    := --s3-no-check-bucket
 
-.PHONY: refresh diff status upload
+.PHONY: refresh diff status upload edit build
+
+edit:
+	python3 scripts/edit_metadata.py
+
+build:
+	python3 scripts/build.py
 
 refresh:
 	rclone ls "$(DRIVE_PATH)" $(DRIVE_FLAGS) | awk -F'/' '{print $$NF}' | sort > drive_names.txt
