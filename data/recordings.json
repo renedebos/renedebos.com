@@ -3449,6 +3449,16 @@
   "updates": [
     {
       "date": "2026-06-24",
+      "ts": "2026-06-24T20:05:00",
+      "text": "Started building a search engine to find individual tracks by song, artist, venue, date and more — powered by a simple metadata editor behind the scenes"
+    },
+    {
+      "date": "2026-06-24",
+      "ts": "2026-06-24T20:00:00",
+      "text": "Added a sort toggle to the Archive — browse every show by date or by artist"
+    },
+    {
+      "date": "2026-06-24",
       "ts": "2026-06-24T17:30:00",
       "text": "Enabled wavesurfer.js waveform graphics on the audio player as an experiment — to be determined whether it stays"
     },
