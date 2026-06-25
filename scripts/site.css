@@ -366,6 +366,64 @@ main {
 /* artist label shown per-row in the cross-artist "By date" view */
 .show-artist { color: var(--text); font-weight: 500; }
 
+/* ── search ──────────────────────────────────────────────────────────────── */
+
+.search-input {
+  font-family: var(--sans); font-size: 16px; color: var(--text);
+  width: 100%; padding: 0.85rem 1rem;
+  background: var(--player-bg); border: 1px solid var(--border);
+  border-radius: 6px; outline: none; transition: border-color 0.2s;
+}
+.search-input:focus { border-color: var(--accent); }
+
+.search-filters { display: flex; flex-direction: column; gap: 0.45rem; margin: 1rem 0 0.4rem; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.chip {
+  font-family: var(--sans); font-size: 12px; font-weight: 500;
+  letter-spacing: 0.03em; color: var(--muted);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 999px; padding: 0.3rem 0.8rem; cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.chip:hover { color: var(--accent); border-color: var(--accent); }
+.chip[aria-pressed="true"] { color: #fff; background: var(--accent); border-color: var(--accent); }
+
+.search-status { font-size: 13px; color: var(--muted); font-weight: 300; margin: 1rem 0 0.6rem; }
+
+.search-results { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; background: var(--player-bg); }
+.search-results:empty { border: none; }
+
+.sr {
+  display: flex; align-items: center; gap: 0.85rem;
+  padding: 0.7rem 1.1rem; text-decoration: none;
+  border-top: 1px solid var(--border); transition: background 0.15s;
+}
+.sr:first-child { border-top: none; }
+.sr:hover { background: var(--accent-light); }
+.sr:hover .sr-title { color: var(--accent); }
+
+.sr-icon { flex-shrink: 0; width: 1.2em; text-align: center; color: var(--accent); font-size: 13px; }
+.sr-show .sr-icon { color: var(--muted); }
+.sr-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sr-title {
+  font-size: 14px; font-weight: 500; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sr-sub { font-size: 12px; color: var(--muted); font-weight: 300; display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+.sr-tag {
+  font-size: 10px; letter-spacing: 0.04em; color: var(--accent);
+  background: var(--accent-light); border-radius: 3px; padding: 1px 6px; font-weight: 500;
+}
+.sr-src { flex-shrink: 0; }
+.sr-meta {
+  flex-shrink: 0; font-size: 11px; color: var(--muted);
+  font-variant-numeric: tabular-nums; min-width: 2.6em; text-align: right;
+}
+
+@media (max-width: 600px) {
+  .sr-meta { display: none; }
+}
+
 /* ── show index rows ─────────────────────────────────────────────────────── */
 
 .show-list {

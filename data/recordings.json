@@ -3449,8 +3449,8 @@
   "updates": [
     {
       "date": "2026-06-24",
-      "ts": "2026-06-24T20:05:00",
-      "text": "Started building a search engine to find individual tracks by song, artist, venue, date and more — powered by a simple metadata editor behind the scenes"
+      "ts": "2026-06-24T21:00:00",
+      "text": "Added a search engine — find any song or show by title, artist, venue, date, or tag"
     },
     {
       "date": "2026-06-24",

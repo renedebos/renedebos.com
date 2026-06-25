@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Search — The Hannan Recordings</title>
+<meta name="description" content="Search the Hannan Recordings archive by song, artist, venue, date, or source.">
+<meta property="og:title" content="Search — The Hannan Recordings">
+<meta property="og:description" content="Search the Hannan Recordings archive by song, artist, venue, date, or source.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://renedebos.com/search/">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♪</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header>
+  <p class="site-eyebrow">The Hannan Recordings</p>
+  <h1>Search</h1>
+  <p class="site-tagline">Find a song, show, venue, or date</p>
+</header>
+
+<nav>
+  <a href="/">Home</a>
+  <a href="/archive/">Archive</a>
+  <a href="/shows/">Shows</a>
+  <a href="/search/" class="active">Search</a>
+  <a href="/updates/">Updates</a>
+  <a href="/contact/">Contact</a>
+</nav>
+
+<main>
+
+  <section class="search">
+    <input id="q" class="search-input" type="search" autocomplete="off" autofocus
+           placeholder="Search songs, shows, venues, dates, covers…">
+    <div id="filters" class="search-filters"></div>
+    <p id="status" class="search-status">Loading…</p>
+    <div id="results" class="search-results"></div>
+  </section>
+</main>
+
+<footer>
+  Part of <a href="/">The Hannan Recordings</a> archive
+</footer>
+
+<script src="/assets/player.js"></script>
+<script src="/assets/search.js"></script>
+</body>
+</html>

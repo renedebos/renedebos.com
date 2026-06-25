@@ -176,6 +176,7 @@ SITE_PAGES = [
     ("Home", "/"),
     ("Archive", "/archive/"),
     ("Shows", "/shows/"),
+    ("Search", "/search/"),
     ("Updates", "/updates/"),
     ("Contact", "/contact/"),
 ]
@@ -511,6 +512,76 @@ def build_shows():
     )
 
 
+def artist_name(aid):
+    return next((a["name"] for a in M["artists"] if a["id"] == aid), aid)
+
+
+def show_city(show):
+    v = show.get("venue") or ""
+    return v.split(", ")[-1] if ", " in v else ""
+
+
+def build_search_index():
+    """Flat, denormalised index the /search/ page loads — one row per curated
+    track plus one per show, with show fields resolved onto each track so a single
+    text search spans song / artist / venue / city / date / source / tags."""
+    rows = []
+    for show in M["shows"]:
+        aname = artist_name(show["artist"])
+        city = show_city(show)
+        year = (show.get("date") or "")[:4]
+        ctx = " · ".join(x for x in [aname, show.get("venue_short") or "",
+                                     show.get("date") or "Unknown date"] if x)
+        base = {
+            "showArtist": aname,             # always the show's artist (for filtering)
+            "venue": show.get("venue_short") or "",
+            "venueFull": show.get("venue") or "",
+            "city": city,
+            "date": show.get("date") or "",
+            "year": year,
+            "source": show.get("source") or "",
+            "context": ctx,
+        }
+        rows.append(dict(base, **{
+            "type": "show",
+            "artist": aname,
+            "subtitle": show.get("subtitle") or "",
+            "tracks": len(show.get("tracks") or []),
+            "url": show_url(show),
+        }))
+        for t in (show.get("tracks") or []):
+            rows.append(dict(base, **{
+                "type": "track",
+                "song": t["title"],
+                "artist": t.get("artist") or aname,
+                "duration": t.get("duration") or "",
+                "tags": t.get("tags") or [],
+                "url": f'{show_url(show)}#track-{t["num"]}',
+            }))
+    return rows
+
+
+def build_search():
+    return page_shell(
+        title="Search — The Hannan Recordings",
+        description="Search the Hannan Recordings archive by song, artist, venue, date, or source.",
+        url="https://renedebos.com/search/",
+        eyebrow="The Hannan Recordings",
+        heading="Search",
+        tagline="Find a song, show, venue, or date",
+        nav=site_nav("Search"),
+        main='''
+  <section class="search">
+    <input id="q" class="search-input" type="search" autocomplete="off" autofocus
+           placeholder="Search songs, shows, venues, dates, covers…">
+    <div id="filters" class="search-filters"></div>
+    <p id="status" class="search-status">Loading…</p>
+    <div id="results" class="search-results"></div>
+  </section>''',
+        extra_scripts='\n<script src="/assets/search.js"></script>',
+    )
+
+
 def build_updates():
     return page_shell(
         title="Updates — The Hannan Recordings",
@@ -792,10 +863,13 @@ def main():
     write("assets/player.js", open(os.path.join(here, "player.js")).read())
     write("assets/wavesurfer.esm.js", open(os.path.join(here, "vendor", "wavesurfer.esm.js")).read())
     write("assets/wavesurfer.js", open(os.path.join(here, "wavesurfer.js")).read())
+    write("assets/search.js", open(os.path.join(here, "search.js")).read())
+    write("assets/search-index.json", json.dumps(build_search_index(), ensure_ascii=False))
     write("lab/wavesurfer/index.html", build_wavesurfer_lab())
     write("index.html", build_home())
     write("archive/index.html", build_archive())
     write("shows/index.html", build_shows())
+    write("search/index.html", build_search())
     write("updates/index.html", build_updates())
     write("contact/index.html", build_contact())
     n = 0
@@ -804,7 +878,7 @@ def main():
         write(out, build_show(show))
         n += 1
     total = sum(len(s["recordings"]) for s in M["shows"]) + len(M["singles"])
-    print(f"Built 5 site pages + {n} show pages ({total} recordings, "
+    print(f"Built 6 site pages + {n} show pages ({total} recordings, "
           f"{sum(len(s['tracks'] or []) for s in M['shows'])} curated tracks)")
 
 
