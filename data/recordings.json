@@ -1530,7 +1530,10 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/02 Model Family Man.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/02 Model Family Man.flac",
-          "flac_size_mb": 35
+          "flac_size_mb": 35,
+          "tags": [
+            "Paddy Nash"
+          ]
         },
         {
           "num": 3,
@@ -1557,7 +1560,10 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/05 Father and Son.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/05 Father and Son.flac",
-          "flac_size_mb": 37
+          "flac_size_mb": 37,
+          "tags": [
+            "Cat Stevens"
+          ]
         },
         {
           "num": 6,
@@ -1566,7 +1572,10 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/06 Galway Shawl.mp3",
           "size_mb": 7,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/06 Galway Shawl.flac",
-          "flac_size_mb": 30
+          "flac_size_mb": 30,
+          "tags": [
+            "Irish"
+          ]
         },
         {
           "num": 7,
@@ -1584,7 +1593,10 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/08 Have You Ever Seen the Rain.mp3",
           "size_mb": 6,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/08 Have You Ever Seen the Rain.flac",
-          "flac_size_mb": 27
+          "flac_size_mb": 27,
+          "tags": [
+            "John Fogerty"
+          ]
         },
         {
           "num": 9,
@@ -1620,7 +1632,10 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/12 Angel from Montgomery.mp3",
           "size_mb": 9,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/12 Angel from Montgomery.flac",
-          "flac_size_mb": 40
+          "flac_size_mb": 40,
+          "tags": [
+            "John Prine"
+          ]
         },
         {
           "num": 13,
@@ -1629,7 +1644,10 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/13 Hide Your Love Away.mp3",
           "size_mb": 5,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/13 Hide Your Love Away.flac",
-          "flac_size_mb": 24
+          "flac_size_mb": 24,
+          "tags": [
+            "John Lennon"
+          ]
         },
         {
           "num": 14,
@@ -1647,7 +1665,10 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/15 The Black Velvet Band.mp3",
           "size_mb": 5,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/15 The Black Velvet Band.flac",
-          "flac_size_mb": 24
+          "flac_size_mb": 24,
+          "tags": [
+            "Irish"
+          ]
         },
         {
           "num": 16,
@@ -1656,7 +1677,10 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/16 Moon Shadow.mp3",
           "size_mb": 7,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/16 Moon Shadow.flac",
-          "flac_size_mb": 31
+          "flac_size_mb": 31,
+          "tags": [
+            "Cat Stevens"
+          ]
         },
         {
           "num": 17,
@@ -1665,7 +1689,10 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/17 Wild World.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/17 Wild World.flac",
-          "flac_size_mb": 35
+          "flac_size_mb": 35,
+          "tags": [
+            "Cat Stevens"
+          ]
         },
         {
           "num": 18,
@@ -1683,7 +1710,10 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/19 Gold's Gym Guy.mp3",
           "size_mb": 7,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/19 Gold's Gym Guy.flac",
-          "flac_size_mb": 35
+          "flac_size_mb": 35,
+          "tags": [
+            "Steve Poltz"
+          ]
         },
         {
           "num": 20,
@@ -1701,7 +1731,10 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/21 Little Number Four.mp3",
           "size_mb": 4,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/21 Little Number Four.flac",
-          "flac_size_mb": 19
+          "flac_size_mb": 19,
+          "tags": [
+            "Irish"
+          ]
         },
         {
           "num": 22,
@@ -1710,7 +1743,10 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/22 Maids When You're Young Never Wed an Old Man.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/22 Maids When You're Young Never Wed an Old Man.flac",
-          "flac_size_mb": 39
+          "flac_size_mb": 39,
+          "tags": [
+            "Irish"
+          ]
         },
         {
           "num": 23,
@@ -1746,7 +1782,10 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/26 Looking Out My Backdoor.mp3",
           "size_mb": 2,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/26 Looking Out My Backdoor.flac",
-          "flac_size_mb": 8
+          "flac_size_mb": 8,
+          "tags": [
+            "John Fogerty"
+          ]
         },
         {
           "num": 27,
@@ -1755,7 +1794,10 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/27 Some Get Married for Love.mp3",
           "size_mb": 3,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/27 Some Get Married for Love.flac",
-          "flac_size_mb": 14
+          "flac_size_mb": 14,
+          "tags": [
+            "Irish"
+          ]
         },
         {
           "num": 28,
@@ -1773,7 +1815,10 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/29 Don't Think Twice It's All Right.mp3",
           "size_mb": 9,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/29 Don't Think Twice It's All Right.flac",
-          "flac_size_mb": 39
+          "flac_size_mb": 39,
+          "tags": [
+            "Bob Dylan"
+          ]
         },
         {
           "num": 30,
@@ -1782,7 +1827,10 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/30 Let It Be.mp3",
           "size_mb": 3,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/30 Let It Be.flac",
-          "flac_size_mb": 11
+          "flac_size_mb": 11,
+          "tags": [
+            "Beatles"
+          ]
         },
         {
           "num": 31,
@@ -1791,7 +1839,10 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/31 The Patriot Game.mp3",
           "size_mb": 7,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/31 The Patriot Game.flac",
-          "flac_size_mb": 32
+          "flac_size_mb": 32,
+          "tags": [
+            "Irish"
+          ]
         }
       ],
       "description": [
