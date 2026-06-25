@@ -548,6 +548,23 @@ main {
 }
 .track-row.playing .progress-bar-track { opacity: 1; background: var(--border); }
 
+/* waveform track rows (show pages with pre-computed peaks) reuse the bare .ws-wave
+   rule; the title yields space so the waveform can fill the row */
+.track-row.ws-track .track-title { flex: 0 1 170px; }
+
+@media (max-width: 600px) {
+  .track-row.ws-track { flex-wrap: wrap; row-gap: 0.5rem; padding: 0.7rem 1.1rem; }
+  .track-row.ws-track .track-title { flex: 1 1 auto; }
+  .track-row.ws-track .time-label { margin-left: auto; }
+  /* both downloads always sit together on their own full-width line */
+  .track-row.ws-track .ws-dl { display: flex; flex: 1 1 100%; order: 4; gap: 8px; }
+  .track-row.ws-track .ws-wave { flex: 1 1 100%; order: 5; }
+  /* larger touch targets for thumbs */
+  .track-row.ws-track .play-btn { width: 44px; height: 44px; }
+  .track-row.ws-track .play-btn svg { width: 15px; height: 15px; }
+  .track-row.ws-track .download-btn { padding: 9px 11px; min-height: 40px; }
+}
+
 /* ── wavesurfer.js prototype (lab page) ──────────────────────────────────── */
 
 .ws-list {

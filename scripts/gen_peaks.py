@@ -1,63 +1,50 @@
 #!/usr/bin/env python3
-"""Prototype tooling: pre-compute waveform peaks for the wavesurfer.js lab page.
+"""Pre-compute waveform peaks for the wavesurfer.js track players.
 
-For each local track mp3 of the Sean Hannan 19 Broadway (unknown date) show, decode
-to mono 8 kHz PCM with ffmpeg, bucket into ~400 peaks (max-abs per bucket, normalized
-0-1), and capture the duration. Writes data/peaks/sean-19-broadway-unknown.json keyed
-by track number: { "1": {"d": 175, "p": [..400 floats..]}, ... }.
+For every split track of every track-listed show (or just one show with --slug),
+stream the track's MP3 straight from R2, decode to mono 8 kHz PCM with ffmpeg, bucket
+into ~400 peaks (max-abs per bucket, normalized 0-1), and derive the duration from the
+sample count. Writes data/peaks/<slug>.json keyed by track number:
+{ "1": {"d": secs, "p": [..400 floats..]}, ... }.
 
-These peaks let wavesurfer render the waveform without downloading the audio (avoids
-the streaming Worker's CORS scope and ~150 MB of page-load fetches); playback still
-streams lazily through a native media element.
+These peaks let wavesurfer render each waveform without downloading the audio (avoids
+the streaming Worker's CORS scope and a flood of page-load fetches); playback still
+streams lazily through a native media element on play.
+
+Usage:
+  python3 scripts/gen_peaks.py                 # all track-listed shows
+  python3 scripts/gen_peaks.py --slug <slug>   # one show
 """
+import argparse
 import array
 import json
 import os
 import subprocess
 
-LOCAL = "/home/renedebos/gdrive-mount/SeanHannan - 19 Broadway unknown date/Tracks Normalized"
-OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                   "data", "peaks", "sean-19-broadway-unknown.json")
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PEAKS_DIR = os.path.join(ROOT, "data", "peaks")
+BUCKET = "r2:hannan-audio"
 N_PEAKS = 400
 SR = 8000
 
-# track num -> local mp3 filename (matches scripts table used for the R2 upload)
-LOCAL_MP3 = {
-    1:  "01 Woman1.mp3",
-    2:  "02 Long Black Veil.mp3",
-    3:  "03 don't Think Twice It's Alright.mp3",
-    4:  "04 I Thought I Was You.mp3",
-    5:  "05 Gold's Gym Guy.mp3",
-    6:  "06 The German Clockwinder.mp3",
-    7:  "07 Model Family Man.mp3",
-    8:  "08 Flag Decal.mp3",
-    9:  "09 Galway Shawl.mp3",
-    10: "10 The Grey Funnel Line w_Jerry.mp3",
-    11: "11 Rugburns w_Jerry.mp3",
-    12: "12 Elephant Shoes w_Jerry.mp3",
-    13: "13 Daddy w_Kelly Peterson.mp3",
-    14: "14 Angel of Montgomery w_Kelly Peterson.mp3",
-    15: "15 The Black Velvet Band.mp3",
-    16: "16 The Good Life.mp3",
-    17: "17 Ode to Billy McGee.mp3",
-    18: "18 The One I Love.mp3",
-}
 
-
-def pcm(path):
-    raw = subprocess.run(
-        ["ffmpeg", "-v", "error", "-i", path, "-ac", "1", "-ar", str(SR),
-         "-f", "s16le", "-"],
-        capture_output=True, check=True).stdout
+def pcm_from_r2(key):
+    """Stream an R2 object through ffmpeg, returning mono 8 kHz s16 samples."""
+    rc = subprocess.Popen(
+        ["rclone", "cat", f"{BUCKET}/{key}", "--s3-no-check-bucket"],
+        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    ff = subprocess.Popen(
+        ["ffmpeg", "-v", "error", "-i", "pipe:0", "-ac", "1", "-ar", str(SR),
+         "-f", "s16le", "pipe:1"],
+        stdin=rc.stdout, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    rc.stdout.close()
+    raw = ff.communicate()[0]
+    rc.wait()
+    if ff.returncode != 0 or not raw:
+        raise SystemExit(f"decode failed for: {key}")
     a = array.array("h")
     a.frombytes(raw)
     return a
-
-
-def duration(path):
-    out = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
-                          "-of", "csv=p=0", path], capture_output=True, text=True).stdout.strip()
-    return round(float(out))
 
 
 def peaks(samples, n=N_PEAKS):
@@ -75,17 +62,35 @@ def peaks(samples, n=N_PEAKS):
     return out
 
 
-def main():
+def gen_show(show):
     data = {}
-    for num, name in LOCAL_MP3.items():
-        path = os.path.join(LOCAL, name)
-        if not os.path.exists(path):
-            raise SystemExit(f"missing local file: {path}")
-        data[str(num)] = {"d": duration(path), "p": peaks(pcm(path))}
-        print(f"[{num:02d}] {name}  d={data[str(num)]['d']}s  peaks={len(data[str(num)]['p'])}", flush=True)
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    json.dump(data, open(OUT, "w"))
-    print(f"\nwrote {OUT} ({len(data)} tracks)")
+    for t in show["tracks"]:
+        a = pcm_from_r2(t["file"])
+        d = round(len(a) / SR)
+        data[str(t["num"])] = {"d": d, "p": peaks(a)}
+        print(f"  [{t['num']:02d}] {t['title']}  d={d}s  peaks={len(data[str(t['num'])]['p'])}",
+              flush=True)
+    os.makedirs(PEAKS_DIR, exist_ok=True)
+    out = os.path.join(PEAKS_DIR, f"{show['slug']}.json")
+    json.dump(data, open(out, "w"))
+    print(f"wrote {out} ({len(data)} tracks)\n")
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--slug", help="limit to one show slug")
+    args = ap.parse_args()
+
+    M = json.load(open(os.path.join(ROOT, "data", "recordings.json")))
+    shows = [s for s in M["shows"] if s.get("tracks")]
+    if args.slug:
+        shows = [s for s in shows if s["slug"] == args.slug]
+        if not shows:
+            raise SystemExit(f"no track-listed show with slug: {args.slug}")
+
+    for show in shows:
+        print(f"{show['slug']} ({len(show['tracks'])} tracks)")
+        gen_show(show)
 
 
 if __name__ == "__main__":

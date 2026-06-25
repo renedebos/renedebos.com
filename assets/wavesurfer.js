@@ -1,12 +1,12 @@
-// wavesurfer.js prototype glue for the /lab/wavesurfer/ track rows.
-// Renders a waveform per row from pre-computed peaks (window.LAB_PEAKS), so no
-// audio is downloaded until play. Playback streams lazily through wavesurfer's
-// native media element (Range-supported, no CORS needed). Mirrors the existing
-// player.js semantics: single active player, play/pause icon, time label,
-// autoplay-next within the [data-autoplay-next] list.
+// wavesurfer.js glue for waveform track rows (show pages and the /lab/ prototype).
+// Renders a waveform per row from pre-computed peaks (window.WS_PEAKS), so no audio is
+// downloaded until play. Playback streams lazily through wavesurfer's native media
+// element (Range-supported, no CORS needed). Mirrors the existing player.js semantics:
+// single active player, play/pause icon, time label, autoplay-next within the
+// [data-autoplay-next] list.
 import WaveSurfer from '/assets/wavesurfer.esm.js';
 
-const PEAKS = window.LAB_PEAKS || {};
+const PEAKS = window.WS_PEAKS || window.LAB_PEAKS || {};
 const root = getComputedStyle(document.documentElement);
 const accent = (root.getPropertyValue('--accent') || '#b5532b').trim();
 const waveColor = (root.getPropertyValue('--border') || '#d8cfc4').trim();
@@ -19,7 +19,7 @@ const fmt = (s) => {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 };
 
-const rows = Array.from(document.querySelectorAll('.ws-row'));
+const rows = Array.from(document.querySelectorAll('.ws-row, .ws-track'));
 const instances = [];
 
 rows.forEach((row, idx) => {

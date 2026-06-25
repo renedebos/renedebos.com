@@ -67,10 +67,6 @@ DL_SVG = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wid
           'stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/>'
           '<path d="M7 10l5 5 5-5"/><path d="M3 18h18"/></svg>')
 PLAY_SVG = '<svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg>'
-SHARE_SVG = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" '
-             'stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.6"/>'
-             '<circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/>'
-             '<path d="M8.2 13.3l7.6 4.4M15.8 6.3l-7.6 4.4"/></svg>')
 
 
 def dl_button(file, *, free, label=None, title="Download"):
@@ -500,6 +496,11 @@ def build_show(show):
     canon = [r for r in show["recordings"] if not r["alternate"]]
     alts = [r for r in show["recordings"] if r["alternate"]]
 
+    # Split tracks render as wavesurfer waveforms when pre-computed peaks exist for
+    # this show; otherwise they fall back to the classic progress-bar player.
+    peaks_path = os.path.join(ROOT, "data", "peaks", f"{show['slug']}.json")
+    has_waves = bool(show.get("tracks")) and os.path.exists(peaks_path)
+
     parts = []
 
     if show.get("description"):
@@ -529,20 +530,32 @@ def build_show(show):
                 ["Format", "FLAC + MP3" if t.get("flac") else "MP3"],
                 ["Size", " · ".join(sizes) or "—"],
             ], ensure_ascii=False))
-            share = esc(f'{track_artist} — “{t["title"]}” ({show["venue_short"]} · {show["date"] or "live"})')
             # Free MP3 download, plus a password-protected lossless FLAC
             # download when a FLAC exists.
             mp3_title = "Download MP3" + (f" · {t['size_mb']} MB" if t.get("size_mb") else "")
-            dl_btn = "\n        " + dl_button(t["file"], free=True, label="MP3", title=mp3_title)
+            dl_btns = [dl_button(t["file"], free=True, label="MP3", title=mp3_title)]
             if t.get("flac"):
                 flac_title = "Download FLAC" + (f" · {t['flac_size_mb']} MB" if t.get("flac_size_mb") else "")
-                dl_btn += "\n        " + dl_button(t["flac"], free=False, label="FLAC", title=flac_title)
-            rows.append(f'''      <div class="track-row custom-player" id="track-{t["num"]}" data-src="{esc(stream)}">
+                dl_btns.append(dl_button(t["flac"], free=False, label="FLAC", title=flac_title))
+            if has_waves:
+                # waveform replaces the progress bar; downloads share the .ws-dl wrapper
+                # so the mobile download-grouping styles apply (matches the lab page).
+                dl = '\n        <div class="ws-dl">' + \
+                     "".join("\n          " + b for b in dl_btns) + "\n        </div>"
+                rows.append(f'''      <div class="track-row ws-track" id="track-{t["num"]}" data-trackid="{t["num"]}" data-src="{esc(stream)}">
         <button class="play-btn" aria-label="Play">{PLAY_SVG}</button>
         <span class="track-num">{t["num"]:02d}</span>
         <span class="track-title" data-info="{info}">{esc(t["title"])}</span>
-        <span class="time-label current" data-duration="{esc(t["duration"])}">{esc(t["duration"])}</span>
-        <button class="share-btn" data-text="{share}" aria-label="Share">{SHARE_SVG}</button>{dl_btn}
+        <div class="ws-wave"></div>
+        <span class="time-label current" data-duration="{esc(t["duration"])}">{esc(t["duration"])}</span>{dl}
+      </div>''')
+            else:
+                dl = "".join("\n        " + b for b in dl_btns)
+                rows.append(f'''      <div class="track-row custom-player" id="track-{t["num"]}" data-src="{esc(stream)}">
+        <button class="play-btn" aria-label="Play">{PLAY_SVG}</button>
+        <span class="track-num">{t["num"]:02d}</span>
+        <span class="track-title" data-info="{info}">{esc(t["title"])}</span>
+        <span class="time-label current" data-duration="{esc(t["duration"])}">{esc(t["duration"])}</span>{dl}
         <div class="progress-bar-track"><div class="progress-bar-fill"></div></div>
       </div>''')
         hint = ("Play streams free (MP3) &middot; download is lossless FLAC, password protected"
@@ -600,6 +613,12 @@ def build_show(show):
         SOURCE_LABEL.get(show["source"], show["source"]),
     ] if b]
 
+    extra_scripts = ""
+    if has_waves:
+        peaks_json = open(peaks_path).read()
+        extra_scripts = (f'\n<script>window.WS_PEAKS = {peaks_json};</script>\n'
+                         f'<script type="module" src="/assets/wavesurfer.js"></script>')
+
     return page_shell(
         title=f"{show_title(show)} — {show['date'] or 'Unknown date'}",
         description=f"{show_title(show)}, {date_with_subtitle(show)} — {SOURCE_LABEL.get(show['source'], show['source'])}. Stream or download.",
@@ -609,6 +628,7 @@ def build_show(show):
         tagline=" &middot; ".join(esc(b) for b in tagline_bits),
         nav=site_nav(),
         main="".join(parts) + wav_note,
+        extra_scripts=extra_scripts,
     )
 
 
@@ -661,8 +681,8 @@ def build_wavesurfer_lab():
     </div>
   </section>'''
 
-    extra = (f'\n<script>window.LAB_PEAKS = {peaks_json};</script>\n'
-             f'<script type="module" src="/assets/wavesurfer-lab.js"></script>')
+    extra = (f'\n<script>window.WS_PEAKS = {peaks_json};</script>\n'
+             f'<script type="module" src="/assets/wavesurfer.js"></script>')
 
     return page_shell(
         title="Waveform prototype — The Hannan Recordings",
@@ -716,7 +736,7 @@ def main():
     write("assets/site.css", open(os.path.join(here, "site.css")).read())
     write("assets/player.js", open(os.path.join(here, "player.js")).read())
     write("assets/wavesurfer.esm.js", open(os.path.join(here, "vendor", "wavesurfer.esm.js")).read())
-    write("assets/wavesurfer-lab.js", open(os.path.join(here, "wavesurfer-lab.js")).read())
+    write("assets/wavesurfer.js", open(os.path.join(here, "wavesurfer.js")).read())
     write("lab/wavesurfer/index.html", build_wavesurfer_lab())
     write("index.html", build_home())
     write("archive/index.html", build_archive())
