@@ -366,7 +366,10 @@
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/08 Black is The Color.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/08 Black is The Color.flac",
-          "flac_size_mb": 36
+          "flac_size_mb": 36,
+          "tags": [
+            "Irish"
+          ]
         },
         {
           "num": 9,
@@ -429,7 +432,10 @@
           "size_mb": 4,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/15 Still I Love Him.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/15 Still I Love Him.flac",
-          "flac_size_mb": 21
+          "flac_size_mb": 21,
+          "tags": [
+            "Irish"
+          ]
         },
         {
           "num": 16,
@@ -438,7 +444,10 @@
           "size_mb": 3,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/16 You're Pulling Me Leg _ The Ted Kennedy Song.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/16 You're Pulling Me Leg _ The Ted Kennedy Song.flac",
-          "flac_size_mb": 15
+          "flac_size_mb": 15,
+          "tags": [
+            "Irish"
+          ]
         },
         {
           "num": 17,
@@ -478,7 +487,7 @@
         },
         {
           "num": 21,
-          "title": "The Kiss / DaDaDa (Salve to An Angel)",
+          "title": "The Kiss / Da Da Da (Slave to An Angel)",
           "duration": "5:23",
           "size_mb": 12,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/21 The Kiss _ DaDaDa (Salve to An Angel).mp3",
@@ -692,14 +701,20 @@
           "title": "My Father's House",
           "duration": "5:43",
           "size_mb": 14,
-          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 01 My Father's House.mp3"
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 01 My Father's House.mp3",
+          "tags": [
+            "Bruce Springsteen"
+          ]
         },
         {
           "num": 2,
           "title": "Black Is The Color",
           "duration": "4:04",
           "size_mb": 10,
-          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 02 Black Is The Color.mp3"
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 02 Black Is The Color.mp3",
+          "tags": [
+            "Irish"
+          ]
         },
         {
           "num": 3,
@@ -783,7 +798,10 @@
           "title": "The Bold Fenian Men",
           "duration": "3:12",
           "size_mb": 8,
-          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 14 The Bold Fenian Men.mp3"
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 14 The Bold Fenian Men.mp3",
+          "tags": [
+            "Irish"
+          ]
         },
         {
           "num": 15,
@@ -811,21 +829,30 @@
           "title": "Tougher Than The Rest",
           "duration": "3:33",
           "size_mb": 9,
-          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 18 Tougher Than The Rest.mp3"
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 18 Tougher Than The Rest.mp3",
+          "tags": [
+            "Bruce Springsteen"
+          ]
         },
         {
           "num": 19,
           "title": "Model Family Man",
           "duration": "3:17",
           "size_mb": 8,
-          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 19 Model Family Man.mp3"
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 19 Model Family Man.mp3",
+          "tags": [
+            "Paddy Nash"
+          ]
         },
         {
           "num": 20,
           "title": "The Crystal Rose",
           "duration": "5:12",
           "size_mb": 12,
-          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 20 The Crystal Rose.mp3"
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 20 The Crystal Rose.mp3",
+          "tags": [
+            "Irish"
+          ]
         },
         {
           "num": 21,
@@ -867,7 +894,10 @@
           "title": "Kilkelly Ireland",
           "duration": "6:02",
           "size_mb": 14,
-          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 26 Kilkelly Ireland.mp3"
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 26 Kilkelly Ireland.mp3",
+          "tags": [
+            "Irish"
+          ]
         },
         {
           "num": 27,
@@ -895,7 +925,10 @@
           "title": "The Parting Glass",
           "duration": "4:34",
           "size_mb": 11,
-          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 30 The Parting Glass.mp3"
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 30 The Parting Glass.mp3",
+          "tags": [
+            "Irish"
+          ]
         }
       ],
       "description": [
@@ -982,7 +1015,10 @@
           "size_mb": 12,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/01 State Trooper.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/01 State Trooper.flac",
-          "flac_size_mb": 53
+          "flac_size_mb": 53,
+          "tags": [
+            "Bruce Springsteen"
+          ]
         },
         {
           "num": 2,
@@ -991,7 +1027,10 @@
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/02 Crystal Rose.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/02 Crystal Rose.flac",
-          "flac_size_mb": 41
+          "flac_size_mb": 41,
+          "tags": [
+            "Irish"
+          ]
         },
         {
           "num": 3,
@@ -1018,7 +1057,10 @@
           "size_mb": 5,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/05 Little Number Four.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/05 Little Number Four.flac",
-          "flac_size_mb": 24
+          "flac_size_mb": 24,
+          "tags": [
+            "Irish"
+          ]
         },
         {
           "num": 6,
@@ -1045,7 +1087,10 @@
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/08 Illegal Smile.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/08 Illegal Smile.flac",
-          "flac_size_mb": 32
+          "flac_size_mb": 32,
+          "tags": [
+            "John Prine"
+          ]
         },
         {
           "num": 9,
@@ -1054,7 +1099,10 @@
           "size_mb": 12,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/09 El Paso.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/09 El Paso.flac",
-          "flac_size_mb": 52
+          "flac_size_mb": 52,
+          "tags": [
+            "Marty Robbins"
+          ]
         },
         {
           "num": 10,
@@ -1081,7 +1129,10 @@
           "size_mb": 3,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/12 You're Pulling Me Leg.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/12 You're Pulling Me Leg.flac",
-          "flac_size_mb": 12
+          "flac_size_mb": 12,
+          "tags": [
+            "Irish"
+          ]
         },
         {
           "num": 13,
@@ -1117,7 +1168,10 @@
           "size_mb": 11,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/16 Sam Hall.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/16 Sam Hall.flac",
-          "flac_size_mb": 47
+          "flac_size_mb": 47,
+          "tags": [
+            "John Prine"
+          ]
         },
         {
           "num": 17,
@@ -1126,7 +1180,10 @@
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/17 Black is The Color.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/17 Black is The Color.flac",
-          "flac_size_mb": 38
+          "flac_size_mb": 38,
+          "tags": [
+            "Irish"
+          ]
         },
         {
           "num": 18,
@@ -1135,7 +1192,10 @@
           "size_mb": 10,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/18 The Fields of Athenry.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/18 The Fields of Athenry.flac",
-          "flac_size_mb": 42
+          "flac_size_mb": 42,
+          "tags": [
+            "Irish"
+          ]
         },
         {
           "num": 19,
@@ -1144,7 +1204,10 @@
           "size_mb": 4,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/19 Johnny McEldoo.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/19 Johnny McEldoo.flac",
-          "flac_size_mb": 20
+          "flac_size_mb": 20,
+          "tags": [
+            "Irish"
+          ]
         },
         {
           "num": 20,
@@ -1153,7 +1216,10 @@
           "size_mb": 12,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/20 Four Leaf Clover Inn.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/20 Four Leaf Clover Inn.flac",
-          "flac_size_mb": 52
+          "flac_size_mb": 52,
+          "tags": [
+            "Irish"
+          ]
         },
         {
           "num": 21,
@@ -1252,7 +1318,10 @@
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/31 The Old Triangle.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/31 The Old Triangle.flac",
-          "flac_size_mb": 34
+          "flac_size_mb": 34,
+          "tags": [
+            "Irish"
+          ]
         }
       ],
       "description": [
@@ -1623,7 +1692,10 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/11 Yer So Bad.mp3",
           "size_mb": 7,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/11 Yer So Bad.flac",
-          "flac_size_mb": 33
+          "flac_size_mb": 33,
+          "tags": [
+            "Tom Petty"
+          ]
         },
         {
           "num": 12,
