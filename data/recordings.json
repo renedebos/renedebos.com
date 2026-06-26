@@ -3112,9 +3112,231 @@
           "stream": "MP3/Full/WAV_Files/MadHannans_Sweetwater_2001-01-06.mp3"
         }
       ],
-      "tracks": null,
-      "description": null,
-      "page": null
+      "tracks": [
+        {
+          "num": 1,
+          "title": "Truck",
+          "duration": "3:38",
+          "file": "MP3/MadHannans - Sweetwater 2001-01-06/01 Truck.mp3",
+          "size_mb": 9,
+          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/01 Truck.flac",
+          "flac_size_mb": 12
+        },
+        {
+          "num": 2,
+          "title": "Blind Man",
+          "duration": "3:18",
+          "file": "MP3/MadHannans - Sweetwater 2001-01-06/02 Blind Man.mp3",
+          "size_mb": 8,
+          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/02 Blind Man.flac",
+          "flac_size_mb": 12
+        },
+        {
+          "num": 3,
+          "title": "Smoke in Heaven",
+          "duration": "2:53",
+          "file": "MP3/MadHannans - Sweetwater 2001-01-06/03 Smoke in Heaven.mp3",
+          "size_mb": 7,
+          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/03 Smoke in Heaven.flac",
+          "flac_size_mb": 10
+        },
+        {
+          "num": 4,
+          "title": "The Good Life",
+          "duration": "3:49",
+          "file": "MP3/MadHannans - Sweetwater 2001-01-06/04 The Good Life.mp3",
+          "size_mb": 9,
+          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/04 The Good Life.flac",
+          "flac_size_mb": 13
+        },
+        {
+          "num": 5,
+          "title": "Clear Headed",
+          "duration": "4:55",
+          "file": "MP3/MadHannans - Sweetwater 2001-01-06/05 Clear Headed.mp3",
+          "size_mb": 12,
+          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/05 Clear Headed.flac",
+          "flac_size_mb": 16
+        },
+        {
+          "num": 6,
+          "title": "Hollywood",
+          "duration": "4:38",
+          "file": "MP3/MadHannans - Sweetwater 2001-01-06/06 Hollywood.mp3",
+          "size_mb": 11,
+          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/06 Hollywood.flac",
+          "flac_size_mb": 15
+        },
+        {
+          "num": 7,
+          "title": "Baby",
+          "duration": "4:38",
+          "file": "MP3/MadHannans - Sweetwater 2001-01-06/07 Baby.mp3",
+          "size_mb": 11,
+          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/07 Baby.flac",
+          "flac_size_mb": 15
+        },
+        {
+          "num": 8,
+          "title": "ABC - Sesame Street",
+          "duration": "5:03",
+          "file": "MP3/MadHannans - Sweetwater 2001-01-06/08 ABC - Sesame Street.mp3",
+          "size_mb": 12,
+          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/08 ABC - Sesame Street.flac",
+          "flac_size_mb": 18
+        },
+        {
+          "num": 9,
+          "title": "Madeline",
+          "duration": "2:41",
+          "file": "MP3/MadHannans - Sweetwater 2001-01-06/09 Madeline.mp3",
+          "size_mb": 6,
+          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/09 Madeline.flac",
+          "flac_size_mb": 9
+        },
+        {
+          "num": 10,
+          "title": "Luxury of Murder",
+          "duration": "2:48",
+          "file": "MP3/MadHannans - Sweetwater 2001-01-06/10 Luxury of Murder.mp3",
+          "size_mb": 7,
+          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/10 Luxury of Murder.flac",
+          "flac_size_mb": 9
+        },
+        {
+          "num": 11,
+          "title": "Rugburns",
+          "duration": "4:23",
+          "file": "MP3/MadHannans - Sweetwater 2001-01-06/11 Rugburns.mp3",
+          "size_mb": 11,
+          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/11 Rugburns.flac",
+          "flac_size_mb": 15
+        },
+        {
+          "num": 12,
+          "title": "Recycle",
+          "duration": "6:02",
+          "file": "MP3/MadHannans - Sweetwater 2001-01-06/12 Recycle.mp3",
+          "size_mb": 14,
+          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/12 Recycle.flac",
+          "flac_size_mb": 20
+        },
+        {
+          "num": 13,
+          "title": "Blahana",
+          "duration": "4:39",
+          "file": "MP3/MadHannans - Sweetwater 2001-01-06/13 Blahana.mp3",
+          "size_mb": 11,
+          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/13 Blahana.flac",
+          "flac_size_mb": 16
+        },
+        {
+          "num": 14,
+          "title": "Everything Reminds Me of You",
+          "duration": "3:08",
+          "file": "MP3/MadHannans - Sweetwater 2001-01-06/14 Everything Reminds Me of You.mp3",
+          "size_mb": 8,
+          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/14 Everything Reminds Me of You.flac",
+          "flac_size_mb": 10
+        },
+        {
+          "num": 15,
+          "title": "I Need a Lover",
+          "duration": "2:44",
+          "file": "MP3/MadHannans - Sweetwater 2001-01-06/15 I Need a Lover.mp3",
+          "size_mb": 7,
+          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/15 I Need a Lover.flac",
+          "flac_size_mb": 9
+        },
+        {
+          "num": 16,
+          "title": "Plastic Lemons",
+          "duration": "2:34",
+          "file": "MP3/MadHannans - Sweetwater 2001-01-06/16 Plastic Lemons.mp3",
+          "size_mb": 6,
+          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/16 Plastic Lemons.flac",
+          "flac_size_mb": 7
+        },
+        {
+          "num": 17,
+          "title": "Scallywag",
+          "duration": "2:24",
+          "file": "MP3/MadHannans - Sweetwater 2001-01-06/17 Scallywag.mp3",
+          "size_mb": 6,
+          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/17 Scallywag.flac",
+          "flac_size_mb": 8
+        },
+        {
+          "num": 18,
+          "title": "Far Away Eyes",
+          "duration": "5:01",
+          "file": "MP3/MadHannans - Sweetwater 2001-01-06/18 Far Away Eyes.mp3",
+          "size_mb": 12,
+          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/18 Far Away Eyes.flac",
+          "flac_size_mb": 17
+        },
+        {
+          "num": 19,
+          "title": "the Belle of Belfast City",
+          "duration": "3:34",
+          "file": "MP3/MadHannans - Sweetwater 2001-01-06/19 the Belle of Belfast City.mp3",
+          "size_mb": 9,
+          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/19 the Belle of Belfast City.flac",
+          "flac_size_mb": 13
+        },
+        {
+          "num": 20,
+          "title": "The Rocky Road to Dublin",
+          "duration": "6:28",
+          "file": "MP3/MadHannans - Sweetwater 2001-01-06/20 The Rocky Road to Dublin.mp3",
+          "size_mb": 16,
+          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/20 The Rocky Road to Dublin.flac",
+          "flac_size_mb": 23
+        },
+        {
+          "num": 21,
+          "title": "Friend",
+          "duration": "3:42",
+          "file": "MP3/MadHannans - Sweetwater 2001-01-06/21 Friend.mp3",
+          "size_mb": 9,
+          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/21 Friend.flac",
+          "flac_size_mb": 13
+        },
+        {
+          "num": 22,
+          "title": "Dysfunctional Guy",
+          "duration": "6:19",
+          "file": "MP3/MadHannans - Sweetwater 2001-01-06/22 Dysfunctional Guy.mp3",
+          "size_mb": 15,
+          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/22 Dysfunctional Guy.flac",
+          "flac_size_mb": 22
+        },
+        {
+          "num": 23,
+          "title": "The Kiss - Da Da Da",
+          "duration": "7:37",
+          "file": "MP3/MadHannans - Sweetwater 2001-01-06/23 The Kiss - Da Da Da.mp3",
+          "size_mb": 18,
+          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/23 The Kiss - Da Da Da.flac",
+          "flac_size_mb": 27
+        },
+        {
+          "num": 24,
+          "title": "I Thought I Was You",
+          "duration": "3:44",
+          "file": "MP3/MadHannans - Sweetwater 2001-01-06/24 I Thought I Was You.mp3",
+          "size_mb": 9,
+          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/24 I Thought I Was You.flac",
+          "flac_size_mb": 10
+        }
+      ],
+      "description": [
+        "A rough show to listen to — the recording has a muffled sound, so this one is more for the completists than for easy listening.",
+        "These tracks are basically straight from tape with no cleanup yet. I plan to apply an EQ filter and then loudness-normalize them; for now what you hear is the raw transfer."
+      ],
+      "page": null,
+      "added": "2026-06-25",
+      "added_ts": "2026-06-25T20:06:26.537625"
     },
     {
       "slug": "seanjerry-19-broadway-1999-12",
