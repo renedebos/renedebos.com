@@ -178,6 +178,7 @@ SITE_PAGES = [
     ("Shows", "/shows/"),
     ("Search", "/search/"),
     ("Updates", "/updates/"),
+    ("History", "/history/"),
     ("Contact", "/contact/"),
 ]
 
@@ -600,6 +601,65 @@ def build_updates():
     )
 
 
+def build_history():
+    return page_shell(
+        title="The Story So Far — The Hannan Recordings",
+        description="A behind-the-scenes history of how the Hannan Recordings archive came together.",
+        url="https://renedebos.com/history/",
+        eyebrow="The Hannan Recordings",
+        heading="The Story So Far",
+        tagline="A behind-the-scenes history of the archive",
+        nav=site_nav("History"),
+        main='''
+  <section class="about">
+    <p>
+      This site is an ongoing labor of love &mdash; digitizing, cleaning up, and sharing the live recordings of Jerry Hannan, the Mad Hannans, and Sean Hannan. Here&rsquo;s how it has come together so far.
+    </p>
+
+    <h2>Week one &mdash; getting it online (June&nbsp;9&ndash;13, 2026)</h2>
+    <p>
+      The archive went live as a simple homepage and quickly grew a proper foundation.
+    </p>
+    <ul class="reasons">
+      <li>Put up the first <strong>&ldquo;About This Archive&rdquo;</strong> page explaining what these recordings are and why I&rsquo;m sharing them.</li>
+      <li><strong>Password-protected the lossless WAV masters</strong> so the big files stay controlled, while keeping the music easy to listen to.</li>
+      <li>Set up <strong>automatic publishing</strong> &mdash; every change now deploys itself to the web.</li>
+      <li>Rebuilt the site around a <strong>data-driven generator</strong>, giving each show its own page with a proper track list.</li>
+      <li>Posted the first track-listed shows: <strong>Jerry Hannan at 19 Broadway</strong> (Jan&nbsp;8,&nbsp;2001), the <strong>Mad Hannans at Sweetwater</strong> (Feb&nbsp;17,&nbsp;2000), and <strong>Sean Hannan at 19 Broadway</strong> (Jan&nbsp;24,&nbsp;2000) &mdash; followed by a redesign of the archive and per-song sharing links.</li>
+    </ul>
+
+    <h2>Week two &mdash; more shows, more polish (June&nbsp;14&ndash;20, 2026)</h2>
+    <p>
+      The site split into proper sections &mdash; Home, Archive, Shows, Updates, and Contact &mdash; and an <strong>Updates feed</strong> began tracking changes as they happen. New shows kept arriving:
+    </p>
+    <ul class="reasons">
+      <li><strong>Sean Hannan at 19 Broadway</strong> (Feb&nbsp;21,&nbsp;2000)</li>
+      <li><strong>Jerry Hannan at 19 Broadway</strong> (Jan&nbsp;15,&nbsp;2001) &mdash; later volume-normalized across all 31 tracks</li>
+      <li><strong>The Mad Hannans at Sweetwater</strong> (Oct&nbsp;17,&nbsp;2000) &mdash; the Birthday Show, with a full lossless download</li>
+      <li><strong>Jerry Hannan at 19 Broadway</strong> (June&nbsp;21,&nbsp;1999)</li>
+    </ul>
+    <p>
+      I also added notes about audio levels and the purpose of the archive, and began marking which recordings came straight off the soundboard (SBD) versus from the audience (AUD).
+    </p>
+
+    <h2>Week three &mdash; listening, searching, restoring (June&nbsp;21&ndash;26, 2026)</h2>
+    <p>
+      The biggest leap in how the archive <em>feels</em> to use:
+    </p>
+    <ul class="reasons">
+      <li>Every full show now <strong>streams as a clean 320&nbsp;kbps MP3</strong>, with <strong>free MP3 downloads</strong> on the show pages.</li>
+      <li>Added the <strong>Sean Hannan 19 Broadway</strong> (unknown date) set and the <strong>Mad Hannans at Cafe Java</strong> (Sept&nbsp;9,&nbsp;1999).</li>
+      <li>Introduced <strong>waveform players</strong> so you can see each song as you listen.</li>
+      <li>Added an <strong>Archive sort toggle</strong> (browse by date or by artist) and a <strong>search engine</strong> to find any song or show by title, artist, venue, date, or tag &mdash; backed by an ongoing effort to tag covers and songwriters.</li>
+      <li>Posted the <strong>Mad Hannans at Sweetwater</strong> (Jan&nbsp;6,&nbsp;2001) &mdash; a rough, muffled audience tape that I then went back and <strong>cleaned up with EQ and loudness normalization</strong> to make it easier on the ears.</li>
+      <li>Gave the <strong>Sean Hannan</strong> (Feb&nbsp;21,&nbsp;2000) set the same loudness treatment, and corrected a long-mislabeled song: <em>&ldquo;Irish Song&rdquo;</em> is really <strong>&ldquo;Ode to Biddy McGee.&rdquo;</strong></li>
+    </ul>
+
+    <p class="about-note">The work continues &mdash; more shows, better audio, and small fixes are always in progress.</p>
+  </section>''',
+    )
+
+
 def build_contact():
     return page_shell(
         title="Contact — The Hannan Recordings",
@@ -871,6 +931,7 @@ def main():
     write("shows/index.html", build_shows())
     write("search/index.html", build_search())
     write("updates/index.html", build_updates())
+    write("history/index.html", build_history())
     write("contact/index.html", build_contact())
     n = 0
     for show in M["shows"]:
