@@ -1965,20 +1965,20 @@
         {
           "num": 2,
           "title": "Woman",
-          "duration": "3:35",
+          "duration": "3:33",
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/02 Woman.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/02 Woman.flac",
-          "flac_size_mb": 36
+          "flac_size_mb": 38
         },
         {
           "num": 3,
           "title": "Galway Shawl",
-          "duration": "4:44",
+          "duration": "4:42",
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/03 Galway Shawl.mp3",
           "size_mb": 11,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/03 Galway Shawl.flac",
-          "flac_size_mb": 48
+          "flac_size_mb": 50
         },
         {
           "num": 4,
@@ -1987,15 +1987,15 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/04 I Thought I Was You.mp3",
           "size_mb": 11,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/04 I Thought I Was You.flac",
-          "flac_size_mb": 49
+          "flac_size_mb": 52
         },
         {
           "num": 5,
-          "title": "Irish Song",
+          "title": "Ode to Biddy McGee",
           "duration": "3:35",
-          "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/05 Irish Song.mp3",
+          "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/05 Ode to Biddy McGee.mp3",
           "size_mb": 8,
-          "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/05 Irish Song.flac",
+          "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/05 Ode to Biddy McGee.flac",
           "flac_size_mb": 36
         },
         {
@@ -2005,12 +2005,12 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/06 The German Clock Winder.mp3",
           "size_mb": 6,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/06 The German Clock Winder.flac",
-          "flac_size_mb": 25
+          "flac_size_mb": 26
         },
         {
           "num": 7,
           "title": "Why Don't You Love Me",
-          "duration": "0:37",
+          "duration": "0:36",
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/07 Why Don't You Love Me.mp3",
           "size_mb": 1,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/07 Why Don't You Love Me.flac",
@@ -2023,7 +2023,7 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/08 Don't Think Twice It's All Right.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/08 Don't Think Twice It's All Right.flac",
-          "flac_size_mb": 33
+          "flac_size_mb": 34
         },
         {
           "num": 9,
@@ -2032,7 +2032,7 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/09 Plastic Lemons.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/09 Plastic Lemons.flac",
-          "flac_size_mb": 36,
+          "flac_size_mb": 38,
           "artist": "Jerry Hannan"
         },
         {
@@ -2042,7 +2042,7 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/10 Gold's Gym Guy.mp3",
           "size_mb": 7,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/10 Gold's Gym Guy.flac",
-          "flac_size_mb": 33
+          "flac_size_mb": 34
         },
         {
           "num": 11,
@@ -2051,13 +2051,13 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/11 Lay Down Your Weary Tune.mp3",
           "size_mb": 10,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/11 Lay Down Your Weary Tune.flac",
-          "flac_size_mb": 44
+          "flac_size_mb": 46
         }
       ],
       "description": [
         "Unlike the audience tapes that make up most of this archive, this February 2000 set at 19 Broadway was recorded straight off the soundboard — so it’s unusually clean and close, with Sean’s voice and guitar right up front.",
         "The tape has been split into its 11 songs — Sean’s originals alongside a few traditional Irish tunes and covers. Each track streams here for free as a 320 kbps MP3, or can be downloaded as a lossless FLAC (password protected).",
-        "In all this is a relatively short set for Sean. Both the streaming MP3s and the lossless FLAC files have been normalized in Audacity for a more even listening level.",
+        "In all this is a relatively short set for Sean. The tracks — both the streaming MP3s and the lossless FLAC files — have been loudness-normalized to −16 LUFS for a more even, consistent listening level.",
         "On “Plastic Lemons” it is actually Jerry Hannan singing — he stepped in for a song while Sean, who was quite tired this night, took a break.",
         "The full tape also includes some guitar music from an unidentified musician, and has not yet been fully audited."
       ],
@@ -3817,6 +3817,12 @@
       "ts": "2026-06-26T21:00:00",
       "slug": "mad-sweetwater-2001-01-06",
       "text": "These very muddled tracks have been processed with EQ filtering and loudness normalization to −16 LUFS to make them sound a little better"
+    },
+    {
+      "date": "2026-06-26",
+      "ts": "2026-06-26T22:30:00",
+      "slug": "sean-19-broadway-2000-02-21",
+      "text": "Loudness-normalized all tracks to −16 LUFS for a more even listening level"
     }
   ]
 }
