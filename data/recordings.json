@@ -1201,7 +1201,8 @@
           "flac_size_mb": 42,
           "tags": [
             "Irish"
-          ]
+          ],
+          "dropouts": true
         },
         {
           "num": 19,
