@@ -3838,7 +3838,7 @@
       "date": "2026-06-27",
       "ts": "2026-06-27T20:00:00",
       "slug": "jerry-19-broadway-2001-01-15",
-      "text": "Re-normalized all 31 tracks with a fresh loudness-normalization pass for a more even, comfortable listening level"
+      "text": "Re-normalized all 31 tracks to −16 LUFS for a more even, comfortable listening level"
     }
   ]
 }
