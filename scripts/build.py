@@ -353,16 +353,27 @@ def load_processing(slug):
 
 def tech_data_section(show, proc):
     """Render a collapsible "Technical data" table for a processed show: every
-    track's duration + sizes (from recordings.json) merged with its achieved
-    LUFS / true peak / LRA (from the processing provenance, where measured)."""
-    head = (f'Loudness-normalized to {proc["target_lufs"]} LUFS / '
-            f'{proc["tp_ceiling"]} dBTP &middot; {esc(proc.get("tool", "ffmpeg loudnorm"))}'
-            f' &middot; {esc(proc.get("date", ""))}')
+    track's duration + sizes (from recordings.json) merged with its input/achieved
+    loudness, true peak, LRA, and gain applied (from the processing provenance,
+    where measured). The per-track audio MD5 is carried in the sidecar for
+    integrity/drift checks but is not displayed."""
+    head_bits = [f'Loudness-normalized to {proc["target_lufs"]} LUFS / '
+                 f'{proc["tp_ceiling"]} dBTP']
+    if proc.get("source"):
+        head_bits.append(f'Source: {esc(proc["source"])}')
+    if proc.get("filters"):
+        head_bits.append(f'Filters: {esc(proc["filters"])}')
+    head_bits.append(esc(proc.get("tool", "ffmpeg loudnorm")))
+    if proc.get("date"):
+        head_bits.append(esc(proc["date"]))
+    head = " &middot; ".join(head_bits)
     pt = proc.get("tracks", {})
     rows = []
     for t in show["tracks"]:
         d = pt.get(str(t["num"]), {})
-        lufs = f'{d["lufs"]:.2f}' if "lufs" in d else "&mdash;"
+        inl = f'{d["in_lufs"]:.1f}' if "in_lufs" in d else "&mdash;"
+        out = f'{d["lufs"]:.2f}' if "lufs" in d else "&mdash;"
+        gain = f'{d["lufs"] - d["in_lufs"]:+.1f}' if ("lufs" in d and "in_lufs" in d) else "&mdash;"
         tp = f'{d["tp"]:.1f}' if "tp" in d else "&mdash;"
         lra = f'{d["lra"]:.1f}' if "lra" in d else "&mdash;"
         mp3 = f'{t["size_mb"]} MB' if t.get("size_mb") else "&mdash;"
@@ -370,7 +381,8 @@ def tech_data_section(show, proc):
         rows.append(
             f'        <tr><td class="tnum">{t["num"]:02d}</td><td>{esc(t["title"])}</td>'
             f'<td class="tnum">{esc(t["duration"])}</td><td class="tnum">{mp3}</td>'
-            f'<td class="tnum">{flac}</td><td class="tnum">{lufs}</td>'
+            f'<td class="tnum">{flac}</td><td class="tnum">{inl}</td>'
+            f'<td class="tnum">{out}</td><td class="tnum">{gain}</td>'
             f'<td class="tnum">{tp}</td><td class="tnum">{lra}</td></tr>')
     return f'''
   <section>
@@ -380,7 +392,8 @@ def tech_data_section(show, proc):
       <div class="tech-scroll">
       <table class="tech-table">
         <thead><tr><th>#</th><th>Song</th><th>Time</th><th>MP3</th><th>FLAC</th>
-          <th>LUFS</th><th>True&nbsp;Pk</th><th>LRA</th></tr></thead>
+          <th>In&nbsp;LUFS</th><th>Out&nbsp;LUFS</th><th>Gain</th>
+          <th>True&nbsp;Pk</th><th>LRA</th></tr></thead>
         <tbody>
 {chr(10).join(rows)}
         </tbody>

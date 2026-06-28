@@ -2,11 +2,13 @@
   "slug": "jerry-19-broadway-1999-06-21",
   "target_lufs": -20,
   "tp_ceiling": -1,
+  "source": "24-bit / 48 kHz FLAC",
+  "filters": "none",
   "tool": "ffmpeg loudnorm",
   "date": "2026-06-28",
   "tracks": {
-    "19": { "lufs": -20.00, "tp": -3.50, "lra": 6.50 },
-    "20": { "lufs": -20.00, "tp": -1.14, "lra": 11.00 },
-    "21": { "lufs": -19.92, "tp": -1.05, "lra": 9.00 }
+    "19": { "in_lufs": -22.3, "lufs": -20.00, "tp": -3.50, "lra": 6.50, "md5": "85806ec71afbe1ea6d2471af6620980b" },
+    "20": { "in_lufs": -24.1, "lufs": -20.00, "tp": -1.14, "lra": 11.00, "md5": "7b97a3949a614abcaf15d7020afeaeb3" },
+    "21": { "in_lufs": -20.9, "lufs": -19.92, "tp": -1.05, "lra": 9.00, "md5": "cd0304043aa424d0459fc34bc8de8e00" }
   }
 }

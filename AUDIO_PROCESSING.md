@@ -438,26 +438,42 @@ Both paths assume `~/work/<slug>/processed/` holds matched `NN Title.mp3` +
 ### Save the processing provenance (both paths) — do NOT discard the reports
 The diagnostic/processing reports are not throwaway: persist the per-track
 measurements as a provenance sidecar at `data/processing/<slug>.json`. `build.py`
-renders this into a collapsible **"Technical data"** table on the show page (every
-track's time + sizes, with achieved LUFS / true peak / LRA filled where measured),
-and the Updates "view data" link (below) deep-links to it. Write it from the
-Phase 1/2 measurements:
+renders this into a collapsible **"Technical data"** table on the show page and
+the Updates "view data" link (below) deep-links to it. Write it from the Phase 1/2
+measurements:
 ```json
 {
   "slug": "<slug>",
   "target_lufs": -20,
   "tp_ceiling": -1,
+  "source": "24-bit / 48 kHz FLAC",
+  "filters": "none",
   "tool": "ffmpeg loudnorm",
   "date": "YYYY-MM-DD",
   "tracks": {
-    "19": { "lufs": -20.00, "tp": -3.50, "lra": 6.50 }
+    "19": { "in_lufs": -22.3, "lufs": -20.00, "tp": -3.50, "lra": 6.50,
+            "md5": "85806ec71afbe1ea6d2471af6620980b" }
   }
 }
 ```
-- Keys are track numbers (strings). Use the **achieved** (Pass 3 / re-measured
-  output) values, not the inputs. On a partial pass, include only the tracks you
-  processed — `build.py` shows `—` for the loudness columns of untouched tracks
-  while still listing their time/size.
+Field notes:
+- **Top level** — `source` is the lossless master spec (bit depth / sample rate /
+  container, from the Phase 1 ffprobe; render as a header line since it's usually
+  uniform). `filters` is the Phase 2 chain actually applied (e.g.
+  `"high-pass 80 Hz"`, or `"none"`).
+- **Per track** (keys are track-number strings):
+  - `in_lufs` — input integrated LUFS (Phase 1, *before* processing).
+  - `lufs` / `tp` / `lra` — **achieved** values from the Pass 3 re-measure of the
+    output (not assumptions). `build.py` shows `In LUFS`, `Out LUFS`, and a derived
+    `Gain` column, plus `True Pk` and `LRA`.
+  - `md5` — audio fingerprint of the processed FLAC for integrity / Drive↔R2 drift
+    checks. Capture it (container-uniform, works for WAV too) with:
+    ```
+    ffmpeg -i "NN Title.flac" -map 0:a -f md5 -    # prints MD5=<hex>
+    ```
+    Stored only; **not displayed** — it's data to diff later, not a column.
+- On a partial pass, include only the tracks you processed — `build.py` shows `—`
+  for the loudness columns of untouched tracks while still listing their time/size.
 - It's a build *source* (`data/` is `.assetsignore`'d → not served); the data
   reaches the browser only via the rendered HTML.
 
