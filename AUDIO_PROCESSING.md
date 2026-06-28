@@ -149,11 +149,31 @@ Read two fields from the Overall block: `Peak level dB` and `Peak count`.
 **Do NOT flag on `Peak count > 0` alone.** `Peak count` is the number of samples
 at the file's *own* peak level, whatever that level is — it is always ≥ 1, so that
 rule flags every file. It only means clipping when the peak actually reaches full
-scale. Apply this logic:
-- If `Peak level dB` < -0.1 → **no clipping** (peak isn't at the ceiling), Clip = 0.
-- Else Clip = `Peak count`. Then judge severity:
-  - `Clip` > ~500 samples → flag `CLIPPING` (sustained — review in Audacity).
-  - 1–500 samples → note as minor/incidental; do **not** warn (typically inaudible).
+scale. Use `astats` as a fast **screen**:
+- If `Peak level dB` < -0.1 → **no clipping** (peak isn't at the ceiling). Done.
+- Else the peak is at full scale → run the **second-tier run-length check** below
+  to decide whether it's real clipping or just isolated transient peaks.
+
+**Second-tier check — `scripts/clipcheck.py` (run only on files the screen flags).**
+A raw count can't tell an isolated transient peak (benign, inaudible) from real
+clipping; the *longest consecutive run* of full-scale samples can. Run it on the
+flagged file(s) — or the whole input folder, it self-skips clean files:
+```
+python3 scripts/clipcheck.py "input.flac"        # or a folder
+```
+It prints one of four verdicts per file (and exits non-zero if any is CLIPPING):
+- `NONE` — peak never actually reaches full scale.
+- `benign` — isolated full-scale samples, longest run < 0.1 ms → **inaudible, do
+  not warn.**
+- `minor` — short clips (longest run 0.1–1 ms) → probably inaudible; note for
+  review only.
+- `CLIPPING` — sustained flat tops (≥ 1 ms, or repeated clip events) → **likely
+  audible; flag for review/declip in Audacity.**
+
+Report the verdict (and the longest-run figure) in the diagnostic, not a bare
+count. Real audible clipping is many consecutive samples pinned at the ceiling
+(milliseconds of flattened waveform); a handful of samples touching it for
+microseconds is just a transient and is left alone.
 
 Note: `input_tp > 0 dBTP` from the loudness check (step 3) is **inter-sample true
 peak**, not digital clipping. It is resolved by the -1 dBTP output ceiling in
