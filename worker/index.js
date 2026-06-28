@@ -50,6 +50,14 @@ async function handleStream(request, env, url, origin) {
   const file = url.searchParams.get('file');
   if (!file) return new Response('Missing file', { status: 400 });
 
+  // The player only ever streams the lossy MP3 proxies. Refuse lossless keys so
+  // the password-gated WAV/FLAC can't be reassembled from Range requests here,
+  // bypassing /auth + /download. Freely-downloadable files are exempt.
+  const lower = file.toLowerCase();
+  if ((lower.endsWith('.wav') || lower.endsWith('.flac')) && !FREE_FILES.has(file)) {
+    return new Response('Forbidden', { status: 403, headers: corsHeaders(origin) });
+  }
+
   const rangeHeader = request.headers.get('Range');
   let rangeOpt;
 
@@ -67,7 +75,12 @@ async function handleStream(request, env, url, origin) {
   const headers = new Headers(corsHeaders(origin));
   headers.set('Content-Type', audioType(file));
   headers.set('Accept-Ranges', 'bytes');
-  headers.set('Cache-Control', 'no-store');
+  // Edge-cacheable. A `v` cache-buster (content fingerprint, added by the build)
+  // means the URL changes whenever the audio does, so it's safe to cache hard and
+  // still go live instantly on re-upload. Un-versioned URLs get a short TTL.
+  const versioned = url.searchParams.get('v');
+  headers.set('Cache-Control',
+    versioned ? 'public, max-age=31536000, immutable' : 'public, max-age=3600');
 
   if (rangeOpt) {
     const offset = rangeOpt.offset;

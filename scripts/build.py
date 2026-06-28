@@ -27,8 +27,11 @@ def esc(s):
     return html.escape(str(s), quote=True)
 
 
-def stream_url(file):
-    return f"{WORKER}/stream?file={urllib.parse.quote(file)}"
+def stream_url(file, version=None):
+    u = f"{WORKER}/stream?file={urllib.parse.quote(file)}"
+    if version:
+        u += f"&v={version}"
+    return u
 
 
 def show_url(show):
@@ -135,13 +138,18 @@ def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main,
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{esc(title)}</title>
 <meta name="description" content="{esc(description)}">
+<link rel="canonical" href="{esc(url)}">
 <meta property="og:title" content="{esc(title)}">
 <meta property="og:description" content="{esc(description)}">
 <meta property="og:type" content="website">
 <meta property="og:url" content="{esc(url)}">
+<meta property="og:image" content="https://renedebos.com/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{esc(title)}">
+<meta name="twitter:description" content="{esc(description)}">
+<meta name="twitter:image" content="https://renedebos.com/assets/og.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♪</text></svg>">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/fonts.css">
 <link rel="stylesheet" href="/assets/site.css">
 </head>
 <body>
@@ -760,11 +768,19 @@ def build_show(show):
     <h2>About This Show</h2>{desc}
   </section>''')
 
+    # Processing provenance (if any): drives the technical-data table and supplies
+    # per-track audio fingerprints used as stream cache-busters.
+    proc = load_processing(show["slug"]) if show.get("tracks") else None
+    proc_tracks = proc.get("tracks", {}) if proc else {}
+
     if show.get("tracks"):
         has_flac = any(t.get("flac") for t in show["tracks"])
         rows = []
         for t in show["tracks"]:
-            stream = stream_url(t["file"])
+            # Version the stream URL with the track's MD5 (when known) so the edge
+            # caches hard yet a re-normalized upload goes live instantly.
+            ver = (proc_tracks.get(str(t["num"]), {}).get("md5") or "")[:12] or None
+            stream = stream_url(t["file"], ver)
             sizes = []
             if t.get("flac_size_mb"):
                 sizes.append(f'FLAC {t["flac_size_mb"]} MB')
@@ -830,7 +846,6 @@ def build_show(show):
 
     # Technical-data table for shows that have been through the audio_processing
     # workflow (renders all tracks; loudness columns filled where measured).
-    proc = load_processing(show["slug"]) if show.get("tracks") else None
     if proc:
         parts.append(tech_data_section(show, proc))
 
@@ -1005,7 +1020,51 @@ def stamp_added_dates():
     return changed
 
 
+def validate():
+    """Fail fast on the recordings.json footguns that otherwise produce broken
+    pages or a mid-build crash. The whole site is generated from this one
+    hand/tool-edited file, so a cheap up-front check is worth it."""
+    errors = []
+    artist_ids = {a["id"] for a in M["artists"]}
+    seen_slugs = set()
+    for i, s in enumerate(M["shows"]):
+        where = s.get("slug") or f"shows[{i}]"
+        if not s.get("slug"):
+            errors.append(f"{where}: missing slug")
+        elif s["slug"] in seen_slugs:
+            errors.append(f"{where}: duplicate slug")
+        else:
+            seen_slugs.add(s["slug"])
+        if s.get("artist") not in artist_ids:
+            errors.append(f"{where}: artist {s.get('artist')!r} is not a known artist id {sorted(artist_ids)}")
+        # null/absent means "no description" (build skips it); only a non-list
+        # value such as a bare string is the footgun (renders char-by-char).
+        if s.get("description") is not None and not isinstance(s["description"], list):
+            errors.append(f"{where}: description must be a list of paragraph strings, not {type(s['description']).__name__}")
+        for t in s.get("tracks") or []:
+            tw = f"{where} track {t.get('num')}"
+            if not isinstance(t.get("num"), int):
+                errors.append(f"{tw}: num must be an integer")
+            if not t.get("title"):
+                errors.append(f"{tw}: missing title")
+            if not t.get("file"):
+                errors.append(f"{tw}: missing file (MP3 R2 key)")
+    if errors:
+        raise SystemExit("recordings.json validation failed:\n  - " + "\n  - ".join(errors))
+
+
+def build_sitemap():
+    base = "https://renedebos.com"
+    urls = [base + p for _, p in SITE_PAGES]
+    urls += [base + show_url(s) for s in M["shows"]]
+    items = "\n".join(f"  <url><loc>{esc(u)}</loc></url>" for u in urls)
+    return ('<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+            f"{items}\n</urlset>\n")
+
+
 def main():
+    validate()
     stamp_added_dates()
     here = os.path.dirname(os.path.abspath(__file__))
     write("assets/site.css", open(os.path.join(here, "site.css")).read())
@@ -1022,6 +1081,8 @@ def main():
     write("updates/index.html", build_updates())
     write("history/index.html", build_history())
     write("contact/index.html", build_contact())
+    write("sitemap.xml", build_sitemap())
+    write("robots.txt", "User-agent: *\nAllow: /\nSitemap: https://renedebos.com/sitemap.xml\n")
     n = 0
     for show in M["shows"]:
         out = (show["page"] or f"shows/{show['slug']}") + "/index.html"
