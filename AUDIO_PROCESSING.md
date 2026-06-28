@@ -62,12 +62,29 @@ that number. Processed output keeps the same `NN Title.<ext>` name as its source
 Check the tools below before doing anything else:
 ```
 ffmpeg -version      # if missing: sudo apt install ffmpeg
-sox --version        # if missing: sudo apt install sox
 rclone version       # required for Phase 0 (Drive) and Phase 3 (R2)
 ```
-The repo's `gdrive:` and `r2:` rclone remotes must already be configured (they
-are on this machine). Run Python helpers (`build.py`, `update_tracks.py`,
-`gen_peaks.py`) from the repo root, `~/renedebos.com`.
+ffmpeg covers every measurement (loudness, peak, DC offset via `astats`); no
+`sox` needed. The repo's `gdrive:` and `r2:` rclone remotes must already be
+configured (they are on this machine). Run all Python helpers from the repo root,
+`~/renedebos.com`.
+
+### Tooling — use the committed engine
+Phases 1–2 are implemented in **`scripts/audio_process.py`** (with
+`scripts/clipcheck.py` for the second-tier clipping check) so they're versioned
+and reproducible rather than re-typed each run:
+```
+python3 scripts/audio_process.py diagnose <input-folder> --artist <id>     # Phase 1
+python3 scripts/audio_process.py process  <input-folder> <output-folder> \
+        --target <LUFS> [--hpf] [--lpf] [--notch] --slug <slug>            # Phase 2
+python3 scripts/audio_process.py verify   <slug> [--drive <path>]          # Phase 3 integrity
+```
+The engine handles the lossless-only rule, per-artist target default
+(jerry/sean/seanjerry → −20, mad → −16), two-pass loudnorm, the derived 320k MP3,
+the audio MD5, output verification (flags TP over ceiling / LUFS drift), and the
+provenance sidecar — and is **resumable** (skips tracks whose outputs exist). The
+sections below document the *why* and the underlying ffmpeg commands the engine
+runs; reach for them when debugging or doing something off the beaten path.
 
 ---
 
@@ -181,9 +198,9 @@ Phase 2 and must not be reported as clipping.
 
 **5. DC offset**
 ```
-sox input.wav -n stat 2>&1 | grep "Mean"
+ffmpeg -i input.wav -af "astats=measure_perchannel=0" -f null - 2>&1 | grep "DC offset"
 ```
-Flag any file where mean amplitude is above 0.01 or below -0.01
+Flag any file where the `DC offset` (fraction, -1..1) is above 0.01 or below -0.01.
 
 **6. Frequency energy** — check how much energy is below 80Hz and above 16kHz
 ```
@@ -336,7 +353,7 @@ Build the ffmpeg audio filter chain based on user answers:
 - DC offset removal: **only if Phase 1 flagged it.** Note `dcshift=0` is a no-op —
   it shifts by zero and removes nothing. To actually remove DC, either apply a
   gentle high-pass `highpass=f=20`, or shift by the measured mean
-  `dcshift={-mean}` using the value from the Phase 1 sox check. If an 80 Hz
+  `dcshift={-mean}` using the DC offset from the Phase 1 `astats` check. If an 80 Hz
   high-pass is already in the chain, DC (0 Hz) is already removed — skip a
   separate DC step.
 - (Optional, only if user opted in) limiter/compressor from Phase 1, placed last
@@ -638,7 +655,8 @@ rclone copy ~/work/<slug>/processed \
   originals in `Tracks/` are untouched.
 - Confirm the **Technical data** table renders on the show page with the right
   LUFS/peak values, and (Path A) that the Updates "view data" link opens it.
+- **Verify upload integrity:** `python3 scripts/audio_process.py verify <slug>`
+  re-reads each published R2 copy, recomputes its audio MD5, and confirms it
+  matches the provenance sidecar (exits non-zero on any mismatch).
 - Spot-check one track streams and that the FLAC download is gated while the MP3
   is free.
-- Optional follow-up (open decision): sync the louder versions back to the Drive
-  Work Folder so the site and archive don't drift.
