@@ -497,7 +497,7 @@
       ],
       "description": [
         "One of the first and early solo 19 Broadway shows &mdash; a loud and rowdy night in Fairfax.",
-        "The tracks have been given rudimentary loudness normalization (-23 LUFS) to even out the different sections of this tape, which were recorded at different microphone input levels (the change comes around the 45-minute mark). The loudness-normalized version of the whole show is also available below as a single lossless FLAC."
+        "The individual tracks have been loudness-normalized to even out the different sections of this tape, which were recorded at different microphone input levels (the change comes around the 45-minute mark). This is the first show on the site to be processed through the new automated loudness-normalization workflow. A loudness-normalized version of the whole show is also available below as a single lossless FLAC."
       ],
       "page": null,
       "added": "2026-06-16",
