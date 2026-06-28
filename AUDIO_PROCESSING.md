@@ -19,8 +19,9 @@ The pipeline has four phases:
   the user reviews the diagnostic report.
 - **Phase 3 — Publish to the website.** Upload the processed tracks to Cloudflare
   R2, update `data/recordings.json`, regenerate waveform peaks, rebuild the site,
-  and add the appropriate Updates-page note. Two sub-paths: re-processing a show
-  already on the site, or adding a brand-new show.
+  add the appropriate Updates-page note, and mirror the processed files back to the
+  Drive archive. Two sub-paths: re-processing a show already on the site, or adding
+  a brand-new show.
 
 Always run Phase 1 first and wait for user confirmation before Phase 2, and show
 the publish plan before Phase 3.
@@ -590,9 +591,31 @@ Field notes:
 
 ---
 
+### Mirror to the Drive archive (both paths)
+Publishing puts the processed files on R2 (the live site) but leaves Google Drive
+holding the originals, so the site and the Drive archive drift apart. Push the
+processed files back to Drive so the archive stays in sync — into a **`Processed/`
+subfolder alongside `Tracks/`, never overwriting the originals**:
+```
+rclone copy ~/work/<slug>/processed \
+  "gdrive:DAT Tapes/Work Folder/<show>/Processed" --drive-shared-with-me --progress
+```
+- This keeps both: `Tracks/` = un-normalized masters, `Processed/` = the
+  normalized versions that match R2. (The provenance `md5` lets you later confirm
+  the Drive `Processed/` copy and the R2 copy are byte-identical audio:
+  `ffmpeg -i <file> -map 0:a -f md5 -`.)
+- Skip the `processing_report.txt` if you don't want it in the archive
+  (`--exclude "*.txt"`), or leave it for a self-documenting folder.
+- **Gotcha:** write through the `gdrive:` remote as above. Do **not** drop files
+  into `~/gdrive-mount` expecting them to sync — that path is a stale *local copy*,
+  not a live mount, so files left there never reach real Drive.
+- Run this **before** the local cleanup that removes `~/work/<slug>/`.
+
 ### Post-publish check
 - Confirm the show page renders tracks with waveforms and the Updates page shows
   the expected (auto or manual) entry.
+- Confirm the processed files landed in the Drive `Processed/` subfolder and the
+  originals in `Tracks/` are untouched.
 - Confirm the **Technical data** table renders on the show page with the right
   LUFS/peak values, and (Path A) that the Updates "view data" link opens it.
 - Spot-check one track streams and that the FLAC download is gated while the MP3
