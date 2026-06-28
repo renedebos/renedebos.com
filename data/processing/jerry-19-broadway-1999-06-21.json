@@ -1,0 +1,12 @@
+{
+  "slug": "jerry-19-broadway-1999-06-21",
+  "target_lufs": -20,
+  "tp_ceiling": -1,
+  "tool": "ffmpeg loudnorm",
+  "date": "2026-06-28",
+  "tracks": {
+    "19": { "lufs": -20.00, "tp": -3.50, "lra": 6.50 },
+    "20": { "lufs": -20.00, "tp": -1.14, "lra": 11.00 },
+    "21": { "lufs": -19.92, "tp": -1.05, "lra": 9.00 }
+  }
+}

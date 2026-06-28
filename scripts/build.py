@@ -341,6 +341,55 @@ def added_sort_key(s):
     return (s.get("added_ts") or f'{s["added"]}T00:00:00', s["slug"])
 
 
+def load_processing(slug):
+    """Per-show audio-processing provenance written by the audio_processing
+    workflow (data/processing/<slug>.json): target, tool, date, and per-track
+    achieved loudness/true-peak/LRA. Returns the dict, or None if the show has
+    never been run through the workflow. data/ is .assetsignore'd, so this is a
+    build-time source only — its data is rendered into the show page HTML."""
+    path = os.path.join(ROOT, "data", "processing", f"{slug}.json")
+    return json.load(open(path)) if os.path.exists(path) else None
+
+
+def tech_data_section(show, proc):
+    """Render a collapsible "Technical data" table for a processed show: every
+    track's duration + sizes (from recordings.json) merged with its achieved
+    LUFS / true peak / LRA (from the processing provenance, where measured)."""
+    head = (f'Loudness-normalized to {proc["target_lufs"]} LUFS / '
+            f'{proc["tp_ceiling"]} dBTP &middot; {esc(proc.get("tool", "ffmpeg loudnorm"))}'
+            f' &middot; {esc(proc.get("date", ""))}')
+    pt = proc.get("tracks", {})
+    rows = []
+    for t in show["tracks"]:
+        d = pt.get(str(t["num"]), {})
+        lufs = f'{d["lufs"]:.2f}' if "lufs" in d else "&mdash;"
+        tp = f'{d["tp"]:.1f}' if "tp" in d else "&mdash;"
+        lra = f'{d["lra"]:.1f}' if "lra" in d else "&mdash;"
+        mp3 = f'{t["size_mb"]} MB' if t.get("size_mb") else "&mdash;"
+        flac = f'{t["flac_size_mb"]} MB' if t.get("flac_size_mb") else "&mdash;"
+        rows.append(
+            f'        <tr><td class="tnum">{t["num"]:02d}</td><td>{esc(t["title"])}</td>'
+            f'<td class="tnum">{esc(t["duration"])}</td><td class="tnum">{mp3}</td>'
+            f'<td class="tnum">{flac}</td><td class="tnum">{lufs}</td>'
+            f'<td class="tnum">{tp}</td><td class="tnum">{lra}</td></tr>')
+    return f'''
+  <section>
+    <details class="tech-details" id="technical-data">
+      <summary>Technical data &mdash; loudness, peaks &amp; sizes</summary>
+      <p class="tech-head">{head}</p>
+      <div class="tech-scroll">
+      <table class="tech-table">
+        <thead><tr><th>#</th><th>Song</th><th>Time</th><th>MP3</th><th>FLAC</th>
+          <th>LUFS</th><th>True&nbsp;Pk</th><th>LRA</th></tr></thead>
+        <tbody>
+{chr(10).join(rows)}
+        </tbody>
+      </table>
+      </div>
+    </details>
+  </section>'''
+
+
 def _show_label(show):
     artist = next(a for a in M["artists"] if a["id"] == show["artist"])
     return f'{esc(artist["name"])} &middot; {esc(show["venue_short"])} &middot; {esc(show["date"] or "")}'
@@ -373,6 +422,10 @@ def updates_list():
                 continue
             link = f'<a href="{show_url(show)}">{_show_label(show)}</a>'
             html = f'{esc(upd["text"])} &mdash; {link} {_src_tag(show)}'
+            # Workflow-generated entries can link straight to the show's
+            # technical-data table (rendered when a processing report exists).
+            if upd.get("report"):
+                html += f' &middot; <a href="{show_url(show)}#technical-data">view data</a>'
         else:
             # Site-wide note (e.g. a feature change) — no show link or source tag.
             html = esc(upd["text"])
@@ -762,6 +815,12 @@ def build_show(show):
     </div>
   </section>''')
 
+    # Technical-data table for shows that have been through the audio_processing
+    # workflow (renders all tracks; loudness columns filled where measured).
+    proc = load_processing(show["slug"]) if show.get("tracks") else None
+    if proc:
+        parts.append(tech_data_section(show, proc))
+
     cards = []
     for r in canon:
         title = r["label"] or "Complete show"
@@ -813,6 +872,14 @@ def build_show(show):
         write(f"assets/peaks/{show['slug']}.json", open(peaks_path).read())
         extra_scripts = (f'\n<script>window.WS_PEAKS_URL = "/assets/peaks/{show["slug"]}.json";</script>\n'
                          f'<script type="module" src="/assets/wavesurfer.js"></script>')
+
+    if proc:
+        # Open the collapsed technical-data table when linked to via #technical-data
+        # (e.g. the "view data" link on the Updates page).
+        extra_scripts += ('\n<script>(function(){function o(){var e=location.hash&&'
+                          'document.getElementById(location.hash.slice(1));'
+                          "if(e&&e.tagName==='DETAILS')e.open=true;}o();"
+                          'addEventListener("hashchange",o);})();</script>')
 
     return page_shell(
         title=f"{show_title(show)} — {show['date'] or 'Unknown date'}",

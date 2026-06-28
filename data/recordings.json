@@ -3843,7 +3843,8 @@
       "date": "2026-06-28",
       "ts": "2026-06-28T11:15:36",
       "slug": "jerry-19-broadway-1999-06-21",
-      "text": "Re-normalized “Please Don’t Bury Me,” “Model Family Man,” and “The Kiss / Da Da Da” to −20 LUFS for a more even listening level, using the automated audio engineering workflow with ffmpeg"
+      "text": "Re-normalized “Please Don’t Bury Me,” “Model Family Man,” and “The Kiss / Da Da Da” to −20 LUFS for a more even listening level, using the automated audio engineering workflow with ffmpeg",
+      "report": true
     }
   ]
 }

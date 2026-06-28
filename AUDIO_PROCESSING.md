@@ -25,15 +25,29 @@ The pipeline has four phases:
 Always run Phase 1 first and wait for user confirmation before Phase 2, and show
 the publish plan before Phase 3.
 
-### Input formats and output container
-Process both `*.wav` and `*.flac` in the input folder. The lossless processed
-output **mirrors the input container** — WAV in → WAV out, FLAC in → FLAC out —
-so the archive stays lossless and FLAC sources keep their ~50% size advantage.
-For publishing, an MP3 is additionally derived from each processed lossless file
-(see Phase 2 and Phase 3). All ffprobe/ffmpeg commands below work identically on
-either container; only the Pass 2 output codec differs (see "Bit depth" under
-Phase 2). Throughout this doc "WAV" in the example commands stands in for "the
-input file," whatever its container.
+### Lossless sources only — skip MP3
+**Process only lossless sources: `*.flac` and `*.wav`.** Scan the input folder for
+those; if it also contains `*.mp3`, **report them and skip them** — do not process
+or upload an MP3 source. Three reasons:
+1. You cannot make a lossless FLAC from an MP3, so an MP3 source can only update a
+   track's streamed MP3 and leaves its gated FLAC at the old level — the two drift
+   out of sync. (This is exactly what happened on the first test run.)
+2. Decoding an MP3, filtering, and re-encoding to MP3 is generational quality loss.
+3. The served MP3 is always **derived from the processed lossless master** (Phase
+   2), so MP3 and FLAC can never drift by construction.
+
+**Never let an MP3 source overwrite a track that has a FLAC on the site.** The only
+allowed exception is a track whose lossless master is genuinely lost — and only
+with the user's explicit opt-in for that specific track.
+
+### Output container
+The lossless processed output **mirrors the input container** — WAV in → WAV out,
+FLAC in → FLAC out — so the archive stays lossless and FLAC sources keep their
+~50% size advantage. For publishing, an MP3 is additionally derived from each
+processed lossless file (see Phase 2 and Phase 3). All ffprobe/ffmpeg commands
+below work identically on either container; only the Pass 2 output codec differs
+(see "Bit depth" under Phase 2). Throughout this doc "WAV" in the example commands
+stands in for "the input file," whatever its container.
 
 ### Keep the leading track number
 Every step downstream — title parsing, `gen_peaks.py`, and especially
@@ -83,9 +97,13 @@ Then confirm what landed and that every file has a leading track number:
 ```
 ls -1 ~/work/<slug>/input
 ```
-Watch for **trailing spaces** in Drive filenames (e.g. `03 Galway Shawl .flac`) —
-they ride through verbatim and will drift from the clean R2 keys. Flag any to the
-user before processing.
+- Watch for **trailing spaces** in Drive filenames (e.g. `03 Galway Shawl .flac`)
+  — they ride through verbatim and will drift from the clean R2 keys. Flag any.
+- **List any `*.mp3` files separately and report them as "skipped (lossy source)"**
+  per the lossless-only rule above. The folder is often a mixed dumping ground;
+  only the `*.flac`/`*.wav` files go forward. If the user wants an MP3-only track
+  processed anyway, that's an explicit per-track opt-in (and never overwrites a
+  FLAC).
 
 All subsequent phases use `~/work/<slug>/input` as the input folder and
 `~/work/<slug>/processed` as the output folder.
@@ -417,6 +435,32 @@ PY
 Both paths assume `~/work/<slug>/processed/` holds matched `NN Title.mp3` +
 `NN Title.flac` files with intact leading track numbers.
 
+### Save the processing provenance (both paths) — do NOT discard the reports
+The diagnostic/processing reports are not throwaway: persist the per-track
+measurements as a provenance sidecar at `data/processing/<slug>.json`. `build.py`
+renders this into a collapsible **"Technical data"** table on the show page (every
+track's time + sizes, with achieved LUFS / true peak / LRA filled where measured),
+and the Updates "view data" link (below) deep-links to it. Write it from the
+Phase 1/2 measurements:
+```json
+{
+  "slug": "<slug>",
+  "target_lufs": -20,
+  "tp_ceiling": -1,
+  "tool": "ffmpeg loudnorm",
+  "date": "YYYY-MM-DD",
+  "tracks": {
+    "19": { "lufs": -20.00, "tp": -3.50, "lra": 6.50 }
+  }
+}
+```
+- Keys are track numbers (strings). Use the **achieved** (Pass 3 / re-measured
+  output) values, not the inputs. On a partial pass, include only the tracks you
+  processed — `build.py` shows `—` for the loudness columns of untouched tracks
+  while still listing their time/size.
+- It's a build *source* (`data/` is `.assetsignore`'d → not served); the data
+  reaches the browser only via the rendered HTML.
+
 ---
 
 ### Path A — Re-processing a show already on the site
@@ -443,12 +487,17 @@ Both paths assume `~/work/<slug>/processed/` holds matched `NN Title.mp3` +
    `data/recordings.json`:
    ```json
    { "date": "YYYY-MM-DD", "ts": "YYYY-MM-DDTHH:MM:SS", "slug": "<slug>",
-     "text": "Re-normalized all tracks to −16 LUFS for a more even, comfortable listening level" }
+     "report": true,
+     "text": "Re-normalized all tracks to −20 LUFS for a more even, comfortable listening level, using the automated audio engineering workflow with ffmpeg" }
    ```
-   Match the phrasing style of existing entries; state the actual target used.
-   (Alternatively use `make edit` → the show's "Update note" field, which posts
-   the same entry.) **Do not** also rely on auto-generation here — that only fires
-   for newly-added shows.
+   - State the **actual target** used and name the tracks if it was a partial pass
+     (don't say "all tracks" unless it was). End workflow-generated notes with
+     "…using the automated audio engineering workflow with ffmpeg" so they're
+     filterable from hand-written ones.
+   - `"report": true` makes `updates_list()` append a **"view data"** link that
+     deep-links to the show's `#technical-data` table (and auto-opens it).
+   - Alternatively use `make edit` → the show's "Update note" field for the text.
+   - **Do not** rely on auto-generation here — that only fires for newly-added shows.
 
 4. **Rebuild, commit, deploy:**
    ```
@@ -512,7 +561,9 @@ Both paths assume `~/work/<slug>/processed/` holds matched `NN Title.mp3` +
 4. **Do NOT add a manual Updates entry.** `build.py`'s `stamp_added_dates()`
    auto-stamps `added`/`added_ts` for any show that has tracks but no `added`, and
    `updates_list()` then auto-generates an "Added … N split tracks" feed event. A
-   manual entry on top would duplicate it.
+   manual entry on top would duplicate it. (The auto "Added" event has no "view
+   data" link, but the **Technical data** table still renders on the show page from
+   the `data/processing/<slug>.json` you wrote above — reachable directly there.)
 
 5. **Generate peaks, rebuild, commit, deploy:**
    ```
@@ -526,6 +577,8 @@ Both paths assume `~/work/<slug>/processed/` holds matched `NN Title.mp3` +
 ### Post-publish check
 - Confirm the show page renders tracks with waveforms and the Updates page shows
   the expected (auto or manual) entry.
+- Confirm the **Technical data** table renders on the show page with the right
+  LUFS/peak values, and (Path A) that the Updates "view data" link opens it.
 - Spot-check one track streams and that the FLAC download is gated while the MP3
   is free.
 - Optional follow-up (open decision): sync the louder versions back to the Drive
