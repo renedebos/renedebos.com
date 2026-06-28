@@ -1078,8 +1078,7 @@
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/07 I Think She Was You.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/07 I Think She Was You.flac",
-          "flac_size_mb": 41,
-          "dropouts": true
+          "flac_size_mb": 41
         },
         {
           "num": 8,
@@ -1103,8 +1102,7 @@
           "flac_size_mb": 55,
           "tags": [
             "Marty Robbins"
-          ],
-          "dropouts": true
+          ]
         },
         {
           "num": 10,
@@ -1134,8 +1132,7 @@
           "flac_size_mb": 12,
           "tags": [
             "Irish"
-          ],
-          "dropouts": true
+          ]
         },
         {
           "num": 13,
@@ -1162,8 +1159,7 @@
           "size_mb": 11,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/15 My Boyfriend.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/15 My Boyfriend.flac",
-          "flac_size_mb": 56,
-          "dropouts": true
+          "flac_size_mb": 56
         },
         {
           "num": 16,
@@ -1187,8 +1183,7 @@
           "flac_size_mb": 41,
           "tags": [
             "Irish"
-          ],
-          "dropouts": true
+          ]
         },
         {
           "num": 18,
@@ -1200,8 +1195,7 @@
           "flac_size_mb": 45,
           "tags": [
             "Irish"
-          ],
-          "dropouts": true
+          ]
         },
         {
           "num": 19,
@@ -1225,8 +1219,7 @@
           "flac_size_mb": 52,
           "tags": [
             "Irish"
-          ],
-          "dropouts": true
+          ]
         },
         {
           "num": 21,
@@ -1235,8 +1228,7 @@
           "size_mb": 11,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/21 Rugburns.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/21 Rugburns.flac",
-          "flac_size_mb": 55,
-          "dropouts": true
+          "flac_size_mb": 55
         },
         {
           "num": 22,
@@ -1290,8 +1282,7 @@
           "size_mb": 5,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/27 Slave Woman.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/27 Slave Woman.flac",
-          "flac_size_mb": 24,
-          "dropouts": true
+          "flac_size_mb": 24
         },
         {
           "num": 28,
@@ -1334,7 +1325,7 @@
         }
       ],
       "description": [
-        "Recorded directly from the soundboard to DAT at 19 Broadway in Fairfax. The full night has been split into its 31 individual songs — Jerry’s originals alongside traditional Irish songs and a handful of covers. Note that this tape has a lot of dropouts and apparent tape damage, affecting a number of the songs.",
+        "Recorded directly from the soundboard to DAT at 19 Broadway in Fairfax. The full night has been split into its 31 individual songs — Jerry’s originals alongside traditional Irish songs and a handful of covers.",
         "All 31 songs have now been volume-normalized for a consistent, comfortable listening level across the set.",
         "A few of the songs here are obscure, unfinished sketches. “Loser,” “Xmas Song,” and “Blender” are short ideas more than full songs. “Dope World” may never have been finished, and “Slave Woman” was a very early song that — for obvious reasons — was rarely featured in live shows.",
         "On the last song of the night, “The Old Triangle,” a guest singer named Johnny joins Jerry."
