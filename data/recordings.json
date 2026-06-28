@@ -1011,11 +1011,11 @@
         {
           "num": 1,
           "title": "State Trooper",
-          "duration": "5:19",
+          "duration": "5:15",
           "size_mb": 12,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/01 State Trooper.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/01 State Trooper.flac",
-          "flac_size_mb": 53,
+          "flac_size_mb": 58,
           "tags": [
             "Bruce Springsteen"
           ]
@@ -1023,11 +1023,11 @@
         {
           "num": 2,
           "title": "Crystal Rose",
-          "duration": "3:51",
+          "duration": "3:50",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/02 Crystal Rose.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/02 Crystal Rose.flac",
-          "flac_size_mb": 41,
+          "flac_size_mb": 44,
           "tags": [
             "Irish"
           ]
@@ -1039,7 +1039,7 @@
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/03 Truck.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/03 Truck.flac",
-          "flac_size_mb": 41
+          "flac_size_mb": 44
         },
         {
           "num": 4,
@@ -1048,7 +1048,7 @@
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/04 Everything.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/04 Everything.flac",
-          "flac_size_mb": 31,
+          "flac_size_mb": 32,
           "dropouts": true
         },
         {
@@ -1058,7 +1058,7 @@
           "size_mb": 5,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/05 Little Number Four.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/05 Little Number Four.flac",
-          "flac_size_mb": 24,
+          "flac_size_mb": 25,
           "tags": [
             "Irish"
           ]
@@ -1066,11 +1066,11 @@
         {
           "num": 6,
           "title": "Anna May",
-          "duration": "2:44",
+          "duration": "2:41",
           "size_mb": 6,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/06 Anna May.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/06 Anna May.flac",
-          "flac_size_mb": 28
+          "flac_size_mb": 29
         },
         {
           "num": 7,
@@ -1079,7 +1079,7 @@
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/07 I Think She Was You.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/07 I Think She Was You.flac",
-          "flac_size_mb": 39,
+          "flac_size_mb": 41,
           "dropouts": true
         },
         {
@@ -1089,7 +1089,7 @@
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/08 Illegal Smile.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/08 Illegal Smile.flac",
-          "flac_size_mb": 32,
+          "flac_size_mb": 35,
           "tags": [
             "John Prine"
           ]
@@ -1101,7 +1101,7 @@
           "size_mb": 12,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/09 El Paso.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/09 El Paso.flac",
-          "flac_size_mb": 52,
+          "flac_size_mb": 55,
           "tags": [
             "Marty Robbins"
           ],
@@ -1110,16 +1110,16 @@
         {
           "num": 10,
           "title": "Plastic Lemons",
-          "duration": "2:55",
+          "duration": "2:54",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/10 Plastic Lemons.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/10 Plastic Lemons.flac",
-          "flac_size_mb": 30
+          "flac_size_mb": 31
         },
         {
           "num": 11,
           "title": "Scallywag",
-          "duration": "2:20",
+          "duration": "2:17",
           "size_mb": 5,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/11 Scallywag.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/11 Scallywag.flac",
@@ -1128,7 +1128,7 @@
         {
           "num": 12,
           "title": "You're Pulling Me Leg",
-          "duration": "1:08",
+          "duration": "1:06",
           "size_mb": 3,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/12 You're Pulling Me Leg.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/12 You're Pulling Me Leg.flac",
@@ -1145,7 +1145,7 @@
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/13 Luxury of Murder.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/13 Luxury of Murder.flac",
-          "flac_size_mb": 33
+          "flac_size_mb": 35
         },
         {
           "num": 14,
@@ -1154,7 +1154,7 @@
           "size_mb": 5,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/14 Moon Shadow.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/14 Moon Shadow.flac",
-          "flac_size_mb": 21
+          "flac_size_mb": 24
         },
         {
           "num": 15,
@@ -1163,7 +1163,7 @@
           "size_mb": 11,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/15 My Boyfriend.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/15 My Boyfriend.flac",
-          "flac_size_mb": 53,
+          "flac_size_mb": 56,
           "dropouts": true
         },
         {
@@ -1194,11 +1194,11 @@
         {
           "num": 18,
           "title": "The Fields of Athenry",
-          "duration": "4:13",
+          "duration": "4:12",
           "size_mb": 10,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/18 The Fields of Athenry.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/18 The Fields of Athenry.flac",
-          "flac_size_mb": 42,
+          "flac_size_mb": 45,
           "tags": [
             "Irish"
           ],
@@ -1211,7 +1211,7 @@
           "size_mb": 4,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/19 Johnny McEldoo.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/19 Johnny McEldoo.flac",
-          "flac_size_mb": 20,
+          "flac_size_mb": 21,
           "tags": [
             "Irish"
           ]
@@ -1219,7 +1219,7 @@
         {
           "num": 20,
           "title": "Four Leaf Clover Inn",
-          "duration": "5:12",
+          "duration": "5:11",
           "size_mb": 12,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/20 Four Leaf Clover Inn.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/20 Four Leaf Clover Inn.flac",
@@ -1232,30 +1232,30 @@
         {
           "num": 21,
           "title": "Rugburns",
-          "duration": "4:47",
+          "duration": "4:49",
           "size_mb": 11,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/21 Rugburns.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/21 Rugburns.flac",
-          "flac_size_mb": 52,
+          "flac_size_mb": 55,
           "dropouts": true
         },
         {
           "num": 22,
           "title": "Houses of the Holy",
-          "duration": "2:45",
+          "duration": "2:46",
           "size_mb": 6,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/22 Houses of the Holy.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/22 Houses of the Holy.flac",
-          "flac_size_mb": 28
+          "flac_size_mb": 29
         },
         {
           "num": 23,
           "title": "Loser",
-          "duration": "1:05",
+          "duration": "1:03",
           "size_mb": 2,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/23 Loser.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/23 Loser.flac",
-          "flac_size_mb": 11
+          "flac_size_mb": 12
         },
         {
           "num": 24,
@@ -1269,7 +1269,7 @@
         {
           "num": 25,
           "title": "Blender",
-          "duration": "0:33",
+          "duration": "0:30",
           "size_mb": 1,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/25 Blender.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/25 Blender.flac",
@@ -1282,31 +1282,31 @@
           "size_mb": 2,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/26 Dope World.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/26 Dope World.flac",
-          "flac_size_mb": 11
+          "flac_size_mb": 12
         },
         {
           "num": 27,
           "title": "Slave Woman",
-          "duration": "2:08",
+          "duration": "2:10",
           "size_mb": 5,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/27 Slave Woman.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/27 Slave Woman.flac",
-          "flac_size_mb": 22,
+          "flac_size_mb": 24,
           "dropouts": true
         },
         {
           "num": 28,
           "title": "I Thought I Was You",
-          "duration": "3:58",
+          "duration": "3:51",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/28 I Thought I Was You.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/28 I Thought I Was You.flac",
-          "flac_size_mb": 43
+          "flac_size_mb": 44
         },
         {
           "num": 29,
           "title": "The Kiss",
-          "duration": "1:27",
+          "duration": "1:24",
           "size_mb": 3,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/29 The Kiss.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/29 The Kiss.flac",
@@ -1315,11 +1315,11 @@
         {
           "num": 30,
           "title": "Never Knew a Woman",
-          "duration": "3:49",
+          "duration": "3:52",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/30 Never Knew a Woman.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/30 Never Knew a Woman.flac",
-          "flac_size_mb": 39
+          "flac_size_mb": 44
         },
         {
           "num": 31,
@@ -1328,7 +1328,7 @@
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/31 The Old Triangle.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/31 The Old Triangle.flac",
-          "flac_size_mb": 34,
+          "flac_size_mb": 36,
           "tags": [
             "Irish"
           ]
