@@ -1048,8 +1048,7 @@
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/04 Everything.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/04 Everything.flac",
-          "flac_size_mb": 32,
-          "dropouts": true
+          "flac_size_mb": 32
         },
         {
           "num": 5,
