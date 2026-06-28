@@ -706,14 +706,23 @@ def build_show(show):
                 sizes.append(f'MP3 {t["size_mb"]} MB')
             # A track may override the show artist (e.g. a guest singer).
             track_artist = t.get("artist") or artist["name"]
-            info = esc(json.dumps([
+            info_rows = [
                 ["Artist", track_artist],
                 ["Song", t["title"]],
                 ["Venue", show["venue"] or "—"],
                 ["Date", show["date"] or "Unknown date"],
                 ["Format", "FLAC + MP3" if t.get("flac") else "MP3"],
                 ["Size", " · ".join(sizes) or "—"],
-            ], ensure_ascii=False))
+            ]
+            # Some tracks have audible tape damage / dropouts; flag them inline
+            # with a small badge and in the track info popup.
+            if t.get("dropouts"):
+                info_rows.append(["Condition", "Significant tape damage — audible dropouts"])
+            info = esc(json.dumps(info_rows, ensure_ascii=False))
+            badge = ('<span class="track-badge" title="Significant tape damage'
+                     ' — audible dropouts">dropouts</span>') if t.get("dropouts") else ""
+            title_html = (f'<div class="track-main"><span class="track-title" data-info="{info}">'
+                          f'{esc(t["title"])}</span>{badge}</div>')
             # Free MP3 download, plus a password-protected lossless FLAC
             # download when a FLAC exists.
             mp3_title = "Download MP3" + (f" · {t['size_mb']} MB" if t.get("size_mb") else "")
@@ -729,7 +738,7 @@ def build_show(show):
                 rows.append(f'''      <div class="track-row ws-track" id="track-{t["num"]}" data-trackid="{t["num"]}" data-src="{esc(stream)}">
         <button class="play-btn" aria-label="Play">{PLAY_SVG}</button>
         <span class="track-num">{t["num"]:02d}</span>
-        <span class="track-title" data-info="{info}">{esc(t["title"])}</span>
+        {title_html}
         <div class="ws-wave"></div>
         <span class="time-label current" data-duration="{esc(t["duration"])}">{esc(t["duration"])}</span>{dl}
       </div>''')
@@ -738,7 +747,7 @@ def build_show(show):
                 rows.append(f'''      <div class="track-row custom-player" id="track-{t["num"]}" data-src="{esc(stream)}">
         <button class="play-btn" aria-label="Play">{PLAY_SVG}</button>
         <span class="track-num">{t["num"]:02d}</span>
-        <span class="track-title" data-info="{info}">{esc(t["title"])}</span>
+        {title_html}
         <span class="time-label current" data-duration="{esc(t["duration"])}">{esc(t["duration"])}</span>{dl}
         <div class="progress-bar-track"><div class="progress-bar-fill"></div></div>
       </div>''')
