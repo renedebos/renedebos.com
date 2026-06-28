@@ -48,6 +48,20 @@ function build(PEAKS) {
 
     btn.addEventListener('click', () => ws.playPause());
 
+    // Seek-on-tap, iOS-safe. With pre-computed peaks the audio is loaded lazily,
+    // and iOS Safari refuses to load an <audio> element until play() runs inside a
+    // user gesture. So tapping the waveform while paused moves the cursor but the
+    // seek is dropped — there's no loaded media to seek (readyState 0). Starting
+    // playback from the tapped position (within the tap gesture) makes the media
+    // load and seek reliably; on desktop a click on the waveform then plays from
+    // that point, matching how players like SoundCloud behave. While already
+    // playing we leave wavesurfer's own seek alone.
+    ws.on('interaction', (newTime) => {
+      if (!ws.isPlaying()) {
+        ws.play().then(() => ws.setTime(newTime)).catch(() => {});
+      }
+    });
+
     ws.on('play', () => {
       instances.forEach((w, i) => { if (i !== idx) w.pause(); });
       row.classList.add('playing');
