@@ -1169,11 +1169,11 @@
         {
           "num": 16,
           "title": "Sam Hall",
-          "duration": "4:42",
+          "duration": "4:47",
           "size_mb": 11,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/16 Sam Hall.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/16 Sam Hall.flac",
-          "flac_size_mb": 47,
+          "flac_size_mb": 51,
           "tags": [
             "John Prine"
           ]
@@ -1185,7 +1185,7 @@
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/17 Black is The Color.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/17 Black is The Color.flac",
-          "flac_size_mb": 38,
+          "flac_size_mb": 41,
           "tags": [
             "Irish"
           ],
@@ -3833,6 +3833,12 @@
       "ts": "2026-06-26T22:30:00",
       "slug": "sean-19-broadway-2000-02-21",
       "text": "Loudness-normalized all tracks to −16 LUFS for a more even listening level"
+    },
+    {
+      "date": "2026-06-27",
+      "ts": "2026-06-27T20:00:00",
+      "slug": "jerry-19-broadway-2001-01-15",
+      "text": "Re-normalized all 31 tracks with a fresh loudness-normalization pass for a more even, comfortable listening level"
     }
   ]
 }
