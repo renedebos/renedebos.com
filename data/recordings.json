@@ -1288,7 +1288,8 @@
           "size_mb": 5,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/27 Slave Woman.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/27 Slave Woman.flac",
-          "flac_size_mb": 22
+          "flac_size_mb": 22,
+          "dropouts": true
         },
         {
           "num": 28,
