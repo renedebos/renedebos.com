@@ -2121,8 +2121,7 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/01 Open Door.mp3",
           "size_mb": 6,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/01 Open Door.flac",
-          "flac_size_mb": 30,
-          "processed": true
+          "flac_size_mb": 30
         },
         {
           "num": 2,
@@ -2131,8 +2130,7 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/02 Woman.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/02 Woman.flac",
-          "flac_size_mb": 38,
-          "processed": true
+          "flac_size_mb": 38
         },
         {
           "num": 3,
@@ -2141,8 +2139,7 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/03 Galway Shawl.mp3",
           "size_mb": 11,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/03 Galway Shawl.flac",
-          "flac_size_mb": 50,
-          "processed": true
+          "flac_size_mb": 50
         },
         {
           "num": 4,
@@ -2151,8 +2148,7 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/04 I Thought I Was You.mp3",
           "size_mb": 11,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/04 I Thought I Was You.flac",
-          "flac_size_mb": 52,
-          "processed": true
+          "flac_size_mb": 52
         },
         {
           "num": 5,
@@ -2161,8 +2157,7 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/05 Ode to Biddy McGee.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/05 Ode to Biddy McGee.flac",
-          "flac_size_mb": 36,
-          "processed": true
+          "flac_size_mb": 36
         },
         {
           "num": 6,
@@ -2171,8 +2166,7 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/06 The German Clock Winder.mp3",
           "size_mb": 6,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/06 The German Clock Winder.flac",
-          "flac_size_mb": 26,
-          "processed": true
+          "flac_size_mb": 26
         },
         {
           "num": 7,
@@ -2181,8 +2175,7 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/07 Why Don't You Love Me.mp3",
           "size_mb": 1,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/07 Why Don't You Love Me.flac",
-          "flac_size_mb": 6,
-          "processed": true
+          "flac_size_mb": 6
         },
         {
           "num": 8,
@@ -2191,8 +2184,7 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/08 Don't Think Twice It's All Right.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/08 Don't Think Twice It's All Right.flac",
-          "flac_size_mb": 34,
-          "processed": true
+          "flac_size_mb": 34
         },
         {
           "num": 9,
@@ -2202,8 +2194,7 @@
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/09 Plastic Lemons.flac",
           "flac_size_mb": 38,
-          "artist": "Jerry Hannan",
-          "processed": true
+          "artist": "Jerry Hannan"
         },
         {
           "num": 10,
@@ -2212,8 +2203,7 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/10 Gold's Gym Guy.mp3",
           "size_mb": 7,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/10 Gold's Gym Guy.flac",
-          "flac_size_mb": 34,
-          "processed": true
+          "flac_size_mb": 34
         },
         {
           "num": 11,
@@ -2222,8 +2212,7 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/11 Lay Down Your Weary Tune.mp3",
           "size_mb": 10,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/11 Lay Down Your Weary Tune.flac",
-          "flac_size_mb": 46,
-          "processed": true
+          "flac_size_mb": 46
         }
       ],
       "description": [
@@ -2236,7 +2225,7 @@
       "page": null,
       "added": "2026-06-14",
       "added_ts": "2026-06-14T00:00:00",
-      "processing_status": "done"
+      "processing_status": "needs-processing"
     },
     {
       "slug": "sean-19-broadway-unknown",
@@ -3091,7 +3080,7 @@
           "size_mb": 8,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/01 Black is The Color.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/01 Black is The Color.flac",
-          "flac_size_mb": 42,
+          "flac_size_mb": 39,
           "tags": [
             "Irish"
           ],
@@ -3104,7 +3093,7 @@
           "size_mb": 7,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/02 Smoke in Heaven.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/02 Smoke in Heaven.flac",
-          "flac_size_mb": 37,
+          "flac_size_mb": 34,
           "processed": true
         },
         {
@@ -3114,167 +3103,167 @@
           "size_mb": 9,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/03 I Thought I Was You.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/03 I Thought I Was You.flac",
-          "flac_size_mb": 47,
+          "flac_size_mb": 43,
           "processed": true
         },
         {
           "num": 4,
           "title": "Plastic Melons",
-          "duration": "3:15",
-          "size_mb": 8,
+          "duration": "3:16",
+          "size_mb": 7,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/04 Plastic Melons.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/04 Plastic Melons.flac",
-          "flac_size_mb": 40,
+          "flac_size_mb": 38,
           "processed": true
         },
         {
           "num": 5,
           "title": "Everything Reminds Me of You",
           "duration": "5:39",
-          "size_mb": 14,
+          "size_mb": 13,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/05 Everything Reminds Me of You.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/05 Everything Reminds Me of You.flac",
-          "flac_size_mb": 71,
+          "flac_size_mb": 67,
           "processed": true
         },
         {
           "num": 6,
           "title": "ABC",
-          "duration": "3:41",
+          "duration": "3:46",
           "size_mb": 9,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/06 ABC.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/06 ABC.flac",
-          "flac_size_mb": 47,
+          "flac_size_mb": 45,
           "processed": true
         },
         {
           "num": 7,
           "title": "Truck",
           "duration": "3:43",
-          "size_mb": 9,
+          "size_mb": 8,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/07 Truck.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/07 Truck.flac",
-          "flac_size_mb": 47,
+          "flac_size_mb": 45,
           "processed": true
         },
         {
           "num": 8,
           "title": "Blahana",
-          "duration": "4:31",
-          "size_mb": 11,
+          "duration": "4:29",
+          "size_mb": 10,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/08 Blahana.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/08 Blahana.flac",
-          "flac_size_mb": 58,
+          "flac_size_mb": 53,
           "processed": true
         },
         {
           "num": 9,
           "title": "My Dear",
-          "duration": "2:57",
+          "duration": "2:00",
           "size_mb": 7,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/09 My Dear.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/09 My Dear.flac",
-          "flac_size_mb": 38,
+          "flac_size_mb": 35,
           "processed": true
         },
         {
           "num": 10,
           "title": "Recycle",
           "duration": "5:42",
-          "size_mb": 14,
+          "size_mb": 13,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/10 Recycle.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/10 Recycle.flac",
-          "flac_size_mb": 73,
+          "flac_size_mb": 67,
           "processed": true
         },
         {
           "num": 11,
           "title": "Luxury of Murder",
-          "duration": "2:47",
-          "size_mb": 7,
+          "duration": "2:50",
+          "size_mb": 6,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/11 Luxery of Murder.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/11 Luxery of Murder.flac",
-          "flac_size_mb": 37,
+          "flac_size_mb": 35,
           "processed": true
         },
         {
           "num": 12,
           "title": "Clear Headed",
-          "duration": "4:43",
+          "duration": "4:47",
           "size_mb": 11,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/12 Clear Headed.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/12 Clear Headed.flac",
-          "flac_size_mb": 62,
+          "flac_size_mb": 58,
           "processed": true
         },
         {
           "num": 13,
           "title": "Baby",
-          "duration": "3:08",
-          "size_mb": 8,
+          "duration": "3:10",
+          "size_mb": 7,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/13 Baby.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/13 Baby.flac",
-          "flac_size_mb": 41,
+          "flac_size_mb": 38,
           "processed": true
         },
         {
           "num": 14,
           "title": "Butter",
-          "duration": "3:14",
+          "duration": "3:17",
           "size_mb": 8,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/14 Butter.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/14 Butter.flac",
-          "flac_size_mb": 40,
+          "flac_size_mb": 38,
           "processed": true
         },
         {
           "num": 15,
           "title": "Anna May",
-          "duration": "3:02",
+          "duration": "3:07",
           "size_mb": 7,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/15 Anna May.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/15 Anna May.flac",
-          "flac_size_mb": 38,
+          "flac_size_mb": 36,
           "processed": true
         },
         {
           "num": 16,
           "title": "Long Black Veil",
-          "duration": "2:43",
-          "size_mb": 7,
+          "duration": "2:48",
+          "size_mb": 6,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/16 Long Black Veil.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/16 Long Black Veil.flac",
-          "flac_size_mb": 35,
+          "flac_size_mb": 33,
           "processed": true
         },
         {
           "num": 17,
           "title": "Blind Man",
-          "duration": "3:13",
-          "size_mb": 8,
+          "duration": "3:14",
+          "size_mb": 7,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/17 Blind Man.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/17 Blind Man.flac",
-          "flac_size_mb": 42,
+          "flac_size_mb": 39,
           "processed": true
         },
         {
           "num": 18,
           "title": "Tougher Than the Rest",
-          "duration": "3:58",
-          "size_mb": 10,
+          "duration": "3:59",
+          "size_mb": 9,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/18 Thougher Than the Rest.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/18 Thougher Than the Rest.flac",
-          "flac_size_mb": 51,
+          "flac_size_mb": 47,
           "processed": true
         },
         {
           "num": 19,
           "title": "Model Family Man",
-          "duration": "3:52",
+          "duration": "3:51",
           "size_mb": 9,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/19 Model Family Man.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/19 Model Family Man.flac",
-          "flac_size_mb": 48,
+          "flac_size_mb": 45,
           "tags": [
             "Paddy Nash"
           ],
@@ -3283,11 +3272,11 @@
         {
           "num": 20,
           "title": "Rocky Road to Dublin / Star of County Down",
-          "duration": "5:09",
+          "duration": "5:11",
           "size_mb": 12,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/20 Rocky Road to Dublin _ Star of County Down.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/20 Rocky Road to Dublin _ Star of County Down.flac",
-          "flac_size_mb": 66,
+          "flac_size_mb": 62,
           "tags": [
             "Irish"
           ],
@@ -3296,17 +3285,17 @@
         {
           "num": 21,
           "title": "The Kiss - Da Da Da (Slave To an Angel)",
-          "duration": "6:21",
+          "duration": "6:25",
           "size_mb": 15,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/21 The Kiss - Da Da Da.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/21 The Kiss - Da Da Da.flac",
-          "flac_size_mb": 82,
+          "flac_size_mb": 76,
           "processed": true
         }
       ],
       "description": [
         "Recorded live at Cafe Java in Larkspur.",
-        "<em>A note on the audio:</em> this recording has some audio issues, mainly from the loud drums and the applause from the audience. The whole show was treated with the Audacity Compressor, and the individual tracks have, for the most part, been loudness normalized to −16 LUFS."
+        "<em>A note on the audio:</em> this is a difficult recording with some audio issues, mainly from the loud drums and the applause from the audience. All tracks have been loudness-normalized to −20 LUFS to match the rest of the archive."
       ],
       "page": null,
       "added": "2026-06-24",
@@ -3468,8 +3457,7 @@
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/01 Truck.mp3",
           "size_mb": 8,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/01 Truck.flac",
-          "flac_size_mb": 38,
-          "processed": true
+          "flac_size_mb": 38
         },
         {
           "num": 2,
@@ -3478,8 +3466,7 @@
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/02 Blind Man.mp3",
           "size_mb": 8,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/02 Blind Man.flac",
-          "flac_size_mb": 34,
-          "processed": true
+          "flac_size_mb": 34
         },
         {
           "num": 3,
@@ -3488,8 +3475,7 @@
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/03 Smoke in Heaven.mp3",
           "size_mb": 7,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/03 Smoke in Heaven.flac",
-          "flac_size_mb": 30,
-          "processed": true
+          "flac_size_mb": 30
         },
         {
           "num": 4,
@@ -3498,8 +3484,7 @@
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/04 The Good Life.mp3",
           "size_mb": 9,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/04 The Good Life.flac",
-          "flac_size_mb": 40,
-          "processed": true
+          "flac_size_mb": 40
         },
         {
           "num": 5,
@@ -3508,8 +3493,7 @@
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/05 Clear Headed.mp3",
           "size_mb": 11,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/05 Clear Headed.flac",
-          "flac_size_mb": 51,
-          "processed": true
+          "flac_size_mb": 51
         },
         {
           "num": 6,
@@ -3518,8 +3502,7 @@
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/06 Hollywood.mp3",
           "size_mb": 11,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/06 Hollywood.flac",
-          "flac_size_mb": 48,
-          "processed": true
+          "flac_size_mb": 48
         },
         {
           "num": 7,
@@ -3528,8 +3511,7 @@
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/07 Baby.mp3",
           "size_mb": 11,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/07 Baby.flac",
-          "flac_size_mb": 48,
-          "processed": true
+          "flac_size_mb": 48
         },
         {
           "num": 8,
@@ -3538,8 +3520,7 @@
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/08 ABC - Sesame Street.mp3",
           "size_mb": 12,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/08 ABC - Sesame Street.flac",
-          "flac_size_mb": 52,
-          "processed": true
+          "flac_size_mb": 52
         },
         {
           "num": 9,
@@ -3548,8 +3529,7 @@
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/09 Madeline.mp3",
           "size_mb": 6,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/09 Madeline.flac",
-          "flac_size_mb": 28,
-          "processed": true
+          "flac_size_mb": 28
         },
         {
           "num": 10,
@@ -3558,8 +3538,7 @@
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/10 Luxury of Murder.mp3",
           "size_mb": 6,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/10 Luxury of Murder.flac",
-          "flac_size_mb": 29,
-          "processed": true
+          "flac_size_mb": 29
         },
         {
           "num": 11,
@@ -3568,8 +3547,7 @@
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/11 Rugburns.mp3",
           "size_mb": 10,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/11 Rugburns.flac",
-          "flac_size_mb": 45,
-          "processed": true
+          "flac_size_mb": 45
         },
         {
           "num": 12,
@@ -3578,8 +3556,7 @@
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/12 Recycle.mp3",
           "size_mb": 14,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/12 Recycle.flac",
-          "flac_size_mb": 62,
-          "processed": true
+          "flac_size_mb": 62
         },
         {
           "num": 13,
@@ -3588,8 +3565,7 @@
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/13 Blahana.mp3",
           "size_mb": 11,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/13 Blahana.flac",
-          "flac_size_mb": 48,
-          "processed": true
+          "flac_size_mb": 48
         },
         {
           "num": 14,
@@ -3598,8 +3574,7 @@
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/14 Everything Reminds Me of You.mp3",
           "size_mb": 7,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/14 Everything Reminds Me of You.flac",
-          "flac_size_mb": 32,
-          "processed": true
+          "flac_size_mb": 32
         },
         {
           "num": 15,
@@ -3608,8 +3583,7 @@
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/15 I Need a Lover.mp3",
           "size_mb": 6,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/15 I Need a Lover.flac",
-          "flac_size_mb": 28,
-          "processed": true
+          "flac_size_mb": 28
         },
         {
           "num": 16,
@@ -3618,8 +3592,7 @@
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/16 Plastic Lemons.mp3",
           "size_mb": 6,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/16 Plastic Lemons.flac",
-          "flac_size_mb": 27,
-          "processed": true
+          "flac_size_mb": 27
         },
         {
           "num": 17,
@@ -3628,8 +3601,7 @@
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/17 Scallywag.mp3",
           "size_mb": 5,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/17 Scallywag.flac",
-          "flac_size_mb": 25,
-          "processed": true
+          "flac_size_mb": 25
         },
         {
           "num": 18,
@@ -3641,8 +3613,7 @@
           "flac_size_mb": 52,
           "tags": [
             "Rolling Stones"
-          ],
-          "processed": true
+          ]
         },
         {
           "num": 19,
@@ -3654,8 +3625,7 @@
           "flac_size_mb": 37,
           "tags": [
             "Irish"
-          ],
-          "processed": true
+          ]
         },
         {
           "num": 20,
@@ -3667,8 +3637,7 @@
           "flac_size_mb": 66,
           "tags": [
             "Irish"
-          ],
-          "processed": true
+          ]
         },
         {
           "num": 21,
@@ -3677,8 +3646,7 @@
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/21 Friend.mp3",
           "size_mb": 8,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/21 Friend.flac",
-          "flac_size_mb": 38,
-          "processed": true
+          "flac_size_mb": 38
         },
         {
           "num": 22,
@@ -3687,8 +3655,7 @@
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/22 Dysfunctional Guy.mp3",
           "size_mb": 14,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/22 Dysfunctional Guy.flac",
-          "flac_size_mb": 65,
-          "processed": true
+          "flac_size_mb": 65
         },
         {
           "num": 23,
@@ -3697,8 +3664,7 @@
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/23 The Kiss - Da Da Da.mp3",
           "size_mb": 20,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/23 The Kiss - Da Da Da.flac",
-          "flac_size_mb": 80,
-          "processed": true
+          "flac_size_mb": 80
         },
         {
           "num": 24,
@@ -3707,8 +3673,7 @@
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/24 I Thought I Was You.mp3",
           "size_mb": 9,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/24 I Thought I Was You.flac",
-          "flac_size_mb": 39,
-          "processed": true
+          "flac_size_mb": 39
         }
       ],
       "description": [
@@ -3717,7 +3682,7 @@
       "page": null,
       "added": "2026-06-25",
       "added_ts": "2026-06-25T20:06:26.537625",
-      "processing_status": "done"
+      "processing_status": "needs-processing"
     },
     {
       "slug": "seanjerry-19-broadway-1999-12",
@@ -4052,6 +4017,20 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-06-29",
+      "ts": "2026-06-29T08:15:00",
+      "slug": "mad-cafe-java-1999-09-09",
+      "report": true,
+      "text": "Re-normalized all 21 tracks to −20 LUFS from the raw masters (replacing the earlier −16 Audacity pass) for an even, comfortable listening level consistent with the rest of the archive, using the automated audio engineering workflow with ffmpeg"
+    },
+    {
+      "date": "2026-06-29",
+      "ts": "2026-06-29T08:00:00",
+      "slug": "mad-sweetwater-2000-10-17",
+      "report": true,
+      "text": "Loudness-normalized all 24 tracks to −20 LUFS for an even, comfortable listening level consistent with the rest of the archive, using the automated audio engineering workflow with ffmpeg"
+    },
     {
       "date": "2026-06-28",
       "ts": "2026-06-28T23:55:00",
