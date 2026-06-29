@@ -40,7 +40,7 @@ import clipcheck  # second-tier run-length clipping check (same dir)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BUCKET = "r2:hannan-audio"
-ARTIST_TARGET = {"jerry": -20, "sean": -20, "seanjerry": -20, "mad": -16}
+ARTIST_TARGET = {"jerry": -20, "sean": -20, "seanjerry": -20, "mad": -20}
 TP_CEILING = -1.0
 TP_TOL = 0.1      # warn if achieved TP exceeds the ceiling by more than this
 LUFS_TOL = 0.5    # warn if achieved LUFS drifts from target by more than this
@@ -58,7 +58,9 @@ WORKFLOW_VERSION = 1
 WORKFLOW_VERSIONS = {
     1: {
         "desc": "Two-pass ffmpeg loudnorm to the per-artist target "
-                "(jerry/sean/seanjerry -20, mad -16 LUFS), -1 dBTP ceiling, linear; "
+                "(all artists -20 LUFS; Mad moved -16 -> -20 after A/B testing showed "
+                "-16 forced non-linear processing on band masters with no audible gain), "
+                "-1 dBTP ceiling, linear; "
                 "optional high-pass 80 Hz / low-pass 18 kHz / 60 Hz hum notch; a 320k "
                 "MP3 derived from the processed lossless master. Recommend-only: no "
                 "automatic limiter/compressor/denoise.",

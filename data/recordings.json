@@ -2477,7 +2477,8 @@
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/01 Blind Man.mp3",
           "size_mb": 8,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/01 Blind Man.flac",
-          "flac_size_mb": 37
+          "flac_size_mb": 36,
+          "processed": true
         },
         {
           "num": 2,
@@ -2486,7 +2487,8 @@
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/02 Smoke in Heaven.mp3",
           "size_mb": 7,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/02 Smoke in Heaven.flac",
-          "flac_size_mb": 31
+          "flac_size_mb": 31,
+          "processed": true
         },
         {
           "num": 3,
@@ -2495,61 +2497,68 @@
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/03 Truck.mp3",
           "size_mb": 7,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/03 Truck.flac",
-          "flac_size_mb": 30
+          "flac_size_mb": 30,
+          "processed": true
         },
         {
           "num": 4,
           "title": "Hard Drinking",
-          "duration": "3:28",
+          "duration": "3:29",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/04 Hard Drinking .mp3",
           "size_mb": 8,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/04 Hard Drinking .flac",
-          "flac_size_mb": 38
+          "flac_size_mb": 36,
+          "processed": true
         },
         {
           "num": 5,
           "title": "Recycle",
           "duration": "5:25",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/05 Recycle.mp3",
-          "size_mb": 13,
+          "size_mb": 12,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/05 Recycle.flac",
-          "flac_size_mb": 56
+          "flac_size_mb": 56,
+          "processed": true
         },
         {
           "num": 6,
           "title": "Clear Headed",
-          "duration": "5:04",
+          "duration": "5:05",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/06 Clear Headed.mp3",
           "size_mb": 12,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/06 Clear Headed.flac",
-          "flac_size_mb": 53
+          "flac_size_mb": 54,
+          "processed": true
         },
         {
           "num": 7,
           "title": "Good Life",
-          "duration": "3:44",
+          "duration": "3:45",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/07 Good Life.mp3",
           "size_mb": 9,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/07 Good Life.flac",
-          "flac_size_mb": 39
+          "flac_size_mb": 40,
+          "processed": true
         },
         {
           "num": 8,
           "title": "Anna May",
-          "duration": "2:55",
+          "duration": "2:56",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/08 Anna May.mp3",
           "size_mb": 7,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/08 Anna May.flac",
-          "flac_size_mb": 28
+          "flac_size_mb": 30,
+          "processed": true
         },
         {
           "num": 9,
           "title": "I Thought I Was You",
-          "duration": "3:33",
+          "duration": "3:34",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/09 I Thought I Was You.mp3",
-          "size_mb": 9,
+          "size_mb": 8,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/09 I Thought I Was You.flac",
-          "flac_size_mb": 34
+          "flac_size_mb": 37,
+          "processed": true
         },
         {
           "num": 10,
@@ -2558,37 +2567,40 @@
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/10 Plastic Lemons.mp3",
           "size_mb": 7,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/10 Plastic Lemons.flac",
-          "flac_size_mb": 29,
+          "flac_size_mb": 33,
           "tags": [
             "Kristin McNamara"
           ],
-          "artist": "Kristin McNamara"
+          "artist": "Kristin McNamara",
+          "processed": true
         },
         {
           "num": 11,
           "title": "Elephant Shoes",
-          "duration": "3:52",
+          "duration": "3:53",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/11 Elephant Shoes.mp3",
           "size_mb": 9,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/11 Elephant Shoes.flac",
-          "flac_size_mb": 39,
+          "flac_size_mb": 41,
           "tags": [
             "Kristin McNamara"
           ],
-          "artist": "Kristin McNamara"
+          "artist": "Kristin McNamara",
+          "processed": true
         },
         {
           "num": 12,
           "title": "Everything Reminds Me of You",
-          "duration": "3:10",
+          "duration": "3:11",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/12 Everything Reminds Me of You.mp3",
-          "size_mb": 8,
+          "size_mb": 7,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/12 Everything Reminds Me of You.flac",
-          "flac_size_mb": 32,
+          "flac_size_mb": 34,
           "tags": [
             "Kristin McNamara"
           ],
-          "artist": "Kristin McNamara"
+          "artist": "Kristin McNamara",
+          "processed": true
         },
         {
           "num": 13,
@@ -2597,7 +2609,8 @@
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/13 I Need a Dream.mp3",
           "size_mb": 7,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/13 I Need a Dream.flac",
-          "flac_size_mb": 32
+          "flac_size_mb": 31,
+          "processed": true
         },
         {
           "num": 14,
@@ -2606,25 +2619,28 @@
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/14 There She Was.mp3",
           "size_mb": 7,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/14 There She Was.flac",
-          "flac_size_mb": 30
+          "flac_size_mb": 32,
+          "processed": true
         },
         {
           "num": 15,
           "title": "Hollywood",
           "duration": "5:22",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/15 Hollywood.mp3",
-          "size_mb": 13,
+          "size_mb": 12,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/15 Hollywood.flac",
-          "flac_size_mb": 57
+          "flac_size_mb": 57,
+          "processed": true
         },
         {
           "num": 16,
           "title": "Rugburns",
-          "duration": "3:22",
+          "duration": "3:23",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/16 Rugburns.mp3",
           "size_mb": 8,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/16 Rugburns.flac",
-          "flac_size_mb": 37
+          "flac_size_mb": 36,
+          "processed": true
         },
         {
           "num": 17,
@@ -2633,46 +2649,51 @@
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/17 Truck.mp3",
           "size_mb": 9,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/17 Truck.flac",
-          "flac_size_mb": 41
+          "flac_size_mb": 41,
+          "processed": true
         },
         {
           "num": 18,
           "title": "Angel from Montgomery",
-          "duration": "4:24",
+          "duration": "4:25",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/18 Angel from Montgomerey.mp3",
-          "size_mb": 11,
+          "size_mb": 10,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/18 Angel from Montgomerey.flac",
           "flac_size_mb": 46,
           "tags": [
             "John Prine"
-          ]
+          ],
+          "processed": true
         },
         {
           "num": 19,
           "title": "Dysfunctional Guy",
-          "duration": "4:47",
+          "duration": "4:48",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/18 Dysfunctional Guy.mp3",
-          "size_mb": 12,
+          "size_mb": 11,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/18 Dysfunctional Guy.flac",
-          "flac_size_mb": 52
+          "flac_size_mb": 51,
+          "processed": true
         },
         {
           "num": 20,
           "title": "Baby",
-          "duration": "3:12",
+          "duration": "3:13",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/19 Baby.mp3",
-          "size_mb": 8,
+          "size_mb": 7,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/19 Baby.flac",
-          "flac_size_mb": 35
+          "flac_size_mb": 34,
+          "processed": true
         },
         {
           "num": 21,
           "title": "Da Da Da",
           "duration": "7:25",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/20 DaDaDa.mp3",
-          "size_mb": 18,
+          "size_mb": 17,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/20 DaDaDa.flac",
-          "flac_size_mb": 81
+          "flac_size_mb": 77,
+          "processed": true
         }
       ],
       "description": [
@@ -2682,7 +2703,7 @@
       "page": null,
       "added": "2026-06-12",
       "added_ts": "2026-06-12T00:00:00",
-      "processing_status": "needs-processing"
+      "processing_status": "done"
     },
     {
       "slug": "mad-sweetwater-2000-10-17",
@@ -3952,6 +3973,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-06-28",
+      "ts": "2026-06-28T23:55:00",
+      "slug": "mad-sweetwater-2000-02-17",
+      "report": true,
+      "text": "Loudness-normalized all 21 tracks to −20 LUFS for an even, comfortable listening level consistent with the rest of the archive, using the automated audio engineering workflow with ffmpeg"
+    },
     {
       "date": "2026-06-28",
       "ts": "2026-06-28T23:30:00",
