@@ -58,7 +58,10 @@ import json
 ROOT = eng.ROOT
 WORK = os.path.expanduser("~/work")
 DRIVE_BASE = "gdrive:DAT Tapes/Work Folder"
-DRIVE_FLAGS = ["--drive-shared-with-me"]
+# gdrive: is now the OWNER account (renedebos@hotmail, 5 TB) — owned content is
+# reached by path with no flag; --drive-shared-with-me would EXCLUDE it. Empty
+# list = no flag (still spread with *DRIVE_FLAGS), easy to restore if auth changes.
+DRIVE_FLAGS = []
 
 # slug -> Drive folder under DRIVE_BASE (audio pulled from "<folder>/Tracks").
 # Always pull the raw "Tracks/" subfolder, never a "Normalized Tracks/" variant.
@@ -356,7 +359,7 @@ def publish_block(slug, info):
         f"  python3 scripts/build.py",
         f"  git add -A && git commit && git push",
         f'  rclone copy ~/work/{slug}/processed "{DRIVE_BASE}/{folder}/Processed" \\',
-        f"    --drive-shared-with-me --exclude '*.txt'",
+        f"    --exclude '*.txt'",
         f"  python3 scripts/audio_process.py verify {slug}",
         "  ```",
     ]

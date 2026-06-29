@@ -100,8 +100,8 @@ Split tracks live under the Work Folder. The folder may or may not carry an `SBD
 suffix, and tracks are usually in a `Tracks` subfolder (sometimes
 `Tracks/Normalized` for an earlier pass):
 ```
-rclone lsf "gdrive:DAT Tapes/Work Folder/" --drive-shared-with-me --dirs-only
-rclone lsf "gdrive:DAT Tapes/Work Folder/<show>/" --drive-shared-with-me --dirs-only
+rclone lsf "gdrive:DAT Tapes/Work Folder/" --dirs-only
+rclone lsf "gdrive:DAT Tapes/Work Folder/<show>/" --dirs-only
 ```
 
 ### Download to a local working folder
@@ -109,7 +109,7 @@ Use a per-show working directory under `~/`. Keep the original filenames:
 ```
 mkdir -p ~/work/<slug>/input
 rclone copy "gdrive:DAT Tapes/Work Folder/<show>/Tracks" \
-  ~/work/<slug>/input --drive-shared-with-me --progress
+  ~/work/<slug>/input --progress
 ```
 Then confirm what landed and that every file has a leading track number:
 ```
@@ -672,7 +672,7 @@ processed files back to Drive so the archive stays in sync — into a **`Process
 subfolder alongside `Tracks/`, never overwriting the originals**:
 ```
 rclone copy ~/work/<slug>/processed \
-  "gdrive:DAT Tapes/Work Folder/<show>/Processed" --drive-shared-with-me --progress
+  "gdrive:DAT Tapes/Work Folder/<show>/Processed" --progress
 ```
 - This keeps both: `Tracks/` = un-normalized masters, `Processed/` = the
   normalized versions that match R2. (The provenance `md5` lets you later confirm

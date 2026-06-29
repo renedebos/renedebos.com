@@ -1,6 +1,9 @@
 DRIVE_PATH := gdrive:DAT Tapes/DAT Tapes WAV Files/Hannans
 R2_BUCKET  := r2:hannan-audio
-DRIVE_FLAGS := --drive-shared-with-me
+# gdrive: is now the OWNER account (renedebos@hotmail, 5 TB). Owned content is
+# reached by path with no flag; --drive-shared-with-me would EXCLUDE it. Left
+# empty (not removed) so it's easy to restore if the auth ever changes back.
+DRIVE_FLAGS :=
 R2_FLAGS    := --s3-no-check-bucket
 
 .PHONY: refresh diff status upload edit build

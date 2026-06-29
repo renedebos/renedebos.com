@@ -39,7 +39,7 @@
    ```
    # slug + Drive folder (e.g. "SeanHannan - 19 Broadway 2000-01-24")
    rclone copy "gdrive:DAT Tapes/Work Folder/<folder>/Tracks" ~/work/<slug>/input \
-     --drive-shared-with-me --include "*.flac" --max-depth 1 --progress
+     --include "*.flac" --max-depth 1 --progress
    python3 scripts/audio_process.py diagnose ~/work/<slug>/input --artist <sean|mad>
    # review (esp. for Mad: check predicted-TP at -16); then:
    python3 scripts/audio_process.py process ~/work/<slug>/input ~/work/<slug>/processed \
@@ -52,7 +52,7 @@
    # update build_history() Week section  <-- standing requirement
    git add -A && git commit && git push
    rclone copy ~/work/<slug>/processed "gdrive:DAT Tapes/Work Folder/<folder>/Processed" \
-     --drive-shared-with-me --exclude "*.txt" --progress
+     --exclude "*.txt" --progress
    python3 scripts/audio_process.py verify <slug>
    rm -rf ~/work/<slug>
    ```
@@ -65,4 +65,4 @@
 - Workflow doc: `AUDIO_PROCESSING.md` (4 phases; engine = `scripts/audio_process.py`).
 - Per-artist targets: jerry/sean/seanjerry **−20**, mad **−16**; ceiling **−1 dBTP**.
 - Status/version queries: `audio_process.py status`, `history <slug> --chains`, `versions`.
-- rclone: `gdrive:` needs `--drive-shared-with-me`; `r2:hannan-audio` needs `--s3-no-check-bucket`.
+- rclone: `gdrive:` is now the **owner** account (renedebos@hotmail, 5 TB) — reach content by path with **no** `--drive-shared-with-me` (that flag now excludes owned content); `r2:hannan-audio` needs `--s3-no-check-bucket`.

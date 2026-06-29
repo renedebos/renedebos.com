@@ -43,8 +43,10 @@ cd renedebos.com
 The remotes are referenced as `gdrive:` and `r2:` throughout the `Makefile` and
 scripts. Re-create them with `rclone config`:
 
-- **`gdrive`** — type `drive` (Google Drive). The recordings live in a
-  *shared-with-me* folder, so list/copy commands pass `--drive-shared-with-me`.
+- **`gdrive`** — type `drive` (Google Drive), authenticated as the **owner**
+  account `renedebos@hotmail` (5 TB) that owns the DAT Tapes folder. Reach
+  content by path with **no** flag — do *not* pass `--drive-shared-with-me`
+  (it filters to shared-with-me items and would exclude owned content).
   - Primary audio path: `gdrive:DAT Tapes/DAT Tapes WAV Files/Hannans`
   - Split-track work folders: `gdrive:DAT Tapes/Work Folder/<show>/Tracks`
   - Auth: OAuth via Google account that the DAT Tapes folder is shared with.
