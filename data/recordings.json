@@ -2121,25 +2121,28 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/01 Open Door.mp3",
           "size_mb": 6,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/01 Open Door.flac",
-          "flac_size_mb": 30
+          "flac_size_mb": 29,
+          "processed": true
         },
         {
           "num": 2,
           "title": "Woman",
-          "duration": "3:33",
+          "duration": "3:35",
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/02 Woman.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/02 Woman.flac",
-          "flac_size_mb": 38
+          "flac_size_mb": 37,
+          "processed": true
         },
         {
           "num": 3,
           "title": "Galway Shawl",
-          "duration": "4:42",
+          "duration": "4:44",
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/03 Galway Shawl.mp3",
           "size_mb": 11,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/03 Galway Shawl.flac",
-          "flac_size_mb": 50
+          "flac_size_mb": 50,
+          "processed": true
         },
         {
           "num": 4,
@@ -2148,7 +2151,8 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/04 I Thought I Was You.mp3",
           "size_mb": 11,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/04 I Thought I Was You.flac",
-          "flac_size_mb": 52
+          "flac_size_mb": 50,
+          "processed": true
         },
         {
           "num": 5,
@@ -2157,7 +2161,8 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/05 Ode to Biddy McGee.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/05 Ode to Biddy McGee.flac",
-          "flac_size_mb": 36
+          "flac_size_mb": 36,
+          "processed": true
         },
         {
           "num": 6,
@@ -2166,16 +2171,18 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/06 The German Clock Winder.mp3",
           "size_mb": 6,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/06 The German Clock Winder.flac",
-          "flac_size_mb": 26
+          "flac_size_mb": 25,
+          "processed": true
         },
         {
           "num": 7,
           "title": "Why Don't You Love Me",
-          "duration": "0:36",
+          "duration": "0:37",
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/07 Why Don't You Love Me.mp3",
           "size_mb": 1,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/07 Why Don't You Love Me.flac",
-          "flac_size_mb": 6
+          "flac_size_mb": 6,
+          "processed": true
         },
         {
           "num": 8,
@@ -2184,7 +2191,8 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/08 Don't Think Twice It's All Right.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/08 Don't Think Twice It's All Right.flac",
-          "flac_size_mb": 34
+          "flac_size_mb": 33,
+          "processed": true
         },
         {
           "num": 9,
@@ -2193,8 +2201,9 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/09 Plastic Lemons.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/09 Plastic Lemons.flac",
-          "flac_size_mb": 38,
-          "artist": "Jerry Hannan"
+          "flac_size_mb": 37,
+          "artist": "Jerry Hannan",
+          "processed": true
         },
         {
           "num": 10,
@@ -2203,7 +2212,8 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/10 Gold's Gym Guy.mp3",
           "size_mb": 7,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/10 Gold's Gym Guy.flac",
-          "flac_size_mb": 34
+          "flac_size_mb": 33,
+          "processed": true
         },
         {
           "num": 11,
@@ -2212,7 +2222,8 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/11 Lay Down Your Weary Tune.mp3",
           "size_mb": 10,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/11 Lay Down Your Weary Tune.flac",
-          "flac_size_mb": 46
+          "flac_size_mb": 44,
+          "processed": true
         }
       ],
       "description": [
@@ -2225,7 +2236,7 @@
       "page": null,
       "added": "2026-06-14",
       "added_ts": "2026-06-14T00:00:00",
-      "processing_status": "needs-processing"
+      "processing_status": "done"
     },
     {
       "slug": "sean-19-broadway-unknown",
@@ -4017,6 +4028,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-06-29",
+      "ts": "2026-06-29T09:30:00",
+      "slug": "sean-19-broadway-2000-02-21",
+      "report": true,
+      "text": "Re-normalized all 11 tracks to −20 LUFS from the raw masters (replacing the earlier −16 pass) for an even, comfortable listening level consistent with the rest of the archive, using the automated audio engineering workflow with ffmpeg"
+    },
     {
       "date": "2026-06-29",
       "ts": "2026-06-29T08:15:00",
