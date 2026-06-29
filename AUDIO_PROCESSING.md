@@ -699,5 +699,11 @@ rclone copy ~/work/<slug>/processed \
   recomputes `processing_status` (per show) and `processed` (per track) in
   `recordings.json` from the sidecars, then rebuild/commit so the data reflects the
   new work. A freshly-published show should flip to `done` (or `partial`).
+- **Update the History page** (`build_history()` in `scripts/build.py`). It's a
+  hand-written, visitor-facing narrative organized by week — NOT auto-generated. Add
+  each newly processed/re-mastered show into the current `<h2>Week …</h2>` section
+  (or start a new dated week as time moves on), in the same plain-language voice
+  (no jargon dumps). This is a standing request from the user: extend the History as
+  shows are processed.
 - Spot-check one track streams and that the FLAC download is gated while the MP3
   is free.
