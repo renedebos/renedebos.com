@@ -1,3 +1,4 @@
 .wrangler/
 scripts/.metadata-backups/
 scripts/__pycache__/
+.claude/settings.local.json

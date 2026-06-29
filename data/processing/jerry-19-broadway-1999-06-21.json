@@ -5,9 +5,13 @@
   "source": "24-bit / 48 kHz FLAC",
   "filters": "none",
   "tool": "ffmpeg loudnorm",
+  "workflow_version": 1,
+  "ffmpeg": "7.1.3-0+deb13u1",
   "date": "2026-06-28",
   "tracks": {
     "1": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
       "in_lufs": -20.4,
       "lufs": -20.0,
       "tp": -4.01,
@@ -15,6 +19,8 @@
       "md5": "d4e154d4a5b72b45d8e65bb5881c2636"
     },
     "2": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
       "in_lufs": -23.9,
       "lufs": -20.0,
       "tp": -1.96,
@@ -22,6 +28,8 @@
       "md5": "5810a169c3db58eeb86f8cf1de960c57"
     },
     "3": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
       "in_lufs": -24.2,
       "lufs": -20.0,
       "tp": -1.9,
@@ -29,6 +37,8 @@
       "md5": "dde6c82effb2a53512c47fbd036c5d09"
     },
     "4": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
       "in_lufs": -21.3,
       "lufs": -20.0,
       "tp": -4.73,
@@ -36,6 +46,8 @@
       "md5": "60267f3debd0cc68d03f28c5aa1e8965"
     },
     "5": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
       "in_lufs": -23.9,
       "lufs": -19.99,
       "tp": -1.61,
@@ -43,6 +55,8 @@
       "md5": "2f73c9e8c8979134c0a5cb59d6b40091"
     },
     "6": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
       "in_lufs": -23.1,
       "lufs": -19.92,
       "tp": -1.2,
@@ -50,6 +64,8 @@
       "md5": "ff97a591697db36a40dfbe3a975328be"
     },
     "7": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
       "in_lufs": -23.1,
       "lufs": -20.03,
       "tp": -1.72,
@@ -57,6 +73,8 @@
       "md5": "7c5e9f13ae7e8adf97bde68d4c1bcf36"
     },
     "8": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
       "in_lufs": -24.7,
       "lufs": -20.02,
       "tp": -0.88,
@@ -64,6 +82,8 @@
       "md5": "1fbec10d073b313f4eef15235d38f224"
     },
     "9": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
       "in_lufs": -21.2,
       "lufs": -20.0,
       "tp": -3.6,
@@ -71,6 +91,8 @@
       "md5": "7da0584788a39dea7d1d2f50436ee0c5"
     },
     "10": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
       "in_lufs": -26.4,
       "lufs": -20.03,
       "tp": -0.99,
@@ -78,6 +100,8 @@
       "md5": "1166735f1b4452ab2149ec56e2a0624a"
     },
     "11": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
       "in_lufs": -21.9,
       "lufs": -20.0,
       "tp": -2.44,
@@ -85,6 +109,8 @@
       "md5": "d5583800c615ee31bcdd87710bb14af8"
     },
     "12": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
       "in_lufs": -24.1,
       "lufs": -20.02,
       "tp": -1.0,
@@ -92,6 +118,8 @@
       "md5": "c81545734baa86eecad1568c78a97270"
     },
     "13": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
       "in_lufs": -22.6,
       "lufs": -19.98,
       "tp": -0.99,
@@ -99,6 +127,8 @@
       "md5": "c2fe4266e8cac8134d548d0afc13c939"
     },
     "14": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
       "in_lufs": -23.1,
       "lufs": -20.02,
       "tp": -1.0,
@@ -106,6 +136,8 @@
       "md5": "590a40c81a4cc2b56138a2a715ada3c0"
     },
     "15": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
       "in_lufs": -26.7,
       "lufs": -19.98,
       "tp": -1.0,
@@ -113,6 +145,8 @@
       "md5": "fec63e18bd0322b64ce29822d9fd18b3"
     },
     "16": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
       "in_lufs": -20.8,
       "lufs": -20.06,
       "tp": -1.0,
@@ -120,6 +154,8 @@
       "md5": "45cf4eb11cba70bce8f133754de3e8cf"
     },
     "17": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
       "in_lufs": -21.6,
       "lufs": -20.03,
       "tp": -1.7,
@@ -127,6 +163,8 @@
       "md5": "7bd774b70436415582b872eac2ebdd27"
     },
     "18": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
       "in_lufs": -25.2,
       "lufs": -20.02,
       "tp": -0.98,
@@ -134,6 +172,8 @@
       "md5": "97ed4d55de55e74e1b8d9e3f927d6c6b"
     },
     "19": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
       "in_lufs": -22.3,
       "lufs": -20.0,
       "tp": -3.5,
@@ -141,6 +181,8 @@
       "md5": "85806ec71afbe1ea6d2471af6620980b"
     },
     "20": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
       "in_lufs": -24.1,
       "lufs": -20.0,
       "tp": -1.14,
@@ -148,6 +190,8 @@
       "md5": "7b97a3949a614abcaf15d7020afeaeb3"
     },
     "21": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
       "in_lufs": -20.9,
       "lufs": -19.92,
       "tp": -1.05,

@@ -487,9 +487,12 @@ measurements:
   "source": "24-bit / 48 kHz FLAC",
   "filters": "none",
   "tool": "ffmpeg loudnorm",
+  "workflow_version": 1,
+  "ffmpeg": "7.1.3-0+deb13u1",
   "date": "YYYY-MM-DD",
   "tracks": {
-    "19": { "in_lufs": -22.3, "lufs": -20.00, "tp": -3.50, "lra": 6.50,
+    "19": { "ver": 1, "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+            "in_lufs": -22.3, "lufs": -20.00, "tp": -3.50, "lra": 6.50,
             "md5": "85806ec71afbe1ea6d2471af6620980b" }
   }
 }
@@ -497,21 +500,45 @@ measurements:
 Field notes:
 - **Top level** — `source` is the lossless master spec (bit depth / sample rate /
   container, from the Phase 1 ffprobe; render as a header line since it's usually
-  uniform). `filters` is the Phase 2 chain actually applied (e.g.
-  `"high-pass 80 Hz"`, or `"none"`).
+  uniform). `filters` is the Phase 2 chain of the *most recent run*. `workflow_version`
+  / `ffmpeg` / `date` record that last run's context — but they are **only a summary**;
+  the per-track `ver`/`chain` below are the authoritative record for a show whose
+  tracks were processed across different workflow generations.
 - **Per track** (keys are track-number strings):
+  - `ver` — the **workflow version** that produced this track (see the
+    `WORKFLOW_VERSIONS` registry in `scripts/audio_process.py`; decode it with
+    `audio_process.py versions`). Bump `WORKFLOW_VERSION` whenever processing
+    functionality changes and add a registry entry describing it.
+  - `chain` — the **literal ffmpeg process chain applied to this specific track**
+    (filters + the loudnorm step), e.g.
+    `"afftdn=nr=12:nf=-45,loudnorm=I=-20:LRA=11:TP=-1:linear=true"` for a track that
+    later got a noise-floor pass. This is the self-contained ground truth of exactly
+    what was done to the track — readable without any version lookup.
   - `in_lufs` — input integrated LUFS (Phase 1, *before* processing).
   - `lufs` / `tp` / `lra` — **achieved** values from the Pass 3 re-measure of the
     output (not assumptions). `build.py` shows `In LUFS`, `Out LUFS`, and a derived
     `Gain` column, plus `True Pk` and `LRA`.
   - `md5` — audio fingerprint of the processed FLAC for integrity / Drive↔R2 drift
-    checks. Capture it (container-uniform, works for WAV too) with:
+    checks, and the **proof of which version's output is live**. Capture it
+    (container-uniform, works for WAV too) with:
     ```
     ffmpeg -i "NN Title.flac" -map 0:a -f md5 -    # prints MD5=<hex>
     ```
     Stored only; **not displayed** — it's data to diff later, not a column.
-- On a partial pass, include only the tracks you processed — `build.py` shows `—`
-  for the loudness columns of untouched tracks while still listing their time/size.
+- **Merge, don't overwrite.** Each `process` run loads the existing sidecar and
+  updates only the tracks it touched, preserving the rest. This is what lets one
+  show hold a mix of versions — e.g. re-running a single track later on a newer
+  workflow updates *its* `ver`/`chain`/`md5` and leaves the other tracks' v1 records
+  intact. The engine does this automatically.
+- **Tracking what's been processed and with what.** The presence of a track entry =
+  that track has been through the engine; its `ver` = which generation; its `chain` =
+  the exact processes. `audio_process.py history <slug> [--chains]` prints this
+  per-track (and a version tally) for a show; `audio_process.py versions` describes
+  what each version did. A track-listed show with *no* sidecar (or missing track
+  entries) is one that still needs processing.
+- On a partial pass, only the tracks you processed are written/updated — `build.py`
+  shows `—` for the loudness columns of untouched tracks while still listing their
+  time/size.
 - It's a build *source* (`data/` is `.assetsignore`'d → not served); the data
   reaches the browser only via the rendered HTML.
 

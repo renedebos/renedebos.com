@@ -45,6 +45,37 @@ TP_CEILING = -1.0
 TP_TOL = 0.1      # warn if achieved TP exceeds the ceiling by more than this
 LUFS_TOL = 0.5    # warn if achieved LUFS drifts from target by more than this
 
+# ── workflow versioning ───────────────────────────────────────────────────────
+# Bump WORKFLOW_VERSION whenever the processing *functionality* changes (a new
+# filter option, a limiter, different target logic, …) and add a registry entry
+# describing it. Each processed track records its `ver` and the literal `chain`
+# applied, so you can later tell exactly which workflow generation — and which
+# concrete processes — touched any given track (even a single track of a show
+# re-run later with a newer version). The registry is the human-readable decode
+# of a version number; the per-track `chain` is the self-contained ground truth;
+# the `md5` proves the live audio is that exact output.
+WORKFLOW_VERSION = 1
+WORKFLOW_VERSIONS = {
+    1: {
+        "desc": "Two-pass ffmpeg loudnorm to the per-artist target "
+                "(jerry/sean/seanjerry -20, mad -16 LUFS), -1 dBTP ceiling, linear; "
+                "optional high-pass 80 Hz / low-pass 18 kHz / 60 Hz hum notch; a 320k "
+                "MP3 derived from the processed lossless master. Recommend-only: no "
+                "automatic limiter/compressor/denoise.",
+        "loudnorm": "I=<target>:LRA=11:TP=-1:linear=true",
+        "targets": dict(ARTIST_TARGET),
+        "optional_filters": ["highpass=f=80", "lowpass=f=18000", "60Hz notch"],
+    },
+}
+
+
+def ffmpeg_version():
+    try:
+        out = subprocess.run(["ffmpeg", "-version"], capture_output=True, text=True).stdout
+        return out.split("\n", 1)[0].replace("ffmpeg version ", "").split()[0]
+    except Exception:
+        return "unknown"
+
 
 # ── shared helpers ────────────────────────────────────────────────────────────
 
@@ -231,6 +262,13 @@ def cmd_process(args):
         raise SystemExit(f"no .flac/.wav files in {infolder}")
     filt = build_filters(args)
 
+    # literal process chain applied to every track in THIS run (filters + the
+    # loudnorm step). Stored per-track so a later, single-track re-run with a new
+    # filter (e.g. a noise-floor pass on just track 4) is individually recoverable.
+    _w = lambda x: int(x) if float(x) == int(x) else x
+    chain_str = ((filt + ",") if filt else "") + \
+        f"loudnorm=I={_w(target)}:LRA=11:TP={_w(TP_CEILING)}:linear=true"
+
     prov_tracks, report, warnings = {}, [], []
     for i, f in enumerate(files, 1):
         src = os.path.join(infolder, f)
@@ -279,10 +317,14 @@ def cmd_process(args):
             status = "LUFS drift"
             warnings.append(f"{f}: achieved {out_I:.2f} LUFS drifts > {LUFS_TOL} from {target}")
         if num is not None:
-            entry = {"lufs": round(out_I, 2), "tp": round(out_TP, 2),
+            entry = {"ver": WORKFLOW_VERSION, "chain": chain_str,
+                     "lufs": round(out_I, 2), "tp": round(out_TP, 2),
                      "lra": round(out_LRA, 2), "md5": md5}
             if in_I is not None:
-                entry = {"in_lufs": round(in_I, 1), **entry}
+                entry = {"ver": WORKFLOW_VERSION, "chain": chain_str,
+                         "in_lufs": round(in_I, 1),
+                         "lufs": round(out_I, 2), "tp": round(out_TP, 2),
+                         "lra": round(out_LRA, 2), "md5": md5}
             prov_tracks[str(num)] = entry
         report.append((f, in_I, out_I, out_TP, status))
         print(f"[{i:02d}/{len(files)}] {f} -> {out_I:.2f} LUFS, TP {out_TP:.2f} "
@@ -306,18 +348,33 @@ def cmd_process(args):
         info0 = probe(os.path.join(infolder, files[0]))
         cont = "FLAC" if files[0].lower().endswith(".flac") else "WAV"
         whole = lambda x: int(x) if float(x) == int(x) else x
+        dest = os.path.join(ROOT, "data", "processing", f"{args.slug}.json")
+        # MERGE: keep any tracks not touched this run (possibly from an older
+        # workflow version) and overlay the ones we just processed. This is what
+        # lets one show hold a mix of versions — e.g. 29 tracks on v1 and a single
+        # track later re-run on v2 with an added filter.
+        merged = {}
+        if os.path.exists(dest):
+            try:
+                merged = json.load(open(dest)).get("tracks", {})
+            except Exception:
+                merged = {}
+        merged.update(prov_tracks)
         prov = {
             "slug": args.slug, "target_lufs": whole(target), "tp_ceiling": whole(TP_CEILING),
             "source": f"{info0['bits']}-bit / {int(info0['sr'])//1000} kHz {cont}",
             "filters": filt or "none", "tool": "ffmpeg loudnorm",
+            # last-run context; the per-track `ver`/`chain` are the authoritative
+            # record for mixed-version shows.
+            "workflow_version": WORKFLOW_VERSION, "ffmpeg": ffmpeg_version(),
             "date": datetime.date.today().isoformat(),
-            "tracks": {k: prov_tracks[k] for k in sorted(prov_tracks, key=int)},
+            "tracks": {k: merged[k] for k in sorted(merged, key=int)},
         }
-        dest = os.path.join(ROOT, "data", "processing", f"{args.slug}.json")
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         json.dump(prov, open(dest, "w"), indent=2, ensure_ascii=False)
         open(dest, "a").write("\n")
-        print(f"provenance -> {dest}")
+        print(f"provenance -> {dest} (workflow v{WORKFLOW_VERSION}, "
+              f"{len(prov_tracks)} track(s) this run, {len(merged)} total)")
 
     print(f"\nProcessed {len(report)} file(s). "
           + (f"{len(warnings)} warning(s) — see report." if warnings else "All within spec."))
@@ -361,6 +418,41 @@ def cmd_verify(args):
     sys.exit(1 if bad else 0)
 
 
+def cmd_versions(args):
+    """Decode the workflow-version registry: what each version's processing did."""
+    print(f"Current workflow version: {WORKFLOW_VERSION}\n")
+    for v in sorted(WORKFLOW_VERSIONS):
+        meta = WORKFLOW_VERSIONS[v]
+        print(f"v{v}: {meta['desc']}")
+        for k, val in meta.items():
+            if k == "desc":
+                continue
+            print(f"     {k}: {val}")
+        print()
+
+
+def cmd_history(args):
+    """Show, per track, which workflow version and exact process chain was applied
+    — including a single track re-run later on a newer version."""
+    path = os.path.join(ROOT, "data", "processing", f"{args.slug}.json")
+    if not os.path.exists(path):
+        raise SystemExit(f"no provenance for {args.slug} (not processed via the engine)")
+    prov = json.load(open(path))
+    print(f"{args.slug}  —  last run: workflow v{prov.get('workflow_version','?')}, "
+          f"ffmpeg {prov.get('ffmpeg','?')}, {prov.get('date','?')}")
+    vers = {}
+    for num in sorted(prov["tracks"], key=int):
+        t = prov["tracks"][num]
+        v = t.get("ver", "?")
+        vers[v] = vers.get(v, 0) + 1
+        if args.chains:
+            print(f"  track {num:>2}: v{v}  {t.get('chain','(unknown)')}")
+        else:
+            print(f"  track {num:>2}: v{v}")
+    summary = ", ".join(f"v{k}: {n} track(s)" for k, n in sorted(vers.items(), key=lambda x: str(x[0])))
+    print(f"\n  {len(prov['tracks'])} track(s) — {summary}")
+
+
 def main():
     ap = argparse.ArgumentParser(description="Audio processing workflow engine.")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -385,6 +477,14 @@ def main():
     v.add_argument("slug")
     v.add_argument("--drive", help="Drive Processed/ path (best-effort)")
     v.set_defaults(func=cmd_verify)
+
+    vs = sub.add_parser("versions", help="describe what each workflow version does")
+    vs.set_defaults(func=cmd_versions)
+
+    h = sub.add_parser("history", help="per-track workflow version + process chain for a show")
+    h.add_argument("slug")
+    h.add_argument("--chains", action="store_true", help="also print the literal filter chain")
+    h.set_defaults(func=cmd_history)
 
     args = ap.parse_args()
     args.func(args)
