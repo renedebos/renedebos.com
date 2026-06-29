@@ -176,18 +176,39 @@ def stdev(xs):
     return (sum((x - m) ** 2 for x in xs) / (len(xs) - 1)) ** 0.5
 
 
+def staged_sidecar(slug):
+    return os.path.join(WORK, slug, "sidecar-staged.json")
+
+
 def run_process(slug, dest, target):
     out = os.path.join(WORK, slug, "processed")
     r = subprocess.run(
         ["python3", os.path.join(ROOT, "scripts", "audio_process.py"),
          "process", dest, out, "--target", str(target), "--slug", slug],
         capture_output=True, text=True)
+    # The engine writes provenance to data/processing/<slug>.json, and `status`
+    # treats a sidecar there as "done". But a staged show is NOT published (its
+    # audio isn't on R2 yet), so leaving the sidecar there would mark it done on
+    # the live site prematurely. Move it to a staging file; the publish block
+    # restores it into data/processing/ right before upload.
+    sidecar = os.path.join(ROOT, "data", "processing", f"{slug}.json")
+    if os.path.exists(sidecar):
+        os.replace(sidecar, staged_sidecar(slug))
     # engine exits 0 = clean, 2 = within-tol warnings, other = failure
     return r.returncode, out, r.stdout, r.stderr
 
 
 def already_done(slug, show):
     return eng.show_status(show) == "done"
+
+
+def already_staged(slug):
+    """Processed in a prior batch run but not yet published (sidecar staged out,
+    processed audio present). Skip on re-run so we don't redo the work."""
+    out = os.path.join(WORK, slug, "processed")
+    return os.path.exists(staged_sidecar(slug)) and bool(
+        [f for f in os.listdir(out) if f.lower().endswith((".flac", ".wav"))]
+        if os.path.isdir(out) else [])
 
 
 def main():
@@ -218,6 +239,11 @@ def main():
         if already_done(slug, show):
             results.append((slug, "SKIP", "done", "already processed", {}))
             print(f"[{slug}] SKIP — already done")
+            continue
+        if already_staged(slug):
+            results.append((slug, "STAGED", "already-staged",
+                            "staged in a prior run; publish block below", {"slug": slug}))
+            print(f"[{slug}] SKIP — already staged (awaiting publish)")
             continue
         artist = show["artist"]
         target = eng.ARTIST_TARGET.get(artist)
@@ -321,6 +347,7 @@ def publish_block(slug, info):
         "- **Staged. To publish (review first):**",
         "  ```",
         f"  cd {ROOT}",
+        f"  mv ~/work/{slug}/sidecar-staged.json data/processing/{slug}.json  # restore provenance",
         f"  python3 scripts/update_tracks.py {slug} ~/work/{slug}/processed",
         f"  python3 scripts/gen_peaks.py --slug {slug}",
         f"  python3 scripts/audio_process.py status --write",

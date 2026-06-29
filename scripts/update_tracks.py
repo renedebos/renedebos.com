@@ -70,20 +70,38 @@ def main():
     if not mp3s and not flacs:
         sys.exit(f"no .mp3/.flac files with leading track numbers in {src}")
 
+    # Upload phase. R2 keys (t["file"]/t["flac"]) are stable, so use the copy
+    # loaded above; collect the size/duration changes to apply afterward rather
+    # than mutating this copy and writing it back wholesale.
     updated = 0
+    pending = {}  # track num -> {field: value} to write into recordings.json
     for t in show["tracks"]:
         n = t["num"]
         if n in mp3s:
             rclone_put(mp3s[n], t["file"])
-            t["size_mb"] = round(os.path.getsize(mp3s[n]) / 1048576)
-            t["duration"] = duration(mp3s[n])
+            pending.setdefault(n, {})["size_mb"] = round(os.path.getsize(mp3s[n]) / 1048576)
+            pending[n]["duration"] = duration(mp3s[n])
             print(f"  {n:02d} mp3  -> {t['file']}")
             updated += 1
         if n in flacs and t.get("flac"):
             rclone_put(flacs[n], t["flac"])
-            t["flac_size_mb"] = round(os.path.getsize(flacs[n]) / 1048576)
+            pending.setdefault(n, {})["flac_size_mb"] = round(os.path.getsize(flacs[n]) / 1048576)
             print(f"  {n:02d} flac -> {t['flac']}")
 
+    # Re-read recordings.json IMMEDIATELY before writing, then apply only the
+    # size/duration fields. Uploads take minutes; editing the file (descriptions,
+    # Updates notes, status) during that window is normal. Writing back the copy
+    # loaded at startup would silently clobber those edits — so merge into a fresh
+    # read instead. This shrinks the race window from the whole upload to the few
+    # lines below.
+    M = json.load(open(DATA))
+    show = next((s for s in M["shows"] if s["slug"] == slug), None)
+    if not show or not show.get("tracks"):
+        sys.exit(f"recordings.json changed under us: no show with tracks for {slug!r}")
+    by_num = {t["num"]: t for t in show["tracks"]}
+    for n, fields in pending.items():
+        if n in by_num:
+            by_num[n].update(fields)
     json.dump(M, open(DATA, "w"), indent=2, ensure_ascii=False)
     open(DATA, "a").write("\n")
     print(f"\nUpdated {updated} track(s) for {slug}.")
