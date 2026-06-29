@@ -359,6 +359,29 @@ def load_processing(slug):
     return json.load(open(path)) if os.path.exists(path) else None
 
 
+STATUS_BLURB = {
+    "done": "All tracks loudness-normalized through the audio workflow.",
+    "partial": "Some tracks loudness-normalized; the rest are pending.",
+    "redo": "Previously normalized outside the current workflow — queued to be re-processed to standard.",
+    "needs-processing": "Not yet loudness-normalized.",
+}
+
+
+def status_line(show):
+    """A standalone audio-processing status badge shown on every show page,
+    independent of the technical-data table (which only exists for processed
+    shows). Reads `processing_status` written into recordings.json by
+    `audio_process.py status --write`."""
+    st = show.get("processing_status")
+    if not st:
+        return ""
+    blurb = STATUS_BLURB.get(st, "")
+    return (f'''
+  <p class="proc-status-line">Audio processing'''
+            f'<span class="proc-status status-{esc(st)}">{esc(st)}</span>'
+            f'<span class="proc-status-blurb">{esc(blurb)}</span></p>''')
+
+
 def tech_data_section(show, proc):
     """Render a collapsible "Technical data" table for a processed show: every
     track's duration + sizes (from recordings.json) merged with its input/achieved
@@ -774,6 +797,10 @@ def build_show(show):
     has_waves = bool(show.get("tracks")) and os.path.exists(peaks_path)
 
     parts = []
+
+    # Audio-processing status badge — shown on every show page (the technical-data
+    # table only appears for already-processed shows).
+    parts.append(status_line(show))
 
     if show.get("description"):
         desc = "".join(f"\n    <p>{p}</p>" for p in show["description"])

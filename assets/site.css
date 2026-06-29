@@ -1048,6 +1048,27 @@ main {
 .proc-status.status-needs-processing { color: var(--muted); }
 .tech-table td.tver { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
 
+/* standalone audio-processing status line (top of every show page) */
+.proc-status-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 500;
+  margin: 0 0 1.4rem;
+}
+.proc-status-line .proc-status { margin-left: 0; }
+.proc-status-blurb {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 300;
+  font-style: italic;
+}
+
 .wav-note {
   font-size: 12px;
   color: var(--muted);
