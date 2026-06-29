@@ -372,9 +372,15 @@ def tech_data_section(show, proc):
     if proc.get("filters"):
         head_bits.append(f'Filters: {esc(proc["filters"])}')
     head_bits.append(esc(proc.get("tool", "ffmpeg loudnorm")))
+    if proc.get("workflow_version") is not None:
+        head_bits.append(f'workflow&nbsp;v{esc(proc["workflow_version"])}')
     if proc.get("date"):
         head_bits.append(esc(proc["date"]))
     head = " &middot; ".join(head_bits)
+    # show-level status badge (from recordings.json, written by `status --write`)
+    status = show.get("processing_status")
+    badge = (f' <span class="proc-status status-{esc(status)}">{esc(status)}</span>'
+             if status else "")
     pt = proc.get("tracks", {})
     rows = []
     for t in show["tracks"]:
@@ -384,6 +390,13 @@ def tech_data_section(show, proc):
         gain = f'{d["lufs"] - d["in_lufs"]:+.1f}' if ("lufs" in d and "in_lufs" in d) else "&mdash;"
         tp = f'{d["tp"]:.1f}' if "tp" in d else "&mdash;"
         lra = f'{d["lra"]:.1f}' if "lra" in d else "&mdash;"
+        # per-track workflow version (with the exact process chain on hover);
+        # blank for an untouched track in a partially-processed show.
+        if "ver" in d:
+            ver = (f'<span title="{esc(d["chain"])}">v{esc(d["ver"])}</span>'
+                   if d.get("chain") else f'v{esc(d["ver"])}')
+        else:
+            ver = "&mdash;"
         mp3 = f'{t["size_mb"]} MB' if t.get("size_mb") else "&mdash;"
         flac = f'{t["flac_size_mb"]} MB' if t.get("flac_size_mb") else "&mdash;"
         rows.append(
@@ -391,17 +404,18 @@ def tech_data_section(show, proc):
             f'<td class="tnum">{esc(t["duration"])}</td><td class="tnum">{mp3}</td>'
             f'<td class="tnum">{flac}</td><td class="tnum">{inl}</td>'
             f'<td class="tnum">{out}</td><td class="tnum">{gain}</td>'
-            f'<td class="tnum">{tp}</td><td class="tnum">{lra}</td></tr>')
+            f'<td class="tnum">{tp}</td><td class="tnum">{lra}</td>'
+            f'<td class="tver">{ver}</td></tr>')
     return f'''
   <section>
     <details class="tech-details" id="technical-data">
-      <summary>Technical data &mdash; loudness, peaks &amp; sizes</summary>
+      <summary>Technical data &mdash; loudness, peaks &amp; sizes{badge}</summary>
       <p class="tech-head">{head}</p>
       <div class="tech-scroll">
       <table class="tech-table">
         <thead><tr><th>#</th><th>Song</th><th>Time</th><th>MP3</th><th>FLAC</th>
           <th>In&nbsp;LUFS</th><th>Out&nbsp;LUFS</th><th>Gain</th>
-          <th>True&nbsp;Pk</th><th>LRA</th></tr></thead>
+          <th>True&nbsp;Pk</th><th>LRA</th><th>Ver</th></tr></thead>
         <tbody>
 {chr(10).join(rows)}
         </tbody>

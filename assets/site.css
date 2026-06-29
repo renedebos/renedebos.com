@@ -1030,6 +1030,24 @@ main {
 .tech-table td.tnum { text-align: right; color: var(--muted); }
 .tech-table tbody tr:hover { background: rgba(255, 255, 255, 0.03); }
 
+/* processing status badge (in the technical-data summary) */
+.proc-status {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  vertical-align: middle;
+  border: 1px solid currentColor;
+}
+.proc-status.status-done { color: #5cc98a; }
+.proc-status.status-partial { color: #d9b65c; }
+.proc-status.status-redo { color: #e08a4c; }
+.proc-status.status-needs-processing { color: var(--muted); }
+.tech-table td.tver { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+
 .wav-note {
   font-size: 12px;
   color: var(--muted);
