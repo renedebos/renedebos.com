@@ -1,0 +1,229 @@
+{
+  "slug": "mad-sweetwater-2000-10-17",
+  "target_lufs": -20,
+  "tp_ceiling": -1,
+  "source": "24-bit / 48 kHz FLAC",
+  "filters": "none",
+  "tool": "ffmpeg loudnorm",
+  "workflow_version": 1,
+  "ffmpeg": "7.1.3-0+deb13u1",
+  "date": "2026-06-29",
+  "tracks": {
+    "1": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.0,
+      "lufs": -19.99,
+      "tp": -2.99,
+      "lra": 9.4,
+      "md5": "318b238c0d5142768f3a4c8c4ef6e7a3"
+    },
+    "2": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -21.9,
+      "lufs": -20.04,
+      "tp": -2.97,
+      "lra": 9.3,
+      "md5": "c2392d18921dd195290c533591f7c710"
+    },
+    "3": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -16.9,
+      "lufs": -20.0,
+      "tp": -3.47,
+      "lra": 9.8,
+      "md5": "c3fbf715717b187df4aea6a3f717dd7f"
+    },
+    "4": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -18.5,
+      "lufs": -20.0,
+      "tp": -2.31,
+      "lra": 11.1,
+      "md5": "76ce0f12fcb3684a2e70ae8d202c733d"
+    },
+    "5": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -21.4,
+      "lufs": -20.01,
+      "tp": -1.24,
+      "lra": 8.8,
+      "md5": "6465144a925d42cd970ffdde4bbb0f93"
+    },
+    "6": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.3,
+      "lufs": -20.0,
+      "tp": -1.0,
+      "lra": 4.6,
+      "md5": "441b64e9034d3260bb466c87220362ae"
+    },
+    "7": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -19.9,
+      "lufs": -20.0,
+      "tp": -1.26,
+      "lra": 7.4,
+      "md5": "91434816e7723d89c3f3713b4f84ac92"
+    },
+    "8": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -19.4,
+      "lufs": -20.0,
+      "tp": -3.45,
+      "lra": 5.3,
+      "md5": "6aec53584302b0c2aceb8ca0764eb08d"
+    },
+    "9": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.4,
+      "lufs": -20.0,
+      "tp": -3.36,
+      "lra": 6.0,
+      "md5": "5b33a4c7f731075155cfa72e089889de"
+    },
+    "10": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.2,
+      "lufs": -20.02,
+      "tp": -1.0,
+      "lra": 7.6,
+      "md5": "06be231a6ad7fa892a0db3dbe5aa14b5"
+    },
+    "11": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -21.9,
+      "lufs": -20.0,
+      "tp": -4.0,
+      "lra": 6.0,
+      "md5": "c018bc13e559adc2d47b7468d8a050c3"
+    },
+    "12": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.5,
+      "lufs": -20.0,
+      "tp": -1.0,
+      "lra": 7.6,
+      "md5": "ef09861395c5c6bfb7a61b8fc12bcaf4"
+    },
+    "13": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.2,
+      "lufs": -20.0,
+      "tp": -1.21,
+      "lra": 7.3,
+      "md5": "9d7ae041c54698eb431d74d93ce51b75"
+    },
+    "14": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -16.3,
+      "lufs": -19.99,
+      "tp": -3.74,
+      "lra": 8.1,
+      "md5": "b9a5ad8e0b838846c73f589cf92cecfb"
+    },
+    "15": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -16.3,
+      "lufs": -20.0,
+      "tp": -3.42,
+      "lra": 8.3,
+      "md5": "6d782dbada7e5a800dd10f3278b013c1"
+    },
+    "16": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -14.2,
+      "lufs": -20.01,
+      "tp": -5.75,
+      "lra": 9.3,
+      "md5": "bac1e779fc88e4c604613f10f584ad24"
+    },
+    "17": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -18.1,
+      "lufs": -20.0,
+      "tp": -2.66,
+      "lra": 5.1,
+      "md5": "21d60760615af4c60fdc420e604ca472"
+    },
+    "18": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -22.0,
+      "lufs": -20.0,
+      "tp": -2.4,
+      "lra": 10.5,
+      "md5": "a929adc676cea015019edcc746281a03"
+    },
+    "19": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -22.7,
+      "lufs": -20.0,
+      "tp": -2.8,
+      "lra": 9.1,
+      "md5": "663d14e50b36b1be8052a91737e1b4f2"
+    },
+    "20": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -22.3,
+      "lufs": -20.0,
+      "tp": -2.36,
+      "lra": 8.3,
+      "md5": "224f66fc59f23ca70815bea4d198f135"
+    },
+    "21": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -21.8,
+      "lufs": -20.0,
+      "tp": -3.12,
+      "lra": 5.9,
+      "md5": "c26dabb69cfa16d686a8c302bd627005"
+    },
+    "22": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -23.3,
+      "lufs": -20.0,
+      "tp": -1.65,
+      "lra": 7.6,
+      "md5": "9d07cc46a32e1fbdab0eab208124cad2"
+    },
+    "23": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -21.8,
+      "lufs": -20.0,
+      "tp": -2.66,
+      "lra": 6.5,
+      "md5": "4d9420ba4ec2555c980bbf1a31b5cbd6"
+    },
+    "24": {
+      "ver": 1,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -19.7,
+      "lufs": -20.08,
+      "tp": -0.99,
+      "lra": 9.8,
+      "md5": "3857798a0810ea8aab4b881e8133bcac"
+    }
+  }
+}
