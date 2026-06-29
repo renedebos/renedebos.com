@@ -1,68 +1,55 @@
 # Session Handoff — Hannan Recordings (renedebos.com)
-**Date:** 2026-06-28 · **Branch:** `main` (all work committed & pushed)
+**Date:** 2026-06-29 · **Branch:** `main` (all site work committed & pushed through `fce5b83`)
 
-## What we did today
+> Read this first. There is **in-flight background work** to finish and a newly
+> installed **Audacity MCP** to use.
 
-**Audio processing (2 shows to the −20 standard):**
-- **2001-01-08** (30 tracks) → −20 LUFS, **added gated FLAC downloads** (was MP3-only), verified 30/30 R2 MD5. `7cd5d1b`
-- **2001-01-15** (31 tracks) → re-mastered from raw masters −20 LUFS (replacing old −16 pass), verified 31/31, **`redo`→`done`**. `b3d265d`
-- Both: peaks, Updates notes, Drive `Processed/` mirror, cleanup. Track 24 of 2001-01-15 ("Xmas Song") lands at −20.64 (TP-limited sketch, benign).
+## ⚡ Immediate pick-up tasks
 
-**Infrastructure / features built:**
-- **Worker deployed** (`08898459`): `/stream` now 403s lossless keys + edge caching. Verified live.
-- **Per-track workflow versioning** `24141ca`: each track stamped with `ver` + literal `chain`; sidecar **merges** (mixed-version shows possible); `WORKFLOW_VERSIONS` registry; new `versions` + `history` subcommands; backfilled the done shows as v1.
-- **Processing status** `7da091d`: `status [--write]` command writes `processing_status` (per show) + `processed` (per track) into `recordings.json`, computed from sidecars. 2001-01-15 set `redo`; 21 whole-show-only = `needs-processing`.
-- **Status surfaced on site**: badge + per-track **Ver** column in Technical-data table `a16a0f0`; status line on **every** show page `c755430`.
-- Removed dropout notes/tags from 2001-01-15 `3d8d96d`.
-- **History page**: added "Week four" `423ae36`; made History upkeep a Phase 3 step `915e630`.
-- **Permissions**: created + widened `~/renedebos.com/.claude/settings.local.json` (allowlist + deny safety net).
+### 1. Finish the Drive `Processed/` rebuild (was 3 of 7 done at restart)
+Context: the `gdrive:` remote was switched from a full 15 GB gmail account
+(`renedebos.ai@gmail`) to the **owner 5 TB account `renedebos@hotmail`**. The old
+`Processed/` mirrors (owned by the gmail acct) were deleted; we're rebuilding them
+**from R2** (the verified source) onto the 5 TB account. `rclone copy` is
+idempotent — **just re-run; it skips files already uploaded.** Drop
+`--drive-shared-with-me` (owned content now; the flag excludes it).
 
-## Current archive state
-| Status | Count |
-|---|---|
-| **done** | 3 — `jerry-19-broadway-1999-06-21`, `2001-01-08`, `2001-01-15` |
-| **needs-processing** | 28 — 7 track-listed (3 Sean, 4 Mad) + 21 whole-show-only |
-| **redo** | 0 (cleared) |
+Rebuild all 7, FLAC + MP3 from R2 into each show's `Processed/` (DriveFolder | R2-name):
+```
+JerryHannan - 19 Broadway 1999-06-21      | JerryHannan - 19 Broadway 1999-06-21
+JerryHannan - 19 Broadway 2001-01-08 SBD  | JerryHannan - 19 Broadway 2001-01-08
+JerryHannan - 19 Broadway 2001-01-15 SBD  | JerryHannan - 19 Broadway 2001-01-15
+MadHannans - Cafe Java 1999-09-09         | MadHannans - Cafe Java 1999-09-09
+MadHannans - Sweetwater 2000-02-17 SBD    | MadHannans - Sweetwater 2000-02-17
+MadHannans - Sweetwater 2000-10-17 SBD    | MadHannans - Sweetwater 2000-10-17
+SeanHannan - 19 Broadway 2000-02-21       | SeanHannan - 19 Broadway 2000-02-21
+```
+Per show: `rclone copy "r2:hannan-audio/FLAC/<r2>" "gdrive:DAT Tapes/Work Folder/<drv>/Processed" --s3-no-check-bucket --transfers 8 --drive-chunk-size 32M`, then same for `MP3/<r2>`. Verify each lands at 2×tracks files.
 
-## Half-finished / open threads
-- **7 track-listed shows pending** (Drive folders all confirmed present):
-  - Sean (→ **−20**): `sean-19-broadway-2000-01-24` (31), `…-2000-02-21` (11), `…-unknown` (18)
-  - Mad (→ **−16**): `mad-sweetwater-2000-02-17` (21), `…-2000-10-17` (24), `mad-cafe-java-1999-09-09` (21), `mad-sweetwater-2001-01-06` (24)
-- ⚠️ **The Mad −16 band-target path is untested** — first Mad run will validate it (watch the predicted-TP behavior; band shows can overshoot −16 and trigger dynamic-mode compression).
-- ⚠️ **Some "needs-processing" shows may actually be old-normalized** (no provenance). The Week-three History notes say **Sean 2000-02-21** and **Mad 2001-01-06** already got a manual loudness pass. They're not in `REDO_SLUGS`, so they read as `needs-processing` — confirm at pull time (raw masters have widely varying input LUFS; pre-normalized cluster near target). If pre-normalized, treat like the 2001-01-15 redo.
-- **Whole-show-only shows (21)**: counted `needs-processing` but the engine can't act on them (no split tracks) — they'd need splitting first, or a separate whole-file normalization path. No path built yet.
-- **Track tagging** (covers/songwriters/genres powering search) — ongoing, partial.
-- **Permissions**: widened allowlist **only activates on a new session**, and it **auto-approves `npx wrangler deploy`** — user hasn't confirmed they want that kept.
+### 2. Complete the 2001-01-06 Drive mirror (was 41/48)
+`rclone copy ~/work/mad-sweetwater-2001-01-06/processed "gdrive:DAT Tapes/Work Folder/MadHannans - Sweetwater 2001-01-06/Processed" --exclude "*.txt"` (idempotent). NOTE: `~/work` may have been cleared — if so, rebuild this one from R2 too (`MadHannans - Sweetwater 2001-01-06`, 24 FLAC + 24 MP3).
 
-## Exact next steps
-1. **Process the next show.** Suggested order: **Sean `2000-01-24`** (validated −20 path), or **Sean `2000-02-21`** for a fast 11-track win — then the Mad shows (first −16 run). Per-show flow:
-   ```
-   # slug + Drive folder (e.g. "SeanHannan - 19 Broadway 2000-01-24")
-   rclone copy "gdrive:DAT Tapes/Work Folder/<folder>/Tracks" ~/work/<slug>/input \
-     --include "*.flac" --max-depth 1 --progress
-   python3 scripts/audio_process.py diagnose ~/work/<slug>/input --artist <sean|mad>
-   # review (esp. for Mad: check predicted-TP at -16); then:
-   python3 scripts/audio_process.py process ~/work/<slug>/input ~/work/<slug>/processed \
-     --target <-20|-16> --slug <slug>
-   python3 scripts/update_tracks.py <slug> ~/work/<slug>/processed
-   python3 scripts/gen_peaks.py --slug <slug>
-   # add Updates note (report:true); then:
-   python3 scripts/audio_process.py status --write
-   python3 scripts/build.py
-   # update build_history() Week section  <-- standing requirement
-   git add -A && git commit && git push
-   rclone copy ~/work/<slug>/processed "gdrive:DAT Tapes/Work Folder/<folder>/Processed" \
-     --exclude "*.txt" --progress
-   python3 scripts/audio_process.py verify <slug>
-   rm -rf ~/work/<slug>
-   ```
-2. **At pull time, check input LUFS** to catch the pre-normalized Sean/Mad shows (redo vs fresh).
-3. **Always update the History page** as part of publishing (now in the doc + memory).
-4. **Worker changes** still need a manual `cd worker && npx wrangler deploy` — the Action only deploys the Pages site.
-5. **Restart the session** to activate the widened permission allowlist (and decide whether to keep `wrangler deploy` auto-approved).
+### 3. `sean-2000-01-24` declip — now doable via the Audacity MCP
+The Audacity MCP (`audacity` server, 131 tools) is installed + registered with Claude Code (user scope, `~/Audacity-MCP/.venv`). After this restart its tools are live. **Launch Audacity** (display `:0`, `mod-script-pipe` enabled) so the MCP can drive it, then:
+- Pull the 7 clipping tracks (`Tracks/`): **07, 09, 14, 17, 19, 22, 23**. Worst clipping (priority): **22 Maids…(4110 fs-samples), 17 Wild World, 23 Long Black Veil**; 07 has the single longest run (17 samples). All are brief transient clips in loud applause/whoo at song ends — **gentle envelope ride-down on the crowd tails** (not an aggressive fade), optional declip; preserve the live feel.
+- Re-export lossless → `audio_process.py diagnose` (confirm CLIPPING→NONE) → `process --target -20 --slug sean-19-broadway-2000-01-24` → publish (Phase 3).
+
+### 4. `sean-19-broadway-unknown` — still HELD
+recordings.json has 18 tracks but Drive `Tracks/` has **20 FLAC (2 unnumbered)**. Needs human reconciliation (extra takes? mis-split?) before processing.
+
+## Archive state: **done: 8 / needs-processing: 23**
+Done (live + R2-verified at −20): 3 Jerry (1999-06-21, 2001-01-08, 2001-01-15) +
+all 4 Mad (2000-02-17, 2000-10-17, cafe-java-1999, **2001-01-06**) + sean-2000-02-21.
+
+## Durable changes made this session (don't undo)
+- **All artists → −20 LUFS** (Mad moved −16→−20; A/B proved no audible gain from −16). See memory [[mad-target-20]].
+- **`gdrive:` = owner account `renedebos@hotmail` (5 TB).** No `--drive-shared-with-me` anywhere (removed from Makefile, `batch_process.py`, docs; CLAUDE.md updated). The 15 GB gmail acct was freed.
+- **Engine `--eq` + workflow v2:** `audio_process.py process --eq "<chain>"` applies a literal corrective-EQ chain before loudnorm, recorded per-track. Fixed a drift bug (measure now reads the post-EQ signal). Used to restore 2001-01-06. 2001-01-06 EQ chain is in its sidecar `chain`.
+- **`batch_process.py`** stages shows (validate→diagnose→process to −20) without publishing; parks sidecars in `~/work/<slug>/sidecar-staged.json` (not `data/processing/`) so staged≠done; publish block restores it.
+- **`update_tracks.py`** re-reads recordings.json right before writing (race-safe) — but still do recordings.json edits AFTER the upload finishes.
 
 ## Reference
-- Workflow doc: `AUDIO_PROCESSING.md` (4 phases; engine = `scripts/audio_process.py`).
-- Per-artist targets: jerry/sean/seanjerry **−20**, mad **−16**; ceiling **−1 dBTP**.
-- Status/version queries: `audio_process.py status`, `history <slug> --chains`, `versions`.
-- rclone: `gdrive:` is now the **owner** account (renedebos@hotmail, 5 TB) — reach content by path with **no** `--drive-shared-with-me` (that flag now excludes owned content); `r2:hannan-audio` needs `--s3-no-check-bucket`.
+- Workflow: `AUDIO_PROCESSING.md`; engine `scripts/audio_process.py` (diagnose/process/verify/status/versions/history).
+- Targets: all artists **−20 LUFS**, **−1 dBTP** ceiling.
+- rclone: `gdrive:` no flag (owner acct); `r2:hannan-audio` needs `--s3-no-check-bucket`.
+- Per-show publish (Phase 3): `update_tracks.py` (R2) → `gen_peaks.py --slug` → edit recordings.json (Updates note + any description) → `status --write` → `build.py` → update `build_history()` → commit/push → Drive mirror (`…/Processed`, no flag) → `verify <slug>`.
