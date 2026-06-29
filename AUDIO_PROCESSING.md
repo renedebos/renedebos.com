@@ -536,6 +536,16 @@ Field notes:
   per-track (and a version tally) for a show; `audio_process.py versions` describes
   what each version did. A track-listed show with *no* sidecar (or missing track
   entries) is one that still needs processing.
+- **Per-show status, persisted.** `audio_process.py status` reports every show's
+  `processing_status` computed from the sidecars; `status --write` persists it into
+  `recordings.json` (per show) plus a per-track `processed: true` flag. **Run
+  `status --write` after every publish** so the data stays current (it's idempotent
+  and drift-free — recomputed from the sidecars each time, never hand-edited).
+  Statuses: `done` (all tracks have a sidecar entry) · `partial` (some do) ·
+  `needs-processing` (none yet — this includes the whole-show-only shows, which have
+  no split tracks for the engine to act on, so they need splitting first) · `redo`
+  (normalized off the books — old manual pass at the wrong target, no provenance;
+  listed in `REDO_SLUGS`, sticky until a real sidecar exists, then auto-upgrades).
 - On a partial pass, only the tracks you processed are written/updated — `build.py`
   shows `—` for the loudness columns of untouched tracks while still listing their
   time/size.
@@ -685,5 +695,9 @@ rclone copy ~/work/<slug>/processed \
 - **Verify upload integrity:** `python3 scripts/audio_process.py verify <slug>`
   re-reads each published R2 copy, recomputes its audio MD5, and confirms it
   matches the provenance sidecar (exits non-zero on any mismatch).
+- **Refresh the status flags:** `python3 scripts/audio_process.py status --write`
+  recomputes `processing_status` (per show) and `processed` (per track) in
+  `recordings.json` from the sidecars, then rebuild/commit so the data reflects the
+  new work. A freshly-published show should flip to `done` (or `partial`).
 - Spot-check one track streams and that the FLAC download is gated while the MP3
   is free.

@@ -453,6 +453,78 @@ def cmd_history(args):
     print(f"\n  {len(prov['tracks'])} track(s) — {summary}")
 
 
+# ── processing status (which shows/tracks are done / need work) ────────────────
+# Statuses:
+#   done             — track-listed show, every track has a sidecar entry
+#   partial          — track-listed show, some (not all) tracks processed
+#   needs-processing — never processed (track-listed with no sidecar, OR a
+#                      whole-show-only show — those have no split tracks for the
+#                      engine to act on yet, so they need splitting first)
+#   redo             — normalized off the books (e.g. an old manual pass at the
+#                      wrong target, no sidecar). Sticky: stays `redo` until a real
+#                      sidecar exists, then auto-upgrades to done/partial.
+# Shows known to have been normalized outside the engine (no provenance) — flagged
+# for a re-run through the engine to get on-standard + verifiable:
+REDO_SLUGS = {"jerry-19-broadway-2001-01-15"}
+
+
+def show_status(show):
+    slug = show["slug"]
+    tracks = show.get("tracks") or []
+    if not tracks:
+        return "needs-processing"  # whole-show-only: nothing split to process yet
+    path = os.path.join(ROOT, "data", "processing", f"{slug}.json")
+    if os.path.exists(path):
+        pt = json.load(open(path)).get("tracks", {})
+        done = sum(1 for t in tracks if str(t["num"]) in pt)
+        if done >= len(tracks):
+            return "done"
+        if done > 0:
+            return "partial"
+    if slug in REDO_SLUGS:
+        return "redo"
+    return "needs-processing"
+
+
+def cmd_status(args):
+    """Compute each show's processing status (and per-track `processed`) from the
+    sidecars. With --write, persist `processing_status` per show and `processed`
+    per track into recordings.json so the data is browsable/checkable without drift
+    (re-run after any processing). Without --write, just print the report."""
+    data_path = os.path.join(ROOT, "data", "recordings.json")
+    data = json.load(open(data_path))
+    order = {"needs-processing": 0, "redo": 1, "partial": 2, "done": 3}
+    rows, tally = [], {}
+    for show in sorted(data["shows"], key=lambda s: order.get(show_status(s), 9)):
+        st = show_status(show)
+        tally[st] = tally.get(st, 0) + 1
+        tracks = show.get("tracks") or []
+        path = os.path.join(ROOT, "data", "processing", f"{show['slug']}.json")
+        pt = json.load(open(path)).get("tracks", {}) if os.path.exists(path) else {}
+        ndone = sum(1 for t in tracks if str(t["num"]) in pt)
+        kind = "tracks" if tracks else "whole-show"
+        rows.append((st, show["slug"], kind, ndone, len(tracks)))
+        if args.write:
+            show["processing_status"] = st
+            for t in tracks:
+                if str(t["num"]) in pt:
+                    t["processed"] = True
+                else:
+                    t.pop("processed", None)  # keep it accurate, no stale flags
+    print(f"{'STATUS':17s} {'KIND':10s} {'DONE':>7s}  SLUG")
+    print("-" * 70)
+    for st, slug, kind, nd, nt in rows:
+        cnt = f"{nd}/{nt}" if nt else "—"
+        print(f"{st:17s} {kind:10s} {cnt:>7s}  {slug}")
+    print("\n" + "  ".join(f"{k}: {v}" for k, v in sorted(tally.items(), key=lambda x: order.get(x[0], 9))))
+    if args.write:
+        json.dump(data, open(data_path, "w"), indent=2, ensure_ascii=False)
+        open(data_path, "a").write("\n")
+        print(f"\nwrote processing_status (+ per-track processed) to {data_path}")
+    else:
+        print("\n(report only — pass --write to persist into recordings.json)")
+
+
 def main():
     ap = argparse.ArgumentParser(description="Audio processing workflow engine.")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -485,6 +557,11 @@ def main():
     h.add_argument("slug")
     h.add_argument("--chains", action="store_true", help="also print the literal filter chain")
     h.set_defaults(func=cmd_history)
+
+    st = sub.add_parser("status", help="per-show processing status (done/partial/redo/needs-processing)")
+    st.add_argument("--write", action="store_true",
+                    help="persist processing_status (+ per-track processed) into recordings.json")
+    st.set_defaults(func=cmd_status)
 
     args = ap.parse_args()
     args.func(args)
