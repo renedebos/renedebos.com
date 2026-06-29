@@ -1,0 +1,229 @@
+{
+  "slug": "mad-sweetwater-2001-01-06",
+  "target_lufs": -20,
+  "tp_ceiling": -1,
+  "source": "24-bit / 48 kHz FLAC",
+  "filters": "highpass=f=70,equalizer=f=300:width_type=q:w=1.1:g=-10,equalizer=f=500:width_type=q:w=1.5:g=-5,equalizer=f=3500:width_type=q:w=1.2:g=5,treble=g=10:f=7000",
+  "tool": "ffmpeg loudnorm",
+  "workflow_version": 2,
+  "ffmpeg": "7.1.3-0+deb13u1",
+  "date": "2026-06-29",
+  "tracks": {
+    "1": {
+      "ver": 2,
+      "chain": "highpass=f=70,equalizer=f=300:width_type=q:w=1.1:g=-10,equalizer=f=500:width_type=q:w=1.5:g=-5,equalizer=f=3500:width_type=q:w=1.2:g=5,treble=g=10:f=7000,loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -30.3,
+      "lufs": -20.0,
+      "tp": -2.19,
+      "lra": 10.6,
+      "md5": "84ad2697c532bdcbafe96f4a953a2363"
+    },
+    "2": {
+      "ver": 2,
+      "chain": "highpass=f=70,equalizer=f=300:width_type=q:w=1.1:g=-10,equalizer=f=500:width_type=q:w=1.5:g=-5,equalizer=f=3500:width_type=q:w=1.2:g=5,treble=g=10:f=7000,loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -27.1,
+      "lufs": -20.0,
+      "tp": -3.12,
+      "lra": 7.8,
+      "md5": "e626ecf97703684a0aa83ba53c61e666"
+    },
+    "3": {
+      "ver": 2,
+      "chain": "highpass=f=70,equalizer=f=300:width_type=q:w=1.1:g=-10,equalizer=f=500:width_type=q:w=1.5:g=-5,equalizer=f=3500:width_type=q:w=1.2:g=5,treble=g=10:f=7000,loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -28.2,
+      "lufs": -20.0,
+      "tp": -2.41,
+      "lra": 10.2,
+      "md5": "0700fec371876bdae379a42df284a8b7"
+    },
+    "4": {
+      "ver": 2,
+      "chain": "highpass=f=70,equalizer=f=300:width_type=q:w=1.1:g=-10,equalizer=f=500:width_type=q:w=1.5:g=-5,equalizer=f=3500:width_type=q:w=1.2:g=5,treble=g=10:f=7000,loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -28.5,
+      "lufs": -20.0,
+      "tp": -3.42,
+      "lra": 9.1,
+      "md5": "26019357be3673f3a630ecf779eb0fb4"
+    },
+    "5": {
+      "ver": 2,
+      "chain": "highpass=f=70,equalizer=f=300:width_type=q:w=1.1:g=-10,equalizer=f=500:width_type=q:w=1.5:g=-5,equalizer=f=3500:width_type=q:w=1.2:g=5,treble=g=10:f=7000,loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -30.2,
+      "lufs": -20.0,
+      "tp": -3.36,
+      "lra": 7.8,
+      "md5": "6fe71ed823604ad0218c58d4f8120844"
+    },
+    "6": {
+      "ver": 2,
+      "chain": "highpass=f=70,equalizer=f=300:width_type=q:w=1.1:g=-10,equalizer=f=500:width_type=q:w=1.5:g=-5,equalizer=f=3500:width_type=q:w=1.2:g=5,treble=g=10:f=7000,loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -30.2,
+      "lufs": -20.0,
+      "tp": -2.82,
+      "lra": 7.7,
+      "md5": "0bb5257a06f73a1be8728ee4b9b4b940"
+    },
+    "7": {
+      "ver": 2,
+      "chain": "highpass=f=70,equalizer=f=300:width_type=q:w=1.1:g=-10,equalizer=f=500:width_type=q:w=1.5:g=-5,equalizer=f=3500:width_type=q:w=1.2:g=5,treble=g=10:f=7000,loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -28.5,
+      "lufs": -20.02,
+      "tp": -2.05,
+      "lra": 8.0,
+      "md5": "11610fb6e09bf2281ff229826a71c012"
+    },
+    "8": {
+      "ver": 2,
+      "chain": "highpass=f=70,equalizer=f=300:width_type=q:w=1.1:g=-10,equalizer=f=500:width_type=q:w=1.5:g=-5,equalizer=f=3500:width_type=q:w=1.2:g=5,treble=g=10:f=7000,loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -26.2,
+      "lufs": -20.02,
+      "tp": -0.9,
+      "lra": 8.4,
+      "md5": "aca004eec4328d14a1fe7354cb2d97e4"
+    },
+    "9": {
+      "ver": 2,
+      "chain": "highpass=f=70,equalizer=f=300:width_type=q:w=1.1:g=-10,equalizer=f=500:width_type=q:w=1.5:g=-5,equalizer=f=3500:width_type=q:w=1.2:g=5,treble=g=10:f=7000,loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -27.9,
+      "lufs": -19.99,
+      "tp": -5.15,
+      "lra": 8.5,
+      "md5": "88ce6ac72720eb88ec731a54fdd55817"
+    },
+    "10": {
+      "ver": 2,
+      "chain": "highpass=f=70,equalizer=f=300:width_type=q:w=1.1:g=-10,equalizer=f=500:width_type=q:w=1.5:g=-5,equalizer=f=3500:width_type=q:w=1.2:g=5,treble=g=10:f=7000,loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -29.1,
+      "lufs": -20.0,
+      "tp": -1.32,
+      "lra": 7.8,
+      "md5": "818899fb9be3c56a84a2a2aaeb8cd8d9"
+    },
+    "11": {
+      "ver": 2,
+      "chain": "highpass=f=70,equalizer=f=300:width_type=q:w=1.1:g=-10,equalizer=f=500:width_type=q:w=1.5:g=-5,equalizer=f=3500:width_type=q:w=1.2:g=5,treble=g=10:f=7000,loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -27.1,
+      "lufs": -20.01,
+      "tp": -1.95,
+      "lra": 9.1,
+      "md5": "b7c18bf5cba288a7a654dba5a6654d20"
+    },
+    "12": {
+      "ver": 2,
+      "chain": "highpass=f=70,equalizer=f=300:width_type=q:w=1.1:g=-10,equalizer=f=500:width_type=q:w=1.5:g=-5,equalizer=f=3500:width_type=q:w=1.2:g=5,treble=g=10:f=7000,loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -26.9,
+      "lufs": -20.0,
+      "tp": -1.37,
+      "lra": 8.9,
+      "md5": "61b78853e6f426502003e9bae604e76b"
+    },
+    "13": {
+      "ver": 2,
+      "chain": "highpass=f=70,equalizer=f=300:width_type=q:w=1.1:g=-10,equalizer=f=500:width_type=q:w=1.5:g=-5,equalizer=f=3500:width_type=q:w=1.2:g=5,treble=g=10:f=7000,loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -27.2,
+      "lufs": -20.0,
+      "tp": -3.0,
+      "lra": 8.2,
+      "md5": "7797d8fae7a3499c992f8958dc975506"
+    },
+    "14": {
+      "ver": 2,
+      "chain": "highpass=f=70,equalizer=f=300:width_type=q:w=1.1:g=-10,equalizer=f=500:width_type=q:w=1.5:g=-5,equalizer=f=3500:width_type=q:w=1.2:g=5,treble=g=10:f=7000,loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -28.9,
+      "lufs": -20.01,
+      "tp": -1.88,
+      "lra": 11.2,
+      "md5": "33891dcaa5b25b3c9386c2177a39d4ef"
+    },
+    "15": {
+      "ver": 2,
+      "chain": "highpass=f=70,equalizer=f=300:width_type=q:w=1.1:g=-10,equalizer=f=500:width_type=q:w=1.5:g=-5,equalizer=f=3500:width_type=q:w=1.2:g=5,treble=g=10:f=7000,loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -27.5,
+      "lufs": -20.03,
+      "tp": -1.01,
+      "lra": 6.9,
+      "md5": "cfbd6626a6e6ace94032dea35db939f1"
+    },
+    "16": {
+      "ver": 2,
+      "chain": "highpass=f=70,equalizer=f=300:width_type=q:w=1.1:g=-10,equalizer=f=500:width_type=q:w=1.5:g=-5,equalizer=f=3500:width_type=q:w=1.2:g=5,treble=g=10:f=7000,loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -31.1,
+      "lufs": -20.05,
+      "tp": -0.98,
+      "lra": 8.1,
+      "md5": "155015c00ae37c6ab44232dafa7cf496"
+    },
+    "17": {
+      "ver": 2,
+      "chain": "highpass=f=70,equalizer=f=300:width_type=q:w=1.1:g=-10,equalizer=f=500:width_type=q:w=1.5:g=-5,equalizer=f=3500:width_type=q:w=1.2:g=5,treble=g=10:f=7000,loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -27.6,
+      "lufs": -20.0,
+      "tp": -2.58,
+      "lra": 7.3,
+      "md5": "b78016e8519da51610de294d20b66816"
+    },
+    "18": {
+      "ver": 2,
+      "chain": "highpass=f=70,equalizer=f=300:width_type=q:w=1.1:g=-10,equalizer=f=500:width_type=q:w=1.5:g=-5,equalizer=f=3500:width_type=q:w=1.2:g=5,treble=g=10:f=7000,loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -27.1,
+      "lufs": -20.02,
+      "tp": -1.35,
+      "lra": 7.5,
+      "md5": "2a65e5ef6fdf4cb555ce73bf73d6bd4e"
+    },
+    "19": {
+      "ver": 2,
+      "chain": "highpass=f=70,equalizer=f=300:width_type=q:w=1.1:g=-10,equalizer=f=500:width_type=q:w=1.5:g=-5,equalizer=f=3500:width_type=q:w=1.2:g=5,treble=g=10:f=7000,loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -25.9,
+      "lufs": -20.0,
+      "tp": -2.1,
+      "lra": 4.9,
+      "md5": "fa233ca1f39e9887e6a9cda0ea69e149"
+    },
+    "20": {
+      "ver": 2,
+      "chain": "highpass=f=70,equalizer=f=300:width_type=q:w=1.1:g=-10,equalizer=f=500:width_type=q:w=1.5:g=-5,equalizer=f=3500:width_type=q:w=1.2:g=5,treble=g=10:f=7000,loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -24.9,
+      "lufs": -20.0,
+      "tp": -1.01,
+      "lra": 7.7,
+      "md5": "18d24fd0f297ebf07da6944defd863b5"
+    },
+    "21": {
+      "ver": 2,
+      "chain": "highpass=f=70,equalizer=f=300:width_type=q:w=1.1:g=-10,equalizer=f=500:width_type=q:w=1.5:g=-5,equalizer=f=3500:width_type=q:w=1.2:g=5,treble=g=10:f=7000,loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -24.1,
+      "lufs": -20.02,
+      "tp": -1.2,
+      "lra": 10.1,
+      "md5": "fe1b950d6dc32f5f80a1e7c08e50001c"
+    },
+    "22": {
+      "ver": 2,
+      "chain": "highpass=f=70,equalizer=f=300:width_type=q:w=1.1:g=-10,equalizer=f=500:width_type=q:w=1.5:g=-5,equalizer=f=3500:width_type=q:w=1.2:g=5,treble=g=10:f=7000,loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -26.1,
+      "lufs": -20.02,
+      "tp": -1.03,
+      "lra": 6.6,
+      "md5": "c33631b0e59696f65e239128706168dc"
+    },
+    "23": {
+      "ver": 2,
+      "chain": "highpass=f=70,equalizer=f=300:width_type=q:w=1.1:g=-10,equalizer=f=500:width_type=q:w=1.5:g=-5,equalizer=f=3500:width_type=q:w=1.2:g=5,treble=g=10:f=7000,loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -24.2,
+      "lufs": -20.02,
+      "tp": -1.11,
+      "lra": 7.9,
+      "md5": "5319955e06c56e97b417363c7465d0df"
+    },
+    "24": {
+      "ver": 2,
+      "chain": "highpass=f=70,equalizer=f=300:width_type=q:w=1.1:g=-10,equalizer=f=500:width_type=q:w=1.5:g=-5,equalizer=f=3500:width_type=q:w=1.2:g=5,treble=g=10:f=7000,loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -31.3,
+      "lufs": -19.9,
+      "tp": -1.05,
+      "lra": 8.1,
+      "md5": "af67e315c23365385cf30c6e452c646f"
+    }
+  }
+}

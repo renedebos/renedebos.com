@@ -54,7 +54,7 @@ LUFS_TOL = 0.5    # warn if achieved LUFS drifts from target by more than this
 # re-run later with a newer version). The registry is the human-readable decode
 # of a version number; the per-track `chain` is the self-contained ground truth;
 # the `md5` proves the live audio is that exact output.
-WORKFLOW_VERSION = 1
+WORKFLOW_VERSION = 2
 WORKFLOW_VERSIONS = {
     1: {
         "desc": "Two-pass ffmpeg loudnorm to the per-artist target "
@@ -67,6 +67,17 @@ WORKFLOW_VERSIONS = {
         "loudnorm": "I=<target>:LRA=11:TP=-1:linear=true",
         "targets": dict(ARTIST_TARGET),
         "optional_filters": ["highpass=f=80", "lowpass=f=18000", "60Hz notch"],
+    },
+    2: {
+        "desc": "As v1, plus an optional literal corrective-EQ chain via --eq "
+                "(prepended before loudnorm) for restoring poor source recordings "
+                "(e.g. de-mud + presence + air shelf on a muffled tape). The exact "
+                "EQ is recorded in each track's `chain`; only tracks processed with "
+                "--eq differ from v1. Still recommend-only (no auto compressor/limiter).",
+        "loudnorm": "I=<target>:LRA=11:TP=-1:linear=true",
+        "targets": dict(ARTIST_TARGET),
+        "optional_filters": ["--eq <literal ffmpeg filter chain>", "highpass=f=80",
+                             "lowpass=f=18000", "60Hz notch"],
     },
 }
 
@@ -117,10 +128,14 @@ def probe(path):
     }
 
 
-def measure(path, target):
-    err = ff_err(["-i", path, "-af",
-                  f"loudnorm=I={target}:LRA=11:TP={TP_CEILING}:print_format=json",
-                  "-f", "null", "-"])
+def measure(path, target, pre=""):
+    # `pre` is an optional filter chain (e.g. corrective EQ) applied BEFORE the
+    # loudnorm analysis. When processing prepends an EQ, loudnorm must be measured
+    # on the post-EQ signal, or the gain calc is wrong and the output drifts off
+    # target (the EQ changes the loudness it's normalizing).
+    af = ((pre + ",") if pre else "") + \
+        f"loudnorm=I={target}:LRA=11:TP={TP_CEILING}:print_format=json"
+    err = ff_err(["-i", path, "-af", af, "-f", "null", "-"])
     return json.loads(re.search(r"\{[^{}]*\"input_i\"[^{}]*\}", err, re.S).group(0))
 
 
@@ -244,6 +259,8 @@ def cmd_diagnose(args):
 
 def build_filters(args):
     chain = []
+    if getattr(args, "eq", None):
+        chain.append(args.eq)              # literal corrective-EQ chain (v2), applied first
     if args.hpf:
         chain.append("highpass=f=80")
     if args.lpf:
@@ -286,8 +303,10 @@ def cmd_process(args):
             in_I = float(measure(src, target)["input_i"]) if os.path.exists(src) else None
         else:
             info = probe(src)
-            j = measure(src, target)
-            in_I = float(j["input_i"])
+            # loudnorm values measured on the post-EQ signal (so the gain is right);
+            # in_I is the RAW input loudness, kept for provenance/display.
+            j = measure(src, target, pre=filt)
+            in_I = float(measure(src, target)["input_i"]) if filt else float(j["input_i"])
             pre = (filt + ",") if filt else ""
             af = (f"{pre}loudnorm=I={target}:LRA=11:TP={TP_CEILING}:"
                   f"measured_I={j['input_i']}:measured_LRA={j['input_lra']}:"
@@ -544,6 +563,9 @@ def main():
     p.add_argument("--hpf", action="store_true", help="high-pass 80 Hz")
     p.add_argument("--lpf", action="store_true", help="low-pass 18 kHz")
     p.add_argument("--notch", action="store_true", help="60 Hz hum notch")
+    p.add_argument("--eq", help="literal ffmpeg corrective-EQ chain applied before "
+                                "loudnorm (e.g. de-mud + presence + air for a muffled tape); "
+                                "recorded per-track in provenance")
     p.add_argument("--slug", help="write provenance sidecar for this show slug")
     p.set_defaults(func=cmd_process)
 
