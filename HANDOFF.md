@@ -1,104 +1,80 @@
 # Session Handoff — Hannan Recordings (renedebos.com)
-**Date:** 2026-06-29 (late) · **Branch:** `main` (site committed/pushed; no new site commits this session)
+**Date:** 2026-06-30 · **Branch:** `main` (all work committed & pushed)
 
-> This session was almost entirely the **`sean-19-broadway-2000-01-24` declip**. Read the
-> Audacity MCP reality-check below before driving it again — it is flaky and cost us time.
+> This session **finished and published two Sean shows**: the `2000-01-24` declip and the
+> undated `unknown` set. Both are fully live (R2 + site + Drive mirror). No open blockers.
 
-## ⚡ Immediate pick-up (after reboot)
+## ✅ Done this session
 
-### 1. Resume the declip of `sean-19-broadway-2000-01-24` ← MAIN TASK
-**Plan agreed with Rene this session:** *he hand-edits the clipped claps in Audacity himself*
-(surgical, clap-by-clap), then **I process the resulting lossless file**. We are NOT using an
-automated region level-ride — see "Why not the level-ride" below.
+### 1. `sean-19-broadway-2000-01-24` — declip + normalize — PUBLISHED
+- Rene hand-edited the 9 clipped tracks (07, 09, 14, 17, 19, 22, 23, 24, 31) in Audacity;
+  a prior pass had already processed all 31 to −20 LUFS and uploaded to R2.
+- This session closed the remaining Phase-3 items: removed the stale "not normalized yet"
+  description line, **verified R2 (31/31 md5 OK)**, and **completed the Drive `Processed/`
+  mirror (62 files)** — the earlier mirror had stalled at 21/62.
+- **Date discrepancy RESOLVED:** the show is **2000-01-24** (slug, R2 keys, mount folder all
+  agree now; the old "2001-01-24" mount-folder name is gone). No longer an open question.
+- Commits: `4f62ab0` (description), `79a5bc5` (handoff). Show already published in `b6c6db6`.
 
-7 clipping tracks (from `input/diagnostic_report.txt`): **07, 09, 14, 17, 19, 22, 23**.
+### 2. `sean-19-broadway-unknown` — normalize — PUBLISHED (commit `ebf877e`)
+- **Was previously HELD** (18 in recordings.json vs 20 FLAC in Drive). Rene reconciled it to a
+  clean **18 numbered tracks** and dropped them in `~/gdrive-mount/SeanHannan - 19 Broadway unknown date/`.
+- Diagnose: **clip NONE on all 18** — clean tape, no hand-editing needed. Processed all 18 to
+  −20 LUFS (workflow v2), **replacing an earlier −16 LUFS Audacity pass** (stale description note
+  removed). Sidecar written; **R2 verified 18/18**; peaks regenerated; Updates note + history
+  bullet added; **Drive `Processed/` mirror = 36 files**.
+- **Source filenames were normalized on staging:** the local files had `w_Jerry` / `w_Kelly Peterson`
+  suffixes + casing (`don't…`, `Angel of Montgomery`); I copied them into `~/work/.../input/` under the
+  **canonical R2 names** (matched by track number) so uploads overwrote in place, no dup keys.
+- ⚠️ **Worth a listen:** several track durations changed vs the old raw upload (e.g. track 3
+  "Don't Think Twice" **+17s**). That means the files Rene supplied are **different cuts** than the
+  original split. Displayed durations now match what's live; flag only if the re-splits were unintended.
 
-Progress:
-- **09 Smoke in Heaven — EDITED BY RENE.** Saved to
-  `~/gdrive-mount/SeanHannan - 19 Broadway 2001-01-24/Edited/09 Smoke in Heaven.flac` (+ .mp3).
-  ⚠️ **Not yet diagnosed/processed.** Next: `audio_process.py diagnose` on it → confirm CLIPPING→NONE
-  → `process --target -20 --slug sean-19-broadway-2000-01-24` → publish (Phase 3).
-- **07, 14, 17** — Rene was about to edit these when Audacity died (see #2). Staged space-free
-  copies exist: `~/work/sean-19-broadway-2000-01-24/declip/t07.flac`, `t14.flac`, `t17.flac`.
-- **19, 22, 23** — not started.
+## 🟡 Notes / minor follow-ups (no action required)
+- **Technical-data "Ver" column looks "missing" on long-title shows.** It renders correctly
+  (`v2` for every track, confirmed on the live site) but is the **last of 11 columns** inside
+  `.tech-scroll` (`overflow-x:auto`), so on shows with long titles (e.g. 2000-01-24's "Maids When
+  You're Young…") it sits off the right edge until you scroll. Rene confirmed the data is correct and
+  **declined a CSS change.** If ever wanted, the one-liner is to let the title column wrap:
+  `.tech-table td:not(.tnum):not(.tver){white-space:normal;min-width:9rem}` in `scripts/site.css`
+  (then `build.py` copies it to `assets/site.css`).
+- Session scratch in `~/work/sean-19-broadway-2000-01-24/declip/` (A/B server, `t09_ride_*` renders)
+  is safe to delete. Originals untouched in each show's `input/`.
 
-⚠️ **DO NOT assume the other 6 are applause clipping like 09.** Rene's explicit caution.
-**Per-track step:** locate each clip first (see ffmpeg recipe in #4), confirm *what* clips
-(applause? vocal/guitar transient? mic bump?), THEN choose treatment.
+## 🟥 Two tooling gotchas that cost time (now in memory)
+- **rclone uploads to `gdrive:` stall mid-file** — byte count freezes, rate decays toward 0, ETA
+  explodes; `--timeout` does NOT catch it (Drive keeps the conn alive). Don't tune `--transfers`;
+  use a **`--max-duration` retry loop** (atomic Drive uploads → killed mid-stall files just retry;
+  done files are skipped) and prefer **local→Drive** over R2→Drive. Full recipe: [[rclone-drive-upload-stall]].
+- **`pgrep -f '<script>.py'` self-matches the watcher.** An `until ! pgrep -f gen_peaks.py` loop
+  matched its OWN command line (which contains the string) → deadlocked forever; gen_peaks/status
+  silently never ran. **Match on the running file PATH or use the bg-task notification**, not a
+  script name that also appears in the watcher's own command.
 
-### 2. ⚠️ DATE DISCREPANCY — resolve before publishing
-Rene's edited 09 saved into a Drive/mount folder named **`SeanHannan - 19 Broadway 2001-01-24`**,
-but the show slug + work dir are **2000-01-24** (`sean-19-broadway-2000-01-24`). One of these years
-is wrong. **Ask Rene which is correct** so files don't get mis-filed. (Note: `gdrive-mount` is a
-LOCAL copy, not a live mount — see [[metadata-editor]] — so the edit must be rclone-pushed to Drive
-once the date is confirmed.)
+## 🟥 Audacity MCP reality-check (unchanged — still flaky)
+The `audacity` MCP (131 tools) is UNRELIABLE: import chokes on spaces (copy to space-free names);
+empty/`success:false` responses are ambiguous (retry READs, never blind-retry a destructive effect —
+verify state first); it once **silently lost a 172s track**; Audacity itself crashed mid-session
+(`PIPE_WRITE_FAILED`). Launch with the file as an arg to bypass MCP import. For deterministic DSP,
+**ffmpeg beats the MCP**. Use Audacity (GUI, by Rene) for surgical hand-editing only. [[audacity-mcp-unreliable]]
 
-### 3. Drive `Processed/` rebuild loop — was killed by reboot, RE-RUN (idempotent)
-The background rebuild from the previous handoff was still mid-run (on Cafe Java) when we rebooted.
-Done before reboot: Jerry 1999-06-21 (42), 2001-01-08 (60), 2001-01-15 (62). NOT finished:
-Cafe Java, Sweetwater 2000-02-17, 2000-10-17, Sean 2000-02-21. **Re-run the loop** (rclone copy is
-idempotent; skips uploaded files). Table + per-show command are in git history of this file / prior
-handoff; pattern:
-`rclone copy "r2:hannan-audio/FLAC/<r2>" "gdrive:DAT Tapes/Work Folder/<drv>/Processed" --s3-no-check-bucket --transfers 8 --drive-chunk-size 32M` then same for `MP3/<r2>`; verify each = 2×tracks.
+## ⏭️ What's left in the archive
+- `status --write` → `done: 10, needs-processing: 21`. All **track-listed** shows are now `done`.
+- The 21 `needs-processing` are **whole-show-only** shows (no split tracks yet) — they need
+  **splitting into tracks first**, then the normal pipeline.
+- Separate item: **`jerry-19-broadway-2001` (30-song soundboard set)** still carries a "these tracks
+  have not been normalized yet" description line (recordings.json ~line 1057) — it's a different show,
+  left untouched this session.
 
-## 🟥 Audacity MCP reality-check (lost us a track + much time)
-The `audacity` MCP (131 tools) is installed/registered but **UNRELIABLE in practice**:
-- **Import chokes on paths with spaces.** Always copy to a space-free name first
-  (we use `~/work/sean-19-broadway-2000-01-24/declip/tNN.flac`).
-- **Empty/`success:false` responses are ambiguous** — the pipe often returns `{"raw":"","success":false}`
-  for commands that *did* run, and sometimes `BatchCommand finished: OK` when nothing happened.
-  **Retry READ commands; NEVER blind-retry a destructive effect** (verify state via `select_all` /
-  `project_get_info Tracks` first — empty track list = `BatchCommand finished: OK` with empty message).
-- **It silently lost a full 172s track** during an `effect_clip_fix` call early on.
-- **Audacity itself crashed/closed** mid-session (the import "OK but no track" symptom preceded a
-  `PIPE_WRITE_FAILED Broken pipe`). After reboot, **relaunch Audacity** (`DISPLAY=:0`, mod-script-pipe
-  enabled — preference persists). **Tip: launch with the file as an arg to bypass MCP import**, e.g.
-  `audacity "/…/input/17 Wild World.flac"`, then drive it with the MCP for anything else.
-- Net: for deterministic DSP, **ffmpeg is more reliable than the MCP**. Use Audacity (GUI, by Rene)
-  for surgical hand-editing; use ffmpeg/`audio_process.py` for measured processing.
-
-## 🔬 09 Smoke in Heaven — clip analysis (reference for the surgical edits)
-- Track 172.31s, 24-bit/48k stereo. **Only the audience clapping clips:** exactly **9 full-scale
-  (0 dBFS) windows, all within 151.7–160.0s (2:31.7–2:40)** — rhythmic claps, ~1/sec. True peak **+2.2 dBTP**.
-- Rest of the track never exceeds −0.5 dBFS. The applause **tail 2:46–end (166–172s) is NOT clipped**
-  (peaks ~−2 dBFS) — Rene asked to limit that tail to −6 dB, but note it doesn't address the 2:31–2:40 overs.
-
-### Why not the automated level-ride
-A trapezoidal ffmpeg gain envelope over the clap region works (−4 dB → true peak −1.8 dBTP, etc.) but
-**ducks Sean's singing between the claps too** — a region envelope can't tell a clap from the vocal under
-it. Rene rejected it for that reason. Correct automated tool would be a **Limiter** (NOT Compressor:
-Audacity's compressor min attack ~100ms can't catch ms-long clap transients). Limiter only touches
-samples above threshold, so the vocal between claps is untouched: **Soft Limit, limit −4 to −6 dB**.
-But the chosen path is Rene's manual editing.
-
-### ffmpeg clip-locator recipe (per track)
-```
-ffmpeg -nostats -hide_banner -i tNN.flac -af "astats=metadata=1:reset=1:length=1,ametadata=print:key=lavfi.astats.Overall.Peak_level:file=-" -f null - 2>/dev/null \
- | grep -oE "pts_time:[0-9.]+|Peak_level=[-0-9.]+" | paste - - | sed -E 's/pts_time://; s/Peak_level=//' | awk '$2>=-0.5'
-```
-Lists the windows at/near full scale → tells you WHERE and (by listening) WHAT clips.
-
-## 🧹 Session artifacts (safe to delete; all in `~/work/sean-19-broadway-2000-01-24/declip/`)
-- `abserver.py` + `ab.html` — a range-capable A/B comparison web server (port 8777, dies on reboot).
-  Multi-way comparator (Original vs −4/−8/−12/−16/−20 dB rides) used to demo the level-ride to Rene.
-- `t09_ride_*.flac` (−4/−8/−12/−16/−20) — test renders, not for release.
-- `t07/t09/t14/t17.flac` — space-free import copies. `ride09.txt` — filter scratch.
-- `t09_check.flac` (261 bytes, empty export from the lost-track incident).
-Originals are untouched in `input/`.
-
-## Other held item
-- **`sean-19-broadway-unknown`** — still HELD: recordings.json has 18 tracks, Drive `Tracks/` has 20
-  FLAC (2 unnumbered). Needs human reconciliation before processing.
-
-## Durable facts (don't undo) — carried from prior handoff, still true
+## Durable facts (don't undo)
 - **All artists → −20 LUFS, −1 dBTP ceiling.** (Mad moved −16→−20; A/B proved no gain.) [[mad-target-20]]
 - **`gdrive:` = owner account `renedebos@hotmail` (5 TB). No `--drive-shared-with-me` anywhere.**
+- `gdrive-mount/` is a **LOCAL copy**, not a live mount — edits must be rclone-pushed to Drive. [[metadata-editor]]
 - Engine `audio_process.py` (diagnose/process/verify/status/versions/history); `--eq "<chain>"` applies
-  corrective EQ before loudnorm, recorded per-track. `batch_process.py` stages without publishing.
-- `update_tracks.py` re-reads recordings.json right before writing (race-safe) — still do recordings.json
-  edits AFTER uploads finish.
+  corrective EQ before loudnorm, recorded per-track. `update_tracks.py` re-reads recordings.json right
+  before writing (race-safe) — still do recordings.json edits AFTER uploads finish.
 
 ## Per-show publish (Phase 3) — reference
 `update_tracks.py` (R2) → `gen_peaks.py --slug` → edit recordings.json (Updates note + description) →
 `status --write` → `build.py` → update `build_history()` → commit/push → Drive mirror (`…/Processed`,
-no flag) → `verify <slug>`. Workflow detail: `AUDIO_PROCESSING.md`.
+**use the max-duration retry loop, local→Drive**) → `verify <slug>`. Detail: `AUDIO_PROCESSING.md`.
