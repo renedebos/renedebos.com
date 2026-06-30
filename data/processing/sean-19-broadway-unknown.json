@@ -1,0 +1,175 @@
+{
+  "slug": "sean-19-broadway-unknown",
+  "target_lufs": -20,
+  "tp_ceiling": -1,
+  "source": "24-bit / 48 kHz FLAC",
+  "filters": "none",
+  "tool": "ffmpeg loudnorm",
+  "workflow_version": 2,
+  "ffmpeg": "7.1.3-0+deb13u1",
+  "date": "2026-06-30",
+  "tracks": {
+    "1": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -26.7,
+      "lufs": -20.04,
+      "tp": -1.0,
+      "lra": 8.6,
+      "md5": "be691d1658b046685c6ea769f3ae21b3"
+    },
+    "2": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -27.8,
+      "lufs": -20.03,
+      "tp": -0.98,
+      "lra": 7.1,
+      "md5": "4a350a0e63fec1b35532b274fb07b6bb"
+    },
+    "3": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -24.0,
+      "lufs": -20.01,
+      "tp": -1.77,
+      "lra": 13.0,
+      "md5": "2f1f3f4ff05e14fd01ef261c12dd963a"
+    },
+    "4": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -26.7,
+      "lufs": -19.99,
+      "tp": -0.99,
+      "lra": 10.7,
+      "md5": "c62a9cddc9ef84992e3deaa0700aed68"
+    },
+    "5": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -24.1,
+      "lufs": -20.06,
+      "tp": -1.0,
+      "lra": 5.7,
+      "md5": "85de4d3a4b21195aee8ff3bf00f051c1"
+    },
+    "6": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -25.9,
+      "lufs": -20.0,
+      "tp": -1.36,
+      "lra": 8.9,
+      "md5": "88f6fa0028c4e3da5a090a1c1f485b97"
+    },
+    "7": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -23.7,
+      "lufs": -20.02,
+      "tp": -0.99,
+      "lra": 10.1,
+      "md5": "65dbc4e0821f0dbc01bc497b88c6469e"
+    },
+    "8": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -22.2,
+      "lufs": -20.02,
+      "tp": -1.0,
+      "lra": 6.7,
+      "md5": "473113d7de7e160758bd348329fae9db"
+    },
+    "9": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -25.8,
+      "lufs": -19.99,
+      "tp": -1.0,
+      "lra": 8.8,
+      "md5": "381041c464e77a233866046cb532714f"
+    },
+    "10": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -26.9,
+      "lufs": -20.07,
+      "tp": -1.0,
+      "lra": 10.8,
+      "md5": "3b7f58a122e0d12e6c9cdda42a81ffb8"
+    },
+    "11": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.3,
+      "lufs": -20.22,
+      "tp": -1.0,
+      "lra": 9.5,
+      "md5": "8925020fd5927608cb0b86e0a9dce704"
+    },
+    "12": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -24.1,
+      "lufs": -20.02,
+      "tp": -0.99,
+      "lra": 9.5,
+      "md5": "22ecdf761cc27152582f723f957481b0"
+    },
+    "13": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -27.7,
+      "lufs": -19.87,
+      "tp": -1.0,
+      "lra": 9.5,
+      "md5": "e5fffb69630cebfdfdfa2e347c96a75b"
+    },
+    "14": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -23.3,
+      "lufs": -20.1,
+      "tp": -1.0,
+      "lra": 10.1,
+      "md5": "ee2d550244664d296c119d97867eda27"
+    },
+    "15": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -25.2,
+      "lufs": -20.01,
+      "tp": -1.0,
+      "lra": 5.7,
+      "md5": "e8c7867af623852d0824e838afff652d"
+    },
+    "16": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -26.3,
+      "lufs": -19.96,
+      "tp": -1.0,
+      "lra": 10.0,
+      "md5": "ba2900fa06a8036ba6945271d5ef8367"
+    },
+    "17": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -24.3,
+      "lufs": -20.0,
+      "tp": -2.46,
+      "lra": 8.4,
+      "md5": "5148bbd8840de477326212c6b76885c6"
+    },
+    "18": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -24.4,
+      "lufs": -20.04,
+      "tp": -3.51,
+      "lra": 16.4,
+      "md5": "20acf5d110cf0ab2005ffea113ac9398"
+    }
+  }
+}

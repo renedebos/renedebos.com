@@ -785,6 +785,7 @@ def build_history():
     </p>
     <ul class="reasons">
       <li>Went back to one of the very first shows posted &mdash; <strong>Sean Hannan at 19 Broadway</strong> (Jan&nbsp;24,&nbsp;2000), a 31-song solo set &mdash; and found nine tracks where loud audience clapping had clipped into distortion. Each one was <strong>hand-edited in Audacity</strong> to smooth out the overloaded peaks, then the whole show was brought to the archive&rsquo;s −20 loudness standard.</li>
+      <li>Brought the undated <strong>Sean Hannan at 19 Broadway</strong> set (18 songs, with guest turns from Jerry Hannan and Kelly Peterson) through the same workflow &mdash; replacing an earlier &minus;16 pass with a clean &minus;20 normalization from the source.</li>
       <li>Kept the whole archive in sync: the original masters, the hand-edited versions, and the final normalized tracks are now all preserved together in the cloud backup.</li>
     </ul>
 
