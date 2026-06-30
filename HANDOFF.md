@@ -6,7 +6,7 @@
 
 ## ⚡ Immediate pick-up tasks
 
-### 1. Finish the Drive `Processed/` rebuild (was 3 of 7 done at restart)
+### 1. Finish the Drive `Processed/` rebuild (STATUS: 3 Jerry shows done; Cafe Java in progress; 2000-02-17, 2000-10-17, 2000-02-21 still 0 — the nohup loop is alive and finishing them. Just verify final counts = 2×tracks and re-run any short one.)
 Context: the `gdrive:` remote was switched from a full 15 GB gmail account
 (`renedebos.ai@gmail`) to the **owner 5 TB account `renedebos@hotmail`**. The old
 `Processed/` mirrors (owned by the gmail acct) were deleted; we're rebuilding them
@@ -26,11 +26,11 @@ SeanHannan - 19 Broadway 2000-02-21       | SeanHannan - 19 Broadway 2000-02-21
 ```
 Per show: `rclone copy "r2:hannan-audio/FLAC/<r2>" "gdrive:DAT Tapes/Work Folder/<drv>/Processed" --s3-no-check-bucket --transfers 8 --drive-chunk-size 32M`, then same for `MP3/<r2>`. Verify each lands at 2×tracks files.
 
-### 2. Complete the 2001-01-06 Drive mirror (was 41/48)
+### 2. 2001-01-06 Drive mirror — DONE (48/48, plus one stray file to identify & remove)
 `rclone copy ~/work/mad-sweetwater-2001-01-06/processed "gdrive:DAT Tapes/Work Folder/MadHannans - Sweetwater 2001-01-06/Processed" --exclude "*.txt"` (idempotent). NOTE: `~/work` may have been cleared — if so, rebuild this one from R2 too (`MadHannans - Sweetwater 2001-01-06`, 24 FLAC + 24 MP3).
 
-### 3. `sean-2000-01-24` declip — now doable via the Audacity MCP
-The Audacity MCP (`audacity` server, 131 tools) is installed + registered with Claude Code (user scope, `~/Audacity-MCP/.venv`). After this restart its tools are live. **Launch Audacity** (display `:0`, `mod-script-pipe` enabled) so the MCP can drive it, then:
+### 3. `sean-2000-01-24` declip — now doable via the Audacity MCP  ← MAIN NEXT TASK
+The Audacity MCP (`audacity` server, 131 tools) is installed, registered (user scope, `~/Audacity-MCP/.venv`), and **confirmed connecting/connected**. **Launch Audacity** (display `:0`, `mod-script-pipe` enabled) so the MCP can drive it, then:
 - Pull the 7 clipping tracks (`Tracks/`): **07, 09, 14, 17, 19, 22, 23**. Worst clipping (priority): **22 Maids…(4110 fs-samples), 17 Wild World, 23 Long Black Veil**; 07 has the single longest run (17 samples). All are brief transient clips in loud applause/whoo at song ends — **gentle envelope ride-down on the crowd tails** (not an aggressive fade), optional declip; preserve the live feel.
 - Re-export lossless → `audio_process.py diagnose` (confirm CLIPPING→NONE) → `process --target -20 --slug sean-19-broadway-2000-01-24` → publish (Phase 3).
 
