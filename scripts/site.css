@@ -1380,8 +1380,15 @@ footer a { color: var(--accent); text-decoration: none; }
 a.artist-chip:hover { filter: brightness(1.08); }
 
 .songs-controls {
-  display: flex; flex-wrap: wrap; gap: .6rem; margin: 1.25rem 0 1.5rem;
+  display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin: 1.25rem 0 1.5rem;
 }
+.song-search {
+  flex: 1 1 12rem; min-width: 10rem; font: inherit; font-size: 14px;
+  color: var(--text); background: var(--surface);
+  border: 1px solid var(--border); border-radius: 8px; padding: .45rem .75rem;
+}
+.song-search:focus { outline: none; border-color: var(--accent); }
+.songs-empty { color: var(--muted); font-style: italic; margin: 1.5rem 0; }
 .songs-controls .seg {
   display: inline-flex; border: 1px solid var(--border);
   border-radius: 8px; overflow: hidden; background: var(--surface);

@@ -4247,6 +4247,12 @@
   "updates": [
     {
       "date": "2026-07-05",
+      "ts": "2026-07-05T12:00:00",
+      "slug": null,
+      "text": "New “Songs” section: a cross-referenced matrix of every song against every show — see each time a song was played across Jerry, the Mad Hannans, and Sean, browse it as a filterable list or a songs-by-shows grid, and search for any song by name. Every performance has its own player and a link to that show."
+    },
+    {
+      "date": "2026-07-05",
       "ts": "2026-07-05T00:00:00",
       "slug": "mad-new-georges-1999-10-13",
       "report": true,

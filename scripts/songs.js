@@ -5,7 +5,7 @@
   var gridEl = document.getElementById("song-grid");
   if (!listEl) return;
 
-  var state = { view: "list", sort: "plays", artist: "all" };
+  var state = { view: "list", sort: "plays", artist: "all", query: "" };
 
   document.querySelectorAll(".songs-controls .seg button").forEach(function (b) {
     b.addEventListener("click", function () {
@@ -16,6 +16,12 @@
       });
       apply();
     });
+  });
+
+  var searchEl = document.getElementById("song-search");
+  if (searchEl) searchEl.addEventListener("input", function () {
+    state.query = searchEl.value.trim().toLowerCase();
+    apply();
   });
 
   function sortIn(container, selector) {
@@ -30,10 +36,15 @@
   }
 
   function filter(nodes) {
+    var shown = 0;
     [].forEach.call(nodes, function (n) {
-      n.hidden = !(state.artist === "all" ||
-        (" " + n.dataset.artists + " ").indexOf(" " + state.artist + " ") >= 0);
+      var okArtist = state.artist === "all" ||
+        (" " + n.dataset.artists + " ").indexOf(" " + state.artist + " ") >= 0;
+      var okQuery = !state.query || n.dataset.title.indexOf(state.query) >= 0;
+      n.hidden = !(okArtist && okQuery);
+      if (!n.hidden) shown++;
     });
+    return shown;
   }
 
   function apply() {
@@ -41,8 +52,10 @@
     if (gridEl) gridEl.hidden = state.view !== "grid";
     sortIn(listEl, ".song-item");
     if (gridEl) sortIn(gridEl.querySelector("tbody"), "tr");
-    filter(listEl.querySelectorAll(".song-item"));
+    var shown = filter(listEl.querySelectorAll(".song-item"));
     if (gridEl) filter(gridEl.querySelectorAll("tbody tr"));
+    var empty = document.getElementById("songs-empty");
+    if (empty) empty.hidden = shown !== 0;
   }
 
   apply();

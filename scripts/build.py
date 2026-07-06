@@ -797,9 +797,12 @@ def build_history():
       <li>Kept the whole archive in sync: the original masters, the hand-edited versions, and the final normalized tracks are now all preserved together in the cloud backup.</li>
     </ul>
 
-    <h2>Week six &mdash; New George&rsquo;s, split and faded (July&nbsp;5, 2026)</h2>
+    <h2>Week six &mdash; New George&rsquo;s, and a song index (July&nbsp;5, 2026)</h2>
     <p>
       Added the <strong>Mad Hannans at New George&rsquo;s</strong> in San Rafael (Oct&nbsp;13,&nbsp;1999) as 14 individual tracks. The show survives as two audience DAT transfers, so I <strong>A/B&rsquo;d them side by side</strong> and went with the one that sounded best. Each song was split out, the applause <strong>gently faded</strong> at the end for easier back-to-back listening, and the whole set brought to the archive&rsquo;s &minus;20 loudness standard. The set opens with a short soundcheck.
+    </p>
+    <p>
+      Also launched a new <strong>&ldquo;Songs&rdquo; section</strong> &mdash; a cross-referenced <strong>matrix of every song against every show</strong>. Because the same songs turn up again and again across Jerry, the Mad Hannans, and Sean, you can now pick a song and see <em>every</em> time it was played, each with a player and a link straight to that performance. Browse it as a filterable list or a songs-by-shows grid, sort by how often a song was played, filter by artist, and <strong>search for any song by name</strong>.
     </p>
 
     <p class="about-note">The work continues &mdash; more shows, better audio, and small fixes are always in progress.</p>
@@ -1268,10 +1271,12 @@ def build_songs_index():
     <p class="about-note">The {n_other} other shows in the archive aren&rsquo;t split into individual songs yet, so they don&rsquo;t appear here.</p>
   </section>
   <div class="songs-controls">
+    <input type="search" id="song-search" class="song-search" placeholder="Search songs&hellip;" autocomplete="off" aria-label="Search songs">
     <div class="seg" data-role="view"><button data-view="list" class="active">List</button><button data-view="grid">Grid</button></div>
     <div class="seg" data-role="sort"><button data-sort="plays" class="active">Most&nbsp;played</button><button data-sort="az">A&ndash;Z</button></div>
     <div class="seg" data-role="artist"><button data-artist="all" class="active">All</button><button data-artist="jerry">Jerry</button><button data-artist="mad">Mad</button><button data-artist="sean">Sean</button></div>
   </div>
+  <p class="songs-empty" id="songs-empty" hidden>No songs match &mdash; try a different search.</p>
   <div class="song-list" id="song-list">
 {chr(10).join(items)}
   </div>
