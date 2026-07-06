@@ -1,80 +1,74 @@
 # Session Handoff — Hannan Recordings (renedebos.com)
-**Date:** 2026-06-30 · **Branch:** `main` (all work committed & pushed)
+**Date:** 2026-07-05 · **Branch:** `main` (all work committed & pushed)
 
-> This session **finished and published two Sean shows**: the `2000-01-24` declip and the
-> undated `unknown` set. Both are fully live (R2 + site + Drive mirror). No open blockers.
+> This session **published the Mad Hannans New George's show**, fixed two title
+> typos, and **built a new song-concordance section (`/songs/`)**. Everything is
+> live (R2 + site); Rene has mirrored the New George's files to Drive. No open blockers.
 
 ## ✅ Done this session
 
-### 1. `sean-19-broadway-2000-01-24` — declip + normalize — PUBLISHED
-- Rene hand-edited the 9 clipped tracks (07, 09, 14, 17, 19, 22, 23, 24, 31) in Audacity;
-  a prior pass had already processed all 31 to −20 LUFS and uploaded to R2.
-- This session closed the remaining Phase-3 items: removed the stale "not normalized yet"
-  description line, **verified R2 (31/31 md5 OK)**, and **completed the Drive `Processed/`
-  mirror (62 files)** — the earlier mirror had stalled at 21/62.
-- **Date discrepancy RESOLVED:** the show is **2000-01-24** (slug, R2 keys, mount folder all
-  agree now; the old "2001-01-24" mount-folder name is gone). No longer an open question.
-- Commits: `4f62ab0` (description), `79a5bc5` (handoff). Show already published in `b6c6db6`.
+### 1. `mad-new-georges-1999-10-13` — 14 tracks — PUBLISHED (commit `12cd83f`)
+- **Two audience-DAT transfers existed** for this show. A/B-compared them (ffmpeg astats /
+  ebur128 + a local A/B web player): the **apostrophe file** `MadHannans - New George's 1999-10-13.wav`
+  is hotter (−20 LUFS integrated) but **clips** (true-peak +0.6 dBFS, flat-topped transients on the
+  left channel, 2.8 dB L/R imbalance); the **underscore file** `MadHannans_NewGeorges_1999-10-13.wav`
+  is cleaner (−24.4 LUFS, ~7 dB headroom, no clipping). Same performance/tone (LRA ≈ 20 both).
+- **Rene chose the apostrophe transfer** (the site's main recording) for its sound, accepting the
+  clipping. He split it in Audacity into 14 songs, **studio-faded the applause** on each, exported
+  24-bit/48k FLAC to `Tracks/` (raw split kept in `Source/`).
+- Processed all 14 to **−20 LUFS / −1 dBTP** (workflow v2, `filters: none`), uploaded FLAC + 320k MP3
+  to R2, peaks generated, **R2 verified 14/14 md5 OK**, description + Updates note + a **"Week six"**
+  history entry added. Track 1 is a soundcheck ("Scallywag").
+- **Drive backup:** Rene moved `Tracks/`, `Source/`, and the processed masters to Google Drive himself.
 
-### 2. `sean-19-broadway-unknown` — normalize — PUBLISHED (commit `ebf877e`)
-- **Was previously HELD** (18 in recordings.json vs 20 FLAC in Drive). Rene reconciled it to a
-  clean **18 numbered tracks** and dropped them in `~/gdrive-mount/SeanHannan - 19 Broadway unknown date/`.
-- Diagnose: **clip NONE on all 18** — clean tape, no hand-editing needed. Processed all 18 to
-  −20 LUFS (workflow v2), **replacing an earlier −16 LUFS Audacity pass** (stale description note
-  removed). Sidecar written; **R2 verified 18/18**; peaks regenerated; Updates note + history
-  bullet added; **Drive `Processed/` mirror = 36 files**.
-- **Source filenames were normalized on staging:** the local files had `w_Jerry` / `w_Kelly Peterson`
-  suffixes + casing (`don't…`, `Angel of Montgomery`); I copied them into `~/work/.../input/` under the
-  **canonical R2 names** (matched by track number) so uploads overwrote in place, no dup keys.
-- ⚠️ **Worth a listen:** several track durations changed vs the old raw upload (e.g. track 3
-  "Don't Think Twice" **+17s**). That means the files Rene supplied are **different cuts** than the
-  original split. Displayed durations now match what's live; flag only if the re-splits were unintended.
+### 2. Title-typo fixes — PUBLISHED (commits `6080143`, `8878db7`)
+- **"Luxery" → "Luxury of Murder"** on **both** New George's (track 5) and Cafe Java (track 11):
+  renamed the R2 objects (MP3 + FLAC), updated `recordings.json` titles/keys, renamed local files.
+- **"Da Da Da" → "Da Da Da (Slave to an Angel)"** everywhere (part of commit `35b7278`): the standalone
+  track on `mad-sweetwater-2000-02-17` (num 21). Note that show has a **file-prefix offset** on tracks
+  19–21 (prefix = num−1), so its R2 key kept the `20 ` prefix: `20 Da Da Da (Slave to an Angel).*`.
+  The separate **medley** "The Kiss - Da Da Da (Slave To an Angel)" was deliberately left alone.
 
-## 🟡 Notes / minor follow-ups (no action required)
-- **Technical-data "Ver" column looks "missing" on long-title shows.** It renders correctly
-  (`v2` for every track, confirmed on the live site) but is the **last of 11 columns** inside
-  `.tech-scroll` (`overflow-x:auto`), so on shows with long titles (e.g. 2000-01-24's "Maids When
-  You're Young…") it sits off the right edge until you scroll. Rene confirmed the data is correct and
-  **declined a CSS change.** If ever wanted, the one-liner is to let the title column wrap:
-  `.tech-table td:not(.tnum):not(.tver){white-space:normal;min-width:9rem}` in `scripts/site.css`
-  (then `build.py` copies it to `assets/site.css`).
-- Session scratch in `~/work/sean-19-broadway-2000-01-24/declip/` (A/B server, `t09_ride_*` renders)
-  is safe to delete. Originals untouched in each show's `input/`.
+### 3. New feature — Song concordance `/songs/` — PUBLISHED (commit `35b7278`)
+- Cross-references every song across the 11 track-listed shows. **List view** (each song expands to
+  every performance with an inline player + deep-link to that track) + **grid view** (songs × 11 shows,
+  artist-colored dots), with sort (most-played / A–Z) and artist filter. **101 per-song pages**
+  (`/songs/<slug>/`) for sharing/SEO. Added "Songs" to nav + sitemap.
+- Built in `build.py`: `collect_songs()`, `build_songs_index()`, `build_song_page()`, dependency-free
+  `scripts/songs.js`, styles in `scripts/site.css`. `player()` gained a `version=` arg (MD5 cache-bust).
+- **Canonical/alias map lives in `build.py`** as `SONG_MANUAL_MERGE` + `SONG_CANONICAL_OVERRIDE`
+  (curated with Rene: spelling merges, "ignore leading The", ABC+Sesame, German Clockwinder, Plastic
+  Lemons, medley naming, Houses of the Holy = Me and Eddie Vedder, I Need a Lover = Lover + I Need a
+  Dream, etc.). Re-derives on every build, so **new shows fold in automatically** — new title variants
+  just need a one-line entry there. Scratch/audit: `~/work/song-concordance/` (`gen_aliases.py`, `REVIEW.md`).
 
-## 🟥 Two tooling gotchas that cost time (now in memory)
-- **rclone uploads to `gdrive:` stall mid-file** — byte count freezes, rate decays toward 0, ETA
-  explodes; `--timeout` does NOT catch it (Drive keeps the conn alive). Don't tune `--transfers`;
-  use a **`--max-duration` retry loop** (atomic Drive uploads → killed mid-stall files just retry;
-  done files are skipped) and prefer **local→Drive** over R2→Drive. Full recipe: [[rclone-drive-upload-stall]].
-- **`pgrep -f '<script>.py'` self-matches the watcher.** An `until ! pgrep -f gen_peaks.py` loop
-  matched its OWN command line (which contains the string) → deadlocked forever; gen_peaks/status
-  silently never ran. **Match on the running file PATH or use the bg-task notification**, not a
-  script name that also appears in the watcher's own command.
-
-## 🟥 Audacity MCP reality-check (unchanged — still flaky)
-The `audacity` MCP (131 tools) is UNRELIABLE: import chokes on spaces (copy to space-free names);
-empty/`success:false` responses are ambiguous (retry READs, never blind-retry a destructive effect —
-verify state first); it once **silently lost a 172s track**; Audacity itself crashed mid-session
-(`PIPE_WRITE_FAILED`). Launch with the file as an arg to bypass MCP import. For deterministic DSP,
-**ffmpeg beats the MCP**. Use Audacity (GUI, by Rene) for surgical hand-editing only. [[audacity-mcp-unreliable]]
+## 🟥 Tooling gotchas (still real)
+- **`pgrep -f '<script>.py'` self-matches the watcher** — hit it again this session. Match on the file
+  PATH or use the bg-task notification, not a name that also appears in the watcher's own command line.
+- **rclone uploads to `gdrive:` stall mid-file** — `--timeout` won't catch it; use a `--max-duration`
+  retry loop, prefer local→Drive. [[rclone-drive-upload-stall]]
+- **Audacity MCP is unreliable** — spaces in paths choke import, ambiguous `success:false`, once lost a
+  track. Use for surgical hand-editing by Rene only; ffmpeg beats it for deterministic DSP. [[audacity-mcp-unreliable]]
 
 ## ⏭️ What's left in the archive
-- `status --write` → `done: 10, needs-processing: 21`. All **track-listed** shows are now `done`.
-- The 21 `needs-processing` are **whole-show-only** shows (no split tracks yet) — they need
-  **splitting into tracks first**, then the normal pipeline.
-- Separate item: **`jerry-19-broadway-2001` (30-song soundboard set)** still carries a "these tracks
-  have not been normalized yet" description line (recordings.json ~line 1057) — it's a different show,
-  left untouched this session.
+- `status`: **`done: 11, needs-processing: 20`.** All **track-listed** shows are `done`.
+- The 20 `needs-processing` are **whole-show-only** shows (no split tracks yet) — they need **splitting
+  into songs first**, then the normal pipeline (which auto-adds them to `/songs/`).
+- Optional idea parked: a **covers-vs-originals filter** on `/songs/` using the per-track `tags`.
+- Separate item (untouched): **`jerry-19-broadway-2001`** still carries a "not normalized yet"
+  description line (recordings.json ~line 1057) — a different show.
 
 ## Durable facts (don't undo)
-- **All artists → −20 LUFS, −1 dBTP ceiling.** (Mad moved −16→−20; A/B proved no gain.) [[mad-target-20]]
+- **All artists → −20 LUFS, −1 dBTP ceiling.** [[mad-target-20]]
 - **`gdrive:` = owner account `renedebos@hotmail` (5 TB). No `--drive-shared-with-me` anywhere.**
 - `gdrive-mount/` is a **LOCAL copy**, not a live mount — edits must be rclone-pushed to Drive. [[metadata-editor]]
-- Engine `audio_process.py` (diagnose/process/verify/status/versions/history); `--eq "<chain>"` applies
-  corrective EQ before loudnorm, recorded per-track. `update_tracks.py` re-reads recordings.json right
-  before writing (race-safe) — still do recordings.json edits AFTER uploads finish.
+- **Song grouping for `/songs/` is curated in `build.py`** (`SONG_MANUAL_MERGE` / `SONG_CANONICAL_OVERRIDE`) —
+  the authoritative map; the `~/work/song-concordance/` files are just scratch/audit.
+- Engine `audio_process.py` (diagnose/process/verify/status/versions/history); `--eq "<chain>"` corrective
+  EQ before loudnorm. `update_tracks.py` re-reads recordings.json right before writing (edit it AFTER uploads).
 
 ## Per-show publish (Phase 3) — reference
-`update_tracks.py` (R2) → `gen_peaks.py --slug` → edit recordings.json (Updates note + description) →
-`status --write` → `build.py` → update `build_history()` → commit/push → Drive mirror (`…/Processed`,
-**use the max-duration retry loop, local→Drive**) → `verify <slug>`. Detail: `AUDIO_PROCESSING.md`.
+build tracks array in recordings.json → `update_tracks.py <slug> <processed>` (R2 + sizes/durations) →
+`gen_peaks.py --slug` → Updates note + description → `status --write` → update `build_history()` →
+`build.py` → commit/push → Drive mirror (`…/Processed`, max-duration retry loop) → `verify <slug>`.
+Detail: `AUDIO_PROCESSING.md`. New shows automatically appear on `/songs/` after `build.py`.
