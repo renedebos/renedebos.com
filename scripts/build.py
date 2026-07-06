@@ -81,15 +81,16 @@ def dl_button(file, *, free, label=None, title="Download"):
             f'download="{esc(name)}" title="{esc(title)}">{DL_SVG}{label_html}</a>')
 
 
-def player(file, free=False, duration=None, download_file=None):
+def player(file, free=False, duration=None, download_file=None, version=None):
     """A custom-player row: play button, progress bar, download button(s).
 
     Streams `file`. When `download_file` differs (e.g. stream a lossy 320 kbps
     MP3 proxy but keep the lossless original available), the row offers two
     downloads: the free MP3 and the lossless original. Otherwise a single
-    download button for the streamed file.
+    download button for the streamed file. `version` cache-busts the stream URL
+    (pass a track's MD5) so a re-normalized upload goes live immediately.
     """
-    stream = stream_url(file)
+    stream = stream_url(file, version)
     end_label = f'<span class="time-label">{esc(duration)}</span>' if duration else ""
     if download_file and download_file != file:
         mp3_fmt = file.rsplit(".", 1)[-1].upper()
@@ -184,6 +185,7 @@ SITE_PAGES = [
     ("Home", "/"),
     ("Archive", "/archive/"),
     ("Shows", "/shows/"),
+    ("Songs", "/songs/"),
     ("Search", "/search/"),
     ("Updates", "/updates/"),
     ("History", "/history/"),
@@ -1128,10 +1130,199 @@ def validate():
         raise SystemExit("recordings.json validation failed:\n  - " + "\n  - ".join(errors))
 
 
+# ── song concordance ──────────────────────────────────────────────────────────
+# Curated title→canonical merges (decided in ~/work/song-concordance). Keeps the
+# cross-show grouping stable and correct as new shows are added.
+SONG_MANUAL_MERGE = {
+    "ABC - Sesame Street": "ABC",
+    "The German Clock Winder": "The German Clockwinder",
+    "Plastic Melons": "Plastic Lemons",
+    "Dysfuctional Guy": "Dysfunctional Guy",
+    "Don't Think Twice It's Alright": "Don't Think Twice It's All Right",
+    "Hard Drinking": "Hard Drinkin'",
+    "You're Pulling Me Leg / The Ted Kennedy Song": "You're Pulling Me Leg",
+    "Rocky Road to Dublin / Star of County Down": "The Rocky Road to Dublin",
+    "Me and Eddie Vedder": "Houses of the Holy",
+    "Lover": "I Need a Lover",
+    "I Need a Dream": "I Need a Lover",
+}
+SONG_CANONICAL_OVERRIDE = {"german clockwinder": "The German Clockwinder"}
+ARTIST_SHORT = {"jerry": "Jerry", "mad": "Mad Hannans", "sean": "Sean",
+                "seanjerry": "Sean & Jerry"}
+_ARTIST_ORDER = ["jerry", "mad", "sean", "seanjerry"]
+
+
+def song_norm(t):
+    """Grouping key: lowercase, drop parentheticals + punctuation, ignore 'The'."""
+    t = re.sub(r"\(.*?\)", "", t.lower().strip())
+    t = re.sub(r"[^a-z0-9]+", " ", t).strip()
+    t = re.sub(r"\s+", " ", t)
+    return re.sub(r"^the ", "", t)
+
+
+def song_slug(t):
+    return re.sub(r"-+", "-", re.sub(r"[^a-z0-9]+", "-", song_norm(t))).strip("-")
+
+
+def collect_songs():
+    """Group every curated track across track-listed shows into canonical songs.
+    Returns (songs, columns) where columns are the shows (chronological) that make
+    up the grid, and each song carries its occurrences with playable stream info."""
+    tl = [s for s in M["shows"] if s.get("tracks")]
+    cols = sorted(tl, key=sort_key)
+    groups = {}
+    for s in tl:
+        proc = load_processing(s["slug"])
+        ptracks = proc.get("tracks", {}) if proc else {}
+        for t in s["tracks"]:
+            key = song_norm(SONG_MANUAL_MERGE.get(t["title"], t["title"]))
+            g = groups.setdefault(key, {"variants": {}, "occ": []})
+            g["variants"][t["title"]] = g["variants"].get(t["title"], 0) + 1
+            ver = (ptracks.get(str(t["num"]), {}).get("md5") or "")[:12] or None
+            g["occ"].append({
+                "artist": s["artist"], "artist_name": artist_name(s["artist"]),
+                "venue": s.get("venue_short") or s.get("venue") or "—",
+                "date": s["date"] or "Unknown date", "slug": s["slug"],
+                "url": show_url(s), "num": t["num"], "duration": t.get("duration"),
+                "file": t["file"], "ver": ver, "title": t["title"],
+            })
+    songs, used = [], set()
+    for key, g in groups.items():
+        variants = sorted(g["variants"])
+        canonical = SONG_CANONICAL_OVERRIDE.get(key) or sorted(
+            variants, key=lambda v: (-g["variants"][v], "(" in v, len(v)))[0]
+        slug = song_slug(canonical) or re.sub(r"\s+", "-", key) or "song"
+        while slug in used:
+            slug += "-x"
+        used.add(slug)
+        occ = sorted(g["occ"], key=lambda o: (o["date"] == "Unknown date", o["date"], o["slug"]))
+        artists = sorted({o["artist"] for o in g["occ"]},
+                         key=lambda a: _ARTIST_ORDER.index(a) if a in _ARTIST_ORDER else 9)
+        songs.append({"canonical": canonical, "slug": slug, "variants": variants,
+                      "plays": len(occ), "artists": artists, "occ": occ})
+    songs.sort(key=lambda s: (-s["plays"], s["canonical"].lower()))
+    return songs, cols
+
+
+def _song_occ_html(o):
+    p = player(o["file"], free=True, duration=o.get("duration"), version=o["ver"])
+    anchor = f'{esc(o["url"])}#track-{o["num"]}'
+    return f'''<div class="song-occ">
+        <div class="song-occ-head">
+          <a class="artist-chip artist-{o['artist']}" href="{anchor}">{esc(o['artist_name'])}</a>
+          <span class="song-occ-where">{esc(o['venue'])} &middot; {esc(o['date'])}</span>
+          <a class="song-occ-open" href="{anchor}">open on show page &rarr;</a>
+        </div>
+        {p}
+      </div>'''
+
+
+def build_songs_index():
+    songs, cols = collect_songs()
+    n_other = len(M["shows"]) - len(cols)
+    multi = sum(1 for s in songs if s["plays"] > 1)
+
+    items = []
+    for s in songs:
+        chips = "".join(f'<span class="artist-chip sm artist-{a}">{esc(ARTIST_SHORT.get(a, a))}</span>'
+                        for a in s["artists"])
+        occs = "\n".join(_song_occ_html(o) for o in s["occ"])
+        items.append(f'''    <details class="song-item" data-artists="{' '.join(s['artists'])}" data-plays="{s['plays']}" data-title="{esc(song_norm(s['canonical']))}">
+      <summary>
+        <span class="song-plays">{s['plays']}&times;</span>
+        <a class="song-name" href="/songs/{s['slug']}/">{esc(s['canonical'])}</a>
+        <span class="song-chips">{chips}</span>
+      </summary>
+      <div class="song-occs">
+{occs}
+      </div>
+    </details>''')
+
+    col_head = "".join(
+        f'<th class="artist-{c["artist"]}"><span class="g-venue">{esc(c.get("venue_short") or c.get("venue") or "—")}</span>'
+        f'<span class="g-date">{esc((c.get("date") or "??")[:10])}</span></th>' for c in cols)
+    rows = []
+    for s in songs:
+        by_show = {}
+        for o in s["occ"]:
+            by_show.setdefault(o["slug"], o)
+        cells = []
+        for c in cols:
+            o = by_show.get(c["slug"])
+            if o:
+                cells.append(f'<td class="hit artist-{o["artist"]}"><a href="{esc(o["url"])}#track-{o["num"]}" '
+                             f'title="{esc(s["canonical"])} &middot; {esc(o["date"])}">&#9679;</a></td>')
+            else:
+                cells.append("<td></td>")
+        rows.append(f'<tr data-artists="{" ".join(s["artists"])}" data-plays="{s["plays"]}" '
+                    f'data-title="{esc(song_norm(s["canonical"]))}">'
+                    f'<th class="g-song"><a href="/songs/{s["slug"]}/">{esc(s["canonical"])}</a>'
+                    f'<span class="g-count">{s["plays"]}&times;</span></th>{"".join(cells)}</tr>')
+
+    main = f'''
+  <section class="about">
+    <h2>Every Song</h2>
+    <p>
+      Every song across the {len(cols)} shows that have been split into individual tracks &mdash; <strong>{len(songs)} distinct songs</strong>, {multi} of them played more than once. Click a song to see every time it was played, each with a player and a link to that exact performance. The same songs turn up across Jerry, the Mad Hannans, and Sean &mdash; that shared repertoire is what this page is for.
+    </p>
+    <p class="about-note">The {n_other} other shows in the archive aren&rsquo;t split into individual songs yet, so they don&rsquo;t appear here.</p>
+  </section>
+  <div class="songs-controls">
+    <div class="seg" data-role="view"><button data-view="list" class="active">List</button><button data-view="grid">Grid</button></div>
+    <div class="seg" data-role="sort"><button data-sort="plays" class="active">Most&nbsp;played</button><button data-sort="az">A&ndash;Z</button></div>
+    <div class="seg" data-role="artist"><button data-artist="all" class="active">All</button><button data-artist="jerry">Jerry</button><button data-artist="mad">Mad</button><button data-artist="sean">Sean</button></div>
+  </div>
+  <div class="song-list" id="song-list">
+{chr(10).join(items)}
+  </div>
+  <div class="song-grid-wrap" id="song-grid" hidden>
+    <table class="song-grid">
+      <thead><tr><th class="g-corner">Song</th>{col_head}</tr></thead>
+      <tbody>
+{chr(10).join("        " + r for r in rows)}
+      </tbody>
+    </table>
+  </div>'''
+    return page_shell(
+        title="Songs — The Hannan Recordings",
+        description=f"Every song across the Hannan live archive — {len(songs)} songs cross-referenced against every show and performance.",
+        url="https://renedebos.com/songs/", eyebrow="The Hannan Recordings",
+        heading="Songs", tagline="Every song, and every time it was played",
+        nav=site_nav("Songs"), main=main,
+        extra_scripts='\n<script src="/assets/songs.js"></script>')
+
+
+def build_song_page(s):
+    plural = "s" if s["plays"] != 1 else ""
+    arts = ", ".join(artist_name(a) for a in s["artists"])
+    parts = ['\n  <p class="song-back"><a href="/songs/">&larr; All songs</a></p>']
+    if len(s["variants"]) > 1:
+        alt = ", ".join(esc(v) for v in s["variants"] if v != s["canonical"])
+        if alt:
+            parts.append(f'''
+  <section class="about"><p class="song-variants">Also listed as: {alt}</p></section>''')
+    occs = "\n".join(_song_occ_html(o) for o in s["occ"])
+    parts.append(f'''
+  <section id="tracks">
+    <div class="group-label-bare">Played {s['plays']} time{plural} &middot; {esc(arts)}</div>
+    <p class="track-hint">Each performance streams free (MP3). &ldquo;Open on show page&rdquo; jumps to the song within its full set.</p>
+    <div class="song-occs">
+{occs}
+    </div>
+  </section>''')
+    return page_shell(
+        title=f"{s['canonical']} — The Hannan Recordings",
+        description=f"{s['canonical']} — {s['plays']} live performance{plural} by {arts} in the Hannan archive.",
+        url=f"https://renedebos.com/songs/{s['slug']}/", eyebrow="The Hannan Recordings &middot; Song",
+        heading=esc(s["canonical"]), tagline=f"Played {s['plays']} time{plural} across the archive",
+        nav=site_nav("Songs"), main="".join(parts))
+
+
 def build_sitemap():
     base = "https://renedebos.com"
     urls = [base + p for _, p in SITE_PAGES]
     urls += [base + show_url(s) for s in M["shows"]]
+    urls += [f"{base}/songs/{s['slug']}/" for s in collect_songs()[0]]
     items = "\n".join(f"  <url><loc>{esc(u)}</loc></url>" for u in urls)
     return ('<?xml version="1.0" encoding="UTF-8"?>\n'
             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
@@ -1147,11 +1338,13 @@ def main():
     write("assets/wavesurfer.esm.js", open(os.path.join(here, "vendor", "wavesurfer.esm.js")).read())
     write("assets/wavesurfer.js", open(os.path.join(here, "wavesurfer.js")).read())
     write("assets/search.js", open(os.path.join(here, "search.js")).read())
+    write("assets/songs.js", open(os.path.join(here, "songs.js")).read())
     write("assets/search-index.json", json.dumps(build_search_index(), ensure_ascii=False))
     write("lab/wavesurfer/index.html", build_wavesurfer_lab())
     write("index.html", build_home())
     write("archive/index.html", build_archive())
     write("shows/index.html", build_shows())
+    write("songs/index.html", build_songs_index())
     write("search/index.html", build_search())
     write("updates/index.html", build_updates())
     write("history/index.html", build_history())
@@ -1163,8 +1356,11 @@ def main():
         out = (show["page"] or f"shows/{show['slug']}") + "/index.html"
         write(out, build_show(show))
         n += 1
+    songs, _ = collect_songs()
+    for s in songs:
+        write(f"songs/{s['slug']}/index.html", build_song_page(s))
     total = sum(len(s["recordings"]) for s in M["shows"]) + len(M["singles"])
-    print(f"Built 6 site pages + {n} show pages ({total} recordings, "
+    print(f"Built 7 site pages + {n} show pages + {len(songs)} song pages ({total} recordings, "
           f"{sum(len(s['tracks'] or []) for s in M['shows'])} curated tracks)")
 
 
