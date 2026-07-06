@@ -3442,10 +3442,156 @@
           "stream": "MP3/Full/WAV_Files/MadHannans_NewGeorges_1999-10-13.mp3"
         }
       ],
-      "tracks": null,
-      "description": null,
+      "tracks": [
+        {
+          "num": 1,
+          "title": "Scallywag (soundcheck)",
+          "file": "MP3/MadHannans - New George's 1999-10-13/01 Scallywag (soundcheck).mp3",
+          "flac": "FLAC/MadHannans - New George's 1999-10-13/01 Scallywag (soundcheck).flac",
+          "processed": true,
+          "size_mb": 8,
+          "duration": "3:17",
+          "flac_size_mb": 35
+        },
+        {
+          "num": 2,
+          "title": "Smoke in Heaven",
+          "file": "MP3/MadHannans - New George's 1999-10-13/02 Smoke in Heaven.mp3",
+          "flac": "FLAC/MadHannans - New George's 1999-10-13/02 Smoke in Heaven.flac",
+          "processed": true,
+          "size_mb": 7,
+          "duration": "2:00",
+          "flac_size_mb": 34
+        },
+        {
+          "num": 3,
+          "title": "Truck",
+          "file": "MP3/MadHannans - New George's 1999-10-13/03 Truck.mp3",
+          "flac": "FLAC/MadHannans - New George's 1999-10-13/03 Truck.flac",
+          "processed": true,
+          "size_mb": 9,
+          "duration": "3:47",
+          "flac_size_mb": 43
+        },
+        {
+          "num": 4,
+          "title": "Recycle",
+          "file": "MP3/MadHannans - New George's 1999-10-13/04 Recycle.mp3",
+          "flac": "FLAC/MadHannans - New George's 1999-10-13/04 Recycle.flac",
+          "processed": true,
+          "size_mb": 10,
+          "duration": "4:17",
+          "flac_size_mb": 48
+        },
+        {
+          "num": 5,
+          "title": "Luxery of Murder",
+          "file": "MP3/MadHannans - New George's 1999-10-13/05 Luxery of Murder.mp3",
+          "flac": "FLAC/MadHannans - New George's 1999-10-13/05 Luxery of Murder.flac",
+          "processed": true,
+          "size_mb": 7,
+          "duration": "2:53",
+          "flac_size_mb": 35
+        },
+        {
+          "num": 6,
+          "title": "Clear Headed",
+          "file": "MP3/MadHannans - New George's 1999-10-13/06 Clear Headed.mp3",
+          "flac": "FLAC/MadHannans - New George's 1999-10-13/06 Clear Headed.flac",
+          "processed": true,
+          "size_mb": 12,
+          "duration": "5:22",
+          "flac_size_mb": 61
+        },
+        {
+          "num": 7,
+          "title": "Rugburns",
+          "file": "MP3/MadHannans - New George's 1999-10-13/07 Rugburns.mp3",
+          "flac": "FLAC/MadHannans - New George's 1999-10-13/07 Rugburns.flac",
+          "processed": true,
+          "size_mb": 8,
+          "duration": "3:39",
+          "flac_size_mb": 42
+        },
+        {
+          "num": 8,
+          "title": "Baby",
+          "file": "MP3/MadHannans - New George's 1999-10-13/08 Baby.mp3",
+          "flac": "FLAC/MadHannans - New George's 1999-10-13/08 Baby.flac",
+          "processed": true,
+          "size_mb": 8,
+          "duration": "3:19",
+          "flac_size_mb": 38
+        },
+        {
+          "num": 9,
+          "title": "Everything Reminds Me of You",
+          "file": "MP3/MadHannans - New George's 1999-10-13/09 Everything Reminds Me of You.mp3",
+          "flac": "FLAC/MadHannans - New George's 1999-10-13/09 Everything Reminds Me of You.flac",
+          "processed": true,
+          "size_mb": 6,
+          "duration": "2:37",
+          "flac_size_mb": 29
+        },
+        {
+          "num": 10,
+          "title": "I Need a Lover",
+          "file": "MP3/MadHannans - New George's 1999-10-13/10 I Need a Lover.mp3",
+          "flac": "FLAC/MadHannans - New George's 1999-10-13/10 I Need a Lover.flac",
+          "processed": true,
+          "size_mb": 7,
+          "duration": "3:04",
+          "flac_size_mb": 34
+        },
+        {
+          "num": 11,
+          "title": "ABC",
+          "file": "MP3/MadHannans - New George's 1999-10-13/11 ABC.mp3",
+          "flac": "FLAC/MadHannans - New George's 1999-10-13/11 ABC.flac",
+          "processed": true,
+          "size_mb": 6,
+          "duration": "2:41",
+          "flac_size_mb": 30
+        },
+        {
+          "num": 12,
+          "title": "I Thought I Was You",
+          "file": "MP3/MadHannans - New George's 1999-10-13/12 I Thought I Was You.mp3",
+          "flac": "FLAC/MadHannans - New George's 1999-10-13/12 I Thought I Was You.flac",
+          "processed": true,
+          "size_mb": 9,
+          "duration": "3:58",
+          "flac_size_mb": 43
+        },
+        {
+          "num": 13,
+          "title": "Anna May",
+          "file": "MP3/MadHannans - New George's 1999-10-13/13 Anna May.mp3",
+          "flac": "FLAC/MadHannans - New George's 1999-10-13/13 Anna May.flac",
+          "processed": true,
+          "size_mb": 7,
+          "duration": "3:08",
+          "flac_size_mb": 34
+        },
+        {
+          "num": 14,
+          "title": "Butter",
+          "file": "MP3/MadHannans - New George's 1999-10-13/14 Butter.mp3",
+          "flac": "FLAC/MadHannans - New George's 1999-10-13/14 Butter.flac",
+          "processed": true,
+          "size_mb": 8,
+          "duration": "3:42",
+          "flac_size_mb": 40
+        }
+      ],
+      "description": [
+        "Recorded from the audience on DAT at New George's in San Rafael on October 13, 1999.",
+        "The show has been split into individual songs and normalized to an even listening level, with the applause faded down at the end of each track for easier streaming. The set opens with a brief soundcheck."
+      ],
       "page": null,
-      "processing_status": "needs-processing"
+      "processing_status": "done",
+      "added": "2026-07-05",
+      "added_ts": "2026-07-05T00:00:00"
     },
     {
       "slug": "mad-sweetwater-1999-05-18",
@@ -4099,6 +4245,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-07-05",
+      "ts": "2026-07-05T00:00:00",
+      "slug": "mad-new-georges-1999-10-13",
+      "report": true,
+      "text": "Added the full show as 14 individual tracks, split from the audience DAT and normalized to −20 LUFS for an even, comfortable listening level, with the applause gently faded at the end of each song for easier streaming — using the automated audio engineering workflow with ffmpeg"
+    },
     {
       "date": "2026-06-30",
       "ts": "2026-06-30T08:00:00",

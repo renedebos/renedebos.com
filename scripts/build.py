@@ -795,6 +795,11 @@ def build_history():
       <li>Kept the whole archive in sync: the original masters, the hand-edited versions, and the final normalized tracks are now all preserved together in the cloud backup.</li>
     </ul>
 
+    <h2>Week six &mdash; New George&rsquo;s, split and faded (July&nbsp;5, 2026)</h2>
+    <p>
+      Added the <strong>Mad Hannans at New George&rsquo;s</strong> in San Rafael (Oct&nbsp;13,&nbsp;1999) as 14 individual tracks. The show survives as two audience DAT transfers, so I <strong>A/B&rsquo;d them side by side</strong> and went with the one that sounded best. Each song was split out, the applause <strong>gently faded</strong> at the end for easier back-to-back listening, and the whole set brought to the archive&rsquo;s &minus;20 loudness standard. The set opens with a short soundcheck.
+    </p>
+
     <p class="about-note">The work continues &mdash; more shows, better audio, and small fixes are always in progress.</p>
   </section>''',
     )

@@ -1,0 +1,139 @@
+{
+  "slug": "mad-new-georges-1999-10-13",
+  "target_lufs": -20,
+  "tp_ceiling": -1,
+  "source": "24-bit / 48 kHz FLAC",
+  "filters": "none",
+  "tool": "ffmpeg loudnorm",
+  "workflow_version": 2,
+  "ffmpeg": "7.1.3-0+deb13u1",
+  "date": "2026-07-05",
+  "tracks": {
+    "1": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -21.8,
+      "lufs": -20.16,
+      "tp": -1.0,
+      "lra": 9.2,
+      "md5": "3cea7687a5cb178cf226a0962cb86583"
+    },
+    "2": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -17.8,
+      "lufs": -19.96,
+      "tp": -2.3,
+      "lra": 10.5,
+      "md5": "e7f698ee937b9bb3704fe3f1a6f6aae4"
+    },
+    "3": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -18.0,
+      "lufs": -20.0,
+      "tp": -1.0,
+      "lra": 12.0,
+      "md5": "0d96f2e1d23294abae2634c4a405b6df"
+    },
+    "4": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -19.0,
+      "lufs": -20.14,
+      "tp": -1.43,
+      "lra": 12.9,
+      "md5": "6d5cb556cd08e2a859707a4f47e5b9d6"
+    },
+    "5": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -18.8,
+      "lufs": -20.0,
+      "tp": -1.82,
+      "lra": 8.0,
+      "md5": "95670da34895ba6eb090567febc0dffb"
+    },
+    "6": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -19.0,
+      "lufs": -20.01,
+      "tp": -1.03,
+      "lra": 10.5,
+      "md5": "5a5385932b00bed013f7476f665c01ff"
+    },
+    "7": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -19.4,
+      "lufs": -20.0,
+      "tp": -2.8,
+      "lra": 10.0,
+      "md5": "eae0afe2bff87b07be763ca2d324c8bb"
+    },
+    "8": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -18.7,
+      "lufs": -20.0,
+      "tp": -2.8,
+      "lra": 9.5,
+      "md5": "c7b34b920edac0b6a125f89d9014a039"
+    },
+    "9": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -22.4,
+      "lufs": -20.38,
+      "tp": -1.0,
+      "lra": 13.3,
+      "md5": "255fa5cf34898a8d85c7211333b03c00"
+    },
+    "10": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.1,
+      "lufs": -20.21,
+      "tp": -1.0,
+      "lra": 9.8,
+      "md5": "cb5c709c51ca83d8c26353cf17586639"
+    },
+    "11": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.6,
+      "lufs": -20.31,
+      "tp": -1.0,
+      "lra": 10.3,
+      "md5": "d9ea9fd2d9e2c0378ee45709dd7cf3e4"
+    },
+    "12": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -29.1,
+      "lufs": -20.01,
+      "tp": -1.0,
+      "lra": 10.0,
+      "md5": "88693949528590e7cd6edf8c6ec86bdc"
+    },
+    "13": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -25.4,
+      "lufs": -19.97,
+      "tp": -1.0,
+      "lra": 13.3,
+      "md5": "f68a1b5f60b258e551f65a2a400c6a95"
+    },
+    "14": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -27.6,
+      "lufs": -19.99,
+      "tp": -1.0,
+      "lra": 11.7,
+      "md5": "624c49863fc868d69c78b58b24861580"
+    }
+  }
+}
