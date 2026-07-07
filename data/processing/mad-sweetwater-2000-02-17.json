@@ -5,9 +5,9 @@
   "source": "24-bit / 48 kHz FLAC",
   "filters": "none",
   "tool": "ffmpeg loudnorm",
-  "workflow_version": 1,
+  "workflow_version": 2,
   "ffmpeg": "7.1.3-0+deb13u1",
-  "date": "2026-06-28",
+  "date": "2026-07-06",
   "tracks": {
     "1": {
       "ver": 1,
@@ -127,13 +127,13 @@
       "md5": "55f63966f57e719b2b8931daf724250d"
     },
     "14": {
-      "ver": 1,
+      "ver": 2,
       "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
-      "in_lufs": -29.4,
+      "in_lufs": -29.5,
       "lufs": -20.05,
       "tp": -1.0,
-      "lra": 7.8,
-      "md5": "47901b2a0e26e9ff93bb5c3ae9e43ba6"
+      "lra": 8.1,
+      "md5": "325378dfa39d1261afbd1fade883ae15"
     },
     "15": {
       "ver": 1,
