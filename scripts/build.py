@@ -815,6 +815,14 @@ def build_history():
       Added two more <strong>early Jerry solo shows at 19&nbsp;Broadway</strong> in Fairfax &mdash; <strong>May&nbsp;10,&nbsp;1999</strong> (21 songs) and <strong>July&nbsp;19,&nbsp;1999</strong> (a long, 26-song set). Each was split into individual tracks by hand in Audacity, with the applause <strong>studio-faded</strong> at the end of every song and a little clipping cleaned up on the loudest peaks, then run through the pipeline to the archive&rsquo;s &minus;20 loudness standard. All 47 new tracks flow straight into the Songs matrix, which now also treats Jerry&rsquo;s <em>&ldquo;My&nbsp;Dear&rdquo;</em> and <em>&ldquo;Ride&nbsp;On&rdquo;</em> as the same song.
     </p>
 
+    <h2>Week eight &mdash; a technical spring-clean (July&nbsp;7, 2026)</h2>
+    <p>
+      A day of polish rather than new tapes. The <a href="/songs/"><strong>Songs</strong></a> page got a real workover: the list is tighter and easier to scan, with each artist shown as a small colour-coded dot lined up in <strong>fixed columns</strong> &mdash; so you can run your eye down and see at a glance which songs Jerry, the Mad Hannans, or Sean played. The songs-by-shows <strong>grid</strong> now scrolls sideways properly, and its artist filter finally hides the other artists&rsquo; columns instead of just their rows. Two songs on the <strong>Sweetwater soundboard</strong> (Feb&nbsp;17,&nbsp;2000) were corrected as well: a track listed as &ldquo;There She Was&rdquo; is really &ldquo;Butter,&rdquo; and the copy here was missing its opening chords, so it was swapped for the complete take; and a stray &ldquo;Da&nbsp;Da&nbsp;Da&rdquo; was reunited with its full name, the medley &ldquo;The&nbsp;Kiss&nbsp;&ndash;&nbsp;Da&nbsp;Da&nbsp;Da.&rdquo; Each fix was pushed everywhere the audio lives at once &mdash; the streaming store, the cloud archive, and the working files.
+    </p>
+    <p>
+      Under the hood, the site grew up a little. Every page now carries <strong>structured data</strong> so search engines read these as live music recordings, performances, and songs rather than anonymous pages. There&rsquo;s a proper <strong>dark mode</strong> that follows your device&rsquo;s setting, an <strong>RSS feed</strong> of these updates so you can follow new additions, and a round of <strong>accessibility</strong> work &mdash; visible keyboard focus, a skip-to-content link, reduced-motion support, and stronger text contrast. Plumbing you never see, but the kind that keeps an archive healthy.
+    </p>
+
     <p class="about-note">The work continues &mdash; more shows, better audio, and small fixes are always in progress.</p>
   </section>''',
     )
