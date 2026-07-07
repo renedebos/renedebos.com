@@ -1453,7 +1453,7 @@ a.artist-chip:hover { filter: brightness(1.08); }
 
 /* grid view */
 .song-grid-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
-.song-grid { border-collapse: collapse; font-size: 13px; min-width: 100%; }
+.song-grid { border-collapse: collapse; font-size: 13px; width: max-content; min-width: 100%; }
 .song-grid th, .song-grid td {
   border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);
   padding: .4rem .5rem; text-align: center;
@@ -1461,6 +1461,7 @@ a.artist-chip:hover { filter: brightness(1.08); }
 .song-grid thead th {
   position: sticky; top: 0; background: var(--surface); z-index: 2;
   vertical-align: bottom; border-bottom: 2px solid var(--border);
+  white-space: nowrap;
 }
 .song-grid thead th .g-venue { display: block; font-weight: 600; }
 .song-grid thead th .g-date { display: block; color: var(--muted); font-size: 10px; font-weight: 400; }
@@ -1471,7 +1472,7 @@ a.artist-chip:hover { filter: brightness(1.08); }
 .song-grid thead th.artist-jerry { color: var(--artist-jerry); }
 .song-grid thead th.artist-mad   { color: var(--artist-mad); }
 .song-grid thead th.artist-sean  { color: var(--artist-sean); }
-.song-grid th.g-corner { text-align: left; }
+.song-grid th.g-corner { text-align: left; left: 0; z-index: 3; border-right: 2px solid var(--border); }
 .song-grid th.g-song {
   position: sticky; left: 0; background: var(--surface); z-index: 1;
   text-align: left; white-space: nowrap; font-weight: 500;
