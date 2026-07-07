@@ -1239,8 +1239,14 @@ def build_songs_index():
 
     items = []
     for s in songs:
-        chips = "".join(f'<span class="artist-dot artist-{a}" title="{esc(ARTIST_SHORT.get(a, a))}"></span>'
-                        for a in s["artists"])
+        # Fixed slot per artist (Jerry | Mad | Sean order), filled where they played
+        # this song and an empty placeholder where they didn't — so the dots line up
+        # into scannable per-artist columns down the list.
+        chips = "".join(
+            (f'<span class="artist-dot artist-{a}" title="{esc(ARTIST_SHORT.get(a, a))}"></span>'
+             if a in s["artists"]
+             else '<span class="artist-dot empty"></span>')
+            for a in present)
         occs = "\n".join(_song_occ_html(o) for o in s["occ"])
         items.append(f'''    <details class="song-item" data-artists="{' '.join(s['artists'])}" data-plays="{s['plays']}" data-title="{esc(song_norm(s['canonical']))}">
       <summary>

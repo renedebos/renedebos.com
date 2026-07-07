@@ -1377,6 +1377,7 @@ footer a { color: var(--accent); text-decoration: none; }
   width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto;
   display: inline-block; background: var(--muted);
 }
+.artist-dot.empty { background: transparent; }
 .song-legend {
   display: flex; flex-wrap: wrap; gap: .35rem 1.1rem;
   font-size: 12px; color: var(--muted); margin: -.6rem 0 1rem .1rem;
