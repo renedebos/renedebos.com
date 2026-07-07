@@ -31,7 +31,15 @@ export default {
       return resolveShortLink(m[1].toLowerCase(), env);
     }
 
-    return env.ASSETS.fetch(request);
+    const resp = await env.ASSETS.fetch(request);
+    if (resp.status === 404) {
+      // Never let a 404 stick in a browser or edge cache — a transient miss
+      // (mid-deploy, propagation) must not shadow the fixed response later.
+      const r = new Response(resp.body, resp);
+      r.headers.set("Cache-Control", "no-store");
+      return r;
+    }
+    return resp;
   },
 };
 
