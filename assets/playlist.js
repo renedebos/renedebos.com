@@ -184,8 +184,54 @@
     queue = buildQueue();
     if (!queue.length) return;
     renderQueue();
+    syncHash();
     playAt(0);
   });
+
+  // ── stateless sharing (#p=id,id,…) ───────────────────────────────────────
+  // Track ids are stable and URL-safe, so the exact queue lives in the hash —
+  // the address bar is always a share link. Phase 4 will shorten these.
+
+  var shareBtn = document.getElementById("pl-share");
+
+  function syncHash() {
+    history.replaceState(null, "", queue.length
+      ? "#p=" + queue.map(function (t) { return t.id; }).join(",")
+      : location.pathname);
+    shareBtn.hidden = !queue.length;
+  }
+
+  shareBtn.addEventListener("click", function () {
+    var url = location.href;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(function () {
+        shareBtn.textContent = "Link copied!";
+        setTimeout(function () { shareBtn.textContent = "Copy share link"; }, 1600);
+      }, function () { window.prompt("Copy this link:", url); });
+    } else {
+      window.prompt("Copy this link:", url);
+    }
+  });
+
+  function hydrateFromHash() {
+    var m = location.hash.match(/^#p=([\w.,-]+)/);
+    if (!m) return false;
+    var byId = {};
+    CATALOG.forEach(function (t) { byId[t.id] = t; });
+    queue = m[1].split(",").map(function (id) { return byId[id]; })
+      .filter(function (t) { return t; });
+    if (!queue.length) return false;
+    renderQueue();
+    syncHash();
+    // Cue the first track without autoplay — browsers block play() before a
+    // user gesture on a fresh page load anyway.
+    idx = 0;
+    audio.src = streamUrl(queue[0]);
+    renderNow();
+    highlight();
+    syncPlayBtn();
+    return true;
+  }
 
   // ── player ────────────────────────────────────────────────────────────────
 
@@ -309,6 +355,7 @@
       renderFilters();
       renderLength();
       updateStatus();
+      hydrateFromHash();
     })
     .catch(function (e) { statusEl.textContent = "Could not load the track catalog: " + e; });
 })();

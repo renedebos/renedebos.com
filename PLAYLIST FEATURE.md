@@ -71,11 +71,21 @@ match `/search/` etc., not the sketched `playlist.html`).
 
 ## Phase 3: Stateless sharing
 
-- “Share” button encodes the exact track ID list (base64) into the URL hash
-  fragment, e.g. `/playlist.html#p=eyJ0cmFja3MiOls...`
-- Loading a share URL hydrates the player with that exact list
-- Optional: “recipe” links (filter criteria + shuffle seed) so a link can
-  regenerate a reproducible — or intentionally fresh — playlist
+**Status (2026-07-07): DONE (exact-list MVP).**
+
+- The exact queue lives in the URL hash as a **raw comma-joined track-id
+  list** — `/playlist/#p=jerry-19-broadway-1999-05-10-01,…` — not base64 as
+  sketched: the ids are already URL-safe, so base64 would only add 33%
+  length and hide the contents. ~30 chars/track; Phase 4 shortens.
+- The hash updates on every Generate (`history.replaceState`, no history
+  spam), so the address bar is always a share link; a **Copy share link**
+  button (clipboard API, prompt fallback) appears once a queue exists.
+- Loading a share URL hydrates that exact queue and cues track 1 paused
+  (browsers block autoplay without a gesture anyway). Unknown/removed ids
+  are skipped and the hash self-cleans.
+- Recipe links (filters + seed): **dropped for MVP** — they'd silently
+  change as the catalog grows, and exact-list + Phase 4 short links cover
+  the real use case. Revisit only if Rene wants "surprise me" links.
 
 ## Phase 4: Short links (Cloudflare Worker + KV)
 
@@ -93,7 +103,8 @@ match `/search/` etc., not the sketched `playlist.html`).
 1. ~~**Compressed renditions**~~ — RESOLVED by the current pipeline: every
    curated track already has a 320k MP3 in R2 (`MP3/<Show Folder>/`) plus a
    FLAC master; the player streams the MP3. Nothing to add.
-1. **Exact-list vs. recipe sharing** — support both, or exact-list only for MVP?
+1. ~~**Exact-list vs. recipe sharing**~~ — RESOLVED 2026-07-07: exact-list
+   only (see Phase 3 notes).
 
 ## Infrastructure (existing, for context)
 

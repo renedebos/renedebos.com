@@ -1600,3 +1600,7 @@ a.artist-chip:hover { filter: brightness(1.08); }
 .pl-row:first-child { border-top: none; }
 .pl-row.pl-playing { background: var(--accent-light); }
 .pl-row.pl-playing .sr-title { color: var(--accent); }
+
+.pl-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.pl-share { color: var(--accent); background: transparent; border-color: var(--accent); }
+.pl-share:hover { color: #fff; background: var(--accent); opacity: 1; }
