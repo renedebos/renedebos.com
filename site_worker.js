@@ -13,7 +13,9 @@
 // same slug and re-shares dedupe. Entries never expire.
 
 const ID_RE = /^[a-z0-9-]{1,80}$/;
-const SLUG_RE = /^\/play\/([a-f0-9]{6,64})$/;
+// Liberal in what we accept: trailing slash (chat apps often append one when
+// linkifying), any letter case, and HEAD as well as GET (link previewers).
+const SLUG_RE = /^\/play\/([a-f0-9]{6,64})\/?$/i;
 const MAX_TRACKS = 500;
 
 export default {
@@ -25,8 +27,8 @@ export default {
     }
 
     const m = url.pathname.match(SLUG_RE);
-    if (m && request.method === "GET") {
-      return resolveShortLink(m[1], env);
+    if (m && (request.method === "GET" || request.method === "HEAD")) {
+      return resolveShortLink(m[1].toLowerCase(), env);
     }
 
     return env.ASSETS.fetch(request);
