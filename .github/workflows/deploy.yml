@@ -1,4 +1,4 @@
-name: Deploy to Cloudflare Pages
+name: Deploy renedebos-site
 
 on:
   push:
@@ -9,7 +9,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy to Cloudflare Pages
-        run: npx wrangler pages deploy . --project-name hannan-audio --commit-dirty=true
+      # Deploys the renedebos-site Worker (static assets + playlist short-link
+      # endpoints, config in wrangler.jsonc) — this is what serves renedebos.com
+      # via Worker custom domains. The old hannan-audio Pages project is no
+      # longer deployed. The wav-download Worker (worker/) deploys separately.
+      - name: Deploy renedebos-site Worker
+        run: npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

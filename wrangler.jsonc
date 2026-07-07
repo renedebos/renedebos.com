@@ -1,0 +1,17 @@
+// renedebos-site: the static site + playlist short-link endpoints, served on
+// renedebos.com via Worker custom domains. Deploy with `npx wrangler deploy`
+// (the GitHub Action does this on every push to main).
+// The wav-download Worker is separate — see worker/wrangler.toml.
+{
+  "name": "renedebos-site",
+  "main": "site_worker.js",
+  "compatibility_date": "2026-05-03",
+  "assets": {
+    "directory": ".",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page"
+  },
+  "kv_namespaces": [
+    { "binding": "PLAYLISTS", "id": "41a793b3ea5149abbc436cde920fc1ee" }
+  ]
+}
