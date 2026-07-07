@@ -1,0 +1,247 @@
+{
+  "slug": "jerry-19-broadway-1999-07-19",
+  "target_lufs": -20,
+  "tp_ceiling": -1,
+  "source": "24-bit / 48 kHz FLAC",
+  "filters": "none",
+  "tool": "ffmpeg loudnorm",
+  "workflow_version": 2,
+  "ffmpeg": "7.1.3-0+deb13u1",
+  "date": "2026-07-06",
+  "tracks": {
+    "1": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.9,
+      "lufs": -20.19,
+      "tp": -1.67,
+      "lra": 11.1,
+      "md5": "86577444e672839c202af16aed39114b"
+    },
+    "2": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -22.0,
+      "lufs": -20.17,
+      "tp": -0.99,
+      "lra": 10.9,
+      "md5": "7dc58d044f43ab25c02cc15c2cded86a"
+    },
+    "3": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.4,
+      "lufs": -20.15,
+      "tp": -2.04,
+      "lra": 9.8,
+      "md5": "8f051644e625c0f5c9754af2a2a9f715"
+    },
+    "4": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -22.6,
+      "lufs": -20.02,
+      "tp": -1.0,
+      "lra": 8.5,
+      "md5": "0bbcde530e32c1f23e0f0806ec343117"
+    },
+    "5": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -18.8,
+      "lufs": -20.01,
+      "tp": -1.8,
+      "lra": 8.2,
+      "md5": "a318f6a538ccb51f76b8e3b1c1eeddbc"
+    },
+    "6": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -16.9,
+      "lufs": -19.99,
+      "tp": -3.06,
+      "lra": 7.2,
+      "md5": "12a0d90b67afe801f966fbfde6fca16e"
+    },
+    "7": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -21.2,
+      "lufs": -20.02,
+      "tp": -0.98,
+      "lra": 9.0,
+      "md5": "e8a1810a53ee2b6598e3d1092d8df370"
+    },
+    "8": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -21.6,
+      "lufs": -20.01,
+      "tp": -0.99,
+      "lra": 11.9,
+      "md5": "5b18bff0d4c5966b61406e2e6045987d"
+    },
+    "9": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -23.6,
+      "lufs": -20.03,
+      "tp": -0.98,
+      "lra": 10.1,
+      "md5": "b6d3cc5155c9b50e9ddc9e85b1471c15"
+    },
+    "10": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -22.2,
+      "lufs": -20.04,
+      "tp": -0.99,
+      "lra": 8.9,
+      "md5": "be944094c141e41068ca2234601a69d5"
+    },
+    "11": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -19.5,
+      "lufs": -20.0,
+      "tp": -2.23,
+      "lra": 12.2,
+      "md5": "a3ce19c356f517cc8929ef72d6a496f7"
+    },
+    "12": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -19.6,
+      "lufs": -20.0,
+      "tp": -1.3,
+      "lra": 8.6,
+      "md5": "0bf6a20c02c4336a658cb66697503cd2"
+    },
+    "13": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -18.4,
+      "lufs": -20.0,
+      "tp": -1.53,
+      "lra": 9.1,
+      "md5": "da07287e0a80273706f5f9b76281e513"
+    },
+    "14": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -22.8,
+      "lufs": -20.02,
+      "tp": -0.95,
+      "lra": 11.9,
+      "md5": "b59943795504ca71f0b900e703166e64"
+    },
+    "15": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -17.5,
+      "lufs": -20.21,
+      "tp": -2.87,
+      "lra": 18.5,
+      "md5": "b574f4cf1ecc7ca21afd5a1f50d8ec97"
+    },
+    "16": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -17.1,
+      "lufs": -20.27,
+      "tp": -3.4,
+      "lra": 11.5,
+      "md5": "e1c20e2358ab78c435210d5877718079"
+    },
+    "17": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -17.7,
+      "lufs": -20.0,
+      "tp": -2.82,
+      "lra": 8.4,
+      "md5": "dea8877e12b19a272845aa8cf7ec2ba7"
+    },
+    "18": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -15.9,
+      "lufs": -19.98,
+      "tp": -4.03,
+      "lra": 10.6,
+      "md5": "3ec7fdccfcd869a025457a4f12a432c3"
+    },
+    "19": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -14.9,
+      "lufs": -20.01,
+      "tp": -3.71,
+      "lra": 9.1,
+      "md5": "27623898a165fabfe23cd5c6dd6a25f2"
+    },
+    "20": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -19.5,
+      "lufs": -20.01,
+      "tp": -1.26,
+      "lra": 10.0,
+      "md5": "c7fe8d9ab5bf1245dddcc5d793bcb6a9"
+    },
+    "21": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -19.4,
+      "lufs": -20.12,
+      "tp": -1.0,
+      "lra": 11.2,
+      "md5": "f67d2ef5a30022301461df7fd9ed50ce"
+    },
+    "22": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.0,
+      "lufs": -19.99,
+      "tp": -0.99,
+      "lra": 11.1,
+      "md5": "ffee2185e4527c022e50f5442dc6b934"
+    },
+    "23": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -22.5,
+      "lufs": -20.03,
+      "tp": -0.99,
+      "lra": 9.9,
+      "md5": "ac4dd60c14c4161acf791fad2d82d092"
+    },
+    "24": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.2,
+      "lufs": -20.21,
+      "tp": -1.0,
+      "lra": 13.8,
+      "md5": "c982a8f8d74f2b4434db0f5e03a4333e"
+    },
+    "25": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.4,
+      "lufs": -20.03,
+      "tp": -0.98,
+      "lra": 10.4,
+      "md5": "d095392ff8733667f36d997538283792"
+    },
+    "26": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -18.5,
+      "lufs": -20.02,
+      "tp": -1.0,
+      "lra": 12.4,
+      "md5": "9d36bf5e4e05fce1d25bea382e164863"
+    }
+  }
+}

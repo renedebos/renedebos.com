@@ -190,10 +190,226 @@
           "stream": "MP3/Full/JerryHannan - 19 Broadway 1999-05-10.mp3"
         }
       ],
-      "tracks": null,
-      "description": null,
+      "tracks": [
+        {
+          "num": 1,
+          "title": "Model Family Man",
+          "duration": "3:46",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/01 Model Family Man.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/01 Model Family Man.flac",
+          "flac_size_mb": 45,
+          "processed": true
+        },
+        {
+          "num": 2,
+          "title": "The Patriot Game",
+          "duration": "3:14",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/02 The Patriot Game.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/02 The Patriot Game.flac",
+          "flac_size_mb": 38,
+          "processed": true
+        },
+        {
+          "num": 3,
+          "title": "I Thought I Was You",
+          "duration": "3:43",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/03 I Thought I Was You.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/03 I Thought I Was You.flac",
+          "flac_size_mb": 44,
+          "processed": true
+        },
+        {
+          "num": 4,
+          "title": "Truck",
+          "duration": "3:37",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/04 Truck.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/04 Truck.flac",
+          "flac_size_mb": 43,
+          "processed": true
+        },
+        {
+          "num": 5,
+          "title": "Getaway Blues",
+          "duration": "2:57",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/05 Getaway Blues.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/05 Getaway Blues.flac",
+          "flac_size_mb": 34,
+          "processed": true
+        },
+        {
+          "num": 6,
+          "title": "Sam Hall",
+          "duration": "3:59",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/06 Sam Hall.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/06 Sam Hall.flac",
+          "flac_size_mb": 47,
+          "processed": true
+        },
+        {
+          "num": 7,
+          "title": "State Trooper",
+          "duration": "5:46",
+          "size_mb": 14,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/07 State Trooper.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/07 State Trooper.flac",
+          "flac_size_mb": 67,
+          "processed": true
+        },
+        {
+          "num": 8,
+          "title": "The Oldest Baby in the World",
+          "duration": "2:18",
+          "size_mb": 6,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/08 The Oldest Baby in the World.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/08 The Oldest Baby in the World.flac",
+          "flac_size_mb": 27,
+          "processed": true
+        },
+        {
+          "num": 9,
+          "title": "Illegal Smile",
+          "duration": "2:46",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/09 Illegal Smile.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/09 Illegal Smile.flac",
+          "flac_size_mb": 32,
+          "processed": true
+        },
+        {
+          "num": 10,
+          "title": "Ted Kennedy Song",
+          "duration": "0:42",
+          "size_mb": 2,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/10 Ted Kennedy Song.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/10 Ted Kennedy Song.flac",
+          "flac_size_mb": 8,
+          "processed": true
+        },
+        {
+          "num": 11,
+          "title": "Smoke in Heaven",
+          "duration": "2:27",
+          "size_mb": 6,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/11 Smoke in Heaven.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/11 Smoke in Heaven.flac",
+          "flac_size_mb": 29,
+          "processed": true
+        },
+        {
+          "num": 12,
+          "title": "Luxury of Murder",
+          "duration": "3:00",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/12 Luxury of Murder.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/12 Luxury of Murder.flac",
+          "flac_size_mb": 35,
+          "processed": true
+        },
+        {
+          "num": 13,
+          "title": "Butter",
+          "duration": "3:19",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/13 Butter.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/13 Butter.flac",
+          "flac_size_mb": 39,
+          "processed": true
+        },
+        {
+          "num": 14,
+          "title": "Anna May",
+          "duration": "2:00",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/14 Anna May.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/14 Anna May.flac",
+          "flac_size_mb": 35,
+          "processed": true
+        },
+        {
+          "num": 15,
+          "title": "Recycle",
+          "duration": "4:38",
+          "size_mb": 11,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/15 Recycle.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/15 Recycle.flac",
+          "flac_size_mb": 52,
+          "processed": true
+        },
+        {
+          "num": 16,
+          "title": "Born to Run",
+          "duration": "4:17",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/16 Born to Run.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/16 Born to Run.flac",
+          "flac_size_mb": 51,
+          "processed": true
+        },
+        {
+          "num": 17,
+          "title": "I Need a Lover",
+          "duration": "2:57",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/17 I Need a Lover.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/17 I Need a Lover.flac",
+          "flac_size_mb": 35,
+          "processed": true
+        },
+        {
+          "num": 18,
+          "title": "Jerry is Gone",
+          "duration": "3:20",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/18 Jerry is Gone.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/18 Jerry is Gone.flac",
+          "flac_size_mb": 39,
+          "processed": true
+        },
+        {
+          "num": 19,
+          "title": "ABC",
+          "duration": "2:23",
+          "size_mb": 6,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/19 ABC.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/19 ABC.flac",
+          "flac_size_mb": 27,
+          "processed": true
+        },
+        {
+          "num": 20,
+          "title": "The Parting Glass",
+          "duration": "3:54",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/20 The Parting Glass.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/20 The Parting Glass.flac",
+          "flac_size_mb": 44,
+          "processed": true
+        },
+        {
+          "num": 21,
+          "title": "Kilkelly Ireland",
+          "duration": "6:15",
+          "size_mb": 15,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/21 Kilkelly Ireland.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/21 Kilkelly Ireland.flac",
+          "flac_size_mb": 73,
+          "processed": true
+        }
+      ],
+      "description": [
+        "Recorded from the audience on DAT at 19 Broadway in Fairfax on May 10, 1999 &mdash; one of Jerry's early solo nights at the club.",
+        "The show has been split into individual songs and loudness-normalized to an even listening level, with the applause faded down at the end of each track for easier streaming."
+      ],
       "page": null,
-      "processing_status": "needs-processing"
+      "processing_status": "done",
+      "added": "2026-07-06",
+      "added_ts": "2026-07-06T12:00:00"
     },
     {
       "slug": "jerry-19-broadway-1999-06-07",
@@ -573,10 +789,276 @@
           "stream": "MP3/Full/WAV_Files/JerryHannan_19Broadway_1999-07-19.mp3"
         }
       ],
-      "tracks": null,
-      "description": null,
+      "tracks": [
+        {
+          "num": 1,
+          "title": "Model Family Man",
+          "duration": "3:42",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/01 Model Family Man.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/01 Model Family Man.flac",
+          "flac_size_mb": 43,
+          "processed": true
+        },
+        {
+          "num": 2,
+          "title": "A Pirate Looks at Forty",
+          "duration": "3:46",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/02 A Pirate Looks at Forty.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/02 A Pirate Looks at Forty.flac",
+          "flac_size_mb": 43,
+          "processed": true
+        },
+        {
+          "num": 3,
+          "title": "Blahana",
+          "duration": "4:17",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/03 Blahana.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/03 Blahana.flac",
+          "flac_size_mb": 50,
+          "processed": true
+        },
+        {
+          "num": 4,
+          "title": "I Thought I Was You",
+          "duration": "3:46",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/04 I Thought I Was You.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/04 I Thought I Was You.flac",
+          "flac_size_mb": 44,
+          "processed": true
+        },
+        {
+          "num": 5,
+          "title": "Truck",
+          "duration": "3:51",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/05 Truck.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/05 Truck.flac",
+          "flac_size_mb": 45,
+          "processed": true
+        },
+        {
+          "num": 6,
+          "title": "Blind Man",
+          "duration": "3:03",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/06 Blind Man.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/06 Blind Man.flac",
+          "flac_size_mb": 35,
+          "processed": true
+        },
+        {
+          "num": 7,
+          "title": "Butter",
+          "duration": "3:29",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/07 Butter.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/07 Butter.flac",
+          "flac_size_mb": 40,
+          "processed": true
+        },
+        {
+          "num": 8,
+          "title": "Anna May",
+          "duration": "2:59",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/08 Anna May.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/08 Anna May.flac",
+          "flac_size_mb": 35,
+          "processed": true
+        },
+        {
+          "num": 9,
+          "title": "Plastic Lemons",
+          "duration": "2:51",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/09 Plastic Lemons.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/09 Plastic Lemons.flac",
+          "flac_size_mb": 33,
+          "processed": true
+        },
+        {
+          "num": 10,
+          "title": "Illegal Smile",
+          "duration": "2:52",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/10 Illegal Smile.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/10 Illegal Smile.flac",
+          "flac_size_mb": 33,
+          "processed": true
+        },
+        {
+          "num": 11,
+          "title": "Nicolai",
+          "duration": "2:43",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/11 Nicolai.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/11 Nicolai.flac",
+          "flac_size_mb": 31,
+          "processed": true
+        },
+        {
+          "num": 12,
+          "title": "ABC",
+          "duration": "1:40",
+          "size_mb": 4,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/12 ABC.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/12 ABC.flac",
+          "flac_size_mb": 19,
+          "processed": true
+        },
+        {
+          "num": 13,
+          "title": "My Dear (Ride On)",
+          "duration": "2:58",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/13 My Dear (Ride On).mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/13 My Dear (Ride On).flac",
+          "flac_size_mb": 35,
+          "processed": true
+        },
+        {
+          "num": 14,
+          "title": "Black is The Color",
+          "duration": "3:40",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/14 Black is The Color.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/14 Black is The Color.flac",
+          "flac_size_mb": 42,
+          "processed": true
+        },
+        {
+          "num": 15,
+          "title": "Why Don't We Get Drunk",
+          "duration": "1:10",
+          "size_mb": 3,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/15 Why Don't We Get Drunk.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/15 Why Don't We Get Drunk.flac",
+          "flac_size_mb": 13,
+          "processed": true
+        },
+        {
+          "num": 16,
+          "title": "Little Number Four",
+          "duration": "2:17",
+          "size_mb": 5,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/16 Little Number Four.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/16 Little Number Four.flac",
+          "flac_size_mb": 26,
+          "processed": true
+        },
+        {
+          "num": 17,
+          "title": "Luxury of Murder",
+          "duration": "2:56",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/17 Luxury of Murder.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/17 Luxury of Murder.flac",
+          "flac_size_mb": 34,
+          "processed": true
+        },
+        {
+          "num": 18,
+          "title": "Angel of Montgomery",
+          "duration": "4:10",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/18 Angel of Montgomery.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/18 Angel of Montgomery.flac",
+          "flac_size_mb": 47,
+          "processed": true
+        },
+        {
+          "num": 19,
+          "title": "Smoke in Heaven",
+          "duration": "2:44",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/19 Smoke in Heaven.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/19 Smoke in Heaven.flac",
+          "flac_size_mb": 32,
+          "processed": true
+        },
+        {
+          "num": 20,
+          "title": "Getaway Blues",
+          "duration": "3:10",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/20 Getaway Blues.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/20 Getaway Blues.flac",
+          "flac_size_mb": 36,
+          "processed": true
+        },
+        {
+          "num": 21,
+          "title": "She is The Girlfriend of The Boyfriend of Herself",
+          "duration": "4:37",
+          "size_mb": 11,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/21 She is The Girlfriend of The Boyfriend of Herself.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/21 She is The Girlfriend of The Boyfriend of Herself.flac",
+          "flac_size_mb": 53,
+          "processed": true
+        },
+        {
+          "num": 22,
+          "title": "Leprechaun",
+          "duration": "4:34",
+          "size_mb": 11,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/22 Leprechaun.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/22 Leprechaun.flac",
+          "flac_size_mb": 52,
+          "processed": true
+        },
+        {
+          "num": 23,
+          "title": "Kilkelly Ireland",
+          "duration": "5:56",
+          "size_mb": 14,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/23 Kilkelly Ireland.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/23 Kilkelly Ireland.flac",
+          "flac_size_mb": 68,
+          "processed": true
+        },
+        {
+          "num": 24,
+          "title": "My Father's House",
+          "duration": "5:17",
+          "size_mb": 13,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/24 My Father's House.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/24 My Father's House.flac",
+          "flac_size_mb": 59,
+          "processed": true
+        },
+        {
+          "num": 25,
+          "title": "Slave Woman",
+          "duration": "2:22",
+          "size_mb": 6,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/25 Slave Woman.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/25 Slave Woman.flac",
+          "flac_size_mb": 27,
+          "processed": true
+        },
+        {
+          "num": 26,
+          "title": "Dysfunctional Guy",
+          "duration": "5:33",
+          "size_mb": 13,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/26 Dysfunctional Guy.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/26 Dysfunctional Guy.flac",
+          "flac_size_mb": 64,
+          "processed": true
+        }
+      ],
+      "description": [
+        "Recorded from the audience on DAT at 19 Broadway in Fairfax on July 19, 1999 &mdash; a long, twenty-six-song solo set.",
+        "The show has been split into individual songs and loudness-normalized to an even listening level, with the applause faded down at the end of each track for easier streaming."
+      ],
       "page": null,
-      "processing_status": "needs-processing"
+      "processing_status": "done",
+      "added": "2026-07-06",
+      "added_ts": "2026-07-06T12:00:00"
     },
     {
       "slug": "jerry-19-broadway-1999-08-23",
@@ -4377,6 +4859,20 @@
       "ts": "2026-06-28T12:28:31",
       "slug": "jerry-19-broadway-1999-06-21",
       "text": "Re-normalized all 21 tracks to −20 LUFS for a more even, comfortable listening level, using the automated audio engineering workflow with ffmpeg",
+      "report": true
+    },
+    {
+      "date": "2026-07-06",
+      "ts": "2026-07-06T12:00:00",
+      "slug": "jerry-19-broadway-1999-05-10",
+      "text": "Added the full show as 21 individual tracks, split from the audience DAT and normalized to −20 LUFS for an even, comfortable listening level, with the applause gently faded at the end of each song for easier streaming — using the automated audio engineering workflow with ffmpeg",
+      "report": true
+    },
+    {
+      "date": "2026-07-06",
+      "ts": "2026-07-06T12:00:00",
+      "slug": "jerry-19-broadway-1999-07-19",
+      "text": "Added the full show as 26 individual tracks, split from the audience DAT and normalized to −20 LUFS for an even, comfortable listening level, with the applause gently faded at the end of each song for easier streaming — using the automated audio engineering workflow with ffmpeg",
       "report": true
     }
   ]

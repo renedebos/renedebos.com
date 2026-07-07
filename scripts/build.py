@@ -805,6 +805,11 @@ def build_history():
       Also launched a new <strong>&ldquo;Songs&rdquo; section</strong> &mdash; a cross-referenced <strong>matrix of every song against every show</strong>. Because the same songs turn up again and again across Jerry, the Mad Hannans, and Sean, you can now pick a song and see <em>every</em> time it was played, each with a player and a link straight to that performance. Browse it as a filterable list or a songs-by-shows grid, sort by how often a song was played, filter by artist, and <strong>search for any song by name</strong>.
     </p>
 
+    <h2>Week seven &mdash; two early Jerry nights (July&nbsp;6, 2026)</h2>
+    <p>
+      Added two more <strong>early Jerry solo shows at 19&nbsp;Broadway</strong> in Fairfax &mdash; <strong>May&nbsp;10,&nbsp;1999</strong> (21 songs) and <strong>July&nbsp;19,&nbsp;1999</strong> (a long, 26-song set). Each was split into individual tracks by hand in Audacity, with the applause <strong>studio-faded</strong> at the end of every song and a little clipping cleaned up on the loudest peaks, then run through the pipeline to the archive&rsquo;s &minus;20 loudness standard. All 47 new tracks flow straight into the Songs matrix, which now also treats Jerry&rsquo;s <em>&ldquo;My&nbsp;Dear&rdquo;</em> and <em>&ldquo;Ride&nbsp;On&rdquo;</em> as the same song.
+    </p>
+
     <p class="about-note">The work continues &mdash; more shows, better audio, and small fixes are always in progress.</p>
   </section>''',
     )
@@ -1148,8 +1153,11 @@ SONG_MANUAL_MERGE = {
     "Me and Eddie Vedder": "Houses of the Holy",
     "Lover": "I Need a Lover",
     "I Need a Dream": "I Need a Lover",
+    "My Dear": "Ride On",
+    "My Dear (Ride On)": "Ride On",
 }
-SONG_CANONICAL_OVERRIDE = {"german clockwinder": "The German Clockwinder"}
+SONG_CANONICAL_OVERRIDE = {"german clockwinder": "The German Clockwinder",
+                           "ride on": "Ride On"}
 ARTIST_SHORT = {"jerry": "Jerry", "mad": "Mad Hannans", "sean": "Sean",
                 "seanjerry": "Sean & Jerry"}
 _ARTIST_ORDER = ["jerry", "mad", "sean", "seanjerry"]
