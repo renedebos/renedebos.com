@@ -87,14 +87,31 @@ match `/search/` etc., not the sketched `playlist.html`).
   change as the catalog grows, and exact-list + Phase 4 short links cover
   the real use case. Revisit only if Rene wants "surprise me" links.
 
-## Phase 4: Short links (Cloudflare Worker + KV)
+## Phase 4: Short links (KV)
 
-- New Worker `playlist-share`:
-  - `POST /api/playlist` — store tracklist JSON in KV, return short slug
-  - `GET /play/{slug}` — fetch list from KV, redirect/render player
-- Short URLs like `renedebos.com/play/f8x2q`
-- Follow existing patterns from the `wav-download` and `contact-form` Workers
-- Consider KV TTL vs. permanent storage (recommend: no expiry; playlists are tiny)
+**Status (2026-07-07): DONE — as Pages Functions, not a separate Worker.**
+A standalone `playlist-share` Worker would have needed a zone route on
+`renedebos.com/play/*` (token lacks the permission) and a separate
+`wrangler deploy` to forget; Pages Functions live in this repo under
+`functions/`, deploy automatically with the site via the existing Action,
+and run on the same domain (no CORS).
+
+- `functions/api/playlist.js` — `POST /api/playlist` `{ids:[…]}` → stores
+  in KV, returns `{slug, url}`. Slugs are **content-addressed** (first 6
+  hex chars of SHA-256 of the id list, lengthened on collision), so the
+  same playlist always yields the same slug and re-shares dedupe. Validates
+  ids (`^[a-z0-9-]{1,80}$`, max 500 tracks). No expiry — playlists are tiny.
+- `functions/play/[slug].js` — `GET /play/{slug}` → 302 to
+  `/playlist/#p=…` (the page's existing hash hydration does the rest);
+  unknown slug → the empty builder. Redirects are edge-cached 24 h
+  (entries are immutable).
+- KV namespace `playlist-share` (id `41a793b3ea5149abbc436cde920fc1ee`),
+  bound as `PLAYLISTS` on the Pages project (production + preview).
+- The Share button now POSTs the queue and copies the short URL, falling
+  back to the long `#p=` link if the API errs.
+- Local testing: `npx wrangler pages dev . --kv PLAYLISTS
+  --compatibility-date=2026-05-03` (local wrangler's runtime is older than
+  today's default compat date).
 
 ## Open decisions (need Rene’s input)
 

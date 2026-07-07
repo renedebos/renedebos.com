@@ -202,16 +202,31 @@
   }
 
   shareBtn.addEventListener("click", function () {
-    var url = location.href;
+    shareBtn.textContent = "…";
+    // Prefer a short /play/{slug} link; fall back to the long hash URL.
+    fetch("/api/playlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: queue.map(function (t) { return t.id; }) }),
+    })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (d) { copyShare(d.url); },
+            function () { copyShare(location.href); });
+  });
+
+  function copyShare(url) {
+    var done = function () {
+      shareBtn.textContent = "Link copied!";
+      setTimeout(function () { shareBtn.textContent = "Copy share link"; }, 1600);
+    };
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(url).then(function () {
-        shareBtn.textContent = "Link copied!";
-        setTimeout(function () { shareBtn.textContent = "Copy share link"; }, 1600);
-      }, function () { window.prompt("Copy this link:", url); });
+      navigator.clipboard.writeText(url).then(done,
+        function () { shareBtn.textContent = "Copy share link"; window.prompt("Copy this link:", url); });
     } else {
+      shareBtn.textContent = "Copy share link";
       window.prompt("Copy this link:", url);
     }
-  });
+  }
 
   function hydrateFromHash() {
     var m = location.hash.match(/^#p=([\w.,-]+)/);
