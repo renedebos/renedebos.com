@@ -1428,7 +1428,7 @@ a.artist-chip:hover { filter: brightness(1.08); }
   font-size: 13px; min-width: 2.4em; text-align: right;
 }
 .song-name {
-  font-family: var(--serif); font-size: 1.02rem; color: var(--accent);
+  font-family: var(--serif); font-size: .92rem; color: var(--accent);
   text-decoration: none; line-height: 1.25;
 }
 .song-name:hover { text-decoration: underline; }
