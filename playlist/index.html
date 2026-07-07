@@ -3,19 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Search — The Hannan Recordings</title>
-<meta name="description" content="Search the Hannan Recordings archive by song, artist, venue, date, or source.">
-<link rel="canonical" href="https://renedebos.com/search/">
+<title>Playlist — The Hannan Recordings</title>
+<meta name="description" content="Build a custom playlist from the Hannan archive — filter by artist, venue, mood, and source, then hit play.">
+<link rel="canonical" href="https://renedebos.com/playlist/">
 <meta name="theme-color" content="#f5f2ed" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#17150f" media="(prefers-color-scheme: dark)">
-<meta property="og:title" content="Search — The Hannan Recordings">
-<meta property="og:description" content="Search the Hannan Recordings archive by song, artist, venue, date, or source.">
+<meta property="og:title" content="Playlist — The Hannan Recordings">
+<meta property="og:description" content="Build a custom playlist from the Hannan archive — filter by artist, venue, mood, and source, then hit play.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://renedebos.com/search/">
+<meta property="og:url" content="https://renedebos.com/playlist/">
 <meta property="og:image" content="https://renedebos.com/assets/og.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Search — The Hannan Recordings">
-<meta name="twitter:description" content="Search the Hannan Recordings archive by song, artist, venue, date, or source.">
+<meta name="twitter:title" content="Playlist — The Hannan Recordings">
+<meta name="twitter:description" content="Build a custom playlist from the Hannan archive — filter by artist, venue, mood, and source, then hit play.">
 <meta name="twitter:image" content="https://renedebos.com/assets/og.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♪</text></svg>">
 <link rel="alternate" type="application/rss+xml" title="The Hannan Recordings &mdash; Updates" href="https://renedebos.com/feed.xml">
@@ -27,8 +27,8 @@
 
 <header>
   <p class="site-eyebrow">The Hannan Recordings</p>
-  <h1>Search</h1>
-  <p class="site-tagline">Find a song, show, venue, or date</p>
+  <h1>Playlist</h1>
+  <p class="site-tagline">Roll your own set list from the archive</p>
 </header>
 
 <nav>
@@ -36,8 +36,8 @@
   <a href="/archive/">Archive</a>
   <a href="/shows/">Shows</a>
   <a href="/songs/">Songs</a>
-  <a href="/playlist/">Playlist</a>
-  <a href="/search/" class="active">Search</a>
+  <a href="/playlist/" class="active">Playlist</a>
+  <a href="/search/">Search</a>
   <a href="/updates/">Updates</a>
   <a href="/history/">History</a>
   <a href="/contact/">Contact</a>
@@ -45,12 +45,13 @@
 
 <main id="main">
 
-  <section class="search">
-    <input id="q" class="search-input" type="search" autocomplete="off" autofocus
-           placeholder="Search songs, shows, venues, dates, covers…">
-    <div id="filters" class="search-filters"></div>
-    <p id="status" class="search-status">Loading…</p>
-    <div id="results" class="search-results"></div>
+  <section class="playlist">
+    <div id="pl-filters" class="search-filters"></div>
+    <div id="pl-length" class="search-filters"></div>
+    <p id="pl-status" class="search-status">Loading the track catalog…</p>
+    <p><button id="pl-generate" class="pl-generate" type="button" disabled>Generate playlist</button></p>
+    <div id="pl-now" class="pl-now" hidden></div>
+    <div id="pl-queue" class="pl-queue"></div>
   </section>
 </main>
 
@@ -59,6 +60,6 @@
 </footer>
 
 <script src="/assets/player.js"></script>
-<script src="/assets/search.js"></script>
+<script src="/assets/playlist.js"></script>
 </body>
 </html>

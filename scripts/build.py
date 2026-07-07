@@ -190,6 +190,7 @@ SITE_PAGES = [
     ("Archive", "/archive/"),
     ("Shows", "/shows/"),
     ("Songs", "/songs/"),
+    ("Playlist", "/playlist/"),
     ("Search", "/search/"),
     ("Updates", "/updates/"),
     ("History", "/history/"),
@@ -738,6 +739,28 @@ def build_search():
     <div id="results" class="search-results"></div>
   </section>''',
         extra_scripts='\n<script src="/assets/search.js"></script>',
+    )
+
+
+def build_playlist():
+    return page_shell(
+        title="Playlist — The Hannan Recordings",
+        description="Build a custom playlist from the Hannan archive — filter by artist, venue, mood, and source, then hit play.",
+        url="https://renedebos.com/playlist/",
+        eyebrow="The Hannan Recordings",
+        heading="Playlist",
+        tagline="Roll your own set list from the archive",
+        nav=site_nav("Playlist"),
+        main='''
+  <section class="playlist">
+    <div id="pl-filters" class="search-filters"></div>
+    <div id="pl-length" class="search-filters"></div>
+    <p id="pl-status" class="search-status">Loading the track catalog…</p>
+    <p><button id="pl-generate" class="pl-generate" type="button" disabled>Generate playlist</button></p>
+    <div id="pl-now" class="pl-now" hidden></div>
+    <div id="pl-queue" class="pl-queue"></div>
+  </section>''',
+        extra_scripts='\n<script src="/assets/playlist.js"></script>',
     )
 
 
@@ -1551,6 +1574,7 @@ def main():
     write("assets/wavesurfer.esm.js", open(os.path.join(here, "vendor", "wavesurfer.esm.js")).read())
     write("assets/wavesurfer.js", open(os.path.join(here, "wavesurfer.js")).read())
     write("assets/search.js", open(os.path.join(here, "search.js")).read())
+    write("assets/playlist.js", open(os.path.join(here, "playlist.js")).read())
     write("assets/songs.js", open(os.path.join(here, "songs.js")).read())
     write("assets/search-index.json", json.dumps(build_search_index(), ensure_ascii=False))
     write("assets/tracks.json", json.dumps(build_track_catalog(), ensure_ascii=False))
@@ -1560,6 +1584,7 @@ def main():
     write("shows/index.html", build_shows())
     write("songs/index.html", build_songs_index())
     write("search/index.html", build_search())
+    write("playlist/index.html", build_playlist())
     write("updates/index.html", build_updates())
     write("history/index.html", build_history())
     write("contact/index.html", build_contact())

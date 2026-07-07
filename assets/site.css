@@ -1540,3 +1540,63 @@ a.artist-chip:hover { filter: brightness(1.08); }
   .song-occs { padding-left: .5rem; }
   .song-occ-open { margin-left: 0; }
 }
+
+/* ── playlist generator (/playlist/) ───────────────────────────────────── */
+
+.pl-amount {
+  font-family: var(--sans); font-size: 12px; font-weight: 500;
+  color: var(--text); background: var(--surface);
+  border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.3rem 0.8rem; width: 5em; text-align: center;
+}
+.pl-amount:focus { border-color: var(--accent); outline: none; }
+
+.pl-generate {
+  font-family: var(--sans); font-size: 13px; font-weight: 500;
+  letter-spacing: 0.03em; color: #fff; background: var(--accent);
+  border: 1px solid var(--accent); border-radius: 999px;
+  padding: 0.5rem 1.4rem; cursor: pointer; transition: opacity 0.15s;
+}
+.pl-generate:hover { opacity: 0.9; }
+.pl-generate:disabled { opacity: 0.45; cursor: default; }
+
+/* Now-playing card sticks while the queue scrolls under it. */
+.pl-now {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; flex-direction: column; gap: 0.55rem;
+  background: var(--player-bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: 0.9rem 1.1rem; margin: 1rem 0;
+}
+.pl-now-info { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.6rem; }
+.pl-now-title {
+  font-size: 16px; font-weight: 500; color: var(--text); text-decoration: none;
+}
+.pl-now-title:hover { color: var(--accent); }
+.pl-now-meta {
+  font-size: 12px; color: var(--muted); font-weight: 300;
+  display: flex; align-items: center; gap: 0.4rem;
+}
+.pl-controls { display: flex; gap: 0.5rem; }
+.pl-btn {
+  font-size: 13px; line-height: 1; color: var(--text);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 999px; width: 2.2rem; height: 2.2rem; cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.pl-btn:hover { color: var(--accent); border-color: var(--accent); }
+.pl-btn-play { color: #fff; background: var(--accent); border-color: var(--accent); }
+.pl-btn-play:hover { color: #fff; opacity: 0.9; }
+.pl-progress {
+  display: flex; align-items: center; gap: 0.6rem;
+  font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.pl-progress .progress-bar-track { flex: 1; }
+
+/* Queue rows are buttons but dress like search results. */
+.pl-row {
+  width: 100%; background: none; font: inherit; text-align: left;
+  border: none; border-top: 1px solid var(--border); cursor: pointer;
+}
+.pl-row:first-child { border-top: none; }
+.pl-row.pl-playing { background: var(--accent-light); }
+.pl-row.pl-playing .sr-title { color: var(--accent); }
