@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+  <title>The Hannan Recordings &#8212; Updates</title>
+  <link>https://renedebos.com/updates/</link>
+  <description>New shows, re-masters, and fixes in the Hannan live archive.</description>
+  <language>en-us</language>
+  <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
+  <item>
+    <title>Replaced track 14: it was listed as “There She Was,” but that’s the same song as “Butter”…</title>
+    <link>https://renedebos.com/shows/mad-sweetwater-2000-02-17/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-06-mad-sweetwater-2000-02-17</guid>
+    <pubDate>Mon, 06 Jul 2026 13:00:00 +0000</pubDate>
+    <description>Replaced track 14: it was listed as “There She Was,” but that’s the same song as “Butter” — and the original transfer was missing the opening chords. Swapped in a complete version, corrected the title, and re-normalized it to the archive’s −20 LUFS standard</description>
+  </item>
+  <item>
+    <title>Added the full show as 21 individual tracks, split from the audience DAT and normalized t…</title>
+    <link>https://renedebos.com/shows/jerry-19-broadway-1999-05-10/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-06-jerry-19-broadway-1999-05-10</guid>
+    <pubDate>Mon, 06 Jul 2026 12:00:00 +0000</pubDate>
+    <description>Added the full show as 21 individual tracks, split from the audience DAT and normalized to −20 LUFS for an even, comfortable listening level, with the applause gently faded at the end of each song for easier streaming — using the automated audio engineering workflow with ffmpeg</description>
+  </item>
+  <item>
+    <title>Added the full show as 26 individual tracks, split from the audience DAT and normalized t…</title>
+    <link>https://renedebos.com/shows/jerry-19-broadway-1999-07-19/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-06-jerry-19-broadway-1999-07-19</guid>
+    <pubDate>Mon, 06 Jul 2026 12:00:00 +0000</pubDate>
+    <description>Added the full show as 26 individual tracks, split from the audience DAT and normalized to −20 LUFS for an even, comfortable listening level, with the applause gently faded at the end of each song for easier streaming — using the automated audio engineering workflow with ffmpeg</description>
+  </item>
+  <item>
+    <title>New “Songs” section: a cross-referenced matrix of every song against every show — see eac…</title>
+    <link>https://renedebos.com/updates/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-05-site</guid>
+    <pubDate>Sun, 05 Jul 2026 12:00:00 +0000</pubDate>
+    <description>New “Songs” section: a cross-referenced matrix of every song against every show — see each time a song was played across Jerry, the Mad Hannans, and Sean, browse it as a filterable list or a songs-by-shows grid, and search for any song by name. Every performance has its own player and a link to that show.</description>
+  </item>
+  <item>
+    <title>Added the full show as 14 individual tracks, split from the audience DAT and normalized t…</title>
+    <link>https://renedebos.com/shows/mad-new-georges-1999-10-13/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-05-mad-new-georges-1999-10-13</guid>
+    <pubDate>Sun, 05 Jul 2026 00:00:00 +0000</pubDate>
+    <description>Added the full show as 14 individual tracks, split from the audience DAT and normalized to −20 LUFS for an even, comfortable listening level, with the applause gently faded at the end of each song for easier streaming — using the automated audio engineering workflow with ffmpeg</description>
+  </item>
+  <item>
+    <title>Normalized all 18 tracks to −20 LUFS for an even, comfortable listening level consistent …</title>
+    <link>https://renedebos.com/shows/sean-19-broadway-unknown/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-30-sean-19-broadway-unknown</guid>
+    <pubDate>Tue, 30 Jun 2026 08:00:00 +0000</pubDate>
+    <description>Normalized all 18 tracks to −20 LUFS for an even, comfortable listening level consistent with the rest of the archive, replacing an earlier −16 LUFS Audacity pass — using the automated audio engineering workflow with ffmpeg</description>
+  </item>
+  <item>
+    <title>Normalized all 31 tracks to −20 LUFS for an even, comfortable listening level consistent …</title>
+    <link>https://renedebos.com/shows/sean-19-broadway-2000-01-24/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-30-sean-19-broadway-2000-01-24</guid>
+    <pubDate>Tue, 30 Jun 2026 00:00:00 +0000</pubDate>
+    <description>Normalized all 31 tracks to −20 LUFS for an even, comfortable listening level consistent with the rest of the archive; nine tracks (7, 9, 14, 17, 19, 22, 23, 24 and 31) were hand-edited in Audacity first to repair clipped applause and tame loud audience peaks before normalizing, using the automated audio engineering workflow with ffmpeg</description>
+  </item>
+  <item>
+    <title>Re-restored this muddy recording from the raw tape: corrective EQ (de-mud + presence + ai…</title>
+    <link>https://renedebos.com/shows/mad-sweetwater-2001-01-06/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-29-mad-sweetwater-2001-01-06</guid>
+    <pubDate>Mon, 29 Jun 2026 12:00:00 +0000</pubDate>
+    <description>Re-restored this muddy recording from the raw tape: corrective EQ (de-mud + presence + air to bring the vocals forward) and re-normalized all 24 tracks to −20 LUFS, replacing the earlier −16 pass — using the automated audio engineering workflow with ffmpeg</description>
+  </item>
+  <item>
+    <title>Re-normalized all 11 tracks to −20 LUFS from the raw masters (replacing the earlier −16 p…</title>
+    <link>https://renedebos.com/shows/sean-19-broadway-2000-02-21/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-29-sean-19-broadway-2000-02-21</guid>
+    <pubDate>Mon, 29 Jun 2026 09:30:00 +0000</pubDate>
+    <description>Re-normalized all 11 tracks to −20 LUFS from the raw masters (replacing the earlier −16 pass) for an even, comfortable listening level consistent with the rest of the archive, using the automated audio engineering workflow with ffmpeg</description>
+  </item>
+  <item>
+    <title>Re-normalized all 21 tracks to −20 LUFS from the raw masters (replacing the earlier −16 A…</title>
+    <link>https://renedebos.com/shows/mad-cafe-java-1999-09-09/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-29-mad-cafe-java-1999-09-09</guid>
+    <pubDate>Mon, 29 Jun 2026 08:15:00 +0000</pubDate>
+    <description>Re-normalized all 21 tracks to −20 LUFS from the raw masters (replacing the earlier −16 Audacity pass) for an even, comfortable listening level consistent with the rest of the archive, using the automated audio engineering workflow with ffmpeg</description>
+  </item>
+  <item>
+    <title>Loudness-normalized all 24 tracks to −20 LUFS for an even, comfortable listening level co…</title>
+    <link>https://renedebos.com/shows/mad-sweetwater-2000-10-17/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-29-mad-sweetwater-2000-10-17</guid>
+    <pubDate>Mon, 29 Jun 2026 08:00:00 +0000</pubDate>
+    <description>Loudness-normalized all 24 tracks to −20 LUFS for an even, comfortable listening level consistent with the rest of the archive, using the automated audio engineering workflow with ffmpeg</description>
+  </item>
+  <item>
+    <title>Loudness-normalized all 21 tracks to −20 LUFS for an even, comfortable listening level co…</title>
+    <link>https://renedebos.com/shows/mad-sweetwater-2000-02-17/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-28-mad-sweetwater-2000-02-17</guid>
+    <pubDate>Sun, 28 Jun 2026 23:55:00 +0000</pubDate>
+    <description>Loudness-normalized all 21 tracks to −20 LUFS for an even, comfortable listening level consistent with the rest of the archive, using the automated audio engineering workflow with ffmpeg</description>
+  </item>
+  <item>
+    <title>Re-normalized all 31 tracks to −20 LUFS (replacing the earlier −16 pass) for a more even,…</title>
+    <link>https://renedebos.com/shows/jerry-19-broadway-2001-01-15/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-28-jerry-19-broadway-2001-01-15</guid>
+    <pubDate>Sun, 28 Jun 2026 23:30:00 +0000</pubDate>
+    <description>Re-normalized all 31 tracks to −20 LUFS (replacing the earlier −16 pass) for a more even, comfortable listening level consistent with the rest of the archive, using the automated audio engineering workflow with ffmpeg</description>
+  </item>
+  <item>
+    <title>Re-normalized all 30 tracks to −20 LUFS for a more even, comfortable listening level, and…</title>
+    <link>https://renedebos.com/jerry-hannan-19-broadway-2001/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-28-jerry-19-broadway-2001-01-08</guid>
+    <pubDate>Sun, 28 Jun 2026 22:00:00 +0000</pubDate>
+    <description>Re-normalized all 30 tracks to −20 LUFS for a more even, comfortable listening level, and added lossless FLAC downloads, using the automated audio engineering workflow with ffmpeg</description>
+  </item>
+  <item>
+    <title>Re-normalized all 21 tracks to −20 LUFS for a more even, comfortable listening level, usi…</title>
+    <link>https://renedebos.com/shows/jerry-19-broadway-1999-06-21/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-28-jerry-19-broadway-1999-06-21</guid>
+    <pubDate>Sun, 28 Jun 2026 12:28:31 +0000</pubDate>
+    <description>Re-normalized all 21 tracks to −20 LUFS for a more even, comfortable listening level, using the automated audio engineering workflow with ffmpeg</description>
+  </item>
+  <item>
+    <title>Re-normalized all 31 tracks to −16 LUFS for a more even, comfortable listening level</title>
+    <link>https://renedebos.com/shows/jerry-19-broadway-2001-01-15/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-27-jerry-19-broadway-2001-01-15</guid>
+    <pubDate>Sat, 27 Jun 2026 20:00:00 +0000</pubDate>
+    <description>Re-normalized all 31 tracks to −16 LUFS for a more even, comfortable listening level</description>
+  </item>
+  <item>
+    <title>Loudness-normalized all tracks to −16 LUFS for a more even listening level</title>
+    <link>https://renedebos.com/shows/sean-19-broadway-2000-02-21/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-26-sean-19-broadway-2000-02-21</guid>
+    <pubDate>Fri, 26 Jun 2026 22:30:00 +0000</pubDate>
+    <description>Loudness-normalized all tracks to −16 LUFS for a more even listening level</description>
+  </item>
+  <item>
+    <title>These very muddled tracks have been processed with EQ filtering and loudness normalizatio…</title>
+    <link>https://renedebos.com/shows/mad-sweetwater-2001-01-06/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-26-mad-sweetwater-2001-01-06</guid>
+    <pubDate>Fri, 26 Jun 2026 21:00:00 +0000</pubDate>
+    <description>These very muddled tracks have been processed with EQ filtering and loudness normalization to −16 LUFS to make them sound a little better</description>
+  </item>
+  <item>
+    <title>Added a search engine — find any song or show by title, artist, venue, date, or tag</title>
+    <link>https://renedebos.com/updates/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-24-site</guid>
+    <pubDate>Wed, 24 Jun 2026 21:00:00 +0000</pubDate>
+    <description>Added a search engine — find any song or show by title, artist, venue, date, or tag</description>
+  </item>
+  <item>
+    <title>Added a sort toggle to the Archive — browse every show by date or by artist</title>
+    <link>https://renedebos.com/updates/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-24-site</guid>
+    <pubDate>Wed, 24 Jun 2026 20:00:00 +0000</pubDate>
+    <description>Added a sort toggle to the Archive — browse every show by date or by artist</description>
+  </item>
+  <item>
+    <title>Enabled wavesurfer.js waveform graphics on the audio player as an experiment — to be dete…</title>
+    <link>https://renedebos.com/updates/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-24-site</guid>
+    <pubDate>Wed, 24 Jun 2026 17:30:00 +0000</pubDate>
+    <description>Enabled wavesurfer.js waveform graphics on the audio player as an experiment — to be determined whether it stays</description>
+  </item>
+  <item>
+    <title>Added a lossless full-show FLAC download</title>
+    <link>https://renedebos.com/shows/mad-sweetwater-2000-10-17/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-15-mad-sweetwater-2000-10-17</guid>
+    <pubDate>Mon, 15 Jun 2026 23:35:00 +0000</pubDate>
+    <description>Added a lossless full-show FLAC download</description>
+  </item>
+  <item>
+    <title>Added the full 24-track listing (MP3 stream + FLAC download)</title>
+    <link>https://renedebos.com/shows/mad-sweetwater-2000-10-17/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-15-mad-sweetwater-2000-10-17</guid>
+    <pubDate>Mon, 15 Jun 2026 23:30:00 +0000</pubDate>
+    <description>Added the full 24-track listing (MP3 stream + FLAC download)</description>
+  </item>
+  <item>
+    <title>Volume-normalized all 31 tracks</title>
+    <link>https://renedebos.com/shows/jerry-19-broadway-2001-01-15/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-15-jerry-19-broadway-2001-01-15</guid>
+    <pubDate>Mon, 15 Jun 2026 16:45:00 +0000</pubDate>
+    <description>Volume-normalized all 31 tracks</description>
+  </item>
+</channel>
+</rss>

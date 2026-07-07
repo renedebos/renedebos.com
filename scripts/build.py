@@ -131,7 +131,7 @@ def recording_card(title, meta_pairs, badge, file, free, stream_file=None):
       </div>'''
 
 
-def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main, extra_scripts=""):
+def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main, extra_scripts="", extra_head=""):
     return f'''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -140,6 +140,8 @@ def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main,
 <title>{esc(title)}</title>
 <meta name="description" content="{esc(description)}">
 <link rel="canonical" href="{esc(url)}">
+<meta name="theme-color" content="#f5f2ed" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#17150f" media="(prefers-color-scheme: dark)">
 <meta property="og:title" content="{esc(title)}">
 <meta property="og:description" content="{esc(description)}">
 <meta property="og:type" content="website">
@@ -150,10 +152,12 @@ def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main,
 <meta name="twitter:description" content="{esc(description)}">
 <meta name="twitter:image" content="https://renedebos.com/assets/og.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♪</text></svg>">
+<link rel="alternate" type="application/rss+xml" title="The Hannan Recordings &mdash; Updates" href="https://renedebos.com/feed.xml">
 <link rel="stylesheet" href="/assets/fonts.css">
-<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/site.css">{extra_head}
 </head>
 <body>
+<a class="skip-link" href="#main">Skip to content</a>
 
 <header>
   <p class="site-eyebrow">{eyebrow}</p>
@@ -165,7 +169,7 @@ def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main,
 {nav}
 </nav>
 
-<main>
+<main id="main">
 {main}
 </main>
 
@@ -571,6 +575,7 @@ def build_home():
         tagline="Live performances &mdash; San Francisco Bay Area",
         nav=site_nav("Home"),
         main=about_block() + why_block() + featured_card() + artist_notes_block(),
+        extra_head=home_jsonld(),
     )
 
 
@@ -1004,6 +1009,7 @@ def build_show(show):
         nav=site_nav(),
         main="".join(parts) + wav_note,
         extra_scripts=extra_scripts,
+        extra_head=show_jsonld(show, artist),
     )
 
 
@@ -1339,7 +1345,150 @@ def build_song_page(s):
         description=f"{s['canonical']} — {s['plays']} live performance{plural} by {arts} in the Hannan archive.",
         url=f"https://renedebos.com/songs/{s['slug']}/", eyebrow="The Hannan Recordings &middot; Song",
         heading=esc(s["canonical"]), tagline=f"Played {s['plays']} time{plural} across the archive",
-        nav=site_nav("Songs"), main="".join(parts))
+        nav=site_nav("Songs"), main="".join(parts), extra_head=song_jsonld(s))
+
+
+# ── structured data (JSON-LD) ───────────────────────────────────────────────
+
+def jsonld(*objs):
+    """Wrap schema.org object(s) in a JSON-LD <script> for the page <head>."""
+    objs = [o for o in objs if o]
+    if not objs:
+        return ""
+    payload = objs[0] if len(objs) == 1 else objs
+    return ('\n<script type="application/ld+json">'
+            + json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+            + "</script>")
+
+
+def iso_duration(mmss):
+    """'3:27' -> 'PT3M27S' (ISO-8601 duration); None if unparseable."""
+    if not mmss or ":" not in mmss:
+        return None
+    p = [int(x) for x in mmss.split(":")]
+    h, m, s = ([0] + p)[-3:] if len(p) == 2 else p
+    return (f"PT{h}H{m}M{s}S" if h else f"PT{m}M{s}S")
+
+
+def home_jsonld():
+    return jsonld({
+        "@context": "https://schema.org", "@type": "WebSite",
+        "name": "The Hannan Recordings", "url": "https://renedebos.com/",
+        "description": "Live recordings archive — Jerry Hannan, Sean Hannan, and Mad Hannans.",
+        "potentialAction": {
+            "@type": "SearchAction",
+            "target": {"@type": "EntryPoint",
+                       "urlTemplate": "https://renedebos.com/search/?q={search_term_string}"},
+            "query-input": "required name=search_term_string",
+        },
+    })
+
+
+def show_jsonld(show, artist):
+    ev = {
+        "@context": "https://schema.org", "@type": "MusicEvent",
+        "name": f"{artist['name']} live at {show.get('venue_short') or show.get('venue')}",
+        "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+        "eventStatus": "https://schema.org/EventScheduled",
+        "performer": {"@type": "MusicGroup", "name": artist["name"]},
+        "location": {"@type": "MusicVenue", "name": show.get("venue") or show.get("venue_short")},
+        "url": f"https://renedebos.com{show_url(show)}",
+        "image": "https://renedebos.com/assets/og.png",
+    }
+    if show.get("date"):
+        ev["startDate"] = show["date"]
+    objs = [ev]
+    tracks = show.get("tracks") or []
+    if tracks:
+        items = []
+        for t in tracks:
+            rec = {"@type": "MusicRecording", "position": t["num"], "name": t["title"],
+                   "byArtist": {"@type": "MusicGroup", "name": artist["name"]}}
+            d = iso_duration(t.get("duration"))
+            if d:
+                rec["duration"] = d
+            items.append(rec)
+        objs.append({
+            "@context": "https://schema.org", "@type": "MusicPlaylist",
+            "name": f"{show_title(show)} — {show.get('date') or ''}".strip(" —"),
+            "url": f"https://renedebos.com{show_url(show)}",
+            "numTracks": len(tracks), "track": items,
+        })
+    return jsonld(*objs)
+
+
+def song_jsonld(s):
+    return jsonld({
+        "@context": "https://schema.org", "@type": "MusicComposition",
+        "name": s["canonical"],
+        "url": f"https://renedebos.com/songs/{s['slug']}/",
+        "recordedAs": [{
+            "@type": "MusicRecording", "name": s["canonical"],
+            "byArtist": {"@type": "MusicGroup", "name": artist_name(o["artist"])},
+            "url": f"https://renedebos.com{o['url']}#track-{o['num']}",
+        } for o in s["occ"]],
+    })
+
+
+# ── RSS feed (the Updates stream) ────────────────────────────────────────────
+
+def _xesc(t):
+    return t.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def build_feed():
+    base = "https://renedebos.com"
+    ups = sorted(M.get("updates", []),
+                 key=lambda u: u.get("ts") or u.get("date") or "", reverse=True)[:40]
+    by_slug = {s["slug"]: s for s in M["shows"]}
+    items = []
+    for u in ups:
+        slug = u.get("slug")
+        link = f"{base}{show_url(by_slug[slug])}" if slug in by_slug else f"{base}/updates/"
+        raw = u.get("text", "")
+        plain = _xesc(html.unescape(re.sub(r"<[^>]+>", "", raw)))
+        title = plain if len(plain) <= 90 else plain[:89] + "…"
+        ts = u.get("ts") or ((u.get("date") or "1999-01-01") + "T12:00:00")
+        try:
+            dt = datetime.datetime.fromisoformat(ts)
+        except Exception:
+            dt = datetime.datetime(1999, 1, 1)
+        pub = dt.strftime("%a, %d %b %Y %H:%M:%S +0000")
+        guid = f"{base}/updates/#{u.get('date','')}-{slug or 'site'}"
+        items.append(
+            f"  <item>\n    <title>{title}</title>\n    <link>{esc(link)}</link>\n"
+            f"    <guid isPermaLink=\"false\">{esc(guid)}</guid>\n"
+            f"    <pubDate>{pub}</pubDate>\n    <description>{plain}</description>\n  </item>")
+    return ('<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">\n<channel>\n'
+            "  <title>The Hannan Recordings &#8212; Updates</title>\n"
+            f"  <link>{base}/updates/</link>\n"
+            "  <description>New shows, re-masters, and fixes in the Hannan live archive.</description>\n"
+            "  <language>en-us</language>\n"
+            f'  <atom:link href="{base}/feed.xml" rel="self" type="application/rss+xml"/>\n'
+            + "\n".join(items) + "\n</channel>\n</rss>\n")
+
+
+# ── custom 404 ───────────────────────────────────────────────────────────────
+
+def build_404():
+    main = '''
+  <section class="about">
+    <h2>Page not found</h2>
+    <p>This page doesn&rsquo;t exist &mdash; it may have moved, or a song may have been renamed or merged into another. A few good places to pick back up:</p>
+    <ul class="notfound-links">
+      <li><a href="/shows/">Browse all shows</a></li>
+      <li><a href="/songs/">Every song, cross-referenced</a></li>
+      <li><a href="/search/">Search the archive</a></li>
+      <li><a href="/">Back to the home page</a></li>
+    </ul>
+  </section>'''
+    return page_shell(
+        title="Page not found — The Hannan Recordings",
+        description="That page couldn't be found in the Hannan live recordings archive.",
+        url="https://renedebos.com/404", eyebrow="The Hannan Recordings",
+        heading="404", tagline="Page not found",
+        nav=site_nav(), main=main)
 
 
 def build_sitemap():
@@ -1374,6 +1523,8 @@ def main():
     write("history/index.html", build_history())
     write("contact/index.html", build_contact())
     write("sitemap.xml", build_sitemap())
+    write("feed.xml", build_feed())
+    write("404.html", build_404())
     write("robots.txt", "User-agent: *\nAllow: /\nSitemap: https://renedebos.com/sitemap.xml\n")
     n = 0
     for show in M["shows"]:
