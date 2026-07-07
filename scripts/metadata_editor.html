@@ -142,7 +142,7 @@ function render() {
   DATA.shows.forEach((show, si) => {
     const tracks = show.tracks || [];
     const blob = [show.slug, show.venue, show.venue_short, show.date, artistName[show.artist],
-      ...tracks.map((t) => t.title)].join(" ").toLowerCase();
+      ...tracks.map((t) => [t.title, t.songwriter || "", (t.tags || []).join(" ")].join(" "))].join(" ").toLowerCase();
     const artistOpts = ARTISTS.map((a) =>
       `<option value="${esc(a.id)}"${a.id === show.artist ? " selected" : ""}>${esc(a.name)}</option>`).join("");
     const srcOpts = ["AUD", "SBD"].map((s) =>
@@ -152,13 +152,14 @@ function render() {
         <td class="num">${t.num}</td>
         <td><input data-show="${si}" data-track="${ti}" data-field="title" value="${esc(t.title)}"></td>
         <td><input data-show="${si}" data-track="${ti}" data-field="artist" value="${esc(t.artist || "")}" placeholder="${esc(artistName[show.artist] || "")}"></td>
+        <td><input data-show="${si}" data-track="${ti}" data-field="songwriter" value="${esc(t.songwriter || "")}" placeholder="unknown"></td>
         <td><input data-show="${si}" data-track="${ti}" data-field="tags" value="${esc((t.tags || []).join(", "))}" placeholder="comma, separated"></td>
         <td class="dur">${esc(t.duration || "")}</td>
       </tr>`).join("");
     const tracksBlock = tracks.length ? `
       <div class="section-label">Tracks (${tracks.length})</div>
       <table>
-        <tr class="tracks-head"><th>#</th><th>Title</th><th>Artist override</th><th>Tags</th><th>Dur</th></tr>
+        <tr class="tracks-head"><th>#</th><th>Title</th><th>Artist override</th><th>Songwriter</th><th>Tags</th><th>Dur</th></tr>
         ${trackRows}
       </table>` : `<p class="empty section-label" style="margin-top:.8rem">No split tracks for this show (full-show only).</p>`;
 
@@ -230,6 +231,8 @@ function apply(obj, field, v, show) {
       show.description = v.split("\n").map((s) => s.trim()).filter(Boolean); break;
     case "artist": // track-level override; blank removes it (falls back to show artist)
       if (tv) obj.artist = v; else delete obj.artist; break;
+    case "songwriter": // blank = unknown provenance
+      if (tv) obj.songwriter = tv; else delete obj.songwriter; break;
     case "tags":
       { const arr = v.split(",").map((s) => s.trim()).filter(Boolean);
         if (arr.length) obj.tags = arr; else delete obj.tags; } break;

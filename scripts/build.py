@@ -679,10 +679,44 @@ def build_search_index():
                 "type": "track",
                 "song": t["title"],
                 "artist": t.get("artist") or aname,
+                "songwriter": t.get("songwriter") or "",
                 "duration": t.get("duration") or "",
                 "tags": t.get("tags") or [],
                 "url": f'{show_url(show)}#track-{t["num"]}',
             }))
+    return rows
+
+
+def _duration_sec(d):
+    m, s = d.split(":")
+    return int(m) * 60 + int(s)
+
+
+def build_track_catalog():
+    """Flat playlist catalog (assets/tracks.json) — one row per curated track,
+    self-contained so the playlist page can filter and queue without loading
+    recordings.json. `file` is the R2 MP3 key; stream via WORKER/stream?file=.
+    Spec: PLAYLIST FEATURE.md, Phase 1."""
+    rows = []
+    for show in sorted([s for s in M["shows"] if s.get("tracks")], key=sort_key):
+        proc = load_processing(show["slug"])
+        ptracks = proc.get("tracks", {}) if proc else {}
+        for t in show["tracks"]:
+            rows.append({
+                "id": f'{show["slug"]}-{t["num"]:02d}',
+                "title": t["title"],
+                "artist": show["artist"],
+                "performer": t.get("artist"),
+                "songwriter": t.get("songwriter"),
+                "showDate": show.get("date"),
+                "venue": show.get("venue_short") or "",
+                "sourceType": (show.get("source") or "").lower(),
+                "tags": t.get("tags") or [],
+                "durationSec": _duration_sec(t["duration"]),
+                "file": t["file"],
+                "ver": (ptracks.get(str(t["num"]), {}).get("md5") or "")[:12] or None,
+                "url": f'{show_url(show)}#track-{t["num"]}',
+            })
     return rows
 
 
@@ -1519,6 +1553,7 @@ def main():
     write("assets/search.js", open(os.path.join(here, "search.js")).read())
     write("assets/songs.js", open(os.path.join(here, "songs.js")).read())
     write("assets/search-index.json", json.dumps(build_search_index(), ensure_ascii=False))
+    write("assets/tracks.json", json.dumps(build_track_catalog(), ensure_ascii=False))
     write("lab/wavesurfer/index.html", build_wavesurfer_lab())
     write("index.html", build_home())
     write("archive/index.html", build_archive())

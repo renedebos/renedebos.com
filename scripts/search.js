@@ -19,7 +19,7 @@
 
   function haystack(r) {
     return [r.song, r.artist, r.showArtist, r.venue, r.venueFull, r.city,
-            r.date, r.source, r.subtitle, (r.tags || []).join(" ")]
+            r.date, r.source, r.subtitle, r.songwriter, (r.tags || []).join(" ")]
       .map(norm).join(" ");
   }
 
@@ -35,6 +35,7 @@
       if (artist.indexOf(t) !== -1) s += 5;
       if (venue.indexOf(t) !== -1) s += 3;
       (r.tags || []).forEach(function (tag) { if (norm(tag).indexOf(t) !== -1) s += 6; });
+      if (r.songwriter && norm(r.songwriter).indexOf(t) !== -1) s += 6;
     });
     if (r.type === "track") s += 1; // songs edge out shows on ties
     return s;
@@ -57,6 +58,10 @@
       var tags = (r.tags || []).map(function (t) {
         return '<span class="sr-tag">' + esc(t) + "</span>";
       }).join("");
+      // covers/trad get a songwriter chip; the Hannan default on every original would be noise
+      if (r.songwriter && r.songwriter !== "Jerry Hannan & Sean Hannan") {
+        tags = '<span class="sr-tag">' + esc(r.songwriter) + "</span>" + tags;
+      }
       return '<a class="sr" href="' + esc(r.url) + '">'
         + '<span class="sr-icon">&#9834;</span>'
         + '<span class="sr-main"><span class="sr-title">' + esc(r.song) + "</span>"

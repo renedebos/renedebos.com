@@ -194,212 +194,323 @@
         {
           "num": 1,
           "title": "Model Family Man",
+          "songwriter": "Paddy Nash",
           "duration": "3:46",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/01 Model Family Man.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/01 Model Family Man.flac",
           "flac_size_mb": 45,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover"
+          ]
         },
         {
           "num": 2,
           "title": "The Patriot Game",
+          "songwriter": "Traditional",
           "duration": "3:14",
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/02 The Patriot Game.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/02 The Patriot Game.flac",
           "flac_size_mb": 38,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "traditional",
+            "irish",
+            "ballad",
+            "story"
+          ]
         },
         {
           "num": 3,
           "title": "I Thought I Was You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:43",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/03 I Thought I Was You.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/03 I Thought I Was You.flac",
           "flac_size_mb": 44,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 4,
           "title": "Truck",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:37",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/04 Truck.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/04 Truck.flac",
           "flac_size_mb": 43,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 5,
           "title": "Getaway Blues",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:57",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/05 Getaway Blues.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/05 Getaway Blues.flac",
           "flac_size_mb": 34,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "blues"
+          ]
         },
         {
           "num": 6,
           "title": "Sam Hall",
+          "songwriter": "John Prine",
           "duration": "3:59",
           "size_mb": 10,
           "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/06 Sam Hall.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/06 Sam Hall.flac",
           "flac_size_mb": 47,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "story"
+          ]
         },
         {
           "num": 7,
           "title": "State Trooper",
+          "songwriter": "Bruce Springsteen",
           "duration": "5:46",
           "size_mb": 14,
           "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/07 State Trooper.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/07 State Trooper.flac",
           "flac_size_mb": 67,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover"
+          ]
         },
         {
           "num": 8,
           "title": "The Oldest Baby in the World",
+          "songwriter": "John Prine",
           "duration": "2:18",
           "size_mb": 6,
           "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/08 The Oldest Baby in the World.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/08 The Oldest Baby in the World.flac",
           "flac_size_mb": 27,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "ballad",
+            "rarity"
+          ]
         },
         {
           "num": 9,
           "title": "Illegal Smile",
+          "songwriter": "John Prine",
           "duration": "2:46",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/09 Illegal Smile.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/09 Illegal Smile.flac",
           "flac_size_mb": 32,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "folk",
+            "upbeat",
+            "singalong"
+          ]
         },
         {
           "num": 10,
           "title": "Ted Kennedy Song",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "0:42",
           "size_mb": 2,
           "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/10 Ted Kennedy Song.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/10 Ted Kennedy Song.flac",
           "flac_size_mb": 8,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "story",
+            "rarity"
+          ]
         },
         {
           "num": 11,
           "title": "Smoke in Heaven",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:27",
           "size_mb": 6,
           "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/11 Smoke in Heaven.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/11 Smoke in Heaven.flac",
           "flac_size_mb": 29,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
         },
         {
           "num": 12,
           "title": "Luxury of Murder",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:00",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/12 Luxury of Murder.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/12 Luxury of Murder.flac",
           "flac_size_mb": 35,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "story"
+          ]
         },
         {
           "num": 13,
           "title": "Butter",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:19",
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/13 Butter.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/13 Butter.flac",
           "flac_size_mb": 39,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 14,
           "title": "Anna May",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:00",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/14 Anna May.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/14 Anna May.flac",
           "flac_size_mb": 35,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
         },
         {
           "num": 15,
           "title": "Recycle",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "4:38",
           "size_mb": 11,
           "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/15 Recycle.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/15 Recycle.flac",
           "flac_size_mb": 52,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 16,
           "title": "Born to Run",
+          "songwriter": "Bruce Springsteen",
           "duration": "4:17",
           "size_mb": 10,
           "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/16 Born to Run.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/16 Born to Run.flac",
           "flac_size_mb": 51,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "rarity"
+          ]
         },
         {
           "num": 17,
           "title": "I Need a Lover",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:57",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/17 I Need a Lover.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/17 I Need a Lover.flac",
           "flac_size_mb": 35,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 18,
           "title": "Jerry is Gone",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:20",
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/18 Jerry is Gone.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/18 Jerry is Gone.flac",
           "flac_size_mb": 39,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "rarity"
+          ]
         },
         {
           "num": 19,
           "title": "ABC",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:23",
           "size_mb": 6,
           "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/19 ABC.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/19 ABC.flac",
           "flac_size_mb": 27,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 20,
           "title": "The Parting Glass",
+          "songwriter": "Traditional",
           "duration": "3:54",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/20 The Parting Glass.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/20 The Parting Glass.flac",
           "flac_size_mb": 44,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "traditional",
+            "irish",
+            "ballad"
+          ]
         },
         {
           "num": 21,
           "title": "Kilkelly Ireland",
+          "songwriter": "Peter Jones",
           "duration": "6:15",
           "size_mb": 15,
           "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/21 Kilkelly Ireland.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/21 Kilkelly Ireland.flac",
           "flac_size_mb": 73,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "irish",
+            "ballad",
+            "story"
+          ]
         }
       ],
       "description": [
@@ -519,221 +630,313 @@
         {
           "num": 1,
           "title": "Recycle (incomplete)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:58",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/01 Recycle (incomplete).mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/01 Recycle (incomplete).flac",
           "flac_size_mb": 45,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 2,
           "title": "ABC",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "1:47",
           "size_mb": 4,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/02 ABC.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/02 ABC.flac",
           "flac_size_mb": 20,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 3,
           "title": "Ride On",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:19",
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/03 Ride On.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/03 Ride On.flac",
           "flac_size_mb": 38,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 4,
           "title": "Blind Man",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:56",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/04 Blind Man.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/04 Blind Man.flac",
           "flac_size_mb": 33,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 5,
           "title": "I Think She Was You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:17",
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/05 I Think She Was You.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/05 I Think She Was You.flac",
           "flac_size_mb": 36,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 6,
           "title": "Anna May",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:56",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/06 Anna May.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/06 Anna May.flac",
           "flac_size_mb": 32,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
         },
         {
           "num": 7,
           "title": "Luxury of Murder",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:53",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/07 Luxury of Murder.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/07 Luxury of Murder.flac",
           "flac_size_mb": 32,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "story"
+          ]
         },
         {
           "num": 8,
           "title": "Black is The Color",
+          "songwriter": "Traditional",
           "duration": "3:28",
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/08 Black is The Color.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/08 Black is The Color.flac",
           "flac_size_mb": 38,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "traditional",
+            "irish",
+            "ballad"
+          ]
         },
         {
           "num": 9,
           "title": "Clear Headed",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "4:53",
           "size_mb": 11,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/09 Clear Headed.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/09 Clear Headed.flac",
           "flac_size_mb": 55,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 10,
           "title": "Learn About Love",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:03",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/10 Learn About Love.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/10 Learn About Love.flac",
           "flac_size_mb": 34,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 11,
           "title": "Good Life",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:47",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/11 Good Life.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/11 Good Life.flac",
           "flac_size_mb": 43,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 12,
           "title": "Everything Reminds Me of You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:37",
           "size_mb": 6,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/12 Everything Reminds Me of You.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/12 Everything Reminds Me of You.flac",
           "flac_size_mb": 29,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 13,
           "title": "Lover",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:11",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/13 Lover.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/13 Lover.flac",
           "flac_size_mb": 36,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 14,
           "title": "Hard Drinkin'",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:11",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/14 Hard Drinkin'.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/14 Hard Drinkin'.flac",
           "flac_size_mb": 37,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 15,
           "title": "Still I Love Him",
+          "songwriter": "Traditional",
           "duration": "1:58",
           "size_mb": 4,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/15 Still I Love Him.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/15 Still I Love Him.flac",
           "flac_size_mb": 22,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "traditional",
+            "irish",
+            "ballad",
+            "rarity"
+          ]
         },
         {
           "num": 16,
           "title": "You're Pulling Me Leg / The Ted Kennedy Song",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "1:24",
           "size_mb": 3,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/16 You're Pulling Me Leg _ The Ted Kennedy Song.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/16 You're Pulling Me Leg _ The Ted Kennedy Song.flac",
           "flac_size_mb": 16,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "original",
+            "irish",
+            "upbeat"
+          ]
         },
         {
           "num": 17,
           "title": "Dysfuctional Guy",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "5:04",
           "size_mb": 12,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/17 Dysfuctional Guy.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/17 Dysfuctional Guy.flac",
           "flac_size_mb": 57,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 18,
           "title": "Nicolai",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:51",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/18 Nicolai.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/18 Nicolai.flac",
           "flac_size_mb": 32,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 19,
           "title": "Please Don't Bury Me",
+          "songwriter": "John Prine",
           "duration": "2:41",
           "size_mb": 6,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/19 Please Don't Bury Me.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/19 Please Don't Bury Me.flac",
           "flac_size_mb": 30,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "upbeat",
+            "rarity"
+          ]
         },
         {
           "num": 20,
           "title": "Model Family Man",
+          "songwriter": "Paddy Nash",
           "duration": "3:34",
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/20 Model Family Man.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/20 Model Family Man.flac",
           "flac_size_mb": 40,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover"
+          ]
         },
         {
           "num": 21,
           "title": "The Kiss / Da Da Da (Slave to An Angel)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "5:23",
           "size_mb": 12,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/21 The Kiss _ DaDaDa (Salve to An Angel).mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/21 The Kiss _ DaDaDa (Salve to An Angel).flac",
           "flac_size_mb": 62,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "medley"
+          ]
         }
       ],
       "description": [
@@ -793,262 +996,397 @@
         {
           "num": 1,
           "title": "Model Family Man",
+          "songwriter": "Paddy Nash",
           "duration": "3:42",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/01 Model Family Man.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/01 Model Family Man.flac",
           "flac_size_mb": 43,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover"
+          ]
         },
         {
           "num": 2,
           "title": "A Pirate Looks at Forty",
+          "songwriter": "Jimmy Buffett",
           "duration": "3:46",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/02 A Pirate Looks at Forty.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/02 A Pirate Looks at Forty.flac",
           "flac_size_mb": 43,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "ballad",
+            "story",
+            "rarity"
+          ]
         },
         {
           "num": 3,
           "title": "Blahana",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "4:17",
           "size_mb": 10,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/03 Blahana.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/03 Blahana.flac",
           "flac_size_mb": 50,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 4,
           "title": "I Thought I Was You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:46",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/04 I Thought I Was You.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/04 I Thought I Was You.flac",
           "flac_size_mb": 44,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 5,
           "title": "Truck",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:51",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/05 Truck.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/05 Truck.flac",
           "flac_size_mb": 45,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 6,
           "title": "Blind Man",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:03",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/06 Blind Man.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/06 Blind Man.flac",
           "flac_size_mb": 35,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 7,
           "title": "Butter",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:29",
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/07 Butter.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/07 Butter.flac",
           "flac_size_mb": 40,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 8,
           "title": "Anna May",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:59",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/08 Anna May.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/08 Anna May.flac",
           "flac_size_mb": 35,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
         },
         {
           "num": 9,
           "title": "Plastic Lemons",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:51",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/09 Plastic Lemons.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/09 Plastic Lemons.flac",
           "flac_size_mb": 33,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 10,
           "title": "Illegal Smile",
+          "songwriter": "John Prine",
           "duration": "2:52",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/10 Illegal Smile.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/10 Illegal Smile.flac",
           "flac_size_mb": 33,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "folk",
+            "upbeat",
+            "singalong"
+          ]
         },
         {
           "num": 11,
           "title": "Nicolai",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:43",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/11 Nicolai.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/11 Nicolai.flac",
           "flac_size_mb": 31,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 12,
           "title": "ABC",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "1:40",
           "size_mb": 4,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/12 ABC.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/12 ABC.flac",
           "flac_size_mb": 19,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 13,
           "title": "My Dear (Ride On)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:58",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/13 My Dear (Ride On).mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/13 My Dear (Ride On).flac",
           "flac_size_mb": 35,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 14,
           "title": "Black is The Color",
+          "songwriter": "Traditional",
           "duration": "3:40",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/14 Black is The Color.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/14 Black is The Color.flac",
           "flac_size_mb": 42,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "traditional",
+            "irish",
+            "ballad"
+          ]
         },
         {
           "num": 15,
           "title": "Why Don't We Get Drunk",
+          "songwriter": "Jimmy Buffett",
           "duration": "1:10",
           "size_mb": 3,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/15 Why Don't We Get Drunk.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/15 Why Don't We Get Drunk.flac",
           "flac_size_mb": 13,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "upbeat",
+            "rarity"
+          ]
         },
         {
           "num": 16,
           "title": "Little Number Four",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:17",
           "size_mb": 5,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/16 Little Number Four.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/16 Little Number Four.flac",
           "flac_size_mb": 26,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "irish"
+          ]
         },
         {
           "num": 17,
           "title": "Luxury of Murder",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:56",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/17 Luxury of Murder.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/17 Luxury of Murder.flac",
           "flac_size_mb": 34,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "story"
+          ]
         },
         {
           "num": 18,
           "title": "Angel of Montgomery",
+          "songwriter": "John Prine",
           "duration": "4:10",
           "size_mb": 10,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/18 Angel of Montgomery.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/18 Angel of Montgomery.flac",
           "flac_size_mb": 47,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "ballad",
+            "country",
+            "rarity"
+          ]
         },
         {
           "num": 19,
           "title": "Smoke in Heaven",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:44",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/19 Smoke in Heaven.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/19 Smoke in Heaven.flac",
           "flac_size_mb": 32,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
         },
         {
           "num": 20,
           "title": "Getaway Blues",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:10",
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/20 Getaway Blues.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/20 Getaway Blues.flac",
           "flac_size_mb": 36,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "blues"
+          ]
         },
         {
           "num": 21,
           "title": "She is The Girlfriend of The Boyfriend of Herself",
+          "songwriter": "Steve Poltz",
           "duration": "4:37",
           "size_mb": 11,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/21 She is The Girlfriend of The Boyfriend of Herself.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/21 She is The Girlfriend of The Boyfriend of Herself.flac",
           "flac_size_mb": 53,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "rarity"
+          ]
         },
         {
           "num": 22,
           "title": "Leprechaun",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "4:34",
           "size_mb": 11,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/22 Leprechaun.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/22 Leprechaun.flac",
           "flac_size_mb": 52,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "irish",
+            "rarity"
+          ]
         },
         {
           "num": 23,
           "title": "Kilkelly Ireland",
+          "songwriter": "Peter Jones",
           "duration": "5:56",
           "size_mb": 14,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/23 Kilkelly Ireland.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/23 Kilkelly Ireland.flac",
           "flac_size_mb": 68,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "irish",
+            "ballad",
+            "story"
+          ]
         },
         {
           "num": 24,
           "title": "My Father's House",
+          "songwriter": "Bruce Springsteen",
           "duration": "5:17",
           "size_mb": 13,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/24 My Father's House.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/24 My Father's House.flac",
           "flac_size_mb": 59,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "folk",
+            "ballad"
+          ]
         },
         {
           "num": 25,
           "title": "Slave Woman",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:22",
           "size_mb": 6,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/25 Slave Woman.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/25 Slave Woman.flac",
           "flac_size_mb": 27,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 26,
           "title": "Dysfunctional Guy",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "5:33",
           "size_mb": 13,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/26 Dysfunctional Guy.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/26 Dysfunctional Guy.flac",
           "flac_size_mb": 64,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         }
       ],
       "description": [
@@ -1211,326 +1549,453 @@
         {
           "num": 1,
           "title": "My Father's House",
+          "songwriter": "Bruce Springsteen",
           "duration": "5:44",
           "size_mb": 13,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 01 My Father's House.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/01 My Father's House.flac",
           "flac_size_mb": 59,
+          "processed": true,
           "tags": [
-            "Bruce Springsteen"
-          ],
-          "processed": true
+            "cover",
+            "folk",
+            "ballad"
+          ]
         },
         {
           "num": 2,
           "title": "Black Is The Color",
+          "songwriter": "Traditional",
           "duration": "4:04",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 02 Black Is The Color.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/02 Black Is The Color.flac",
           "flac_size_mb": 42,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "traditional",
+            "irish",
+            "ballad"
+          ]
         },
         {
           "num": 3,
           "title": "I Thought I Was You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:46",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 03 I Thought I Was You.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/03 I Thought I Was You.flac",
           "flac_size_mb": 39,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 4,
           "title": "Open Door",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:25",
           "size_mb": 6,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 04 Open Door.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/04 Open Door.flac",
           "flac_size_mb": 24,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 5,
           "title": "Plastic Lemons",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:04",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 05 Plastic Lemons.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/05 Plastic Lemons.flac",
           "flac_size_mb": 32,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 6,
           "title": "Scallywag",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:18",
           "size_mb": 5,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 06 Scallywag.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/06 Scallywag.flac",
           "flac_size_mb": 24,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 7,
           "title": "Hollywood",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "4:16",
           "size_mb": 10,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 07 Hollywood.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/07 Hollywood.flac",
           "flac_size_mb": 45,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 8,
           "title": "The Wind",
+          "songwriter": "Cat Stevens",
           "duration": "2:15",
           "size_mb": 5,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 08 The Wind.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/08 The Wind.flac",
           "flac_size_mb": 24,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "rarity"
+          ]
         },
         {
           "num": 9,
           "title": "Everything",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:12",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 09 Everything.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/09 Everything.flac",
           "flac_size_mb": 33,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 10,
           "title": "This World (Early Version)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:14",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 10 This World (Early Version).mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/10 This World (Early Version).flac",
           "flac_size_mb": 34,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "rarity"
+          ]
         },
         {
           "num": 11,
           "title": "Smoke in Heaven",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:02",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 11 Smoke in Heaven.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/11 Smoke in Heaven.flac",
           "flac_size_mb": 32,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
         },
         {
           "num": 12,
           "title": "My Dog",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "0:23",
           "size_mb": 1,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 12 My Dog.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/12 My Dog.flac",
           "flac_size_mb": 4,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat",
+            "rarity"
+          ]
         },
         {
           "num": 13,
           "title": "Truck",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:56",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 13 Truck.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/13 Truck.flac",
           "flac_size_mb": 41,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 14,
           "title": "The Bold Fenian Men",
+          "songwriter": "Traditional",
           "duration": "3:12",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 14 The Bold Fenian Men.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/14 The Bold Fenian Men.flac",
           "flac_size_mb": 32,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "traditional",
+            "irish",
+            "ballad",
+            "rarity"
+          ]
         },
         {
           "num": 15,
           "title": "El Paso",
+          "songwriter": "Marty Robbins",
           "duration": "4:48",
           "size_mb": 11,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 15 El Paso.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/15 El Paso.flac",
           "flac_size_mb": 49,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "country",
+            "story"
+          ]
         },
         {
           "num": 16,
           "title": "Rugburns",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "4:40",
           "size_mb": 11,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 16 Rugburns.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/16 Rugburns.flac",
           "flac_size_mb": 50,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 17,
           "title": "Elephant Shoes",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:47",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 17 Elephant Shoes.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/17 Elephant Shoes.flac",
           "flac_size_mb": 41,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 18,
           "title": "Tougher Than The Rest",
+          "songwriter": "Bruce Springsteen",
           "duration": "3:33",
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 18 Tougher Than The Rest.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/18 Tougher Than The Rest.flac",
           "flac_size_mb": 37,
+          "processed": true,
           "tags": [
-            "Bruce Springsteen"
-          ],
-          "processed": true
+            "cover",
+            "ballad"
+          ]
         },
         {
           "num": 19,
           "title": "Model Family Man",
+          "songwriter": "Paddy Nash",
           "duration": "3:17",
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 19 Model Family Man.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/19 Model Family Man.flac",
           "flac_size_mb": 35,
+          "processed": true,
           "tags": [
-            "Paddy Nash"
-          ],
-          "processed": true
+            "cover"
+          ]
         },
         {
           "num": 20,
           "title": "The Crystal Rose",
+          "songwriter": "Traditional",
           "duration": "5:12",
           "size_mb": 12,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 20 The Crystal Rose.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/20 The Crystal Rose.flac",
           "flac_size_mb": 55,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "traditional",
+            "irish"
+          ]
         },
         {
           "num": 21,
           "title": "That's The Way The World Goes 'Round",
+          "songwriter": "John Prine",
           "duration": "3:49",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 21 That's The Way The World Goes 'Round.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/21 That's The Way The World Goes 'Round.flac",
           "flac_size_mb": 41,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "folk",
+            "upbeat",
+            "rarity"
+          ]
         },
         {
           "num": 22,
           "title": "Ride On",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:32",
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 22 Ride On.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/22 Ride On.flac",
           "flac_size_mb": 38,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 23,
           "title": "Anna May",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:20",
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 23 Anna May.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/23 Anna May.flac",
           "flac_size_mb": 35,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
         },
         {
           "num": 24,
           "title": "War",
+          "songwriter": "Steve Poltz",
           "duration": "3:04",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 24 War.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/24 War.flac",
           "flac_size_mb": 33,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "rarity"
+          ]
         },
         {
           "num": 25,
           "title": "Woman (Early Version)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:21",
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 25 Woman (Early Version).mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/25 Woman (Early Version).flac",
           "flac_size_mb": 35,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 26,
           "title": "Kilkelly Ireland",
+          "songwriter": "Peter Jones",
           "duration": "6:02",
           "size_mb": 14,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 26 Kilkelly Ireland.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/26 Kilkelly Ireland.flac",
           "flac_size_mb": 64,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "cover",
+            "irish",
+            "ballad",
+            "story"
+          ]
         },
         {
           "num": 27,
           "title": "Butter",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "4:19",
           "size_mb": 10,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 27 Butter.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/27 Butter.flac",
           "flac_size_mb": 45,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 28,
           "title": "Luxury of Murder",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:06",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 28 Luxury of Murder.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/28 Luxury of Murder.flac",
           "flac_size_mb": 32,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "story"
+          ]
         },
         {
           "num": 29,
           "title": "ABC",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:13",
           "size_mb": 5,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 29 ABC.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/29 ABC.flac",
           "flac_size_mb": 24,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 30,
           "title": "The Parting Glass",
+          "songwriter": "Traditional",
           "duration": "4:35",
           "size_mb": 10,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-08/JerryHannan - 19 Broadway 2001-01-08 - 30 The Parting Glass.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-08/30 The Parting Glass.flac",
           "flac_size_mb": 48,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "traditional",
+            "irish",
+            "ballad"
+          ]
         }
       ],
       "description": [
@@ -1614,348 +2079,476 @@
         {
           "num": 1,
           "title": "State Trooper",
+          "songwriter": "Bruce Springsteen",
           "duration": "5:19",
           "size_mb": 12,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/01 State Trooper.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/01 State Trooper.flac",
           "flac_size_mb": 58,
+          "processed": true,
           "tags": [
-            "Bruce Springsteen"
-          ],
-          "processed": true
+            "cover"
+          ]
         },
         {
           "num": 2,
           "title": "Crystal Rose",
+          "songwriter": "Traditional",
           "duration": "3:51",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/02 Crystal Rose.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/02 Crystal Rose.flac",
           "flac_size_mb": 42,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "traditional",
+            "irish"
+          ]
         },
         {
           "num": 3,
           "title": "Truck",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:50",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/03 Truck.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/03 Truck.flac",
           "flac_size_mb": 42,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 4,
           "title": "Everything",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:52",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/04 Everything.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/04 Everything.flac",
           "flac_size_mb": 31,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 5,
           "title": "Little Number Four",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:12",
           "size_mb": 5,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/05 Little Number Four.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/05 Little Number Four.flac",
           "flac_size_mb": 25,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "original",
+            "irish"
+          ]
         },
         {
           "num": 6,
           "title": "Anna May",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:44",
           "size_mb": 6,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/06 Anna May.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/06 Anna May.flac",
           "flac_size_mb": 30,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
         },
         {
           "num": 7,
           "title": "I Think She Was You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:46",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/07 I Think She Was You.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/07 I Think She Was You.flac",
           "flac_size_mb": 40,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 8,
           "title": "Illegal Smile",
+          "songwriter": "John Prine",
           "duration": "3:10",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/08 Illegal Smile.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/08 Illegal Smile.flac",
           "flac_size_mb": 34,
+          "processed": true,
           "tags": [
-            "John Prine"
-          ],
-          "processed": true
+            "cover",
+            "folk",
+            "upbeat",
+            "singalong"
+          ]
         },
         {
           "num": 9,
           "title": "El Paso",
+          "songwriter": "Marty Robbins",
           "duration": "5:04",
           "size_mb": 12,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/09 El Paso.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/09 El Paso.flac",
           "flac_size_mb": 54,
+          "processed": true,
           "tags": [
-            "Marty Robbins"
-          ],
-          "processed": true
+            "cover",
+            "country",
+            "story"
+          ]
         },
         {
           "num": 10,
           "title": "Plastic Lemons",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:56",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/10 Plastic Lemons.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/10 Plastic Lemons.flac",
           "flac_size_mb": 32,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 11,
           "title": "Scallywag",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:20",
           "size_mb": 5,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/11 Scallywag.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/11 Scallywag.flac",
           "flac_size_mb": 26,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 12,
           "title": "You're Pulling Me Leg",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "1:09",
           "size_mb": 3,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/12 You're Pulling Me Leg.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/12 You're Pulling Me Leg.flac",
           "flac_size_mb": 12,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "original",
+            "irish",
+            "upbeat"
+          ]
         },
         {
           "num": 13,
           "title": "Luxury of Murder",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:15",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/13 Luxury of Murder.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/13 Luxury of Murder.flac",
           "flac_size_mb": 35,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "story"
+          ]
         },
         {
           "num": 14,
           "title": "Moon Shadow",
+          "songwriter": "Cat Stevens",
           "duration": "2:05",
           "size_mb": 5,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/14 Moon Shadow.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/14 Moon Shadow.flac",
           "flac_size_mb": 23,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "folk",
+            "upbeat"
+          ]
         },
         {
           "num": 15,
           "title": "My Boyfriend",
+          "songwriter": "Steve Poltz",
           "duration": "4:55",
           "size_mb": 11,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/15 My Boyfriend.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/15 My Boyfriend.flac",
           "flac_size_mb": 54,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "upbeat",
+            "rarity"
+          ]
         },
         {
           "num": 16,
           "title": "Sam Hall",
+          "songwriter": "John Prine",
           "duration": "4:47",
           "size_mb": 11,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/16 Sam Hall.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/16 Sam Hall.flac",
           "flac_size_mb": 51,
+          "processed": true,
           "tags": [
-            "John Prine"
-          ],
-          "processed": true
+            "cover",
+            "story"
+          ]
         },
         {
           "num": 17,
           "title": "Black is The Color",
+          "songwriter": "Traditional",
           "duration": "3:45",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/17 Black is The Color.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/17 Black is The Color.flac",
           "flac_size_mb": 40,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "traditional",
+            "irish",
+            "ballad"
+          ]
         },
         {
           "num": 18,
           "title": "The Fields of Athenry",
+          "songwriter": "Traditional",
           "duration": "4:12",
           "size_mb": 10,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/18 The Fields of Athenry.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/18 The Fields of Athenry.flac",
           "flac_size_mb": 44,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "traditional",
+            "irish",
+            "ballad",
+            "singalong",
+            "story",
+            "rarity"
+          ]
         },
         {
           "num": 19,
           "title": "Johnny McEldoo",
+          "songwriter": "Traditional",
           "duration": "1:53",
           "size_mb": 4,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/19 Johnny McEldoo.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/19 Johnny McEldoo.flac",
           "flac_size_mb": 20,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "traditional",
+            "irish",
+            "upbeat",
+            "rarity"
+          ]
         },
         {
           "num": 20,
           "title": "Four Leaf Clover Inn",
+          "songwriter": "Traditional",
           "duration": "5:11",
           "size_mb": 12,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/20 Four Leaf Clover Inn.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/20 Four Leaf Clover Inn.flac",
           "flac_size_mb": 55,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "traditional",
+            "irish",
+            "rarity"
+          ]
         },
         {
           "num": 21,
           "title": "Rugburns",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "4:49",
           "size_mb": 11,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/21 Rugburns.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/21 Rugburns.flac",
           "flac_size_mb": 54,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 22,
           "title": "Houses of the Holy",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:46",
           "size_mb": 6,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/22 Houses of the Holy.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/22 Houses of the Holy.flac",
           "flac_size_mb": 29,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 23,
           "title": "Loser",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "1:05",
           "size_mb": 2,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/23 Loser.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/23 Loser.flac",
           "flac_size_mb": 12,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "rarity"
+          ]
         },
         {
           "num": 24,
           "title": "Xmas Song",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "0:51",
           "size_mb": 2,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/24 Xmas Song.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/24 Xmas Song.flac",
           "flac_size_mb": 9,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "rarity"
+          ]
         },
         {
           "num": 25,
           "title": "Blender",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "0:33",
           "size_mb": 1,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/25 Blender.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/25 Blender.flac",
           "flac_size_mb": 6,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat",
+            "rarity"
+          ]
         },
         {
           "num": 26,
           "title": "Dope World",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "1:05",
           "size_mb": 2,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/26 Dope World.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/26 Dope World.flac",
           "flac_size_mb": 12,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "rarity"
+          ]
         },
         {
           "num": 27,
           "title": "Slave Woman",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:10",
           "size_mb": 5,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/27 Slave Woman.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/27 Slave Woman.flac",
           "flac_size_mb": 24,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 28,
           "title": "I Thought I Was You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:58",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/28 I Thought I Was You.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/28 I Thought I Was You.flac",
           "flac_size_mb": 44,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 29,
           "title": "The Kiss",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "1:27",
           "size_mb": 3,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/29 The Kiss.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/29 The Kiss.flac",
           "flac_size_mb": 16,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "rarity"
+          ]
         },
         {
           "num": 30,
           "title": "Never Knew a Woman",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:52",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/30 Never Knew a Woman.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/30 Never Knew a Woman.flac",
           "flac_size_mb": 43,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "rarity"
+          ]
         },
         {
           "num": 31,
           "title": "The Old Triangle",
+          "songwriter": "Traditional",
           "duration": "3:22",
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/31 The Old Triangle.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15/31 The Old Triangle.flac",
           "flac_size_mb": 36,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "traditional",
+            "irish",
+            "singalong",
+            "rarity"
+          ]
         }
       ],
       "description": [
@@ -2228,320 +2821,423 @@
         {
           "num": 1,
           "title": "The One I Love",
+          "songwriter": "REM",
           "duration": "2:34",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/01 The One I Love.mp3",
           "size_mb": 6,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/01 The One I Love.flac",
           "flac_size_mb": 28,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover"
+          ]
         },
         {
           "num": 2,
           "title": "Model Family Man",
+          "songwriter": "Paddy Nash",
           "duration": "3:28",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/02 Model Family Man.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/02 Model Family Man.flac",
           "flac_size_mb": 37,
+          "processed": true,
           "tags": [
-            "Paddy Nash"
-          ],
-          "processed": true
+            "cover"
+          ]
         },
         {
           "num": 3,
           "title": "Woman",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:43",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/03 Woman.mp3",
           "size_mb": 9,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/03 Woman.flac",
           "flac_size_mb": 40,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 4,
           "title": "The Good Life",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:00",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/04 The Good Life.mp3",
           "size_mb": 7,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/04 The Good Life.flac",
           "flac_size_mb": 32,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 5,
           "title": "Father and Son",
+          "songwriter": "Cat Stevens",
           "duration": "3:40",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/05 Father and Son.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/05 Father and Son.flac",
           "flac_size_mb": 40,
+          "processed": true,
           "tags": [
-            "Cat Stevens"
-          ],
-          "processed": true
+            "cover",
+            "folk",
+            "ballad",
+            "rarity"
+          ]
         },
         {
           "num": 6,
           "title": "Galway Shawl",
+          "songwriter": "Traditional",
           "duration": "2:59",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/06 Galway Shawl.mp3",
           "size_mb": 7,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/06 Galway Shawl.flac",
           "flac_size_mb": 32,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "traditional",
+            "irish",
+            "ballad"
+          ]
         },
         {
           "num": 7,
           "title": "I Thought I Was You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "4:07",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/07 I Thought I Was You.mp3",
           "size_mb": 9,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/07 I Thought I Was You.flac",
           "flac_size_mb": 44,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 8,
           "title": "Have You Ever Seen the Rain",
+          "songwriter": "John Fogerty",
           "duration": "2:37",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/08 Have You Ever Seen the Rain.mp3",
           "size_mb": 6,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/08 Have You Ever Seen the Rain.flac",
           "flac_size_mb": 28,
+          "processed": true,
           "tags": [
-            "John Fogerty"
-          ],
-          "processed": true
+            "cover",
+            "rock",
+            "rarity"
+          ]
         },
         {
           "num": 9,
           "title": "Smoke in Heaven",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:52",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/09 Smoke in Heaven.mp3",
           "size_mb": 7,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/09 Smoke in Heaven.flac",
           "flac_size_mb": 31,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
         },
         {
           "num": 10,
           "title": "Beverley",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "0:18",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/10 Beverley.mp3",
           "size_mb": 1,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/10 Beverley.flac",
           "flac_size_mb": 3,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "rarity"
+          ]
         },
         {
           "num": 11,
           "title": "Yer So Bad",
+          "songwriter": "Tom Petty",
           "duration": "3:04",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/11 Yer So Bad.mp3",
           "size_mb": 7,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/11 Yer So Bad.flac",
           "flac_size_mb": 33,
+          "processed": true,
           "tags": [
-            "Tom Petty"
-          ],
-          "processed": true
+            "cover",
+            "rock",
+            "rarity"
+          ]
         },
         {
           "num": 12,
           "title": "Angel from Montgomery",
+          "songwriter": "John Prine",
           "duration": "3:56",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/12 Angel from Montgomery.mp3",
           "size_mb": 9,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/12 Angel from Montgomery.flac",
           "flac_size_mb": 42,
+          "processed": true,
           "tags": [
-            "John Prine"
-          ],
-          "processed": true
+            "cover",
+            "ballad",
+            "country"
+          ]
         },
         {
           "num": 13,
           "title": "Hide Your Love Away",
+          "songwriter": "John Lennon",
           "duration": "2:20",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/13 Hide Your Love Away.mp3",
           "size_mb": 5,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/13 Hide Your Love Away.flac",
           "flac_size_mb": 25,
+          "processed": true,
           "tags": [
-            "John Lennon"
-          ],
-          "processed": true
+            "cover",
+            "folk",
+            "ballad",
+            "rarity"
+          ]
         },
         {
           "num": 14,
           "title": "You Don't Know How It Feels",
+          "songwriter": "Tom Petty",
           "duration": "3:21",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/14 You Don't Know How It Feels.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/14 You Don't Know How It Feels.flac",
           "flac_size_mb": 37,
+          "processed": true,
           "tags": [
-            "Tom Petty"
-          ],
-          "processed": true
+            "cover",
+            "rock",
+            "rarity"
+          ]
         },
         {
           "num": 15,
           "title": "The Black Velvet Band",
+          "songwriter": "Traditional",
           "duration": "2:19",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/15 The Black Velvet Band.mp3",
           "size_mb": 5,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/15 The Black Velvet Band.flac",
           "flac_size_mb": 25,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "traditional",
+            "irish",
+            "upbeat",
+            "singalong"
+          ]
         },
         {
           "num": 16,
           "title": "Moon Shadow",
+          "songwriter": "Cat Stevens",
           "duration": "3:06",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/16 Moon Shadow.mp3",
           "size_mb": 7,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/16 Moon Shadow.flac",
           "flac_size_mb": 34,
+          "processed": true,
           "tags": [
-            "Cat Stevens"
-          ],
-          "processed": true
+            "cover",
+            "folk",
+            "upbeat"
+          ]
         },
         {
           "num": 17,
           "title": "Wild World",
+          "songwriter": "Cat Stevens",
           "duration": "3:23",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/17 Wild World.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/17 Wild World.flac",
           "flac_size_mb": 36,
+          "processed": true,
           "tags": [
-            "Cat Stevens"
-          ],
-          "processed": true
+            "cover",
+            "folk",
+            "rarity"
+          ]
         },
         {
           "num": 18,
           "title": "Me and Eddie Vedder",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:13",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/18 Me and Eddie Vedder.mp3",
           "size_mb": 7,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/18 Me and Eddie Vedder.flac",
           "flac_size_mb": 35,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 19,
           "title": "Gold's Gym Guy",
+          "songwriter": "Steve Poltz",
           "duration": "3:13",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/19 Gold's Gym Guy.mp3",
           "size_mb": 7,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/19 Gold's Gym Guy.flac",
           "flac_size_mb": 30,
+          "processed": true,
           "tags": [
-            "Steve Poltz"
-          ],
-          "processed": true
+            "cover",
+            "upbeat"
+          ]
         },
         {
           "num": 20,
           "title": "Never Know Love",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:28",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/20 Never Know Love.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/20 Never Know Love.flac",
           "flac_size_mb": 38,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "rarity"
+          ]
         },
         {
           "num": 21,
           "title": "Little Number Four",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "1:49",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/21 Little Number Four.mp3",
           "size_mb": 4,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/21 Little Number Four.flac",
           "flac_size_mb": 18,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "original",
+            "irish"
+          ]
         },
         {
           "num": 22,
           "title": "Maids When You're Young Never Wed an Old Man",
+          "songwriter": "Traditional",
           "duration": "3:40",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/22 Maids When You're Young Never Wed an Old Man.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/22 Maids When You're Young Never Wed an Old Man.flac",
           "flac_size_mb": 40,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "traditional",
+            "irish",
+            "upbeat",
+            "rarity"
+          ]
         },
         {
           "num": 23,
           "title": "Long Black Veil",
+          "songwriter": "Lefty Frizzell",
           "duration": "2:38",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/23 Long Black Veil.mp3",
           "size_mb": 6,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/23 Long Black Veil.flac",
           "flac_size_mb": 29,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "country",
+            "ballad",
+            "story"
+          ]
         },
         {
           "num": 24,
           "title": "Learn About Love",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:08",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/24 Learn About Love.mp3",
           "size_mb": 7,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/24 Learn About Love.flac",
           "flac_size_mb": 35,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 25,
           "title": "Lay Down Your Weary Tune",
+          "songwriter": "Bob Dylan",
           "duration": "3:28",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/25 Lay Down Your Weary Tune.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/25 Lay Down Your Weary Tune.flac",
           "flac_size_mb": 38,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "folk",
+            "ballad"
+          ]
         },
         {
           "num": 26,
           "title": "Looking Out My Backdoor",
+          "songwriter": "John Fogerty",
           "duration": "0:49",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/26 Looking Out My Backdoor.mp3",
           "size_mb": 2,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/26 Looking Out My Backdoor.flac",
           "flac_size_mb": 9,
+          "processed": true,
           "tags": [
-            "John Fogerty"
-          ],
-          "processed": true
+            "cover",
+            "rock",
+            "upbeat",
+            "rarity"
+          ]
         },
         {
           "num": 27,
           "title": "Some Get Married for Love",
+          "songwriter": "Traditional",
           "duration": "1:19",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/27 Some Get Married for Love.mp3",
           "size_mb": 3,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/27 Some Get Married for Love.flac",
           "flac_size_mb": 14,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "traditional",
+            "irish",
+            "rarity"
+          ]
         },
         {
           "num": 28,
@@ -2551,46 +3247,59 @@
           "size_mb": 4,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/28 Did You Ever See.flac",
           "flac_size_mb": 21,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "rarity"
+          ]
         },
         {
           "num": 29,
           "title": "Don't Think Twice It's All Right",
+          "songwriter": "Bob Dylan",
           "duration": "3:55",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/29 Don't Think Twice It's All Right.mp3",
           "size_mb": 9,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/29 Don't Think Twice It's All Right.flac",
           "flac_size_mb": 44,
+          "processed": true,
           "tags": [
-            "Bob Dylan"
-          ],
-          "processed": true
+            "cover",
+            "folk"
+          ]
         },
         {
           "num": 30,
           "title": "Let It Be",
+          "songwriter": "Beatles",
           "duration": "1:06",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/30 Let It Be.mp3",
           "size_mb": 3,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/30 Let It Be.flac",
           "flac_size_mb": 12,
+          "processed": true,
           "tags": [
-            "Beatles"
-          ],
-          "processed": true
+            "cover",
+            "ballad",
+            "singalong",
+            "rarity"
+          ]
         },
         {
           "num": 31,
           "title": "The Patriot Game",
+          "songwriter": "Traditional",
           "duration": "3:13",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/31 The Patriot Game.mp3",
           "size_mb": 7,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/31 The Patriot Game.flac",
           "flac_size_mb": 35,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "traditional",
+            "irish",
+            "ballad",
+            "story"
+          ]
         }
       ],
       "description": [
@@ -2629,113 +3338,168 @@
         {
           "num": 1,
           "title": "Open Door",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:50",
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/01 Open Door.mp3",
           "size_mb": 6,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/01 Open Door.flac",
           "flac_size_mb": 29,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 2,
           "title": "Woman",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:35",
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/02 Woman.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/02 Woman.flac",
           "flac_size_mb": 37,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 3,
           "title": "Galway Shawl",
+          "songwriter": "Traditional",
           "duration": "4:44",
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/03 Galway Shawl.mp3",
           "size_mb": 11,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/03 Galway Shawl.flac",
           "flac_size_mb": 50,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "traditional",
+            "irish",
+            "ballad"
+          ]
         },
         {
           "num": 4,
           "title": "I Thought I Was You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "4:54",
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/04 I Thought I Was You.mp3",
           "size_mb": 11,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/04 I Thought I Was You.flac",
           "flac_size_mb": 50,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 5,
           "title": "Ode to Biddy McGee",
+          "songwriter": "Traditional",
           "duration": "3:35",
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/05 Ode to Biddy McGee.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/05 Ode to Biddy McGee.flac",
           "flac_size_mb": 36,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "traditional"
+          ]
         },
         {
           "num": 6,
           "title": "The German Clock Winder",
+          "songwriter": "Traditional",
           "duration": "2:29",
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/06 The German Clock Winder.mp3",
           "size_mb": 6,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/06 The German Clock Winder.flac",
           "flac_size_mb": 25,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "traditional",
+            "irish",
+            "upbeat"
+          ]
         },
         {
           "num": 7,
           "title": "Why Don't You Love Me",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "0:37",
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/07 Why Don't You Love Me.mp3",
           "size_mb": 1,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/07 Why Don't You Love Me.flac",
           "flac_size_mb": 6,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "rarity"
+          ]
         },
         {
           "num": 8,
           "title": "Don't Think Twice It's All Right",
+          "songwriter": "Bob Dylan",
           "duration": "3:23",
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/08 Don't Think Twice It's All Right.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/08 Don't Think Twice It's All Right.flac",
           "flac_size_mb": 33,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "folk"
+          ]
         },
         {
           "num": 9,
           "title": "Plastic Lemons",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:40",
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/09 Plastic Lemons.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/09 Plastic Lemons.flac",
           "flac_size_mb": 37,
           "artist": "Jerry Hannan",
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "guest"
+          ]
         },
         {
           "num": 10,
           "title": "Gold's Gym Guy",
+          "songwriter": "Steve Poltz",
           "duration": "3:12",
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/10 Gold's Gym Guy.mp3",
           "size_mb": 7,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/10 Gold's Gym Guy.flac",
           "flac_size_mb": 33,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "upbeat"
+          ]
         },
         {
           "num": 11,
           "title": "Lay Down Your Weary Tune",
+          "songwriter": "Bob Dylan",
           "duration": "4:15",
           "file": "MP3/SeanHannan - 19 Broadway 2000-02-21/11 Lay Down Your Weary Tune.mp3",
           "size_mb": 10,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/11 Lay Down Your Weary Tune.flac",
           "flac_size_mb": 44,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "folk",
+            "ballad"
+          ]
         }
       ],
       "description": [
@@ -2787,184 +3551,283 @@
         {
           "num": 1,
           "title": "Woman",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:52",
           "size_mb": 7,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/01 Woman.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/01 Woman.flac",
           "flac_size_mb": 31,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 2,
           "title": "Long Black Veil",
+          "songwriter": "Lefty Frizzell",
           "duration": "2:42",
           "size_mb": 6,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/02 Long Black Veil.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/02 Long Black Veil.flac",
           "flac_size_mb": 30,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "country",
+            "ballad",
+            "story"
+          ]
         },
         {
           "num": 3,
           "title": "Don't Think Twice It's Alright",
+          "songwriter": "Bob Dylan",
           "duration": "3:51",
           "size_mb": 9,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/03 Don't Think Twice It's Alright.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/03 Don't Think Twice It's Alright.flac",
           "flac_size_mb": 41,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "folk"
+          ]
         },
         {
           "num": 4,
           "title": "I Thought I Was You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "4:10",
           "size_mb": 10,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/04 I Thought I Was You.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/04 I Thought I Was You.flac",
           "flac_size_mb": 45,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 5,
           "title": "Gold's Gym Guy",
+          "songwriter": "Steve Poltz",
           "duration": "2:33",
           "size_mb": 6,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/05 Gold's Gym Guy.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/05 Gold's Gym Guy.flac",
           "flac_size_mb": 28,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "upbeat"
+          ]
         },
         {
           "num": 6,
           "title": "The German Clockwinder",
+          "songwriter": "Traditional",
           "duration": "2:43",
           "size_mb": 6,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/06 The German Clockwinder.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/06 The German Clockwinder.flac",
           "flac_size_mb": 30,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "traditional",
+            "irish",
+            "upbeat"
+          ]
         },
         {
           "num": 7,
           "title": "Model Family Man",
+          "songwriter": "Paddy Nash",
           "duration": "3:39",
           "size_mb": 8,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/07 Model Family Man.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/07 Model Family Man.flac",
           "flac_size_mb": 40,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover"
+          ]
         },
         {
           "num": 8,
           "title": "Flag Decal",
+          "songwriter": "John Prine",
           "duration": "3:33",
           "size_mb": 8,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/08 Flag Decal.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/08 Flag Decal.flac",
           "flac_size_mb": 39,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "upbeat",
+            "rarity"
+          ]
         },
         {
           "num": 9,
           "title": "Galway Shawl",
+          "songwriter": "Traditional",
           "duration": "3:22",
           "size_mb": 8,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/09 Galway Shawl.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/09 Galway Shawl.flac",
           "flac_size_mb": 37,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "traditional",
+            "irish",
+            "ballad"
+          ]
         },
         {
           "num": 10,
           "title": "The Grey Funnel Line (with Jerry)",
+          "songwriter": "Traditional",
           "duration": "4:26",
           "size_mb": 10,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/10 The Grey Funnel Line.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/10 The Grey Funnel Line.flac",
           "flac_size_mb": 50,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "traditional",
+            "folk",
+            "ballad",
+            "rarity",
+            "guest"
+          ]
         },
         {
           "num": 11,
           "title": "Rugburns (with Jerry)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "5:11",
           "size_mb": 12,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/11 Rugburns.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/11 Rugburns.flac",
           "flac_size_mb": 57,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "guest"
+          ]
         },
         {
           "num": 12,
           "title": "Elephant Shoes (with Jerry)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:38",
           "size_mb": 8,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/12 Elephant Shoes.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/12 Elephant Shoes.flac",
           "flac_size_mb": 40,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "guest"
+          ]
         },
         {
           "num": 13,
           "title": "Daddy (Kelly Peterson)",
+          "songwriter": "Kelly Peterson",
           "artist": "Kelly Peterson",
           "duration": "2:55",
           "size_mb": 7,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/13 Daddy.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/13 Daddy.flac",
           "flac_size_mb": 32,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "rarity",
+            "guest"
+          ]
         },
         {
           "num": 14,
           "title": "Angel from Montgomery (Kelly Peterson)",
+          "songwriter": "John Prine",
           "artist": "Kelly Peterson",
           "duration": "4:27",
           "size_mb": 10,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/14 Angel from Montgomery.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/14 Angel from Montgomery.flac",
           "flac_size_mb": 49,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "ballad",
+            "country",
+            "guest"
+          ]
         },
         {
           "num": 15,
           "title": "The Black Velvet Band",
+          "songwriter": "Traditional",
           "duration": "2:52",
           "size_mb": 7,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/15 The Black Velvet Band.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/15 The Black Velvet Band.flac",
           "flac_size_mb": 32,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "traditional",
+            "irish",
+            "upbeat",
+            "singalong"
+          ]
         },
         {
           "num": 16,
           "title": "The Good Life",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:59",
           "size_mb": 7,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/16 The Good Life.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/16 The Good Life.flac",
           "flac_size_mb": 32,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 17,
           "title": "Ode to Biddy McGee",
+          "songwriter": "Traditional",
           "duration": "2:53",
           "size_mb": 7,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/17 Ode to Biddy McGee.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/17 Ode to Biddy McGee.flac",
           "flac_size_mb": 32,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "traditional"
+          ]
         },
         {
           "num": 18,
           "title": "The One I Love",
+          "songwriter": "REM",
           "duration": "1:06",
           "size_mb": 3,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/18 The One I Love.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/18 The One I Love.flac",
           "flac_size_mb": 12,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover"
+          ]
         }
       ],
       "description": [
@@ -3013,227 +3876,315 @@
         {
           "num": 1,
           "title": "Blind Man",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:23",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/01 Blind Man.mp3",
           "size_mb": 8,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/01 Blind Man.flac",
           "flac_size_mb": 36,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 2,
           "title": "Smoke in Heaven",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:56",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/02 Smoke in Heaven.mp3",
           "size_mb": 7,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/02 Smoke in Heaven.flac",
           "flac_size_mb": 31,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
         },
         {
           "num": 3,
           "title": "Truck",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:53",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/03 Truck.mp3",
           "size_mb": 7,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/03 Truck.flac",
           "flac_size_mb": 30,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 4,
           "title": "Hard Drinking",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:29",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/04 Hard Drinking .mp3",
           "size_mb": 8,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/04 Hard Drinking .flac",
           "flac_size_mb": 36,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 5,
           "title": "Recycle",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "5:25",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/05 Recycle.mp3",
           "size_mb": 12,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/05 Recycle.flac",
           "flac_size_mb": 56,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 6,
           "title": "Clear Headed",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "5:05",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/06 Clear Headed.mp3",
           "size_mb": 12,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/06 Clear Headed.flac",
           "flac_size_mb": 54,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 7,
           "title": "Good Life",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:45",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/07 Good Life.mp3",
           "size_mb": 9,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/07 Good Life.flac",
           "flac_size_mb": 40,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 8,
           "title": "Anna May",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:56",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/08 Anna May.mp3",
           "size_mb": 7,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/08 Anna May.flac",
           "flac_size_mb": 30,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
         },
         {
           "num": 9,
           "title": "I Thought I Was You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:34",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/09 I Thought I Was You.mp3",
           "size_mb": 8,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/09 I Thought I Was You.flac",
           "flac_size_mb": 37,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 10,
           "title": "Plastic Lemons",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:06",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/10 Plastic Lemons.mp3",
           "size_mb": 7,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/10 Plastic Lemons.flac",
           "flac_size_mb": 33,
-          "tags": [
-            "Kristin McNamara"
-          ],
           "artist": "Kristin McNamara",
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "guest"
+          ]
         },
         {
           "num": 11,
           "title": "Elephant Shoes",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:53",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/11 Elephant Shoes.mp3",
           "size_mb": 9,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/11 Elephant Shoes.flac",
           "flac_size_mb": 41,
-          "tags": [
-            "Kristin McNamara"
-          ],
           "artist": "Kristin McNamara",
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "guest"
+          ]
         },
         {
           "num": 12,
           "title": "Everything Reminds Me of You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:11",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/12 Everything Reminds Me of You.mp3",
           "size_mb": 7,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/12 Everything Reminds Me of You.flac",
           "flac_size_mb": 34,
-          "tags": [
-            "Kristin McNamara"
-          ],
           "artist": "Kristin McNamara",
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "guest"
+          ]
         },
         {
           "num": 13,
           "title": "I Need a Dream",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:58",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/13 I Need a Dream.mp3",
           "size_mb": 7,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/13 I Need a Dream.flac",
           "flac_size_mb": 31,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 14,
           "title": "Butter",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:27",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/14 Butter.mp3",
           "size_mb": 8,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/14 Butter.flac",
           "flac_size_mb": 37,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 15,
           "title": "Hollywood",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "5:22",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/15 Hollywood.mp3",
           "size_mb": 12,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/15 Hollywood.flac",
           "flac_size_mb": 57,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 16,
           "title": "Rugburns",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:23",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/16 Rugburns.mp3",
           "size_mb": 8,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/16 Rugburns.flac",
           "flac_size_mb": 36,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 17,
           "title": "Truck",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:50",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/17 Truck.mp3",
           "size_mb": 9,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/17 Truck.flac",
           "flac_size_mb": 41,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 18,
           "title": "Angel from Montgomery",
+          "songwriter": "John Prine",
           "duration": "4:25",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/18 Angel from Montgomerey.mp3",
           "size_mb": 10,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/18 Angel from Montgomerey.flac",
           "flac_size_mb": 46,
+          "processed": true,
           "tags": [
-            "John Prine"
-          ],
-          "processed": true
+            "cover",
+            "ballad",
+            "country"
+          ]
         },
         {
           "num": 19,
           "title": "Dysfunctional Guy",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "4:48",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/18 Dysfunctional Guy.mp3",
           "size_mb": 11,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/18 Dysfunctional Guy.flac",
           "flac_size_mb": 51,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 20,
           "title": "Baby",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:13",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/19 Baby.mp3",
           "size_mb": 7,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/19 Baby.flac",
           "flac_size_mb": 34,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 21,
           "title": "The Kiss - Da Da Da (Slave to an Angel)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "7:25",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/20 The Kiss - Da Da Da (Slave to an Angel).mp3",
           "size_mb": 17,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17/20 The Kiss - Da Da Da (Slave to an Angel).flac",
           "flac_size_mb": 77,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "medley"
+          ]
         }
       ],
       "description": [
@@ -3281,245 +4232,351 @@
         {
           "num": 1,
           "title": "I Thought I Was You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:39",
           "file": "MP3/MadHannans - Sweetwater 2000-10-17/01 I Thought I Was You.mp3",
           "size_mb": 8,
           "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/01 I Thought I Was You.flac",
           "flac_size_mb": 38,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 2,
           "title": "Plastic Lemons",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:37",
           "file": "MP3/MadHannans - Sweetwater 2000-10-17/02 Plastic Lemons.mp3",
           "size_mb": 6,
           "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/02 Plastic Lemons.flac",
           "flac_size_mb": 27,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 3,
           "title": "Model Family Man",
+          "songwriter": "Paddy Nash",
           "duration": "3:14",
           "file": "MP3/MadHannans - Sweetwater 2000-10-17/03 Model Family Man  .mp3",
           "size_mb": 7,
           "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/03 Model Family Man  .flac",
           "flac_size_mb": 34,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover"
+          ]
         },
         {
           "num": 4,
           "title": "Blahana",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "4:41",
           "file": "MP3/MadHannans - Sweetwater 2000-10-17/04 Blahana.mp3",
           "size_mb": 11,
           "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/04 Blahana.flac",
           "flac_size_mb": 50,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 5,
           "title": "Luxury of Murder",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:50",
           "file": "MP3/MadHannans - Sweetwater 2000-10-17/05 Luxury of Murder.mp3",
           "size_mb": 6,
           "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/05 Luxury of Murder.flac",
           "flac_size_mb": 31,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "story"
+          ]
         },
         {
           "num": 6,
           "title": "Blind Man",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:08",
           "file": "MP3/MadHannans - Sweetwater 2000-10-17/06 Blind Man.mp3",
           "size_mb": 7,
           "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/06 Blind Man.flac",
           "flac_size_mb": 35,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 7,
           "title": "Good Life",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:22",
           "file": "MP3/MadHannans - Sweetwater 2000-10-17/07 Good Life.mp3",
           "size_mb": 8,
           "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/07 Good Life.flac",
           "flac_size_mb": 37,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 8,
           "title": "Hard Drinkin'",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:27",
           "file": "MP3/MadHannans - Sweetwater 2000-10-17/08 Hard Drinkin'.mp3",
           "size_mb": 8,
           "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/08 Hard Drinkin'.flac",
           "flac_size_mb": 38,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 9,
           "title": "Clear Headed",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "5:02",
           "file": "MP3/MadHannans - Sweetwater 2000-10-17/09 Clear Headed.mp3",
           "size_mb": 12,
           "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/09 Clear Headed.flac",
           "flac_size_mb": 55,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 10,
           "title": "Recycle",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "5:44",
           "file": "MP3/MadHannans - Sweetwater 2000-10-17/10 Recycle.mp3",
           "size_mb": 13,
           "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/10 Recycle.flac",
           "flac_size_mb": 61,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 11,
           "title": "Nicolai",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:41",
           "file": "MP3/MadHannans - Sweetwater 2000-10-17/11 Nicolai.mp3",
           "size_mb": 6,
           "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/11 Nicolai.flac",
           "flac_size_mb": 28,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 12,
           "title": "Rugburns",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "4:47",
           "file": "MP3/MadHannans - Sweetwater 2000-10-17/12 Rugburns.mp3",
           "size_mb": 11,
           "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/12 Rugburns.flac",
           "flac_size_mb": 52,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 13,
           "title": "Baby",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "4:27",
           "file": "MP3/MadHannans - Sweetwater 2000-10-17/13 Baby.mp3",
           "size_mb": 10,
           "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/13 Baby.flac",
           "flac_size_mb": 48,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 14,
           "title": "Dysfunctional Guy",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "4:31",
           "file": "MP3/MadHannans - Sweetwater 2000-10-17/14 Dysfunctional Guy.mp3",
           "size_mb": 10,
           "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/14 Dysfunctional Guy.flac",
           "flac_size_mb": 49,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 15,
           "title": "Truck",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:38",
           "file": "MP3/MadHannans - Sweetwater 2000-10-17/15 Truck.mp3",
           "size_mb": 8,
           "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/15 Truck.flac",
           "flac_size_mb": 39,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 16,
           "title": "Madeline",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:44",
           "file": "MP3/MadHannans - Sweetwater 2000-10-17/16 Madeline.mp3",
           "size_mb": 6,
           "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/16 Madeline.flac",
           "flac_size_mb": 29,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 17,
           "title": "ABC",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "4:20",
           "file": "MP3/MadHannans - Sweetwater 2000-10-17/17 ABC's.mp3",
           "size_mb": 10,
           "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/17 ABC's.flac",
           "flac_size_mb": 47,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 18,
           "title": "Everything Reminds Me of You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:47",
           "file": "MP3/MadHannans - Sweetwater 2000-10-17/18 Everything Reminds Me of You.mp3",
           "size_mb": 6,
           "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/18 Everything Reminds Me of You.flac",
           "flac_size_mb": 30,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 19,
           "title": "Angel from Montgomery",
+          "songwriter": "John Prine",
           "duration": "3:52",
           "file": "MP3/MadHannans - Sweetwater 2000-10-17/19 Angel from Montgomery.mp3",
           "size_mb": 9,
           "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/19 Angel from Montgomery.flac",
           "flac_size_mb": 41,
+          "processed": true,
           "tags": [
-            "John Prine"
-          ],
-          "processed": true
+            "cover",
+            "ballad",
+            "country"
+          ]
         },
         {
           "num": 20,
           "title": "Smoke in Heaven",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:57",
           "file": "MP3/MadHannans - Sweetwater 2000-10-17/20 Smoke in Heaven.mp3",
           "size_mb": 7,
           "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/20 Smoke in Heaven.flac",
           "flac_size_mb": 32,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
         },
         {
           "num": 21,
           "title": "Hollywood",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "4:33",
           "file": "MP3/MadHannans - Sweetwater 2000-10-17/21 Hollywood.mp3",
           "size_mb": 10,
           "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/21 Hollywood.flac",
           "flac_size_mb": 50,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 22,
           "title": "Anna May",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:53",
           "file": "MP3/MadHannans - Sweetwater 2000-10-17/22 Anna May.mp3",
           "size_mb": 7,
           "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/22 Anna May.flac",
           "flac_size_mb": 31,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
         },
         {
           "num": 23,
           "title": "Scallywag",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:15",
           "file": "MP3/MadHannans - Sweetwater 2000-10-17/23 Scallywag.mp3",
           "size_mb": 5,
           "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/23 Scallywag.flac",
           "flac_size_mb": 24,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 24,
           "title": "The Kiss_Da Da Da (Slave to an Angel)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "6:31",
           "file": "MP3/MadHannans - Sweetwater 2000-10-17/24 The Kiss_DaDaDa (Slave to an Angel).mp3",
           "size_mb": 15,
           "flac": "FLAC/MadHannans - Sweetwater 2000-10-17/24 The Kiss_DaDaDa (Slave to an Angel).flac",
           "flac_size_mb": 71,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "medley"
+          ]
         }
       ],
       "description": [
@@ -3616,221 +4673,314 @@
         {
           "num": 1,
           "title": "Black is the Color",
+          "songwriter": "Traditional",
           "duration": "3:17",
           "size_mb": 8,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/01 Black is The Color.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/01 Black is The Color.flac",
           "flac_size_mb": 39,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "traditional",
+            "irish",
+            "ballad"
+          ]
         },
         {
           "num": 2,
           "title": "Smoke in Heaven",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:50",
           "size_mb": 7,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/02 Smoke in Heaven.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/02 Smoke in Heaven.flac",
           "flac_size_mb": 34,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
         },
         {
           "num": 3,
           "title": "I Thought I Was You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:43",
           "size_mb": 9,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/03 I Thought I Was You.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/03 I Thought I Was You.flac",
           "flac_size_mb": 43,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 4,
           "title": "Plastic Melons",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:16",
           "size_mb": 7,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/04 Plastic Melons.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/04 Plastic Melons.flac",
           "flac_size_mb": 38,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 5,
           "title": "Everything Reminds Me of You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "5:39",
           "size_mb": 13,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/05 Everything Reminds Me of You.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/05 Everything Reminds Me of You.flac",
           "flac_size_mb": 67,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 6,
           "title": "ABC",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:46",
           "size_mb": 9,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/06 ABC.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/06 ABC.flac",
           "flac_size_mb": 45,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 7,
           "title": "Truck",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:43",
           "size_mb": 8,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/07 Truck.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/07 Truck.flac",
           "flac_size_mb": 45,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 8,
           "title": "Blahana",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "4:29",
           "size_mb": 10,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/08 Blahana.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/08 Blahana.flac",
           "flac_size_mb": 53,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 9,
           "title": "My Dear",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:00",
           "size_mb": 7,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/09 My Dear.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/09 My Dear.flac",
           "flac_size_mb": 35,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 10,
           "title": "Recycle",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "5:42",
           "size_mb": 13,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/10 Recycle.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/10 Recycle.flac",
           "flac_size_mb": 67,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 11,
           "title": "Luxury of Murder",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:50",
           "size_mb": 6,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/11 Luxury of Murder.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/11 Luxury of Murder.flac",
           "flac_size_mb": 35,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "story"
+          ]
         },
         {
           "num": 12,
           "title": "Clear Headed",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "4:47",
           "size_mb": 11,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/12 Clear Headed.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/12 Clear Headed.flac",
           "flac_size_mb": 58,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 13,
           "title": "Baby",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:10",
           "size_mb": 7,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/13 Baby.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/13 Baby.flac",
           "flac_size_mb": 38,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 14,
           "title": "Butter",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:17",
           "size_mb": 8,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/14 Butter.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/14 Butter.flac",
           "flac_size_mb": 38,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 15,
           "title": "Anna May",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:07",
           "size_mb": 7,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/15 Anna May.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/15 Anna May.flac",
           "flac_size_mb": 36,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
         },
         {
           "num": 16,
           "title": "Long Black Veil",
+          "songwriter": "Lefty Frizzell",
           "duration": "2:48",
           "size_mb": 6,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/16 Long Black Veil.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/16 Long Black Veil.flac",
           "flac_size_mb": 33,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "country",
+            "ballad",
+            "story"
+          ]
         },
         {
           "num": 17,
           "title": "Blind Man",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:14",
           "size_mb": 7,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/17 Blind Man.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/17 Blind Man.flac",
           "flac_size_mb": 39,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 18,
           "title": "Tougher Than the Rest",
+          "songwriter": "Bruce Springsteen",
           "duration": "3:59",
           "size_mb": 9,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/18 Thougher Than the Rest.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/18 Thougher Than the Rest.flac",
           "flac_size_mb": 47,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "cover",
+            "ballad"
+          ]
         },
         {
           "num": 19,
           "title": "Model Family Man",
+          "songwriter": "Paddy Nash",
           "duration": "3:51",
           "size_mb": 9,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/19 Model Family Man.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/19 Model Family Man.flac",
           "flac_size_mb": 45,
+          "processed": true,
           "tags": [
-            "Paddy Nash"
-          ],
-          "processed": true
+            "cover"
+          ]
         },
         {
           "num": 20,
           "title": "Rocky Road to Dublin / Star of County Down",
+          "songwriter": "Traditional",
           "duration": "5:11",
           "size_mb": 12,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/20 Rocky Road to Dublin _ Star of County Down.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/20 Rocky Road to Dublin _ Star of County Down.flac",
           "flac_size_mb": 62,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "traditional",
+            "irish",
+            "upbeat",
+            "singalong"
+          ]
         },
         {
           "num": 21,
           "title": "The Kiss - Da Da Da (Slave To an Angel)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "6:25",
           "size_mb": 15,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/21 The Kiss - Da Da Da.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/21 The Kiss - Da Da Da.flac",
           "flac_size_mb": 76,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "medley"
+          ]
         }
       ],
       "description": [
@@ -3928,142 +5078,206 @@
         {
           "num": 1,
           "title": "Scallywag (soundcheck)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "file": "MP3/MadHannans - New George's 1999-10-13/01 Scallywag (soundcheck).mp3",
           "flac": "FLAC/MadHannans - New George's 1999-10-13/01 Scallywag (soundcheck).flac",
           "processed": true,
           "size_mb": 8,
           "duration": "3:17",
-          "flac_size_mb": 35
+          "flac_size_mb": 35,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 2,
           "title": "Smoke in Heaven",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "file": "MP3/MadHannans - New George's 1999-10-13/02 Smoke in Heaven.mp3",
           "flac": "FLAC/MadHannans - New George's 1999-10-13/02 Smoke in Heaven.flac",
           "processed": true,
           "size_mb": 7,
           "duration": "2:00",
-          "flac_size_mb": 34
+          "flac_size_mb": 34,
+          "tags": [
+            "original",
+            "ballad"
+          ]
         },
         {
           "num": 3,
           "title": "Truck",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "file": "MP3/MadHannans - New George's 1999-10-13/03 Truck.mp3",
           "flac": "FLAC/MadHannans - New George's 1999-10-13/03 Truck.flac",
           "processed": true,
           "size_mb": 9,
           "duration": "3:47",
-          "flac_size_mb": 43
+          "flac_size_mb": 43,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 4,
           "title": "Recycle",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "file": "MP3/MadHannans - New George's 1999-10-13/04 Recycle.mp3",
           "flac": "FLAC/MadHannans - New George's 1999-10-13/04 Recycle.flac",
           "processed": true,
           "size_mb": 10,
           "duration": "4:17",
-          "flac_size_mb": 48
+          "flac_size_mb": 48,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 5,
           "title": "Luxury of Murder",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "file": "MP3/MadHannans - New George's 1999-10-13/05 Luxury of Murder.mp3",
           "flac": "FLAC/MadHannans - New George's 1999-10-13/05 Luxury of Murder.flac",
           "processed": true,
           "size_mb": 7,
           "duration": "2:53",
-          "flac_size_mb": 35
+          "flac_size_mb": 35,
+          "tags": [
+            "original",
+            "story"
+          ]
         },
         {
           "num": 6,
           "title": "Clear Headed",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "file": "MP3/MadHannans - New George's 1999-10-13/06 Clear Headed.mp3",
           "flac": "FLAC/MadHannans - New George's 1999-10-13/06 Clear Headed.flac",
           "processed": true,
           "size_mb": 12,
           "duration": "5:22",
-          "flac_size_mb": 61
+          "flac_size_mb": 61,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 7,
           "title": "Rugburns",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "file": "MP3/MadHannans - New George's 1999-10-13/07 Rugburns.mp3",
           "flac": "FLAC/MadHannans - New George's 1999-10-13/07 Rugburns.flac",
           "processed": true,
           "size_mb": 8,
           "duration": "3:39",
-          "flac_size_mb": 42
+          "flac_size_mb": 42,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 8,
           "title": "Baby",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "file": "MP3/MadHannans - New George's 1999-10-13/08 Baby.mp3",
           "flac": "FLAC/MadHannans - New George's 1999-10-13/08 Baby.flac",
           "processed": true,
           "size_mb": 8,
           "duration": "3:19",
-          "flac_size_mb": 38
+          "flac_size_mb": 38,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 9,
           "title": "Everything Reminds Me of You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "file": "MP3/MadHannans - New George's 1999-10-13/09 Everything Reminds Me of You.mp3",
           "flac": "FLAC/MadHannans - New George's 1999-10-13/09 Everything Reminds Me of You.flac",
           "processed": true,
           "size_mb": 6,
           "duration": "2:37",
-          "flac_size_mb": 29
+          "flac_size_mb": 29,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 10,
           "title": "I Need a Lover",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "file": "MP3/MadHannans - New George's 1999-10-13/10 I Need a Lover.mp3",
           "flac": "FLAC/MadHannans - New George's 1999-10-13/10 I Need a Lover.flac",
           "processed": true,
           "size_mb": 7,
           "duration": "3:04",
-          "flac_size_mb": 34
+          "flac_size_mb": 34,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 11,
           "title": "ABC",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "file": "MP3/MadHannans - New George's 1999-10-13/11 ABC.mp3",
           "flac": "FLAC/MadHannans - New George's 1999-10-13/11 ABC.flac",
           "processed": true,
           "size_mb": 6,
           "duration": "2:41",
-          "flac_size_mb": 30
+          "flac_size_mb": 30,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 12,
           "title": "I Thought I Was You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "file": "MP3/MadHannans - New George's 1999-10-13/12 I Thought I Was You.mp3",
           "flac": "FLAC/MadHannans - New George's 1999-10-13/12 I Thought I Was You.flac",
           "processed": true,
           "size_mb": 9,
           "duration": "3:58",
-          "flac_size_mb": 43
+          "flac_size_mb": 43,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 13,
           "title": "Anna May",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "file": "MP3/MadHannans - New George's 1999-10-13/13 Anna May.mp3",
           "flac": "FLAC/MadHannans - New George's 1999-10-13/13 Anna May.flac",
           "processed": true,
           "size_mb": 7,
           "duration": "3:08",
-          "flac_size_mb": 34
+          "flac_size_mb": 34,
+          "tags": [
+            "original",
+            "ballad"
+          ]
         },
         {
           "num": 14,
           "title": "Butter",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "file": "MP3/MadHannans - New George's 1999-10-13/14 Butter.mp3",
           "flac": "FLAC/MadHannans - New George's 1999-10-13/14 Butter.flac",
           "processed": true,
           "size_mb": 8,
           "duration": "3:42",
-          "flac_size_mb": 40
+          "flac_size_mb": 40,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         }
       ],
       "description": [
@@ -4139,251 +5353,357 @@
         {
           "num": 1,
           "title": "Truck",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:39",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/01 Truck.mp3",
           "size_mb": 8,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/01 Truck.flac",
           "flac_size_mb": 39,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 2,
           "title": "Blind Man",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:18",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/02 Blind Man.mp3",
           "size_mb": 8,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/02 Blind Man.flac",
           "flac_size_mb": 35,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 3,
           "title": "Smoke in Heaven",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:54",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/03 Smoke in Heaven.mp3",
           "size_mb": 7,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/03 Smoke in Heaven.flac",
           "flac_size_mb": 31,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
         },
         {
           "num": 4,
           "title": "The Good Life",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:50",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/04 The Good Life.mp3",
           "size_mb": 9,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/04 The Good Life.flac",
           "flac_size_mb": 41,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 5,
           "title": "Clear Headed",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "4:55",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/05 Clear Headed.mp3",
           "size_mb": 11,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/05 Clear Headed.flac",
           "flac_size_mb": 53,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 6,
           "title": "Hollywood",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "4:38",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/06 Hollywood.mp3",
           "size_mb": 11,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/06 Hollywood.flac",
           "flac_size_mb": 50,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 7,
           "title": "Baby",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "4:39",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/07 Baby.mp3",
           "size_mb": 11,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/07 Baby.flac",
           "flac_size_mb": 50,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 8,
           "title": "ABC - Sesame Street",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "5:03",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/08 ABC - Sesame Street.mp3",
           "size_mb": 12,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/08 ABC - Sesame Street.flac",
           "flac_size_mb": 53,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 9,
           "title": "Madeline",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:41",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/09 Madeline.mp3",
           "size_mb": 6,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/09 Madeline.flac",
           "flac_size_mb": 29,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 10,
           "title": "Luxury of Murder",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:49",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/10 Luxury of Murder.mp3",
           "size_mb": 6,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/10 Luxury of Murder.flac",
           "flac_size_mb": 30,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "story"
+          ]
         },
         {
           "num": 11,
           "title": "Rugburns",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "4:23",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/11 Rugburns.mp3",
           "size_mb": 10,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/11 Rugburns.flac",
           "flac_size_mb": 47,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 12,
           "title": "Recycle",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "6:02",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/12 Recycle.mp3",
           "size_mb": 14,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/12 Recycle.flac",
           "flac_size_mb": 64,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 13,
           "title": "Blahana",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "4:40",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/13 Blahana.mp3",
           "size_mb": 11,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/13 Blahana.flac",
           "flac_size_mb": 50,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 14,
           "title": "Everything Reminds Me of You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:09",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/14 Everything Reminds Me of You.mp3",
           "size_mb": 7,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/14 Everything Reminds Me of You.flac",
           "flac_size_mb": 33,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 15,
           "title": "I Need a Lover",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:44",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/15 I Need a Lover.mp3",
           "size_mb": 6,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/15 I Need a Lover.flac",
           "flac_size_mb": 29,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 16,
           "title": "Plastic Lemons",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:35",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/16 Plastic Lemons.mp3",
           "size_mb": 6,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/16 Plastic Lemons.flac",
           "flac_size_mb": 28,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 17,
           "title": "Scallywag",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:24",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/17 Scallywag.mp3",
           "size_mb": 5,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/17 Scallywag.flac",
           "flac_size_mb": 26,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         },
         {
           "num": 18,
           "title": "Far Away Eyes",
+          "songwriter": "Rolling Stones",
           "duration": "5:02",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/18 Far Away Eyes.mp3",
           "size_mb": 12,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/18 Far Away Eyes.flac",
           "flac_size_mb": 53,
+          "processed": true,
           "tags": [
-            "Rolling Stones"
-          ],
-          "processed": true
+            "cover",
+            "country",
+            "rarity"
+          ]
         },
         {
           "num": 19,
           "title": "the Belle of Belfast City",
+          "songwriter": "Traditional",
           "duration": "3:34",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/19 the Belle of Belfast City.mp3",
           "size_mb": 8,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/19 the Belle of Belfast City.flac",
           "flac_size_mb": 38,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "traditional",
+            "irish",
+            "upbeat",
+            "singalong",
+            "rarity"
+          ]
         },
         {
           "num": 20,
           "title": "The Rocky Road to Dublin",
+          "songwriter": "Traditional",
           "duration": "6:29",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/20 The Rocky Road to Dublin.mp3",
           "size_mb": 15,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/20 The Rocky Road to Dublin.flac",
           "flac_size_mb": 68,
+          "processed": true,
           "tags": [
-            "Irish"
-          ],
-          "processed": true
+            "traditional",
+            "irish",
+            "upbeat",
+            "singalong"
+          ]
         },
         {
           "num": 21,
           "title": "Friend",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:42",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/21 Friend.mp3",
           "size_mb": 8,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/21 Friend.flac",
           "flac_size_mb": 39,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "rarity"
+          ]
         },
         {
           "num": 22,
           "title": "Dysfunctional Guy",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "6:20",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/22 Dysfunctional Guy.mp3",
           "size_mb": 14,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/22 Dysfunctional Guy.flac",
           "flac_size_mb": 67,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         },
         {
           "num": 23,
           "title": "The Kiss - Da Da Da (Slave To an Angel)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "7:38",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/23 The Kiss - Da Da Da.mp3",
           "size_mb": 17,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/23 The Kiss - Da Da Da.flac",
           "flac_size_mb": 80,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "medley"
+          ]
         },
         {
           "num": 24,
           "title": "I Thought I Was You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:45",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/24 I Thought I Was You.mp3",
           "size_mb": 9,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/24 I Thought I Was You.flac",
           "flac_size_mb": 40,
-          "processed": true
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
         }
       ],
       "description": [
