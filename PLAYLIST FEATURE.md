@@ -89,29 +89,37 @@ match `/search/` etc., not the sketched `playlist.html`).
 
 ## Phase 4: Short links (KV)
 
-**Status (2026-07-07): DONE — as Pages Functions, not a separate Worker.**
-A standalone `playlist-share` Worker would have needed a zone route on
-`renedebos.com/play/*` (token lacks the permission) and a separate
-`wrangler deploy` to forget; Pages Functions live in this repo under
-`functions/`, deploy automatically with the site via the existing Action,
-and run on the same domain (no CORS).
+**Status (2026-07-07): DONE — inside the `renedebos-site` Worker.**
 
-- `functions/api/playlist.js` — `POST /api/playlist` `{ids:[…]}` → stores
-  in KV, returns `{slug, url}`. Slugs are **content-addressed** (first 6
-  hex chars of SHA-256 of the id list, lengthened on collision), so the
-  same playlist always yields the same slug and re-shares dedupe. Validates
-  ids (`^[a-z0-9-]{1,80}$`, max 500 tracks). No expiry — playlists are tiny.
-- `functions/play/[slug].js` — `GET /play/{slug}` → 302 to
-  `/playlist/#p=…` (the page's existing hash hydration does the rest);
-  unknown slug → the empty builder. Redirects are edge-cached 24 h
-  (entries are immutable).
-- KV namespace `playlist-share` (id `41a793b3ea5149abbc436cde920fc1ee`),
-  bound as `PLAYLISTS` on the Pages project (production + preview).
-- The Share button now POSTs the queue and copies the short URL, falling
-  back to the long `#p=` link if the API errs.
-- Local testing: `npx wrangler pages dev . --kv PLAYLISTS
-  --compatibility-date=2026-05-03` (local wrangler's runtime is older than
-  today's default compat date).
+History: first built as Pages Functions on the `hannan-audio` Pages
+project, then discovered the domain had moved to the **`renedebos-site`
+Workers-static-assets service** (Worker custom domains, set up from Rene's
+work computer the same day) where Pages Functions don't run. Consolidated:
+
+- `wrangler.jsonc` + `site_worker.js` at the repo root define
+  `renedebos-site`: static assets (root dir, `.assetsignore` honored,
+  `not_found_handling: "404-page"` — the branded 404 now actually serves)
+  plus the two endpoints; all other paths fall through to assets.
+- `POST /api/playlist` `{ids:[…]}` → `{slug, url}`. Slugs are
+  **content-addressed** (first 6 hex chars of SHA-256 of the id list,
+  lengthened on collision), so the same playlist always yields the same
+  slug and re-shares dedupe. Validates ids (`^[a-z0-9-]{1,80}$`, max 500).
+  No expiry.
+- `GET /play/{slug}` → 302 to `/playlist/#p=…` (existing hash hydration
+  does the rest); unknown slug → the empty builder; redirects edge-cached
+  24 h (entries are immutable).
+- KV namespace `playlist-share` (id `41a793b3ea5149abbc436cde920fc1ee`)
+  bound as `PLAYLISTS`.
+- The Share button POSTs the queue and copies the short URL, falling back
+  to the long `#p=` link if the API errs.
+- **Deploys**: the GitHub Action runs `npx wrangler deploy` on every push —
+  site and endpoints ship together. The `wav-download` Worker (worker/)
+  still deploys separately. The old Pages project and the work-computer
+  `playlist-share` Worker prototype were retired (worker deleted; Pages
+  project kept, undeployed, as a short-term rollback net).
+- Local testing: `npx wrangler dev --port 8789 --local --persist-to
+  <outside-the-repo>` — persisting state inside the repo retriggers the
+  file watcher in an endless reload loop.
 
 ## Open decisions (need Rene’s input)
 
