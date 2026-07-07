@@ -1254,7 +1254,7 @@ def build_songs_index():
     </details>''')
 
     col_head = "".join(
-        f'<th class="artist-{c["artist"]}"><span class="g-venue">{esc(c.get("venue_short") or c.get("venue") or "—")}</span>'
+        f'<th class="artist-{c["artist"]}" data-artist="{c["artist"]}"><span class="g-venue">{esc(c.get("venue_short") or c.get("venue") or "—")}</span>'
         f'<span class="g-date">{esc((c.get("date") or "??")[:10])}</span></th>' for c in cols)
     rows = []
     for s in songs:
@@ -1265,10 +1265,10 @@ def build_songs_index():
         for c in cols:
             o = by_show.get(c["slug"])
             if o:
-                cells.append(f'<td class="hit artist-{o["artist"]}"><a href="{esc(o["url"])}#track-{o["num"]}" '
+                cells.append(f'<td class="hit artist-{o["artist"]}" data-artist="{c["artist"]}"><a href="{esc(o["url"])}#track-{o["num"]}" '
                              f'title="{esc(s["canonical"])} &middot; {esc(o["date"])}">&#9679;</a></td>')
             else:
-                cells.append("<td></td>")
+                cells.append(f'<td data-artist="{c["artist"]}"></td>')
         rows.append(f'<tr data-artists="{" ".join(s["artists"])}" data-plays="{s["plays"]}" '
                     f'data-title="{esc(song_norm(s["canonical"]))}">'
                     f'<th class="g-song"><a href="/songs/{s["slug"]}/">{esc(s["canonical"])}</a>'

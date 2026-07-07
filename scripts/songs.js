@@ -47,13 +47,24 @@
     return shown;
   }
 
+  function filterGridCols() {
+    // In the grid, an artist filter also hides the other artists' show columns
+    // (every cell carries data-artist), so picking "Jerry" leaves only Jerry's
+    // shows — otherwise the rows filter but all columns stay and it looks unfiltered.
+    if (!gridEl) return;
+    var hideOthers = state.artist !== "all";
+    gridEl.querySelectorAll("[data-artist]").forEach(function (cell) {
+      cell.hidden = hideOthers && cell.dataset.artist !== state.artist;
+    });
+  }
+
   function apply() {
     listEl.hidden = state.view !== "list";
     if (gridEl) gridEl.hidden = state.view !== "grid";
     sortIn(listEl, ".song-item");
     if (gridEl) sortIn(gridEl.querySelector("tbody"), "tr");
     var shown = filter(listEl.querySelectorAll(".song-item"));
-    if (gridEl) filter(gridEl.querySelectorAll("tbody tr"));
+    if (gridEl) { filter(gridEl.querySelectorAll("tbody tr")); filterGridCols(); }
     var empty = document.getElementById("songs-empty");
     if (empty) empty.hidden = shown !== 0;
   }
