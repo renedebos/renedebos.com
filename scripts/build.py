@@ -1233,9 +1233,13 @@ def build_songs_index():
     n_other = len(M["shows"]) - len(cols)
     multi = sum(1 for s in songs if s["plays"] > 1)
 
+    present = [a for a in _ARTIST_ORDER if any(a in s["artists"] for s in songs)]
+    legend = "".join(f'<span class="legend-item"><span class="artist-dot artist-{a}"></span>'
+                     f'{esc(ARTIST_SHORT.get(a, a))}</span>' for a in present)
+
     items = []
     for s in songs:
-        chips = "".join(f'<span class="artist-chip sm artist-{a}">{esc(ARTIST_SHORT.get(a, a))}</span>'
+        chips = "".join(f'<span class="artist-dot artist-{a}" title="{esc(ARTIST_SHORT.get(a, a))}"></span>'
                         for a in s["artists"])
         occs = "\n".join(_song_occ_html(o) for o in s["occ"])
         items.append(f'''    <details class="song-item" data-artists="{' '.join(s['artists'])}" data-plays="{s['plays']}" data-title="{esc(song_norm(s['canonical']))}">
@@ -1284,6 +1288,7 @@ def build_songs_index():
     <div class="seg" data-role="sort"><button data-sort="plays" class="active">Most&nbsp;played</button><button data-sort="az">A&ndash;Z</button></div>
     <div class="seg" data-role="artist"><button data-artist="all" class="active">All</button><button data-artist="jerry">Jerry</button><button data-artist="mad">Mad</button><button data-artist="sean">Sean</button></div>
   </div>
+  <div class="song-legend" aria-hidden="true">{legend}</div>
   <p class="songs-empty" id="songs-empty" hidden>No songs match &mdash; try a different search.</p>
   <div class="song-list" id="song-list">
 {chr(10).join(items)}

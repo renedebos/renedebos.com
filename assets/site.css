@@ -1373,6 +1373,15 @@ footer a { color: var(--accent); text-decoration: none; }
   color: #fff; background: var(--muted); text-decoration: none;
 }
 .artist-chip.sm { font-size: 10px; padding: .12em .5em; }
+.artist-dot {
+  width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto;
+  display: inline-block; background: var(--muted);
+}
+.song-legend {
+  display: flex; flex-wrap: wrap; gap: .35rem 1.1rem;
+  font-size: 12px; color: var(--muted); margin: -.6rem 0 1rem .1rem;
+}
+.song-legend .legend-item { display: inline-flex; align-items: center; gap: .4em; }
 .artist-jerry { background: var(--artist-jerry); }
 .artist-mad   { background: var(--artist-mad); }
 .artist-sean  { background: var(--artist-sean); }
@@ -1405,8 +1414,8 @@ a.artist-chip:hover { filter: brightness(1.08); }
 .song-list { border-top: 1px solid var(--border); }
 .song-item { border-bottom: 1px solid var(--border); }
 .song-item > summary {
-  display: flex; align-items: center; gap: .75rem; cursor: pointer;
-  padding: .7rem .25rem; list-style: none;
+  display: flex; align-items: center; gap: .7rem; cursor: pointer;
+  padding: .42rem .25rem; list-style: none;
 }
 .song-item > summary::-webkit-details-marker { display: none; }
 .song-item > summary::before {
@@ -1419,11 +1428,11 @@ a.artist-chip:hover { filter: brightness(1.08); }
   font-size: 13px; min-width: 2.4em; text-align: right;
 }
 .song-name {
-  font-family: var(--serif); font-size: 1.15rem; color: var(--accent);
-  text-decoration: none;
+  font-family: var(--serif); font-size: 1.02rem; color: var(--accent);
+  text-decoration: none; line-height: 1.25;
 }
 .song-name:hover { text-decoration: underline; }
-.song-chips { margin-left: auto; display: flex; gap: .3rem; flex-wrap: wrap; }
+.song-chips { margin-left: auto; display: flex; align-items: center; gap: .4rem; flex-shrink: 0; }
 .song-occs { padding: .25rem 0 1rem 1.6rem; }
 
 .song-occ {
@@ -1484,7 +1493,6 @@ a.artist-chip:hover { filter: brightness(1.08); }
 .song-variants { color: var(--muted); font-size: 14px; }
 
 @media (max-width: 600px) {
-  .song-chips { width: 100%; margin-left: 2.4em; }
   .song-occs { padding-left: .5rem; }
   .song-occ-open { margin-left: 0; }
 }
