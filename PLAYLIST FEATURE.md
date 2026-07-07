@@ -59,6 +59,10 @@ match `/search/` etc., not the sketched `playlist.html`).
   no facet — provenance tags cover it; /search/ handles by-writer lookup.
 - Length modes: N songs / N minutes (greedy fill after shuffle) / endless
   shuffle (whole filtered pool, reshuffles and continues when it runs out).
+- No repeated songs in a playlist: the catalog carries the canonical `song`
+  slug (same grouping as the songs matrix, so variant titles count as one
+  song) and the queue keeps one randomly-chosen performance per song.
+  Each endless-shuffle cycle re-rolls which performance represents a song.
 - One shared `<audio>` queue: prev (restarts current track past 3 s) /
   play-pause / next, seekable progress bar, sticky now-playing card,
   clickable queue rows, Media Session metadata for lock screens.

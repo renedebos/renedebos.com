@@ -115,11 +115,14 @@
   }
 
   function updateStatus() {
-    var n = pool().length;
-    statusEl.textContent = n
-      ? n + " of " + CATALOG.length + " tracks match your filters."
+    var p = pool();
+    var uniq = dedupe(p).length;
+    statusEl.textContent = p.length
+      ? p.length + " of " + CATALOG.length + " recordings match — "
+        + uniq + (uniq === 1 ? " song" : " different songs")
+        + " (one performance of each per playlist)."
       : "No tracks match — loosen the filters.";
-    goBtn.disabled = !n;
+    goBtn.disabled = !p.length;
   }
 
   filtersEl.addEventListener("click", function (e) {
@@ -150,8 +153,19 @@
 
   // ── queue building ────────────────────────────────────────────────────────
 
+  // One performance per song: shuffle first so which recording represents a
+  // song is random each time, then keep only the first occurrence of each.
+  function dedupe(list) {
+    var seen = {}, out = [];
+    list.forEach(function (t) {
+      var key = t.song || t.title;
+      if (!seen[key]) { seen[key] = true; out.push(t); }
+    });
+    return out;
+  }
+
   function buildQueue() {
-    var p = shuffle(pool().slice());
+    var p = dedupe(shuffle(pool().slice()));
     if (mode === "songs") return p.slice(0, amounts.songs);
     if (mode === "minutes") {
       var budget = amounts.minutes * 60, out = [], sec = 0;

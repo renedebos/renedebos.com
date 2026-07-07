@@ -697,7 +697,13 @@ def build_track_catalog():
     """Flat playlist catalog (assets/tracks.json) — one row per curated track,
     self-contained so the playlist page can filter and queue without loading
     recordings.json. `file` is the R2 MP3 key; stream via WORKER/stream?file=.
+    `song` is the canonical song slug so the player can avoid queueing two
+    performances of the same song under variant titles.
     Spec: PLAYLIST FEATURE.md, Phase 1."""
+    song_of = {}
+    for s in collect_songs()[0]:
+        for o in s["occ"]:
+            song_of[(o["slug"], o["num"])] = s["slug"]
     rows = []
     for show in sorted([s for s in M["shows"] if s.get("tracks")], key=sort_key):
         proc = load_processing(show["slug"])
@@ -706,6 +712,7 @@ def build_track_catalog():
             rows.append({
                 "id": f'{show["slug"]}-{t["num"]:02d}',
                 "title": t["title"],
+                "song": song_of.get((show["slug"], t["num"])),
                 "artist": show["artist"],
                 "performer": t.get("artist"),
                 "songwriter": t.get("songwriter"),
