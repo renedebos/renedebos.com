@@ -23,7 +23,7 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname === "/api/playlist" && request.method === "POST") {
-      return createShortLink(request, env);
+      return createShortLink(request, env, url.origin);
     }
 
     const m = url.pathname.match(SLUG_RE);
@@ -43,7 +43,7 @@ export default {
   },
 };
 
-async function createShortLink(request, env) {
+async function createShortLink(request, env, origin) {
   let body;
   try {
     body = await request.json();
@@ -67,10 +67,10 @@ async function createShortLink(request, env) {
     const existing = await env.PLAYLISTS.get(slug);
     if (existing === null) {
       await env.PLAYLISTS.put(slug, value);
-      return ok(slug);
+      return ok(slug, origin);
     }
     const same = safeIds(existing);
-    if (same && same.join(",") === ids.join(",")) return ok(slug); // dedupe
+    if (same && same.join(",") === ids.join(",")) return ok(slug, origin); // dedupe
   }
   return err(500, "could not allocate a slug"); // unreachable in practice
 }
@@ -99,8 +99,11 @@ function safeIds(raw) {
   }
 }
 
-function ok(slug) {
-  return new Response(JSON.stringify({ slug, url: "https://renedebos.com/play/" + slug }),
+function ok(slug, origin) {
+  // Match the host the request came in on (apex vs www) so the browser's own
+  // verification fetch (see scripts/playlist.js) is same-origin, not blocked
+  // by CORS — a www visitor who got an apex link would fail that check.
+  return new Response(JSON.stringify({ slug, url: origin + "/play/" + slug }),
     { headers: { "Content-Type": "application/json" } });
 }
 
