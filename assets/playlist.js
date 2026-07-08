@@ -190,7 +190,9 @@
 
   // ── stateless sharing (#p=id,id,…) ───────────────────────────────────────
   // Track ids are stable and URL-safe, so the exact queue lives in the hash —
-  // the address bar is always a share link. Phase 4 will shorten these.
+  // the address bar is always a share link, fully client-side, no server
+  // involved. /play/{slug} (below) shortens it, but only once this exact
+  // browser has confirmed the short link actually resolves for it.
 
   var shareBtn = document.getElementById("pl-share");
 
@@ -202,11 +204,30 @@
   }
 
   shareBtn.addEventListener("click", function () {
-    // Long hash link only: resolved fully client-side, so it works even when
-    // an edge node serves a stale worker (2026-07-08 rollback of short-link
-    // copying; the /play/{slug} endpoints stay live for links already shared).
-    copyShare(location.href);
+    var longUrl = location.href;
+    shareBtn.textContent = "…";
+    fetch("/api/playlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: queue.map(function (t) { return t.id; }) }),
+    })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (d) { return verifyShortLink(d.url); })
+      .then(function (url) { copyShare(url); },
+            function () { copyShare(longUrl); });
   });
+
+  // Confirms /play/{slug} actually resolves from THIS browser/network before
+  // ever handing it out — a stale Cloudflare edge node once served a 404 for
+  // a correctly-stored link from one machine while working everywhere else
+  // (2026-07-07). A plain server-side check can't catch that; only a request
+  // from the same path the recipient will use can. Falls back to the long
+  // link (resolved entirely client-side, so it can't suffer the same fault)
+  // rather than ever copying a link that just failed its own test.
+  function verifyShortLink(shortUrl) {
+    return fetch(shortUrl, { method: "HEAD", cache: "no-store" })
+      .then(function (r) { return (r.ok && r.redirected) ? shortUrl : Promise.reject(); });
+  }
 
   function copyShare(url) {
     var done = function () {
