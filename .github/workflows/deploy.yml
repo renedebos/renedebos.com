@@ -9,6 +9,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Gate 1: recordings.json integrity — tag vocabulary, songwriter rules,
+      # R2 key conventions, peaks/processing sidecars, orphan song pages.
+      - name: Integrity check
+        run: python3 scripts/build.py --check
+      # Gate 2: the committed generated output must match a fresh build —
+      # catches "edited recordings.json (or a template) but forgot to rebuild".
+      - name: Verify committed site is current
+        run: |
+          python3 scripts/build.py
+          if [ -n "$(git status --porcelain)" ]; then
+            git status --porcelain
+            echo "::error::Committed site is stale — run 'python3 scripts/build.py' locally and commit the result."
+            exit 1
+          fi
       # Deploys the renedebos-site Worker (static assets + playlist short-link
       # endpoints, config in wrangler.jsonc) — this is what serves renedebos.com
       # via Worker custom domains. The old hannan-audio Pages project is no

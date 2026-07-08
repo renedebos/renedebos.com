@@ -14,6 +14,7 @@ import html
 import json
 import os
 import re
+import sys
 import urllib.parse
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -21,6 +22,28 @@ M = json.load(open(os.path.join(ROOT, "data", "recordings.json")))
 WORKER = M["worker"]
 
 SOURCE_LABEL = {"SBD": "Soundboard", "AUD": "Audience recording"}
+
+# Controlled tag vocabulary — the enforcement counterpart of TAGS.md (which
+# stays the human doc). validate() rejects anything not listed here.
+TAG_VOCAB = {
+    "original", "cover", "traditional",              # provenance
+    "ballad", "upbeat", "rocker", "singalong",       # mood
+    "irish", "folk", "country", "blues", "rock",     # flavor
+    "instrumental", "medley", "story", "banter",     # format
+    "guest", "improv",
+    "favorite", "rarity",                            # curated
+}
+
+DURATION_RE = re.compile(r"^\d+:[0-5]\d$")
+
+# Shows whose R2 basenames predate the "NN Title" convention (verified working
+# in R2; renaming live objects is riskier than exempting them). The structural
+# key checks still apply — only the basename-naming rules are skipped.
+#   jerry-19-broadway-2001-01-08: MP3 names carry the long legacy
+#     "JerryHannan - … - NN Title" prefix and differ from the FLAC stems.
+#   mad-sweetwater-2000-02-17: filenames run one behind num from track 19 on
+#     (a track was inserted later and metadata renumbered without R2 renames).
+LEGACY_KEY_NAMING = {"jerry-19-broadway-2001-01-08", "mad-sweetwater-2000-02-17"}
 
 
 def esc(s):
@@ -1219,6 +1242,7 @@ def validate():
         # value such as a bare string is the footgun (renders char-by-char).
         if s.get("description") is not None and not isinstance(s["description"], list):
             errors.append(f"{where}: description must be a list of paragraph strings, not {type(s['description']).__name__}")
+        folders = set()
         for t in s.get("tracks") or []:
             tw = f"{where} track {t.get('num')}"
             if not isinstance(t.get("num"), int):
@@ -1227,8 +1251,72 @@ def validate():
                 errors.append(f"{tw}: missing title")
             if not t.get("file"):
                 errors.append(f"{tw}: missing file (MP3 R2 key)")
+            bad_tags = set(t.get("tags") or []) - TAG_VOCAB
+            if bad_tags:
+                errors.append(f"{tw}: tags not in the TAGS.md vocabulary: {sorted(bad_tags)}")
+            if "songwriter" in t and not (isinstance(t["songwriter"], str) and t["songwriter"].strip()):
+                errors.append(f"{tw}: songwriter must be a non-empty string (omit the key if unknown)")
+            if t.get("duration") and not DURATION_RE.match(t["duration"]):
+                errors.append(f"{tw}: duration {t['duration']!r} is not M:SS")
+            if bool(t.get("flac")) != bool(t.get("flac_size_mb")):
+                errors.append(f"{tw}: flac and flac_size_mb must be set together")
+            # R2 key conventions: MP3/<folder>/NN Title.mp3 + matching FLAC key.
+            if isinstance(t.get("num"), int) and t.get("file"):
+                legacy = s.get("slug") in LEGACY_KEY_NAMING
+                parts = t["file"].split("/")
+                if parts[0] != "MP3" or len(parts) != 3:
+                    errors.append(f"{tw}: file key must look like MP3/<show folder>/<NN Title>.mp3")
+                else:
+                    folders.add(parts[1])
+                    if not legacy and not parts[2].startswith(f"{t['num']:02d} "):
+                        errors.append(f"{tw}: file basename {parts[2]!r} doesn't start with {t['num']:02d}")
+                if t.get("flac"):
+                    fparts = t["flac"].split("/")
+                    if fparts[0] != "FLAC" or len(fparts) != 3 or fparts[1] != parts[1]:
+                        errors.append(f"{tw}: flac key must be FLAC/<same show folder>/…")
+                    elif not legacy and fparts[2] != parts[2][:-4] + ".flac":
+                        errors.append(f"{tw}: flac basename doesn't mirror the MP3 basename")
+        if len(folders) > 1:
+            errors.append(f"{where}: tracks span multiple R2 folders: {sorted(folders)}")
+        # Referential integrity: waveforms + processing provenance for curated shows.
+        if s.get("tracks"):
+            if not os.path.exists(os.path.join(ROOT, "data", "peaks", f"{s['slug']}.json")):
+                errors.append(f"{where}: missing data/peaks/{s['slug']}.json (run scripts/gen_peaks.py --slug {s['slug']})")
+            if any(t.get("processed") for t in s["tracks"]):
+                proc_path = os.path.join(ROOT, "data", "processing", f"{s['slug']}.json")
+                if not os.path.exists(proc_path):
+                    errors.append(f"{where}: tracks marked processed but data/processing/{s['slug']}.json is missing")
+                else:
+                    nums = {t["num"] for t in s["tracks"] if isinstance(t.get("num"), int)}
+                    stray = [n for n in json.load(open(proc_path)).get("tracks", {}) if int(n) not in nums]
+                    if stray:
+                        errors.append(f"{where}: processing sidecar has track number(s) {stray} not present in tracks[]")
+    # One songwriter per canonical song — the editor edits per-track, so a
+    # per-song decision can silently miss variant titles or other shows.
+    writers = {}
+    for s in M["shows"]:
+        for t in s.get("tracks") or []:
+            if t.get("songwriter") and t.get("title"):
+                key = song_norm(SONG_MANUAL_MERGE.get(t["title"], t["title"]))
+                writers.setdefault(key, {})[t["songwriter"]] = t["title"]
+    for key, seen in writers.items():
+        if len(seen) > 1:
+            print(f"WARNING: song {key!r} has conflicting songwriters: {seen}", file=sys.stderr)
     if errors:
         raise SystemExit("recordings.json validation failed:\n  - " + "\n  - ".join(errors))
+
+
+def check_orphan_song_dirs():
+    """A retitled or merged song silently strands its old /songs/<slug>/ page —
+    build never deletes output. Fail loudly with the exact cleanup commands
+    (replaces the manual runbook step)."""
+    valid = {s["slug"] for s in collect_songs()[0]}
+    existing = {d for d in os.listdir(os.path.join(ROOT, "songs"))
+                if os.path.isdir(os.path.join(ROOT, "songs", d))}
+    orphans = sorted(existing - valid)
+    if orphans:
+        cmds = "\n  ".join(f"git rm -r 'songs/{d}/'" for d in orphans)
+        raise SystemExit(f"orphaned song page dir(s) no longer produced by the build:\n  {cmds}")
 
 
 # ── song concordance ──────────────────────────────────────────────────────────
@@ -1591,6 +1679,12 @@ def build_sitemap():
 
 def main():
     validate()
+    check_orphan_song_dirs()
+    if "--check" in sys.argv[1:]:
+        n_shows = len(M["shows"])
+        n_tracks = sum(len(s["tracks"] or []) for s in M["shows"])
+        print(f"integrity OK — {n_shows} shows, {n_tracks} curated tracks, no orphan song pages")
+        return
     stamp_added_dates()
     here = os.path.dirname(os.path.abspath(__file__))
     write("assets/site.css", open(os.path.join(here, "site.css")).read())
