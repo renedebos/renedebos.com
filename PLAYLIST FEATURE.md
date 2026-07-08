@@ -89,15 +89,22 @@ match `/search/` etc., not the sketched `playlist.html`).
 
 ## Phase 4: Short links (KV)
 
-**Status (2026-07-08): built and live server-side, but the Share button was
-rolled back to copying long `#p=` links.** A Cloudflare edge node kept
-serving Rene's Chromebook a stale worker version (short links 404'd from
-his machine while working everywhere else — both hostnames, incognito,
-cache-busting; confirmed via request logs that his traffic never reached
-the current worker). Long links are client-side and immune. The
-`/api/playlist` + `/play/{slug}` endpoints remain deployed so existing
-short links keep resolving; to re-enable, revert the small
-"Long hash link only" block in `scripts/playlist.js`.
+**Status (2026-07-08): DONE — short links re-enabled with client-side
+self-verification.** First attempt: a stale Cloudflare edge node served
+one user's browser a 404 for a correctly-stored slug while every other
+client (including the same check run from elsewhere) got the right
+answer — a server-side test can't catch a fault that's specific to one
+client's network path, so the Share button was rolled back to the long
+`#p=` link as a stopgap.
+
+Real fix: the Share button now creates the short link, then immediately
+`HEAD`s that exact URL from the same browser before copying anything. If
+the response isn't a clean redirect (stale edge, API hiccup, offline), it
+silently copies the long link instead — which resolves entirely
+client-side and can't hit the same fault. This uses the one vantage point
+that actually matters (the requester's own path), which the earlier
+implementation never checked. Tested against healthy / stale-edge /
+API-down / offline cases in a fetch-mocked harness.
 
 **Implementation (2026-07-07): inside the `renedebos-site` Worker.**
 
