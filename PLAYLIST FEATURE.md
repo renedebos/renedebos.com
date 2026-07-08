@@ -89,7 +89,17 @@ match `/search/` etc., not the sketched `playlist.html`).
 
 ## Phase 4: Short links (KV)
 
-**Status (2026-07-07): DONE — inside the `renedebos-site` Worker.**
+**Status (2026-07-08): built and live server-side, but the Share button was
+rolled back to copying long `#p=` links.** A Cloudflare edge node kept
+serving Rene's Chromebook a stale worker version (short links 404'd from
+his machine while working everywhere else — both hostnames, incognito,
+cache-busting; confirmed via request logs that his traffic never reached
+the current worker). Long links are client-side and immune. The
+`/api/playlist` + `/play/{slug}` endpoints remain deployed so existing
+short links keep resolving; to re-enable, revert the small
+"Long hash link only" block in `scripts/playlist.js`.
+
+**Implementation (2026-07-07): inside the `renedebos-site` Worker.**
 
 History: first built as Pages Functions on the `hannan-audio` Pages
 project, then discovered the domain had moved to the **`renedebos-site`
