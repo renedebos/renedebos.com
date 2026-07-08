@@ -898,6 +898,9 @@ def build_history():
       <li>Launched <a href="/playlist/"><strong>Playlist</strong></a>: filter the whole archive by artist, venue, audience/soundboard, and any combination of tags, choose how long you want to listen &mdash; a number of songs, a number of minutes, or endless shuffle &mdash; and hit play. However you slice it, the queue never plays the same song twice, even one with a dozen different live takes across the years.</li>
       <li>Every playlist is <strong>shareable</strong>. The exact set of songs lives in the link itself, and a &ldquo;Copy share link&rdquo; button hands you a short renedebos.com/play/&hellip; URL to send along.</li>
     </ul>
+    <p>
+      Also added the <strong>Mad Hannans at 4th Street Tavern</strong> in San Rafael (May&nbsp;1,&nbsp;1999) as 24 individual tracks &mdash; split, faded, and clip-repaired by hand before the usual pass to the archive&rsquo;s &minus;20 loudness standard. The set opens with a short soundcheck.
+    </p>
 
     <p class="about-note">The work continues &mdash; more shows, better audio, and small fixes are always in progress.</p>
   </section>''',
