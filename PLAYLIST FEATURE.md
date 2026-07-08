@@ -97,14 +97,29 @@ answer — a server-side test can't catch a fault that's specific to one
 client's network path, so the Share button was rolled back to the long
 `#p=` link as a stopgap.
 
-Real fix: the Share button now creates the short link, then immediately
-`HEAD`s that exact URL from the same browser before copying anything. If
-the response isn't a clean redirect (stale edge, API hiccup, offline), it
-silently copies the long link instead — which resolves entirely
-client-side and can't hit the same fault. This uses the one vantage point
-that actually matters (the requester's own path), which the earlier
-implementation never checked. Tested against healthy / stale-edge /
-API-down / offline cases in a fetch-mocked harness.
+Self-verification (2026-07-08): the Share button creates the short link,
+then `HEAD`s that exact URL from the same browser before copying anything,
+falling back to the long `#p=` link if that check fails. Genuinely useful
+for catching real transient faults — but it did NOT catch the actual bug
+below, because `fetch()` requests aren't flagged as navigations and always
+reached the Worker fine even when real navigation didn't.
+
+**Root cause, finally found (2026-07-08):** Cloudflare's
+`not_found_handling: "404-page"` intercepts every full-page navigation
+(`Sec-Fetch-Mode: navigate`, sent by real address-bar/pasted navigation,
+never by `fetch()`) to any non-matching path at the asset layer, BEFORE
+the Worker script runs — and edge-caches its own generic 404 for that
+exact URL. This applied to `/play/{slug}` and `/api/playlist` exactly as
+it would to a genuinely missing page, since neither is a real file.
+`run_worker_first: true` does NOT override this for navigations (tested).
+
+Fix: `not_found_handling` is now `"none"`; `site_worker.js` serves the
+branded 404 itself in its own fallback branch, which — with
+`run_worker_first: true` — is guaranteed to run for every request
+regardless of navigate vs. fetch mode. Verified: every short link
+generated during debugging (14 slugs, including the ones that 404'd for
+Rene) now resolves correctly under real navigation-shaped requests, and
+genuinely missing paths still get the branded 404, correctly uncached.
 
 **Implementation (2026-07-07): inside the `renedebos-site` Worker.**
 
