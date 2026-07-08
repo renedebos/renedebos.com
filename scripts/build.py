@@ -241,54 +241,20 @@ def site_nav(active=None):
 
 # ── reusable content fragments ──────────────────────────────────────────────
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+def content(name):
+    """Long-form prose lives in scripts/content/*.html so editing the site's
+    narrative (a standing weekly task) never touches Python."""
+    return open(os.path.join(HERE, "content", name)).read()
+
+
 def about_block():
-    return '''
-  <section class="about">
-    <h2>About This Archive</h2>
-    <p>
-      These recordings were captured on a Sony portable DAT recorder at clubs in Marin and the Bay Area in the late 1990s and early 2000s. Audio quality varies &mdash; the tapes have aged, the microphone was small, and some shows had significant background noise.
-    </p>
-    <p>
-      This is very much a work in progress. I&rsquo;m steadily working through the show tapes &mdash; splitting them into individual songs and, where it helps the listening experience, cleaning up the MP3 versions: normalizing the volume, adding gentle fades, and removing clicks where possible.
-    </p>
-    <p>
-      Most of these tracks have <em>not</em> been processed to bring them up to the loudness you&rsquo;d expect from a normal streaming service, so when you play a song or a show you may need to turn the volume on your device up &mdash; or down &mdash; to taste. The main goal of this site is simply to give these tapes a home. As time allows, the recordings may get a proper cleanup down the road.
-    </p>
-    <p>
-      The lossless files are kept close to the original transfer: the full-show WAV downloads and the individual-song FLAC downloads are only minimally processed, for anyone who wants the rawest version. All lossless downloads are password protected.
-    </p>
-    <p class="about-note">
-      Most full-show recordings are large lossless WAV files (1&ndash;3 GB) and may take a moment to begin playing.
-    </p>
-  </section>'''
+    return content("about.html")
 
 
 def why_block():
-    return '''
-  <section class="about">
-    <h2>Why I&rsquo;m Doing This</h2>
-    <p>
-      The real catalyst was wanting to hand these recordings over to Jerry and Sean. Passing on the DAT tapes meant more than copying a few files &mdash; the tapes had to be digitized to disc and kept in a form that could actually be handed on. It quickly became clear that dropping everything onto a memory stick wouldn&rsquo;t do anyone any favors, so I set out to identify the songs, catalog them, and make the whole thing easier to take in.
-    </p>
-    <p>
-      A website was always in the back of my mind, but never something I had the time or bandwidth for &mdash; until AI tools like Claude made it surprisingly easy. Once I started building, it became clear I could use the whole project as an excuse to learn: how to work with AI, how to grow a site like this, and how to lean on Audacity to clean up the old recordings. That&rsquo;s really where the three reasons below come from.
-    </p>
-    <p>There are four reasons I keep working on this archive:</p>
-    <ol class="reasons">
-      <li>
-        <strong>To give these tapes a home.</strong> I want these old recordings to have a place where the people who were around in those days can stream them, enjoy them again, and relive those moments &mdash; back when Jerry and Sean were playing the local bars and venues.
-      </li>
-      <li>
-        <strong>To learn audio restoration.</strong> Working through these shows is teaching me how to improve recordings in Audacity &mdash; experimenting with normalization, limiters, filters, and the other tools it provides to get the best possible sound from aging tape.
-      </li>
-      <li>
-        <strong>To learn to work with AI.</strong> Building and maintaining this site is also how I&rsquo;m getting familiar with AI &mdash; learning to use a tool like Claude and figuring out how to make the most of it.
-      </li>
-      <li>
-        <strong>To make up for the live album that never happened.</strong> The Mad Hannans never put out a live record, and I always wished they had. This archive &mdash; and especially the <a href="/playlist/">playlist generator</a> &mdash; is the next best thing: pick a show, or build your own set across all of them, and listen to it as one. It also means I can finally put together the all-<strong>Traditional</strong> playlist of Irish songs I always hoped Jerry or Sean would release as a record of their own.
-      </li>
-    </ol>
-  </section>'''
+    return content("why.html")
 
 
 def featured_card():
@@ -848,108 +814,7 @@ def build_history():
         heading="The Story So Far",
         tagline="A behind-the-scenes history of the archive",
         nav=site_nav(),
-        main='''
-  <section class="about">
-    <p>
-      This site is an ongoing labor of love &mdash; digitizing, cleaning up, and sharing the live recordings of Jerry Hannan, the Mad Hannans, and Sean Hannan. Here&rsquo;s how it has come together so far.
-    </p>
-
-    <h2>Week one &mdash; getting it online (June&nbsp;9&ndash;13, 2026)</h2>
-    <p>
-      The archive went live as a simple homepage and quickly grew a proper foundation.
-    </p>
-    <ul class="reasons">
-      <li>Put up the first <strong>&ldquo;About This Archive&rdquo;</strong> page explaining what these recordings are and why I&rsquo;m sharing them.</li>
-      <li><strong>Password-protected the lossless WAV masters</strong> so the big files stay controlled, while keeping the music easy to listen to.</li>
-      <li>Set up <strong>automatic publishing</strong> &mdash; every change now deploys itself to the web.</li>
-      <li>Rebuilt the site around a <strong>data-driven generator</strong>, giving each show its own page with a proper track list.</li>
-      <li>Posted the first track-listed shows: <strong>Jerry Hannan at 19 Broadway</strong> (Jan&nbsp;8,&nbsp;2001), the <strong>Mad Hannans at Sweetwater</strong> (Feb&nbsp;17,&nbsp;2000), and <strong>Sean Hannan at 19 Broadway</strong> (Jan&nbsp;24,&nbsp;2000) &mdash; followed by a redesign of the archive and per-song sharing links.</li>
-    </ul>
-
-    <h2>Week two &mdash; more shows, more polish (June&nbsp;14&ndash;20, 2026)</h2>
-    <p>
-      The site split into proper sections &mdash; Home, Archive, Shows, Updates, and Contact &mdash; and an <strong>Updates feed</strong> began tracking changes as they happen. New shows kept arriving:
-    </p>
-    <ul class="reasons">
-      <li><strong>Sean Hannan at 19 Broadway</strong> (Feb&nbsp;21,&nbsp;2000)</li>
-      <li><strong>Jerry Hannan at 19 Broadway</strong> (Jan&nbsp;15,&nbsp;2001) &mdash; later volume-normalized across all 31 tracks</li>
-      <li><strong>The Mad Hannans at Sweetwater</strong> (Oct&nbsp;17,&nbsp;2000) &mdash; the Birthday Show, with a full lossless download</li>
-      <li><strong>Jerry Hannan at 19 Broadway</strong> (June&nbsp;21,&nbsp;1999)</li>
-    </ul>
-    <p>
-      I also added notes about audio levels and the purpose of the archive, and began marking which recordings came straight off the soundboard (SBD) versus from the audience (AUD).
-    </p>
-
-    <h2>Week three &mdash; listening, searching, restoring (June&nbsp;21&ndash;26, 2026)</h2>
-    <p>
-      The biggest leap in how the archive <em>feels</em> to use:
-    </p>
-    <ul class="reasons">
-      <li>Every full show now <strong>streams as a clean 320&nbsp;kbps MP3</strong>, with <strong>free MP3 downloads</strong> on the show pages.</li>
-      <li>Added the <strong>Sean Hannan 19 Broadway</strong> (unknown date) set and the <strong>Mad Hannans at Cafe Java</strong> (Sept&nbsp;9,&nbsp;1999).</li>
-      <li>Introduced <strong>waveform players</strong> so you can see each song as you listen.</li>
-      <li>Added an <strong>Archive sort toggle</strong> (browse by date or by artist) and a <strong>search engine</strong> to find any song or show by title, artist, venue, date, or tag &mdash; backed by an ongoing effort to tag covers and songwriters.</li>
-      <li>Posted the <strong>Mad Hannans at Sweetwater</strong> (Jan&nbsp;6,&nbsp;2001) &mdash; a rough, muffled audience tape that I then went back and <strong>cleaned up with EQ and loudness normalization</strong> to make it easier on the ears.</li>
-      <li>Gave the <strong>Sean Hannan</strong> (Feb&nbsp;21,&nbsp;2000) set the same loudness treatment, and corrected a long-mislabeled song: <em>&ldquo;Irish Song&rdquo;</em> is really <strong>&ldquo;Ode to Biddy McGee.&rdquo;</strong></li>
-    </ul>
-
-    <h2>Week four &mdash; a real audio pipeline (June&nbsp;27&ndash;28, 2026)</h2>
-    <p>
-      The cleanup work grew up into a proper, repeatable process. Instead of treating each show by hand, there&rsquo;s now an <strong>automated audio-engineering workflow</strong> that takes the original lossless masters and brings every track to one consistent, comfortable listening level across the whole archive &mdash; solo sets and full-band shows alike &mdash; all with a ceiling that prevents digital clipping.
-    </p>
-    <ul class="reasons">
-      <li>Each processed show now carries a <strong>&ldquo;Technical data&rdquo; panel</strong> &mdash; the before-and-after loudness, true peak, and dynamic range for every song, plus exactly which version of the workflow touched each track.</li>
-      <li>Every show page shows its <strong>processing status at a glance</strong> &mdash; whether it&rsquo;s been through the new workflow yet, or is still on the list.</li>
-      <li>Re-mastered to the new standard: <strong>Jerry Hannan at 19 Broadway</strong> &mdash; June&nbsp;21,&nbsp;1999; Jan&nbsp;8,&nbsp;2001 (now with <strong>lossless FLAC downloads</strong> added); and Jan&nbsp;15,&nbsp;2001 (redone from the masters to the new loudness standard).</li>
-      <li>Settled on <strong>one loudness standard for the entire archive</strong> &mdash; after A/B testing confirmed the full-band shows gained nothing audible from being louder, the Mad Hannans sets now sit at the same comfortable level as everything else. The earlier −16 passes are being redone to match. First through the new process: the <strong>Mad Hannans at Sweetwater</strong> (Feb&nbsp;17,&nbsp;2000), the Oct&nbsp;17,&nbsp;2000 <strong>Birthday Show</strong>, the <strong>Cafe Java</strong> set (Sept&nbsp;9,&nbsp;1999), and <strong>Sean Hannan</strong>&rsquo;s Feb&nbsp;21,&nbsp;2000 set.</li>
-      <li>Added <strong>corrective EQ to the workflow</strong> for salvaging poor source tapes, and used it to rebuild the muddy <strong>Mad Hannans at Sweetwater</strong> (Jan&nbsp;6,&nbsp;2001) straight from the raw transfer &mdash; cutting the low-mid mud and lifting presence and air to bring the vocals forward, then normalizing to the −20 standard. The exact EQ is recorded with each track.</li>
-      <li>Behind the scenes: <strong>faster page loads</strong>, better link previews when a show is shared, and more reliable, properly protected lossless downloads.</li>
-    </ul>
-
-    <h2>Week five &mdash; repairing the damaged peaks (June&nbsp;29&ndash;30, 2026)</h2>
-    <p>
-      Some older recordings have a flaw that volume adjustment alone can&rsquo;t fix: bursts of applause so loud they overloaded the original tape and distorted. This week the focus turned to <strong>repairing that damage by hand</strong> before normalizing.
-    </p>
-    <ul class="reasons">
-      <li>Went back to one of the very first shows posted &mdash; <strong>Sean Hannan at 19 Broadway</strong> (Jan&nbsp;24,&nbsp;2000), a 31-song solo set &mdash; and found nine tracks where loud audience clapping had clipped into distortion. Each one was <strong>hand-edited in Audacity</strong> to smooth out the overloaded peaks, then the whole show was brought to the archive&rsquo;s −20 loudness standard.</li>
-      <li>Brought the undated <strong>Sean Hannan at 19 Broadway</strong> set (18 songs, with guest turns from Jerry Hannan and Kelly Peterson) through the same workflow &mdash; replacing an earlier &minus;16 pass with a clean &minus;20 normalization from the source.</li>
-      <li>Kept the whole archive in sync: the original masters, the hand-edited versions, and the final normalized tracks are now all preserved together in the cloud backup.</li>
-    </ul>
-
-    <h2>Week six &mdash; New George&rsquo;s, more shows, and a technical clean-up (July&nbsp;5&ndash;7, 2026)</h2>
-    <p>
-      Added the <strong>Mad Hannans at New George&rsquo;s</strong> in San Rafael (Oct&nbsp;13,&nbsp;1999) as 14 individual tracks. The show survives as two audience DAT transfers, so I <strong>A/B&rsquo;d them side by side</strong> and went with the one that sounded best. Each song was split out, the applause <strong>gently faded</strong> at the end for easier back-to-back listening, and the whole set brought to the archive&rsquo;s &minus;20 loudness standard. The set opens with a short soundcheck.
-    </p>
-    <p>
-      Also launched a new <strong>&ldquo;Songs&rdquo; section</strong> &mdash; a cross-referenced <strong>matrix of every song against every show</strong>. Because the same songs turn up again and again across Jerry, the Mad Hannans, and Sean, you can now pick a song and see <em>every</em> time it was played, each with a player and a link straight to that performance. Browse it as a filterable list or a songs-by-shows grid, sort by how often a song was played, filter by artist, and <strong>search for any song by name</strong>.
-    </p>
-
-    <p>
-      Added two more <strong>early Jerry solo shows at 19&nbsp;Broadway</strong> in Fairfax &mdash; <strong>May&nbsp;10,&nbsp;1999</strong> (21 songs) and <strong>July&nbsp;19,&nbsp;1999</strong> (a long, 26-song set). Each was split into individual tracks by hand in Audacity, with the applause <strong>studio-faded</strong> at the end of every song and a little clipping cleaned up on the loudest peaks, then run through the pipeline to the archive&rsquo;s &minus;20 loudness standard. All 47 new tracks flow straight into the Songs matrix, which now also treats Jerry&rsquo;s <em>&ldquo;My&nbsp;Dear&rdquo;</em> and <em>&ldquo;Ride&nbsp;On&rdquo;</em> as the same song.
-    </p>
-
-    <p>
-      Then a stretch of polish rather than new tapes. The <a href="/songs/"><strong>Songs</strong></a> page got a real workover: the list is tighter and easier to scan, with each artist shown as a small colour-coded dot lined up in <strong>fixed columns</strong> &mdash; so you can run your eye down and see at a glance which songs Jerry, the Mad Hannans, or Sean played. The songs-by-shows <strong>grid</strong> now scrolls sideways properly, and its artist filter finally hides the other artists&rsquo; columns instead of just their rows. Two songs on the <strong>Sweetwater soundboard</strong> (Feb&nbsp;17,&nbsp;2000) were corrected as well: a track listed as &ldquo;There She Was&rdquo; is really &ldquo;Butter,&rdquo; and the copy here was missing its opening chords, so it was swapped for the complete take; and a stray &ldquo;Da&nbsp;Da&nbsp;Da&rdquo; was reunited with its full name, the medley &ldquo;The&nbsp;Kiss&nbsp;&ndash;&nbsp;Da&nbsp;Da&nbsp;Da.&rdquo; Each fix was pushed everywhere the audio lives at once &mdash; the streaming store, the cloud archive, and the working files.
-    </p>
-    <p>
-      Under the hood, the site grew up a little. Every page now carries <strong>structured data</strong> so search engines read these as live music recordings, performances, and songs rather than anonymous pages. There&rsquo;s a proper <strong>dark mode</strong> that follows your device&rsquo;s setting, an <strong>RSS feed</strong> of these updates so you can follow new additions, and a round of <strong>accessibility</strong> work &mdash; visible keyboard focus, a skip-to-content link, reduced-motion support, and stronger text contrast. Plumbing you never see, but the kind that keeps an archive healthy.
-    </p>
-
-    <h2>Week seven &mdash; a playlist generator (July&nbsp;7&ndash;8, 2026)</h2>
-    <p>
-      A new way to listen to the archive: build your own set instead of working through one show at a time.
-    </p>
-    <ul class="reasons">
-      <li>Every curated track now carries a proper <strong>tag vocabulary</strong> &mdash; mood, style, and format &mdash; plus a dedicated <strong>songwriter credit</strong>, separating Hannan originals from covers (named by writer) and Irish traditionals.</li>
-      <li>Launched <a href="/playlist/"><strong>Playlist</strong></a>: filter the whole archive by artist, venue, audience/soundboard, and any combination of tags, choose how long you want to listen &mdash; a number of songs, a number of minutes, or endless shuffle &mdash; and hit play. However you slice it, the queue never plays the same song twice, even one with a dozen different live takes across the years.</li>
-      <li>Every playlist is <strong>shareable</strong>. The exact set of songs lives in the link itself, and a &ldquo;Copy share link&rdquo; button hands you a short renedebos.com/play/&hellip; URL to send along.</li>
-    </ul>
-    <p>
-      Also added the <strong>Mad Hannans at 4th Street Tavern</strong> in San Rafael (May&nbsp;1,&nbsp;1999) as 24 individual tracks &mdash; split, faded, and clip-repaired by hand before the usual pass to the archive&rsquo;s &minus;20 loudness standard. The set opens with a short soundcheck.
-    </p>
-
-    <p class="about-note">The work continues &mdash; more shows, better audio, and small fixes are always in progress.</p>
-  </section>''',
+        main=content("history.html"),
     )
 
 
