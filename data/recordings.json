@@ -4590,7 +4590,7 @@
     {
       "slug": "mad-4th-street-tavern-1999-05-01",
       "artist": "mad",
-      "venue": "4th Street Tavern",
+      "venue": "4th Street Tavern, San Rafael",
       "venue_short": "4th Street Tavern",
       "date": "1999-05-01",
       "date_display": "May 1, 1999",
@@ -4620,10 +4620,358 @@
           "stream": "MP3/Full/WAV_Files/MadHannans - 4th Street Tavern 1999-05-01 Pt 2.mp3"
         }
       ],
-      "tracks": null,
-      "description": null,
+      "tracks": [
+        {
+          "num": 1,
+          "title": "Soundcheck (Football Tonight)",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/01 Soundcheck (Football Tonight.mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/01 Soundcheck (Football Tonight.flac",
+          "processed": true,
+          "size_mb": 11,
+          "duration": "4:41",
+          "flac_size_mb": 52,
+          "tags": [
+            "banter"
+          ]
+        },
+        {
+          "num": 2,
+          "title": "Long Black Veil",
+          "songwriter": "Lefty Frizzell",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/02 Long Black Veil.mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/02 Long Black Veil.flac",
+          "processed": true,
+          "size_mb": 6,
+          "duration": "2:38",
+          "flac_size_mb": 30,
+          "tags": [
+            "cover",
+            "country",
+            "ballad",
+            "story"
+          ]
+        },
+        {
+          "num": 3,
+          "title": "Truck",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/03 Truck.mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/03 Truck.flac",
+          "processed": true,
+          "size_mb": 10,
+          "duration": "3:57",
+          "flac_size_mb": 48,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 4,
+          "title": "Blind Man",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/04 Blind Man.mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/04 Blind Man.flac",
+          "processed": true,
+          "size_mb": 8,
+          "duration": "3:13",
+          "flac_size_mb": 39,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 5,
+          "title": "Clear Headed",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/05 Clear Headed.mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/05 Clear Headed.flac",
+          "processed": true,
+          "size_mb": 11,
+          "duration": "4:32",
+          "flac_size_mb": 55,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 6,
+          "title": "Rocky Road to Dublin",
+          "songwriter": "Traditional",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/06 Rocky Road to Dublin.mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/06 Rocky Road to Dublin.flac",
+          "processed": true,
+          "size_mb": 13,
+          "duration": "5:14",
+          "flac_size_mb": 63,
+          "tags": [
+            "traditional",
+            "irish",
+            "upbeat",
+            "singalong"
+          ]
+        },
+        {
+          "num": 7,
+          "title": "The Good Life",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/07 The Good Life.mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/07 The Good Life.flac",
+          "processed": true,
+          "size_mb": 18,
+          "duration": "7:39",
+          "flac_size_mb": 91,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 8,
+          "title": "Luxury of Murder",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/08 Luxury of Murder.mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/08 Luxury of Murder.flac",
+          "processed": true,
+          "size_mb": 7,
+          "duration": "2:54",
+          "flac_size_mb": 35,
+          "tags": [
+            "original",
+            "story"
+          ]
+        },
+        {
+          "num": 9,
+          "title": "Everything Reminds Me of You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/09 Everything Reminds Me of You.mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/09 Everything Reminds Me of You.flac",
+          "processed": true,
+          "size_mb": 6,
+          "duration": "2:34",
+          "flac_size_mb": 30,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 10,
+          "title": "I Need a Lover",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/10 I Need a Lover.mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/10 I Need a Lover.flac",
+          "processed": true,
+          "size_mb": 7,
+          "duration": "3:07",
+          "flac_size_mb": 38,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 11,
+          "title": "Blahana",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/11 Blahana.mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/11 Blahana.flac",
+          "processed": true,
+          "size_mb": 10,
+          "duration": "4:12",
+          "flac_size_mb": 51,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 12,
+          "title": "Tougher Than the Rest",
+          "songwriter": "Bruce Springsteen",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/12 Tougher Than the Rest.mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/12 Tougher Than the Rest.flac",
+          "processed": true,
+          "size_mb": 9,
+          "duration": "3:43",
+          "flac_size_mb": 44,
+          "tags": [
+            "cover",
+            "ballad"
+          ]
+        },
+        {
+          "num": 13,
+          "title": "Recycle",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/13 Recycle.mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/13 Recycle.flac",
+          "processed": true,
+          "size_mb": 12,
+          "duration": "5:09",
+          "flac_size_mb": 62,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 14,
+          "title": "Butter",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/14 Butter.mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/14 Butter.flac",
+          "processed": true,
+          "size_mb": 9,
+          "duration": "3:51",
+          "flac_size_mb": 42,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 15,
+          "title": "The Kiss - Da Da Da (Slave to an Angel)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/15 The Kiss - Da Da Da (Slave to an Angel).mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/15 The Kiss - Da Da Da (Slave to an Angel).flac",
+          "processed": true,
+          "size_mb": 15,
+          "duration": "6:24",
+          "flac_size_mb": 74,
+          "tags": [
+            "original",
+            "medley"
+          ]
+        },
+        {
+          "num": 16,
+          "title": "Dysfunctional Guy",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/16 Dysfunctional Guy.mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/16 Dysfunctional Guy.flac",
+          "processed": true,
+          "size_mb": 11,
+          "duration": "4:40",
+          "flac_size_mb": 57,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 17,
+          "title": "ABC - Sesame Street",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/17 ABC - Sesame Street.mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/17 ABC - Sesame Street.flac",
+          "processed": true,
+          "size_mb": 12,
+          "duration": "5:11",
+          "flac_size_mb": 64,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 18,
+          "title": "Baby",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/18 Baby.mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/18 Baby.flac",
+          "processed": true,
+          "size_mb": 8,
+          "duration": "3:13",
+          "flac_size_mb": 40,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 19,
+          "title": "Far Away Eyes",
+          "songwriter": "Rolling Stones",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/19 Far Away Eyes.mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/19 Far Away Eyes.flac",
+          "processed": true,
+          "size_mb": 10,
+          "duration": "4:20",
+          "flac_size_mb": 54,
+          "tags": [
+            "cover",
+            "country"
+          ]
+        },
+        {
+          "num": 20,
+          "title": "Friend",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/20 Friend.mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/20 Friend.flac",
+          "processed": true,
+          "size_mb": 10,
+          "duration": "3:58",
+          "flac_size_mb": 48,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 21,
+          "title": "Shirt",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/21 Shirt.mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/21 Shirt.flac",
+          "processed": true,
+          "size_mb": 8,
+          "duration": "3:26",
+          "flac_size_mb": 40
+        },
+        {
+          "num": 22,
+          "title": "The Ballad of Tommy and Marla",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/22 The Ballad of Tommy and Marla.mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/22 The Ballad of Tommy and Marla.flac",
+          "processed": true,
+          "size_mb": 7,
+          "duration": "3:03",
+          "flac_size_mb": 35,
+          "tags": [
+            "story"
+          ]
+        },
+        {
+          "num": 23,
+          "title": "Madeline",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/23 Madeline.mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/23 Madeline.flac",
+          "processed": true,
+          "size_mb": 7,
+          "duration": "2:47",
+          "flac_size_mb": 35,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 24,
+          "title": "The Rodeo Song",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/24 The Rodeo Song.mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/24 The Rodeo Song.flac",
+          "processed": true,
+          "size_mb": 8,
+          "duration": "3:27",
+          "flac_size_mb": 43
+        }
+      ],
+      "description": [
+        "Recorded from the audience on DAT at 4th Street Tavern in San Rafael on May 1, 1999.",
+        "The show has been split into individual songs and loudness-normalized to an even listening level, with the applause faded down at the end of each track for easier streaming, and some minor clipping repaired by hand. The set opens with a soundcheck."
+      ],
       "page": null,
-      "processing_status": "needs-processing"
+      "processing_status": "done",
+      "added": "2026-07-07",
+      "added_ts": "2026-07-07T22:02:59.794473"
     },
     {
       "slug": "mad-cafe-java-1999-09-09",
