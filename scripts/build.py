@@ -240,7 +240,7 @@ def why_block():
     <p>
       A website was always in the back of my mind, but never something I had the time or bandwidth for &mdash; until AI tools like Claude made it surprisingly easy. Once I started building, it became clear I could use the whole project as an excuse to learn: how to work with AI, how to grow a site like this, and how to lean on Audacity to clean up the old recordings. That&rsquo;s really where the three reasons below come from.
     </p>
-    <p>There are three reasons I keep working on this archive:</p>
+    <p>There are four reasons I keep working on this archive:</p>
     <ol class="reasons">
       <li>
         <strong>To give these tapes a home.</strong> I want these old recordings to have a place where the people who were around in those days can stream them, enjoy them again, and relive those moments &mdash; back when Jerry and Sean were playing the local bars and venues.
@@ -250,6 +250,9 @@ def why_block():
       </li>
       <li>
         <strong>To learn to work with AI.</strong> Building and maintaining this site is also how I&rsquo;m getting familiar with AI &mdash; learning to use a tool like Claude and figuring out how to make the most of it.
+      </li>
+      <li>
+        <strong>To make up for the live album that never happened.</strong> The Mad Hannans never put out a live record, and I always wished they had. This archive &mdash; and especially the <a href="/playlist/">playlist generator</a> &mdash; is the next best thing: pick a show, or build your own set across all of them, and listen to it as one. It also means I can finally put together the all-<strong>Traditional</strong> playlist of Irish songs I always hoped Jerry or Sean would release as a record of their own.
       </li>
     </ol>
   </section>'''
@@ -885,6 +888,16 @@ def build_history():
     <p>
       Under the hood, the site grew up a little. Every page now carries <strong>structured data</strong> so search engines read these as live music recordings, performances, and songs rather than anonymous pages. There&rsquo;s a proper <strong>dark mode</strong> that follows your device&rsquo;s setting, an <strong>RSS feed</strong> of these updates so you can follow new additions, and a round of <strong>accessibility</strong> work &mdash; visible keyboard focus, a skip-to-content link, reduced-motion support, and stronger text contrast. Plumbing you never see, but the kind that keeps an archive healthy.
     </p>
+
+    <h2>Week seven &mdash; a playlist generator (July&nbsp;7&ndash;8, 2026)</h2>
+    <p>
+      A new way to listen to the archive: build your own set instead of working through one show at a time.
+    </p>
+    <ul class="reasons">
+      <li>Every curated track now carries a proper <strong>tag vocabulary</strong> &mdash; mood, style, and format &mdash; plus a dedicated <strong>songwriter credit</strong>, separating Hannan originals from covers (named by writer) and Irish traditionals.</li>
+      <li>Launched <a href="/playlist/"><strong>Playlist</strong></a>: filter the whole archive by artist, venue, audience/soundboard, and any combination of tags, choose how long you want to listen &mdash; a number of songs, a number of minutes, or endless shuffle &mdash; and hit play. However you slice it, the queue never plays the same song twice, even one with a dozen different live takes across the years.</li>
+      <li>Every playlist is <strong>shareable</strong>. The exact set of songs lives in the link itself, and a &ldquo;Copy share link&rdquo; button hands you a short renedebos.com/play/&hellip; URL to send along.</li>
+    </ul>
 
     <p class="about-note">The work continues &mdash; more shows, better audio, and small fixes are always in progress.</p>
   </section>''',
