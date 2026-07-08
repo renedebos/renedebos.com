@@ -202,16 +202,10 @@
   }
 
   shareBtn.addEventListener("click", function () {
-    shareBtn.textContent = "…";
-    // Prefer a short /play/{slug} link; fall back to the long hash URL.
-    fetch("/api/playlist", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ids: queue.map(function (t) { return t.id; }) }),
-    })
-      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
-      .then(function (d) { copyShare(d.url); },
-            function () { copyShare(location.href); });
+    // Long hash link only: resolved fully client-side, so it works even when
+    // an edge node serves a stale worker (2026-07-08 rollback of short-link
+    // copying; the /play/{slug} endpoints stay live for links already shared).
+    copyShare(location.href);
   });
 
   function copyShare(url) {
