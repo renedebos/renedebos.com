@@ -2,3 +2,7 @@
 /shows/sean-19-broadway-unknown-2   /shows/sean-19-broadway-unknown/  301
 /shows/sean-19-broadway-unknown-1/  /shows/sean-19-broadway-unknown/  301
 /shows/sean-19-broadway-unknown-1   /shows/sean-19-broadway-unknown/  301
+# /shows/ index merged into /archive/ (split-shows filter), 2026-07-08.
+# Exact-path rules only — /shows/<slug>/ pages are unaffected.
+/shows/   /archive/  301
+/shows    /archive/  301

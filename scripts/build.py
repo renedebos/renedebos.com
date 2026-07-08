@@ -198,6 +198,11 @@ def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main,
 
 <footer>
   Part of <a href="/">The Hannan Recordings</a> archive
+  <span class="footer-links">
+    <a href="/history/">The Story So Far</a> &middot;
+    <a href="/contact/">Contact</a> &middot;
+    <a href="/feed.xml">RSS</a>
+  </span>
 </footer>
 
 <script src="/assets/player.js"></script>{extra_scripts}
@@ -208,14 +213,19 @@ def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main,
 
 # ── site navigation ─────────────────────────────────────────────────────────
 
+# Top navigation — deliberately short so it stays one line on phones.
+# /shows/ merged into /archive/ (split-shows filter) 2026-07-08; History and
+# Contact moved to the footer on every page. EXTRA_PAGES keeps footer-only
+# pages in the sitemap.
 SITE_PAGES = [
     ("Home", "/"),
     ("Archive", "/archive/"),
-    ("Shows", "/shows/"),
     ("Songs", "/songs/"),
     ("Playlist", "/playlist/"),
     ("Search", "/search/"),
     ("Updates", "/updates/"),
+]
+EXTRA_PAGES = [
     ("History", "/history/"),
     ("Contact", "/contact/"),
 ]
@@ -356,10 +366,10 @@ def artist_sections(only_tracks=False):
     return "".join(out)
 
 
-def date_sorted_list():
+def date_sorted_list(only_tracks=False):
     # One flat chronological list across all artists (oldest first; undated shows
     # sort last via sort_key). Used by the Archive's "By date" view.
-    shows = sorted(M["shows"], key=sort_key)
+    shows = sorted((s for s in M["shows"] if s.get("tracks") or not only_tracks), key=sort_key)
     rows = "\n".join(show_row(s, with_artist=True) for s in shows)
     return f'''
   <section class="artist-section">
@@ -607,35 +617,61 @@ def build_home():
 
 
 def build_archive():
-    toggle = '''
-  <div class="view-toggle" role="group" aria-label="Sort shows">
-    <button type="button" class="seg active" data-view="artist">By artist</button>
-    <button type="button" class="seg" data-view="date">By date</button>
+    # Absorbs the old /shows/ page (2026-07-08): the four view combinations
+    # (artist/date × all/split-only) are prerendered and toggled client-side —
+    # same pattern the by-artist/by-date switch always used, so section counts
+    # stay honest and no artist header lingers over a filtered-empty list.
+    n_split = sum(1 for s in M["shows"] if s.get("tracks"))
+    toggle = f'''
+  <div class="archive-controls">
+    <div class="view-toggle" role="group" aria-label="Sort shows">
+      <button type="button" class="seg active" data-view="artist">By artist</button>
+      <button type="button" class="seg" data-view="date">By date</button>
+    </div>
+    <div class="view-toggle" role="group" aria-label="Filter shows">
+      <button type="button" class="seg" data-split="1" aria-pressed="false">&#9834; Split shows only ({n_split})</button>
+    </div>
   </div>'''
     views = f'''
-  <div class="archive-view" data-view="artist">{artist_sections(only_tracks=False)}
+  <div class="archive-view" data-view="artist" data-split="all">{artist_sections(only_tracks=False)}
   </div>
-  <div class="archive-view" data-view="date" hidden>{date_sorted_list()}
+  <div class="archive-view" data-view="date" data-split="all" hidden>{date_sorted_list()}
+  </div>
+  <div class="archive-view" data-view="artist" data-split="split" hidden>{artist_sections(only_tracks=True)}
+  </div>
+  <div class="archive-view" data-view="date" data-split="split" hidden>{date_sorted_list(only_tracks=True)}
   </div>'''
     script = '''
 <script>
 (function () {
-  var KEY = 'archiveView';
-  var segs = document.querySelectorAll('.view-toggle .seg');
+  var VIEW_KEY = 'archiveView', SPLIT_KEY = 'archiveSplit';
+  var view = 'artist', split = 'all';
+  var segs = document.querySelectorAll('.view-toggle .seg[data-view]');
+  var splitBtn = document.querySelector('.view-toggle .seg[data-split]');
   var views = document.querySelectorAll('.archive-view');
-  function apply(v) {
-    segs.forEach(function (s) { s.classList.toggle('active', s.dataset.view === v); });
-    views.forEach(function (x) { x.hidden = x.dataset.view !== v; });
+  function apply() {
+    segs.forEach(function (s) { s.classList.toggle('active', s.dataset.view === view); });
+    splitBtn.classList.toggle('active', split === 'split');
+    splitBtn.setAttribute('aria-pressed', split === 'split' ? 'true' : 'false');
+    views.forEach(function (x) { x.hidden = !(x.dataset.view === view && x.dataset.split === split); });
   }
   segs.forEach(function (s) {
     s.addEventListener('click', function () {
-      apply(s.dataset.view);
-      try { localStorage.setItem(KEY, s.dataset.view); } catch (e) {}
+      view = s.dataset.view;
+      apply();
+      try { localStorage.setItem(VIEW_KEY, view); } catch (e) {}
     });
   });
-  var saved;
-  try { saved = localStorage.getItem(KEY); } catch (e) {}
-  if (saved === 'date') apply('date');
+  splitBtn.addEventListener('click', function () {
+    split = split === 'split' ? 'all' : 'split';
+    apply();
+    try { localStorage.setItem(SPLIT_KEY, split); } catch (e) {}
+  });
+  try {
+    if (localStorage.getItem(VIEW_KEY) === 'date') view = 'date';
+    if (localStorage.getItem(SPLIT_KEY) === 'split') split = 'split';
+  } catch (e) {}
+  apply();
 })();
 </script>'''
     return page_shell(
@@ -644,23 +680,10 @@ def build_archive():
         url="https://renedebos.com/archive/",
         eyebrow="The Hannan Recordings",
         heading="Archive",
-        tagline="Every show &middot; by artist or by date",
+        tagline="Every show &middot; by artist or by date &middot; filter to split shows",
         nav=site_nav("Archive"),
         main=toggle + views,
         extra_scripts=script,
-    )
-
-
-def build_shows():
-    return page_shell(
-        title="Shows — The Hannan Recordings",
-        description="Shows that have been split into individual, streamable songs.",
-        url="https://renedebos.com/shows/",
-        eyebrow="The Hannan Recordings",
-        heading="Shows",
-        tagline="Split into individual songs &middot; by artist",
-        nav=site_nav("Shows"),
-        main=artist_sections(only_tracks=True),
     )
 
 
@@ -824,7 +847,7 @@ def build_history():
         eyebrow="The Hannan Recordings",
         heading="The Story So Far",
         tagline="A behind-the-scenes history of the archive",
-        nav=site_nav("History"),
+        nav=site_nav(),
         main='''
   <section class="about">
     <p>
@@ -938,7 +961,7 @@ def build_contact():
         eyebrow="The Hannan Recordings",
         heading="Contact",
         tagline="Questions or comments about the recordings",
-        nav=site_nav("Contact"),
+        nav=site_nav(),
         main=contact_block(),
     )
 
@@ -1652,7 +1675,7 @@ def build_404():
     <h2>Page not found</h2>
     <p>This page doesn&rsquo;t exist &mdash; it may have moved, or a song may have been renamed or merged into another. A few good places to pick back up:</p>
     <ul class="notfound-links">
-      <li><a href="/shows/">Browse all shows</a></li>
+      <li><a href="/archive/">Browse all shows</a></li>
       <li><a href="/songs/">Every song, cross-referenced</a></li>
       <li><a href="/search/">Search the archive</a></li>
       <li><a href="/">Back to the home page</a></li>
@@ -1668,7 +1691,7 @@ def build_404():
 
 def build_sitemap():
     base = "https://renedebos.com"
-    urls = [base + p for _, p in SITE_PAGES]
+    urls = [base + p for _, p in SITE_PAGES + EXTRA_PAGES]
     urls += [base + show_url(s) for s in M["shows"]]
     urls += [f"{base}/songs/{s['slug']}/" for s in collect_songs()[0]]
     items = "\n".join(f"  <url><loc>{esc(u)}</loc></url>" for u in urls)
@@ -1699,7 +1722,6 @@ def main():
     write("lab/wavesurfer/index.html", build_wavesurfer_lab())
     write("index.html", build_home())
     write("archive/index.html", build_archive())
-    write("shows/index.html", build_shows())
     write("songs/index.html", build_songs_index())
     write("search/index.html", build_search())
     write("playlist/index.html", build_playlist())

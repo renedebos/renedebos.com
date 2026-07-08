@@ -1310,6 +1310,18 @@ footer {
 }
 
 footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+.footer-links { display: block; margin-top: 0.5rem; }
+
+/* Archive controls: view toggle + split-shows filter side by side */
+.archive-controls { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.archive-controls .view-toggle { margin: 0 0 2.2rem; }
+
+/* Tablet pass: give the two wide scroll containers a little more room */
+@media (max-width: 900px) {
+  .song-grid-wrap { font-size: 13px; }
+  .tech-scroll { font-size: 12px; }
+}
 
 /* ── hover info tooltip ──────────────────────────────────────────────────── */
 
