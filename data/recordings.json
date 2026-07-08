@@ -4632,7 +4632,8 @@
           "flac_size_mb": 52,
           "tags": [
             "banter"
-          ]
+          ],
+          "songwriter": "Jerry Hannan & Sean Hannan"
         },
         {
           "num": 2,
@@ -4918,13 +4919,14 @@
         },
         {
           "num": 21,
-          "title": "Shirt",
+          "title": "Shirt - ABC",
           "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/21 Shirt.mp3",
           "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/21 Shirt.flac",
           "processed": true,
           "size_mb": 8,
           "duration": "3:26",
-          "flac_size_mb": 40
+          "flac_size_mb": 40,
+          "songwriter": "Jerry Hannan & Sean Hannan"
         },
         {
           "num": 22,
@@ -4936,8 +4938,10 @@
           "duration": "3:03",
           "flac_size_mb": 35,
           "tags": [
+            "cover",
             "story"
-          ]
+          ],
+          "songwriter": "Steve Poltz"
         },
         {
           "num": 23,
@@ -4961,7 +4965,12 @@
           "processed": true,
           "size_mb": 8,
           "duration": "3:27",
-          "flac_size_mb": 43
+          "flac_size_mb": 43,
+          "songwriter": "Gary Lee and the Showdown",
+          "tags": [
+            "cover",
+            "upbeat"
+          ]
         }
       ],
       "description": [
