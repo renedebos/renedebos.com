@@ -1,0 +1,526 @@
+"""sitegen.fragments: page chrome and reusable HTML bits (players, rows, cards, blocks, JSON-LD)."""
+import datetime
+import html
+import json
+import os
+import re
+import sys
+import urllib.parse
+
+from .core import *  # noqa: F401,F403
+
+# scripts/ directory — prose fragments live in scripts/content/
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+DL_SVG = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" '
+          'stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/>'
+          '<path d="M7 10l5 5 5-5"/><path d="M3 18h18"/></svg>')
+
+PLAY_SVG = '<svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg>'
+
+def dl_button(file, *, free, label=None, title="Download"):
+    url = stream_url(file)
+    name = file.split("/")[-1]
+    free_attr = ' data-free="true"' if free else ""
+    label_html = f'<span class="dl-label">{esc(label)}</span>' if label else ""
+    return (f'<a class="download-btn"{free_attr} href="{esc(url)}" '
+            f'download="{esc(name)}" title="{esc(title)}">{DL_SVG}{label_html}</a>')
+
+def player(file, free=False, duration=None, download_file=None, version=None):
+    """A custom-player row: play button, progress bar, download button(s).
+
+    Streams `file`. When `download_file` differs (e.g. stream a lossy 320 kbps
+    MP3 proxy but keep the lossless original available), the row offers two
+    downloads: the free MP3 and the lossless original. Otherwise a single
+    download button for the streamed file. `version` cache-busts the stream URL
+    (pass a track's MD5) so a re-normalized upload goes live immediately.
+    """
+    stream = stream_url(file, version)
+    end_label = f'<span class="time-label">{esc(duration)}</span>' if duration else ""
+    if download_file and download_file != file:
+        mp3_fmt = file.rsplit(".", 1)[-1].upper()
+        loss_fmt = download_file.rsplit(".", 1)[-1].upper()
+        downloads = (
+            dl_button(file, free=True, label=mp3_fmt, title="Download 320 kbps MP3")
+            + "\n          "
+            + dl_button(download_file, free=free, label=loss_fmt,
+                        title=f"Download lossless {loss_fmt}"))
+    else:
+        downloads = dl_button(download_file or file, free=free)
+    return f'''<div class="custom-player" data-src="{esc(stream)}">
+          <button class="play-btn" aria-label="Play">{PLAY_SVG}</button>
+          <div class="progress-wrap">
+            <div class="progress-bar-track"><div class="progress-bar-fill"></div></div>
+            <div class="time-row"><span class="time-label current">0:00</span>{end_label}</div>
+          </div>
+          {downloads}
+        </div>'''
+
+def recording_card(title, meta_pairs, badge, file, free, stream_file=None):
+    # If a lossy stream proxy exists (stream_file), play it for free and gate the
+    # lossless `file` behind the download/password flow; otherwise stream `file`.
+    grid = "".join(f'<span class="meta-label">{esc(k)}</span><span class="meta-value">{esc(v)}</span>'
+                   for k, v in meta_pairs if v)
+    play = player(stream_file or file, free,
+                  download_file=file if stream_file else None)
+    return f'''      <div class="recording-item">
+        <div class="recording-meta">
+          <div>
+            <div class="recording-title">{esc(title)}</div>
+            <div class="recording-meta-grid">{grid}</div>
+          </div>
+          <span class="recording-badge">{esc(badge)}</span>
+        </div>
+        {play}
+      </div>'''
+
+def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main, extra_scripts="", extra_head=""):
+    return f'''<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{esc(title)}</title>
+<meta name="description" content="{esc(description)}">
+<link rel="canonical" href="{esc(url)}">
+<meta name="theme-color" content="#f5f2ed" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#17150f" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="{esc(title)}">
+<meta property="og:description" content="{esc(description)}">
+<meta property="og:type" content="website">
+<meta property="og:url" content="{esc(url)}">
+<meta property="og:image" content="https://renedebos.com/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{esc(title)}">
+<meta name="twitter:description" content="{esc(description)}">
+<meta name="twitter:image" content="https://renedebos.com/assets/og.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♪</text></svg>">
+<link rel="alternate" type="application/rss+xml" title="The Hannan Recordings &mdash; Updates" href="https://renedebos.com/feed.xml">
+<link rel="stylesheet" href="/assets/fonts.css">
+<link rel="stylesheet" href="/assets/site.css">{extra_head}
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header>
+  <p class="site-eyebrow">{eyebrow}</p>
+  <h1>{heading}</h1>
+  <p class="site-tagline">{tagline}</p>
+</header>
+
+<nav>
+{nav}
+</nav>
+
+<main id="main">
+{main}
+</main>
+
+<footer>
+  Part of <a href="/">The Hannan Recordings</a> archive
+  <span class="footer-links">
+    <a href="/history/">The Story So Far</a> &middot;
+    <a href="/contact/">Contact</a> &middot;
+    <a href="/feed.xml">RSS</a>
+  </span>
+</footer>
+
+<script src="/assets/player.js"></script>{extra_scripts}
+</body>
+</html>
+'''
+
+SITE_PAGES = [
+    ("Home", "/"),
+    ("Archive", "/archive/"),
+    ("Songs", "/songs/"),
+    ("Playlist", "/playlist/"),
+    ("Search", "/search/"),
+    ("Updates", "/updates/"),
+]
+
+EXTRA_PAGES = [
+    ("History", "/history/"),
+    ("Contact", "/contact/"),
+]
+
+def site_nav(active=None):
+    links = []
+    for label, href in SITE_PAGES:
+        cls = ' class="active"' if label == active else ""
+        links.append(f'  <a href="{href}"{cls}>{label}</a>')
+    return "\n".join(links)
+
+def content(name):
+    """Long-form prose lives in scripts/content/*.html so editing the site's
+    narrative (a standing weekly task) never touches Python."""
+    return open(os.path.join(HERE, "content", name)).read()
+
+def about_block():
+    return content("about.html")
+
+def why_block():
+    return content("why.html")
+
+def featured_card():
+    featured = next(s for s in M["shows"] if s["slug"] in M["featured"])
+    tracks = featured["tracks"]
+    return f'''
+  <a class="featured-card" href="{show_url(featured)}">
+    <div>
+      <p class="featured-eyebrow">Featured &middot; Curated Show</p>
+      <p class="featured-title">{esc(show_title(featured))}</p>
+      <p class="featured-sub">{esc(date_with_subtitle(featured))} &middot; {SOURCE_LABEL.get(featured["source"], featured["source"])} &middot; {len(tracks)} tracks &middot; {track_total(tracks)}</p>
+      <p class="featured-note">Every song split out and streamable.</p>
+    </div>
+    <span class="featured-cta">Listen &rarr;</span>
+  </a>'''
+
+def show_row(show, with_artist=False):
+    artist = next(a for a in M["artists"] if a["id"] == show["artist"])
+    n_alt = sum(1 for r in show["recordings"] if r["alternate"])
+    n_can = len(show["recordings"]) - n_alt
+    extra = []
+    if n_can > 1:
+        extra.append(f"{n_can} parts")
+    if n_alt:
+        extra.append(f"{n_alt} alt transfer{'s' if n_alt > 1 else ''}")
+    extra_html = f' <span class="show-extra">&middot; {" &middot; ".join(extra)}</span>' if extra else ""
+    if show.get("tracks"):
+        n = len(show["tracks"])
+        marker = f'<span class="show-tracks" title="{n} songs available">&#9834; {n}</span>'
+    else:
+        marker = '<span class="show-tracks"></span>'
+    subtitle = f' &middot; <em>{esc(show["subtitle"])}</em>' if show.get("subtitle") else ""
+    primary_size = next((r["size"] for r in show["recordings"] if not r["alternate"]), "—")
+    info = esc(json.dumps([
+        ["Artist", artist["name"]],
+        ["Venue", show["venue"] or "—"],
+        ["Date", show["date"] or "Unknown date"],
+        ["Source", SOURCE_LABEL.get(show["source"], show["source"])],
+        ["Tracks", str(len(show["tracks"])) if show.get("tracks") else "—"],
+        ["Size", primary_size],
+    ], ensure_ascii=False))
+    # In the cross-artist date view each row carries the artist, since the
+    # grouping header that would otherwise name it is gone.
+    artist_prefix = f'<span class="show-artist">{esc(artist["name"])}</span> &middot; ' if with_artist else ""
+    return f'''      <a class="show-row" href="{show_url(show)}" data-info="{info}">
+        <span class="show-date">{esc(show["date"] or "Unknown date")}</span>
+        <span class="show-venue">{artist_prefix}{esc(show["venue"] or "")}{subtitle}{extra_html}</span>
+        {marker}
+        <span class="show-src src-{show["source"].lower()}">{esc(show["source"])}</span>
+        <span class="show-arrow">&rarr;</span>
+      </a>'''
+
+def artist_sections(only_tracks=False):
+    out = []
+    for artist in M["artists"]:
+        shows = sorted((s for s in M["shows"]
+                        if s["artist"] == artist["id"] and (s.get("tracks") if only_tracks else True)),
+                       key=sort_key)
+        if not shows:
+            continue
+        rows = "\n".join(show_row(s) for s in shows)
+        out.append(f'''
+  <section class="artist-section" id="{artist["id"]}">
+    <div class="artist-header">
+      <h2 class="artist-name">{esc(artist["name"])}</h2>
+      <span class="recording-count">{len(shows)} show{"s" if len(shows) != 1 else ""}</span>
+    </div>
+    <div class="artist-divider"></div>
+    <div class="show-list">
+{rows}
+    </div>
+  </section>''')
+    return "".join(out)
+
+def date_sorted_list(only_tracks=False):
+    # One flat chronological list across all artists (oldest first; undated shows
+    # sort last via sort_key). Used by the Archive's "By date" view.
+    shows = sorted((s for s in M["shows"] if s.get("tracks") or not only_tracks), key=sort_key)
+    rows = "\n".join(show_row(s, with_artist=True) for s in shows)
+    return f'''
+  <section class="artist-section">
+    <div class="show-list">
+{rows}
+    </div>
+  </section>'''
+
+def artist_notes_block():
+    notes = [a for a in M["artists"] if a.get("note")]
+    if not notes:
+        return ""
+    lines = "\n".join(
+        f'    <p class="artist-note"><strong>{esc(a["name"])}</strong> &mdash; {a["note"]}</p>'
+        for a in notes)
+    return f'''
+  <section class="home-notes">
+{lines}
+  </section>'''
+
+STATUS_BLURB = {
+    "done": "All tracks loudness-normalized through the audio workflow.",
+    "partial": "Some tracks loudness-normalized; the rest are pending.",
+    "redo": "Previously normalized outside the current workflow — queued to be re-processed to standard.",
+    "needs-processing": "Not yet loudness-normalized.",
+}
+
+def status_line(show):
+    """A standalone audio-processing status badge shown on every show page,
+    independent of the technical-data table (which only exists for processed
+    shows). Reads `processing_status` written into recordings.json by
+    `audio_process.py status --write`."""
+    st = show.get("processing_status")
+    if not st:
+        return ""
+    blurb = STATUS_BLURB.get(st, "")
+    return (f'''
+  <p class="proc-status-line">Audio processing'''
+            f'<span class="proc-status status-{esc(st)}">{esc(st)}</span>'
+            f'<span class="proc-status-blurb">{esc(blurb)}</span></p>''')
+
+def tech_data_section(show, proc):
+    """Render a collapsible "Technical data" table for a processed show: every
+    track's duration + sizes (from recordings.json) merged with its input/achieved
+    loudness, true peak, LRA, and gain applied (from the processing provenance,
+    where measured). The per-track audio MD5 is carried in the sidecar for
+    integrity/drift checks but is not displayed."""
+    head_bits = [f'Loudness-normalized to {proc["target_lufs"]} LUFS / '
+                 f'{proc["tp_ceiling"]} dBTP']
+    if proc.get("source"):
+        head_bits.append(f'Source: {esc(proc["source"])}')
+    if proc.get("filters"):
+        head_bits.append(f'Filters: {esc(proc["filters"])}')
+    head_bits.append(esc(proc.get("tool", "ffmpeg loudnorm")))
+    if proc.get("workflow_version") is not None:
+        head_bits.append(f'workflow&nbsp;v{esc(proc["workflow_version"])}')
+    if proc.get("date"):
+        head_bits.append(esc(proc["date"]))
+    head = " &middot; ".join(head_bits)
+    # show-level status badge (from recordings.json, written by `status --write`)
+    status = show.get("processing_status")
+    badge = (f' <span class="proc-status status-{esc(status)}">{esc(status)}</span>'
+             if status else "")
+    pt = proc.get("tracks", {})
+    rows = []
+    for t in show["tracks"]:
+        d = pt.get(str(t["num"]), {})
+        inl = f'{d["in_lufs"]:.1f}' if "in_lufs" in d else "&mdash;"
+        out = f'{d["lufs"]:.2f}' if "lufs" in d else "&mdash;"
+        gain = f'{d["lufs"] - d["in_lufs"]:+.1f}' if ("lufs" in d and "in_lufs" in d) else "&mdash;"
+        tp = f'{d["tp"]:.1f}' if "tp" in d else "&mdash;"
+        lra = f'{d["lra"]:.1f}' if "lra" in d else "&mdash;"
+        # per-track workflow version (with the exact process chain on hover);
+        # blank for an untouched track in a partially-processed show.
+        if "ver" in d:
+            ver = (f'<span title="{esc(d["chain"])}">v{esc(d["ver"])}</span>'
+                   if d.get("chain") else f'v{esc(d["ver"])}')
+        else:
+            ver = "&mdash;"
+        mp3 = f'{t["size_mb"]} MB' if t.get("size_mb") else "&mdash;"
+        flac = f'{t["flac_size_mb"]} MB' if t.get("flac_size_mb") else "&mdash;"
+        rows.append(
+            f'        <tr><td class="tnum">{t["num"]:02d}</td><td>{esc(t["title"])}</td>'
+            f'<td class="tnum">{esc(t["duration"])}</td><td class="tnum">{mp3}</td>'
+            f'<td class="tnum">{flac}</td><td class="tnum">{inl}</td>'
+            f'<td class="tnum">{out}</td><td class="tnum">{gain}</td>'
+            f'<td class="tnum">{tp}</td><td class="tnum">{lra}</td>'
+            f'<td class="tver">{ver}</td></tr>')
+    return f'''
+  <section>
+    <details class="tech-details" id="technical-data">
+      <summary>Technical data &mdash; loudness, peaks &amp; sizes{badge}</summary>
+      <p class="tech-head">{head}</p>
+      <div class="tech-scroll">
+      <table class="tech-table">
+        <thead><tr><th>#</th><th>Song</th><th>Time</th><th>MP3</th><th>FLAC</th>
+          <th>In&nbsp;LUFS</th><th>Out&nbsp;LUFS</th><th>Gain</th>
+          <th>True&nbsp;Pk</th><th>LRA</th><th>Ver</th></tr></thead>
+        <tbody>
+{chr(10).join(rows)}
+        </tbody>
+      </table>
+      </div>
+    </details>
+  </section>'''
+
+def _show_label(show):
+    artist = next(a for a in M["artists"] if a["id"] == show["artist"])
+    return f'{esc(artist["name"])} &middot; {esc(show["venue_short"])} &middot; {esc(show["date"] or "")}'
+
+def _src_tag(show):
+    src = show["source"]
+    return f'<span class="src-tag src-{src.lower()}">{esc(src)}</span>'
+
+def updates_list():
+    # Two kinds of events share the Updates feed, sorted most-recent-first by
+    # timestamp: auto-stamped show additions and manual entries (e.g. a later
+    # re-normalization pass) listed under the top-level "updates" key.
+    by_slug = {s["slug"]: s for s in M["shows"]}
+    events = []  # (sort_ts, slug, date, html)
+    for show in M["shows"]:
+        if show.get("added"):
+            ts = show.get("added_ts") or f'{show["added"]}T00:00:00'
+            n = len(show["tracks"]) if show.get("tracks") else 0
+            link = f'<a href="{show_url(show)}">{_show_label(show)}</a>'
+            html = f'Added {link} &mdash; {n} split tracks {_src_tag(show)}'
+            events.append((ts, show["slug"], show["added"], html))
+    for upd in M.get("updates", []):
+        ts = upd.get("ts") or f'{upd["date"]}T00:00:00'
+        slug = upd.get("slug")
+        if slug:
+            show = by_slug.get(slug)
+            if not show:
+                continue
+            link = f'<a href="{show_url(show)}">{_show_label(show)}</a>'
+            html = f'{esc(upd["text"])} &mdash; {link} {_src_tag(show)}'
+            # Workflow-generated entries can link straight to the show's
+            # technical-data table (rendered when a processing report exists).
+            if upd.get("report"):
+                html += f' &middot; <a href="{show_url(show)}#technical-data">view data</a>'
+        else:
+            # Site-wide note (e.g. a feature change) — no show link or source tag.
+            html = esc(upd["text"])
+        events.append((ts, slug or "", upd["date"], html))
+    events.sort(key=lambda e: (e[0], e[1]), reverse=True)
+    items = []
+    for _ts, _slug, date, html in events:
+        items.append(f'''      <li class="update-item">
+        <span class="update-date">{esc(date)}</span>
+        <div class="update-text">{html}</div>
+      </li>''')
+    return "\n".join(items)
+
+def contact_block():
+    return '''
+  <section class="contact-section">
+    <p class="contact-sub">Questions or comments about the recordings? Send a message below.</p>
+    <form class="contact-form" id="contactForm">
+      <div class="form-group">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" required autocomplete="name">
+      </div>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label for="message">Message</label>
+        <textarea id="message" name="message" required></textarea>
+      </div>
+      <button type="submit" class="form-submit" id="submitBtn">Send Message</button>
+      <p id="formStatus"></p>
+    </form>
+  </section>
+  <script>
+  document.getElementById('contactForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    const status = document.getElementById('formStatus');
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    status.textContent = '';
+    status.className = '';
+    try {
+      const res = await fetch('https://contact-form.renedebos.workers.dev', {
+        method: 'POST',
+        body: new FormData(this)
+      });
+      if (res.ok) {
+        status.textContent = 'Message sent — thank you!';
+        status.className = 'success';
+        this.reset();
+      } else {
+        throw new Error();
+      }
+    } catch {
+      status.textContent = 'Something went wrong. Please try again.';
+      status.className = 'error';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Send Message';
+    }
+  });
+  </script>'''
+
+def _song_occ_html(o):
+    p = player(o["file"], free=True, duration=o.get("duration"), version=o["ver"])
+    anchor = f'{esc(o["url"])}#track-{o["num"]}'
+    return f'''<div class="song-occ">
+        <div class="song-occ-head">
+          <a class="artist-chip artist-{o['artist']}" href="{anchor}">{esc(o['artist_name'])}</a>
+          <span class="song-occ-where">{esc(o['venue'])} &middot; {esc(o['date'])}</span>
+          <a class="song-occ-open" href="{anchor}">open on show page &rarr;</a>
+        </div>
+        {p}
+      </div>'''
+
+def jsonld(*objs):
+    """Wrap schema.org object(s) in a JSON-LD <script> for the page <head>."""
+    objs = [o for o in objs if o]
+    if not objs:
+        return ""
+    payload = objs[0] if len(objs) == 1 else objs
+    return ('\n<script type="application/ld+json">'
+            + json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+            + "</script>")
+
+def home_jsonld():
+    return jsonld({
+        "@context": "https://schema.org", "@type": "WebSite",
+        "name": "The Hannan Recordings", "url": "https://renedebos.com/",
+        "description": "Live recordings archive — Jerry Hannan, Sean Hannan, and Mad Hannans.",
+        "potentialAction": {
+            "@type": "SearchAction",
+            "target": {"@type": "EntryPoint",
+                       "urlTemplate": "https://renedebos.com/search/?q={search_term_string}"},
+            "query-input": "required name=search_term_string",
+        },
+    })
+
+def show_jsonld(show, artist):
+    ev = {
+        "@context": "https://schema.org", "@type": "MusicEvent",
+        "name": f"{artist['name']} live at {show.get('venue_short') or show.get('venue')}",
+        "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+        "eventStatus": "https://schema.org/EventScheduled",
+        "performer": {"@type": "MusicGroup", "name": artist["name"]},
+        "location": {"@type": "MusicVenue", "name": show.get("venue") or show.get("venue_short")},
+        "url": f"https://renedebos.com{show_url(show)}",
+        "image": "https://renedebos.com/assets/og.png",
+    }
+    if show.get("date"):
+        ev["startDate"] = show["date"]
+    objs = [ev]
+    tracks = show.get("tracks") or []
+    if tracks:
+        items = []
+        for t in tracks:
+            rec = {"@type": "MusicRecording", "position": t["num"], "name": t["title"],
+                   "byArtist": {"@type": "MusicGroup", "name": artist["name"]}}
+            d = iso_duration(t.get("duration"))
+            if d:
+                rec["duration"] = d
+            items.append(rec)
+        objs.append({
+            "@context": "https://schema.org", "@type": "MusicPlaylist",
+            "name": f"{show_title(show)} — {show.get('date') or ''}".strip(" —"),
+            "url": f"https://renedebos.com{show_url(show)}",
+            "numTracks": len(tracks), "track": items,
+        })
+    return jsonld(*objs)
+
+def song_jsonld(s):
+    return jsonld({
+        "@context": "https://schema.org", "@type": "MusicComposition",
+        "name": s["canonical"],
+        "url": f"https://renedebos.com/songs/{s['slug']}/",
+        "recordedAs": [{
+            "@type": "MusicRecording", "name": s["canonical"],
+            "byArtist": {"@type": "MusicGroup", "name": artist_name(o["artist"])},
+            "url": f"https://renedebos.com{o['url']}#track-{o['num']}",
+        } for o in s["occ"]],
+    })
+
+
+__all__ = ['DL_SVG', 'EXTRA_PAGES', 'PLAY_SVG', 'SITE_PAGES', 'STATUS_BLURB', '_show_label', '_song_occ_html', '_src_tag', 'about_block', 'artist_notes_block', 'artist_sections', 'contact_block', 'content', 'date_sorted_list', 'dl_button', 'featured_card', 'home_jsonld', 'jsonld', 'page_shell', 'player', 'recording_card', 'show_jsonld', 'show_row', 'site_nav', 'song_jsonld', 'status_line', 'tech_data_section', 'updates_list', 'why_block']
