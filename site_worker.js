@@ -2,10 +2,17 @@
 // short-link endpoints. Deployed by the GitHub Action via `npx wrangler deploy`
 // (config in wrangler.jsonc); the wav-download Worker in worker/ is separate.
 //
-// Routing: paths that match an uploaded asset are served directly and never
-// reach this script; everything else lands here. We handle the two API routes
-// and fall back to the assets binding (whose not_found_handling serves the
-// branded 404 page) for the rest.
+// Routing: `run_worker_first: true` in wrangler.jsonc makes every request hit
+// this script before Cloudflare's asset layer gets a say — that's required,
+// not cosmetic: with the default (assets-first) routing, Cloudflare's own
+// `not_found_handling` fallback intercepts full-page navigations to ANY
+// non-matching path (including /play/{slug} and /api/playlist, which are
+// dynamic, not files) before this script ever runs, serving and edge-caching
+// its generic 404 regardless of what this script would have returned —
+// confirmed 2026-07-08 (plain fetch() calls reached the script fine; actual
+// browser navigation, which sends Sec-Fetch-Mode: navigate, did not). So
+// `not_found_handling` is OFF, and the branded 404 below is served by this
+// script instead, which is guaranteed to run for every request.
 //
 // Short links (PLAYLIST FEATURE.md, Phase 4): slugs are content-addressed —
 // the first 6 hex chars of SHA-256 of the track-id list, lengthened only on
@@ -33,11 +40,13 @@ export default {
 
     const resp = await env.ASSETS.fetch(request);
     if (resp.status === 404) {
-      // Never let a 404 stick in a browser or edge cache — a transient miss
-      // (mid-deploy, propagation) must not shadow the fixed response later.
-      const r = new Response(resp.body, resp);
-      r.headers.set("Cache-Control", "no-store");
-      return r;
+      // Serve the branded 404 ourselves (see routing note above); no-store so
+      // a transient miss (mid-deploy, propagation) can't shadow a fix later.
+      const page = await env.ASSETS.fetch(new URL("/404.html", url));
+      return new Response(request.method === "HEAD" ? null : page.body, {
+        status: 404,
+        headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
+      });
     }
     return resp;
   },

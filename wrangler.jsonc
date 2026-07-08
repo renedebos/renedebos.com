@@ -6,10 +6,18 @@
   "name": "renedebos-site",
   "main": "site_worker.js",
   "compatibility_date": "2026-05-03",
+  // Without this, Cloudflare checks the static-asset manifest BEFORE running
+  // site_worker.js. /play/{slug} and /api/playlist aren't real files, so
+  // browser navigations to them (Sec-Fetch-Mode: navigate) got short-circuited
+  // straight to the 404 fallback — and cached that way — without the script
+  // ever running. Ordinary fetch() calls aren't flagged as navigations, so
+  // they always reached the script and looked fine, which is why this only
+  // ever broke actual link-pasting/address-bar use (2026-07-08).
+  "run_worker_first": true,
   "assets": {
     "directory": ".",
     "binding": "ASSETS",
-    "not_found_handling": "404-page"
+    "not_found_handling": "none"
   },
   "kv_namespaces": [
     { "binding": "PLAYLISTS", "id": "41a793b3ea5149abbc436cde920fc1ee" }
