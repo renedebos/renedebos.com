@@ -17,7 +17,9 @@
                    "upbeat", "rocker", "singalong", "folk", "country", "blues",
                    "rock", "story", "guest", "favorite", "rarity"];
 
-  var filters = { artist: "all", venue: "all", source: "all", tags: [] };
+  // Every facet is multi-select now: an empty array means "no filter" (all
+  // match); a non-empty array is OR'd within the facet, AND'd across facets.
+  var filters = { artist: [], venue: [], source: [], tags: [] };
   var mode = "songs";                    // songs | minutes | endless
   var amounts = { songs: 12, minutes: 45 };
 
@@ -38,9 +40,9 @@
   }
 
   function matches(t) {
-    if (filters.artist !== "all" && t.artist !== filters.artist) return false;
-    if (filters.venue !== "all" && t.venue !== filters.venue) return false;
-    if (filters.source !== "all" && t.sourceType !== filters.source) return false;
+    if (filters.artist.length && filters.artist.indexOf(t.artist) === -1) return false;
+    if (filters.venue.length && filters.venue.indexOf(t.venue) === -1) return false;
+    if (filters.source.length && filters.source.indexOf(t.sourceType) === -1) return false;
     for (var i = 0; i < filters.tags.length; i++) {
       if (t.tags.indexOf(filters.tags[i]) === -1) return false;
     }
@@ -80,38 +82,41 @@
     return seen;
   }
 
+  function filterGroup(label, key, allLabel, options) {
+    return '<div class="pl-filter-group"><p class="pl-filter-label">' + esc(label) + '</p><div class="chip-row">'
+      + chip(key, "all", allLabel, filters[key].length === 0)
+      + options.map(function (o) {
+        return chip(key, o[0], o[1], filters[key].indexOf(o[0]) !== -1);
+      }).join("") + "</div></div>";
+  }
+
   function renderFilters() {
-    var rows = [];
-    rows.push('<div class="chip-row">' + [chip("artist", "all", "All artists", filters.artist === "all")]
-      .concat(uniq("artist").map(function (a) {
-        return chip("artist", a, ARTIST_NAMES[a] || a, filters.artist === a);
-      })).join("") + "</div>");
-    rows.push('<div class="chip-row">' + [chip("venue", "all", "All venues", filters.venue === "all")]
-      .concat(uniq("venue").map(function (v) {
-        return chip("venue", v, v, filters.venue === v);
-      })).join("") + "</div>");
-    rows.push('<div class="chip-row">'
-      + chip("source", "all", "All sources", filters.source === "all")
-      + chip("source", "aud", "AUD", filters.source === "aud")
-      + chip("source", "sbd", "SBD", filters.source === "sbd") + "</div>");
+    var groups = [];
+    groups.push(filterGroup("Artist", "artist", "All artists",
+      uniq("artist").map(function (a) { return [a, ARTIST_NAMES[a] || a]; })));
+    groups.push(filterGroup("Venue", "venue", "All venues",
+      uniq("venue").map(function (v) { return [v, v]; })));
+    groups.push(filterGroup("Source", "source", "All sources",
+      [["aud", "AUD"], ["sbd", "SBD"]]));
     var present = TAG_ORDER.filter(function (tg) {
       return CATALOG.some(function (t) { return t.tags.indexOf(tg) !== -1; });
     });
-    rows.push('<div class="chip-row">' + present.map(function (tg) {
-      return chip("tag", tg, tg, filters.tags.indexOf(tg) !== -1);
-    }).join("") + "</div>");
-    filtersEl.innerHTML = rows.join("");
+    groups.push('<div class="pl-filter-group"><p class="pl-filter-label">Tags</p><div class="chip-row">'
+      + present.map(function (tg) {
+        return chip("tag", tg, tg, filters.tags.indexOf(tg) !== -1);
+      }).join("") + "</div></div>");
+    filtersEl.innerHTML = groups.join("");
   }
 
   function renderLength() {
-    lengthEl.innerHTML = '<div class="chip-row">'
+    lengthEl.innerHTML = '<div class="pl-filter-group"><p class="pl-filter-label">Length</p><div class="chip-row">'
       + chip("mode", "songs", "Songs", mode === "songs")
       + chip("mode", "minutes", "Minutes", mode === "minutes")
       + chip("mode", "endless", "Endless shuffle", mode === "endless")
       + (mode === "endless" ? "" :
         '<input id="pl-amount" class="pl-amount" type="number" min="1" max="999" value="'
         + amounts[mode] + '" aria-label="How many ' + mode + '">')
-      + "</div>";
+      + "</div></div>";
   }
 
   function updateStatus() {
@@ -129,11 +134,12 @@
     var b = e.target.closest(".chip");
     if (!b) return;
     var g = b.dataset.group, v = b.dataset.value;
-    if (g === "tag") {
-      var i = filters.tags.indexOf(v);
-      if (i === -1) filters.tags.push(v); else filters.tags.splice(i, 1);
+    var key = g === "tag" ? "tags" : g;
+    if (v === "all") {
+      filters[key] = [];
     } else {
-      filters[g] = v;
+      var i = filters[key].indexOf(v);
+      if (i === -1) filters[key].push(v); else filters[key].splice(i, 1);
     }
     renderFilters();
     updateStatus();

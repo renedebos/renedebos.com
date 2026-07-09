@@ -124,11 +124,15 @@ def build_playlist():
         nav=site_nav("Playlist"),
         main='''
   <section class="playlist">
-    <div id="pl-filters" class="search-filters"></div>
-    <div id="pl-length" class="search-filters"></div>
-    <p id="pl-status" class="search-status">Loading the track catalog…</p>
-    <p class="pl-actions"><button id="pl-generate" class="pl-generate" type="button" disabled>Generate playlist</button>
-    <button id="pl-share" class="pl-generate pl-share" type="button" hidden>Copy share link</button></p>
+    <div class="pl-panel">
+      <div id="pl-filters" class="pl-filter-groups"></div>
+    </div>
+    <div class="pl-panel pl-panel-build">
+      <div id="pl-length" class="pl-filter-groups"></div>
+      <p id="pl-status" class="search-status">Loading the track catalog…</p>
+      <p class="pl-actions"><button id="pl-generate" class="pl-generate" type="button" disabled>Generate playlist</button>
+      <button id="pl-share" class="pl-generate pl-share" type="button" hidden>Copy share link</button></p>
+    </div>
     <div id="pl-now" class="pl-now" hidden></div>
     <div id="pl-queue" class="pl-queue"></div>
   </section>''',

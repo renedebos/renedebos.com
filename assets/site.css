@@ -1555,6 +1555,23 @@ a.artist-chip:hover { filter: brightness(1.08); }
 
 /* ── playlist generator (/playlist/) ───────────────────────────────────── */
 
+/* Two cards: narrow-it-down filters, then build-and-play. Replaces the old
+   flat stack of unlabeled chip rows, which read as one undifferentiated
+   wall of buttons once artist/venue/source/tags were all on screen. */
+.pl-panel {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 1.1rem 1.2rem; margin: 1.2rem 0;
+}
+.pl-panel-build { display: flex; flex-direction: column; gap: 0.2rem; }
+.pl-panel-build .search-status { margin: 0.7rem 0 0; }
+.pl-panel-build .pl-actions { margin: 0.9rem 0 0; }
+
+.pl-filter-groups { display: flex; flex-direction: column; gap: 0.9rem; }
+.pl-filter-label {
+  font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted); font-weight: 500; margin: 0 0 0.4rem;
+}
+
 .pl-amount {
   font-family: var(--sans); font-size: 12px; font-weight: 500;
   color: var(--text); background: var(--surface);
@@ -1579,6 +1596,10 @@ a.artist-chip:hover { filter: brightness(1.08); }
   background: var(--player-bg); border: 1px solid var(--border);
   border-radius: 6px; padding: 0.9rem 1.1rem; margin: 1rem 0;
 }
+/* .pl-now's own `display` beats the UA [hidden]{display:none} default
+   (author rules always win over user-agent ones), so the empty card was
+   rendering as an empty bar even while marked hidden. */
+.pl-now[hidden] { display: none; }
 .pl-now-info { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.6rem; }
 .pl-now-title {
   font-size: 16px; font-weight: 500; color: var(--text); text-decoration: none;
