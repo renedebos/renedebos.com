@@ -1,0 +1,283 @@
+{
+  "slug": "seanjerry-19-broadway-1999-12",
+  "target_lufs": -20,
+  "tp_ceiling": -1,
+  "source": "24-bit / 32 kHz FLAC",
+  "filters": "none",
+  "tool": "ffmpeg loudnorm",
+  "workflow_version": 2,
+  "ffmpeg": "7.1.3-0+deb13u1",
+  "date": "2026-07-09",
+  "tracks": {
+    "1": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -25.6,
+      "lufs": -20.13,
+      "tp": -0.95,
+      "lra": 10.1,
+      "md5": "e5c19acc491321da8aaefdf7e647024b"
+    },
+    "2": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -21.2,
+      "lufs": -20.01,
+      "tp": -2.12,
+      "lra": 10.3,
+      "md5": "e03cd40f4ae67f4341188277c9aff1b2"
+    },
+    "3": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -25.5,
+      "lufs": -20.08,
+      "tp": -0.99,
+      "lra": 10.4,
+      "md5": "22f49677afd2ca314801ef77a92b3f64"
+    },
+    "4": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -22.8,
+      "lufs": -20.02,
+      "tp": -1.65,
+      "lra": 11.1,
+      "md5": "05fd5122bc4da907b0e5834036e6dac7"
+    },
+    "5": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -25.0,
+      "lufs": -19.99,
+      "tp": -0.96,
+      "lra": 10.1,
+      "md5": "6e72904f2556d629e1fb601ffc0fcda0"
+    },
+    "6": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -26.3,
+      "lufs": -20.01,
+      "tp": -0.98,
+      "lra": 12.2,
+      "md5": "ad9d9b62141ee8fe7b58b2fab76dc07e"
+    },
+    "7": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -27.6,
+      "lufs": -20.03,
+      "tp": -1.0,
+      "lra": 13.3,
+      "md5": "b1b20387c26af1c21a0eb8e9dfe00e6f"
+    },
+    "8": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -24.1,
+      "lufs": -20.0,
+      "tp": -1.89,
+      "lra": 9.9,
+      "md5": "494abe7d757b6003d5b8eea64dde269b"
+    },
+    "9": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -24.7,
+      "lufs": -20.02,
+      "tp": -1.0,
+      "lra": 13.2,
+      "md5": "c5676b181ec29fecb47c37d93be7d212"
+    },
+    "10": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -22.1,
+      "lufs": -20.14,
+      "tp": -1.0,
+      "lra": 9.9,
+      "md5": "84a006b322d4fac33bcdbd50e0ca8dc8"
+    },
+    "11": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -19.1,
+      "lufs": -20.02,
+      "tp": -2.17,
+      "lra": 11.7,
+      "md5": "4bef87bfcb8fe3b97c0600f62715df8d"
+    },
+    "12": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -22.1,
+      "lufs": -20.01,
+      "tp": -0.99,
+      "lra": 16.2,
+      "md5": "0647f8654e0bcd81b93d5f6e8722fb45"
+    },
+    "13": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -21.6,
+      "lufs": -20.09,
+      "tp": -1.0,
+      "lra": 11.3,
+      "md5": "3597d8e3e4215750c1c2a896fa772691"
+    },
+    "14": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -18.9,
+      "lufs": -19.99,
+      "tp": -1.0,
+      "lra": 12.9,
+      "md5": "9f009aaabf514df025e449734c7bce8e"
+    },
+    "15": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -23.5,
+      "lufs": -20.5,
+      "tp": -0.99,
+      "lra": 17.0,
+      "md5": "9106c14c213bc068a7801d3fe11da323"
+    },
+    "16": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -26.3,
+      "lufs": -20.02,
+      "tp": -0.98,
+      "lra": 14.6,
+      "md5": "d0e11603e20d7d8646a85fcd4f346233"
+    },
+    "17": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -25.0,
+      "lufs": -20.0,
+      "tp": -1.97,
+      "lra": 8.5,
+      "md5": "376ff7100e1b3c1691c13780cf1af03a"
+    },
+    "18": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -23.8,
+      "lufs": -20.01,
+      "tp": -0.98,
+      "lra": 8.1,
+      "md5": "acabd6d920e8e3a51bdf1b4415f2c150"
+    },
+    "19": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.8,
+      "lufs": -20.02,
+      "tp": -0.88,
+      "lra": 9.8,
+      "md5": "0a2742b2a645324b00407c4f8a631cb9"
+    },
+    "20": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -19.1,
+      "lufs": -20.02,
+      "tp": -1.06,
+      "lra": 5.6,
+      "md5": "4761ef82c43dc30fc66033dafa18b0a4"
+    },
+    "21": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.9,
+      "lufs": -20.0,
+      "tp": -3.46,
+      "lra": 12.1,
+      "md5": "df50fa71bfeab13fb49f718323c06cad"
+    },
+    "22": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -22.5,
+      "lufs": -20.0,
+      "tp": -1.0,
+      "lra": 13.0,
+      "md5": "8e7e45128e570fd6f93f731d5e143f02"
+    },
+    "23": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -21.3,
+      "lufs": -20.2,
+      "tp": -0.93,
+      "lra": 10.3,
+      "md5": "c8d5ebe3cf0ff7d8fce82ca2523b171c"
+    },
+    "24": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -23.7,
+      "lufs": -19.92,
+      "tp": -0.98,
+      "lra": 9.9,
+      "md5": "00f6d7c19bbedfd5112f1c7879c2c65a"
+    },
+    "25": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -21.0,
+      "lufs": -19.99,
+      "tp": -1.0,
+      "lra": 7.7,
+      "md5": "a2a07bf0b234822020d1a852a9a6db3d"
+    },
+    "26": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.0,
+      "lufs": -19.99,
+      "tp": -1.01,
+      "lra": 10.0,
+      "md5": "9e02dc1a8430a920b80166436c83399c"
+    },
+    "27": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.7,
+      "lufs": -19.92,
+      "tp": -0.96,
+      "lra": 9.4,
+      "md5": "8813c4a11081ba46454abcb396378da6"
+    },
+    "28": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -24.2,
+      "lufs": -20.02,
+      "tp": -1.0,
+      "lra": 12.9,
+      "md5": "a05ff31d4ee709dc61b45afd3591712b"
+    },
+    "29": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -25.7,
+      "lufs": -20.02,
+      "tp": -1.5,
+      "lra": 12.1,
+      "md5": "7797fbe71249e3c71b7bc97a9c9f56bf"
+    },
+    "30": {
+      "ver": 2,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -27.5,
+      "lufs": -20.02,
+      "tp": -0.99,
+      "lra": 13.7,
+      "md5": "7beeaedb81b76589b7aa5c6b4f3cdc05"
+    }
+  }
+}
