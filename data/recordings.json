@@ -6568,7 +6568,9 @@
           ]
         }
       ],
-      "description": null,
+      "description": [
+        "A fun show with both Jerry and Sean performing but the recording has quite a significant amount of background chatter from the bar. Jerry has some voice issues during this time and most of the vocals are done by Sean. This concert stands out for a very early version of 'Perfect Autumn Day'. You can find the full finished version of this song at https://jerryhannan.com/sean-s-page."
+      ],
       "page": null,
       "processing_status": "done",
       "added": "2026-07-09",
