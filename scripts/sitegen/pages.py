@@ -16,7 +16,7 @@ def build_home():
         description="Live recordings archive — Jerry Hannan, Sean Hannan, and Mad Hannans performing at clubs in Marin and the Bay Area in the late 1990s and early 2000s.",
         url="https://renedebos.com",
         eyebrow="Live Recordings Archive",
-        heading="The <em>Hannan</em><br>Recordings",
+        heading="The <em>Hannan</em><br>Tapes",
         tagline="Live performances &mdash; San Francisco Bay Area",
         nav=site_nav("Home"),
         main=about_block() + why_block() + featured_card() + artist_notes_block(),
