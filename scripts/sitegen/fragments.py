@@ -95,7 +95,7 @@ def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main,
 <meta name="twitter:description" content="{esc(description)}">
 <meta name="twitter:image" content="https://renedebos.com/assets/og.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♪</text></svg>">
-<link rel="alternate" type="application/rss+xml" title="The Hannan Recordings &mdash; Updates" href="https://renedebos.com/feed.xml">
+<link rel="alternate" type="application/rss+xml" title="The Hannan Tapes &mdash; Updates" href="https://renedebos.com/feed.xml">
 <link rel="stylesheet" href="/assets/fonts.css">
 <link rel="stylesheet" href="/assets/site.css">{extra_head}
 </head>
@@ -117,7 +117,7 @@ def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main,
 </main>
 
 <footer>
-  Part of <a href="/">The Hannan Recordings</a> archive
+  Part of <a href="/">The Hannan Tapes</a> archive
   <span class="footer-links">
     <a href="/history/">The Story So Far</a> &middot;
     <a href="/contact/">Contact</a> &middot;
@@ -468,7 +468,7 @@ def jsonld(*objs):
 def home_jsonld():
     return jsonld({
         "@context": "https://schema.org", "@type": "WebSite",
-        "name": "The Hannan Recordings", "url": "https://renedebos.com/",
+        "name": "The Hannan Tapes", "url": "https://renedebos.com/",
         "description": "Live recordings archive — Jerry Hannan, Sean Hannan, and Mad Hannans.",
         "potentialAction": {
             "@type": "SearchAction",

@@ -12,7 +12,7 @@ from .fragments import *  # noqa: F401,F403
 
 def build_home():
     return page_shell(
-        title="The Hannan Recordings",
+        title="The Hannan Tapes",
         description="Live recordings archive — Jerry Hannan, Sean Hannan, and Mad Hannans performing at clubs in Marin and the Bay Area in the late 1990s and early 2000s.",
         url="https://renedebos.com",
         eyebrow="Live Recordings Archive",
@@ -82,10 +82,10 @@ def build_archive():
 })();
 </script>'''
     return page_shell(
-        title="Archive — The Hannan Recordings",
+        title="Archive — The Hannan Tapes",
         description="Every Jerry Hannan, Sean Hannan, and Mad Hannans recording in the archive, by artist or by date.",
         url="https://renedebos.com/archive/",
-        eyebrow="The Hannan Recordings",
+        eyebrow="The Hannan Tapes",
         heading="Archive",
         tagline="Every show &middot; by artist or by date &middot; filter to split shows",
         nav=site_nav("Archive"),
@@ -95,10 +95,10 @@ def build_archive():
 
 def build_search():
     return page_shell(
-        title="Search — The Hannan Recordings",
-        description="Search the Hannan Recordings archive by song, artist, venue, date, or source.",
+        title="Search — The Hannan Tapes",
+        description="Search the Hannan Tapes archive by song, artist, venue, date, or source.",
         url="https://renedebos.com/search/",
-        eyebrow="The Hannan Recordings",
+        eyebrow="The Hannan Tapes",
         heading="Search",
         tagline="Find a song, show, venue, or date",
         nav=site_nav("Search"),
@@ -115,10 +115,10 @@ def build_search():
 
 def build_playlist():
     return page_shell(
-        title="Playlist — The Hannan Recordings",
+        title="Playlist — The Hannan Tapes",
         description="Build a custom playlist from the Hannan archive — filter by artist, venue, mood, and source, then hit play.",
         url="https://renedebos.com/playlist/",
-        eyebrow="The Hannan Recordings",
+        eyebrow="The Hannan Tapes",
         heading="Playlist",
         tagline="Roll your own set list from the archive",
         nav=site_nav("Playlist"),
@@ -137,10 +137,10 @@ def build_playlist():
 
 def build_updates():
     return page_shell(
-        title="Updates — The Hannan Recordings",
-        description="Recently added to the Hannan Recordings archive.",
+        title="Updates — The Hannan Tapes",
+        description="Recently added to the Hannan Tapes archive.",
         url="https://renedebos.com/updates/",
-        eyebrow="The Hannan Recordings",
+        eyebrow="The Hannan Tapes",
         heading="Updates",
         tagline="Recently added to the archive",
         nav=site_nav("Updates"),
@@ -154,10 +154,10 @@ def build_updates():
 
 def build_history():
     return page_shell(
-        title="The Story So Far — The Hannan Recordings",
-        description="A behind-the-scenes history of how the Hannan Recordings archive came together.",
+        title="The Story So Far — The Hannan Tapes",
+        description="A behind-the-scenes history of how the Hannan Tapes archive came together.",
         url="https://renedebos.com/history/",
-        eyebrow="The Hannan Recordings",
+        eyebrow="The Hannan Tapes",
         heading="The Story So Far",
         tagline="A behind-the-scenes history of the archive",
         nav=site_nav(),
@@ -166,10 +166,10 @@ def build_history():
 
 def build_contact():
     return page_shell(
-        title="Contact — The Hannan Recordings",
+        title="Contact — The Hannan Tapes",
         description="Questions or comments about the recordings? Get in touch.",
         url="https://renedebos.com/contact/",
-        eyebrow="The Hannan Recordings",
+        eyebrow="The Hannan Tapes",
         heading="Contact",
         tagline="Questions or comments about the recordings",
         nav=site_nav(),
@@ -344,7 +344,7 @@ def build_show(show):
         title=f"{show_title(show)} — {show['date'] or 'Unknown date'}",
         description=f"{show_title(show)}, {date_with_subtitle(show)} — {SOURCE_LABEL.get(show['source'], show['source'])}. Stream or download.",
         url=f"https://renedebos.com{show_url(show)}",
-        eyebrow="The Hannan Recordings",
+        eyebrow="The Hannan Tapes",
         heading=f"{esc(artist['name'])}<br><em>Live at {esc(show['venue_short'])}</em>",
         tagline=" &middot; ".join(esc(b) for b in tagline_bits),
         nav=site_nav(),
@@ -403,7 +403,7 @@ def build_wavesurfer_lab():
              f'<script type="module" src="/assets/wavesurfer.js"></script>')
 
     return page_shell(
-        title="Waveform prototype — The Hannan Recordings",
+        title="Waveform prototype — The Hannan Tapes",
         description="Experimental wavesurfer.js waveform player prototype.",
         url="https://renedebos.com/lab/wavesurfer/",
         eyebrow="Lab &middot; Prototype",
@@ -494,9 +494,9 @@ def build_songs_index():
     </table>
   </div>'''
     return page_shell(
-        title="Songs — The Hannan Recordings",
+        title="Songs — The Hannan Tapes",
         description=f"Every song across the Hannan live archive — {len(songs)} songs cross-referenced against every show and performance.",
-        url="https://renedebos.com/songs/", eyebrow="The Hannan Recordings",
+        url="https://renedebos.com/songs/", eyebrow="The Hannan Tapes",
         heading="Songs", tagline="Every song, and every time it was played",
         nav=site_nav("Songs"), main=main,
         extra_scripts='\n<script src="/assets/songs.js"></script>')
@@ -520,9 +520,9 @@ def build_song_page(s):
     </div>
   </section>''')
     return page_shell(
-        title=f"{s['canonical']} — The Hannan Recordings",
+        title=f"{s['canonical']} — The Hannan Tapes",
         description=f"{s['canonical']} — {s['plays']} live performance{plural} by {arts} in the Hannan archive.",
-        url=f"https://renedebos.com/songs/{s['slug']}/", eyebrow="The Hannan Recordings &middot; Song",
+        url=f"https://renedebos.com/songs/{s['slug']}/", eyebrow="The Hannan Tapes &middot; Song",
         heading=esc(s["canonical"]), tagline=f"Played {s['plays']} time{plural} across the archive",
         nav=site_nav("Songs"), main="".join(parts), extra_head=song_jsonld(s))
 
@@ -539,9 +539,9 @@ def build_404():
     </ul>
   </section>'''
     return page_shell(
-        title="Page not found — The Hannan Recordings",
+        title="Page not found — The Hannan Tapes",
         description="That page couldn't be found in the Hannan live recordings archive.",
-        url="https://renedebos.com/404", eyebrow="The Hannan Recordings",
+        url="https://renedebos.com/404", eyebrow="The Hannan Tapes",
         heading="404", tagline="Page not found",
         nav=site_nav(), main=main)
 

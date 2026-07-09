@@ -112,7 +112,7 @@ def build_feed():
             f"    <pubDate>{pub}</pubDate>\n    <description>{plain}</description>\n  </item>")
     return ('<?xml version="1.0" encoding="UTF-8"?>\n'
             '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">\n<channel>\n'
-            "  <title>The Hannan Recordings &#8212; Updates</title>\n"
+            "  <title>The Hannan Tapes &#8212; Updates</title>\n"
             f"  <link>{base}/updates/</link>\n"
             "  <description>New shows, re-masters, and fixes in the Hannan live archive.</description>\n"
             "  <language>en-us</language>\n"
