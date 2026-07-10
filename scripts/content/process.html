@@ -49,9 +49,14 @@
       <p>Every exported track is measured before anything is processed: integrated
         loudness, true peak, loudness range, DC offset, a clipping scan, a
         <strong>DAT dropout scan</strong> (held or muted samples from tape error
-        concealment), an <strong>effective-bandwidth check</strong> against the file&rsquo;s
+        concealment), a <strong>digital click and discontinuity scan</strong> (corrupted
+        or skipped samples &mdash; a step in the waveform is a defect when it dwarfs its
+        surroundings, which separates real glitches from claps), an
+        <strong>effective-bandwidth check</strong> against the file&rsquo;s
         sample rate (catches mislabelled rates and lossy-sourced files), and
-        <strong>channel health</strong> &mdash; left/right balance and phase. A track that
+        <strong>channel health</strong> &mdash; left/right balance and phase. Any defect is
+        reported with its exact timestamp, and a spectrogram image per track can be
+        generated for visual inspection of suspect tapes. A track that
         fails goes back to the editing stage &mdash; nothing clipped gets published.</p>
     </div>
 

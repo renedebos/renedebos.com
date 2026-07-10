@@ -221,18 +221,32 @@ def astats_channels(path):
     return rms, peak, dc
 
 
-def dropout_scan(path, sr, ch, min_ms=2.0, edge_s=2.0):
-    """DAT-style dropout detector: runs of IDENTICAL sample values (any level,
+def fmt_ts(sec):
+    m, s = divmod(sec, 60)
+    return f"{int(m)}:{s:06.3f}"
+
+
+def defect_scan(path, sr, ch, min_ms=2.0, edge_s=2.0):
+    """DAT-defect detector, one decode pass. Returns (dropouts, clicks):
+
+    dropouts — [(time_s, run_ms)]: runs of IDENTICAL sample values (any level,
     including digital zero) of >= min_ms, ignoring edge_s at each end where
     fades legitimately sit at zero. Error concealment on a failing DAT holds
     or mutes samples — a different defect from clipping, which only lives at
-    full scale. Returns (events, worst_run_ms). Skip-sampled for speed; runs
-    are confirmed exactly before they count."""
+    full scale. Skip-sampled for speed; runs are confirmed exactly.
+
+    clicks — [(time_s, step, ratio)]: single-sample spikes and waveform
+    discontinuities (corrupted samples / skipped samples). Candidates come
+    from a per-window ffmpeg astats Max_difference pass (C speed); each is
+    then confirmed in Python against its local context — a step is a defect
+    when it dwarfs the surrounding RMS, which separates digital clicks from
+    legitimate transients like claps (loud surroundings -> low ratio)."""
     a = clipcheck.decode_f32(path)
     n = len(a) // ch
+
+    dropouts = []
     N = max(32, int(sr * min_ms / 1000))
     M = max(16, N // 3)
-    events, worst = 0, 0
     for c in range(ch):
         s = a[c::ch]
         lo, hi = int(edge_s * sr), n - int(edge_s * sr)
@@ -246,12 +260,71 @@ def dropout_scan(path, sr, ch, min_ms=2.0, edge_s=2.0):
                     k += 1
                 run = k - j + 1
                 if run >= N and s[j:k + 1].count(v) == run:
-                    events += 1
-                    worst = max(worst, run)
+                    dropouts.append((j / sr, round(run * 1000 / sr, 1)))
                 p = k + M
             else:
                 p += M
-    return events, round(worst * 1000 / sr, 1)
+    dropouts.sort()
+
+    # click/discontinuity candidates: windowed max sample-to-sample difference
+    win = 512
+    r = subprocess.run(
+        ["ffmpeg", "-hide_banner", "-loglevel", "error", "-i", path,
+         "-af", f"asetnsamples=n={win},astats=metadata=1:reset=1,"
+                "ametadata=mode=print:key=lavfi.astats.Overall.Max_difference:file=-",
+         "-f", "null", "-"], capture_output=True, text=True)
+    cands, t = [], None
+    for line in r.stdout.splitlines():
+        m = re.search(r"pts_time:([\d.]+)", line)
+        if m:
+            t = float(m.group(1))
+        m = re.search(r"Max_difference=([\d.eE+-]+)", line)
+        if m and t is not None and float(m.group(1)) > 0.18:
+            cands.append(t)
+
+    # Confirmation thresholds, calibrated on 34 real audience tracks
+    # (2026-07-10): raw step size is useless there — loud strums/claps hit
+    # sample steps of 0.6-1.1 routinely, and a lone clap in a quiet moment
+    # reached 18.9x its surroundings. So: a SPIKE only counts when it dwarfs
+    # its context by >= 25x (context excludes the defect itself), and a
+    # SPLICE (skipped samples / hold offset) is detected by the DC mean-shift
+    # between the audio before and after the step — claps are pure AC and
+    # can't shift the mean. Clicks buried in loud music stay undetectable
+    # statistically (and are masked anyway).
+    clicks = []
+    chans = [a[c::ch] for c in range(ch)]
+    # splice mean-shift windows must exceed a bass period (30 ms covers 33 Hz
+    # and up) or low-frequency phase reads as a DC jump — 17 false splices on
+    # the calibration tracks came from 5 ms windows straddling bass notes
+    ctx, guard, half = int(0.05 * sr), int(0.002 * sr), int(0.030 * sr)
+    for t in cands:
+        w0, w1 = int(t * sr), min(n - 1, int(t * sr) + win + 1)
+        for s in chans:
+            best, bi = 0.0, None
+            for i in range(max(1, w0), w1):
+                d = abs(s[i] - s[i - 1])
+                if d > best:
+                    best, bi = d, i
+            if bi is None or best < 0.18:
+                continue
+            seg = (list(s[max(0, bi - ctx):max(0, bi - guard)])
+                   + list(s[bi + guard:min(n, bi + ctx)]))
+            rms = (sum(x * x for x in seg) / max(len(seg), 1)) ** 0.5
+            ratio = best / max(rms, 1e-9)
+            pre = s[max(0, bi - half):bi]
+            post = s[bi:min(n, bi + half)]
+            shift = abs(sum(post) / max(len(post), 1) - sum(pre) / max(len(pre), 1))
+            if ratio >= 25:
+                clicks.append((bi / sr, round(best, 2), round(ratio, 1), "spike"))
+            elif shift > 0.08:
+                clicks.append((bi / sr, round(best, 2), round(shift, 2), "splice"))
+    # de-dup events within 5 ms of each other (stereo pairs, window overlaps)
+    clicks.sort()
+    deduped = []
+    for e in clicks:
+        if not deduped or e[0] - deduped[-1][0] > 0.005:
+            deduped.append(e)
+    return dropouts, deduped
 
 
 def mean_vol(path, af):
@@ -336,8 +409,9 @@ def cmd_diagnose(args):
             clip, _ = clipcheck.classify(worst_run, srp, events)
         dc_bad = dc is not None and abs(float(dc)) > 0.01
 
-        # DAT dropout scan: identical-sample runs at any level, mid-track
-        drops, drop_ms = dropout_scan(p, sr, nch)
+        # DAT defect scan: dropouts (identical-sample runs) + clicks/steps
+        dropouts, clicks = defect_scan(p, sr, nch)
+        drops, drop_ms = len(dropouts), max((ms for _, ms in dropouts), default=0)
         # effective bandwidth vs container rate (catches mislabelled sample
         # rates and lossy-sourced files): high-band mean vs full-band mean
         cut = int(0.43 * sr)
@@ -373,8 +447,16 @@ def cmd_diagnose(args):
         if dc_bad:
             flags.append(f"DC: {f} — DC offset {dc}.")
         if drops:
-            flags.append(f"DROPOUT: {f} — {drops} identical-sample run(s) mid-track, "
-                         f"worst {drop_ms} ms (DAT error concealment?). Listen there.")
+            where = ", ".join(f"{fmt_ts(t)} ({ms} ms)" for t, ms in dropouts[:5])
+            more = f" +{drops - 5} more" if drops > 5 else ""
+            flags.append(f"DROPOUT: {f} — {drops} identical-sample run(s) mid-track "
+                         f"at {where}{more} (DAT error concealment?). Listen there.")
+        if clicks:
+            where = ", ".join(f"{fmt_ts(t)} ({kind}, step {st}, {m})"
+                              for t, st, m, kind in clicks[:5])
+            more = f" +{len(clicks) - 5} more" if len(clicks) > 5 else ""
+            flags.append(f"CLICK: {f} — {len(clicks)} suspected digital defect(s) "
+                         f"at {where}{more}. Listen there.")
         if bw_bad:
             flags.append(f"BANDWIDTH: {f} — energy above {cut/1000:.1f} kHz is "
                          f"{bw_delta:.0f} dB below full-band: content doesn't fill the "
@@ -385,7 +467,16 @@ def cmd_diagnose(args):
             flags.append(f"PHASE: {f} — side energy {sm:+.1f} dB above mid: channels "
                          "largely out of phase (inverted channel?).")
         print(f"  {f}: in {I:.1f} LUFS, LRA {LRA:.1f}, TP {TP:.1f}, pred@{target} "
-              f"{pred:+.1f}, clip {clip}, drops {drops}", flush=True)
+              f"{pred:+.1f}, clip {clip}, drops {drops}, clicks {len(clicks)}", flush=True)
+
+        if getattr(args, "spectrograms", False):
+            sdir = os.path.join(folder, "spectrograms")
+            os.makedirs(sdir, exist_ok=True)
+            png = os.path.join(sdir, os.path.splitext(f)[0] + ".png")
+            subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+                            "-i", p, "-lavfi",
+                            "showspectrumpic=s=2048x512:legend=1:gain=5",
+                            png], capture_output=True)
 
     out = os.path.join(folder, "diagnostic_report.txt")
     L = ["DIAGNOSTIC REPORT",
@@ -793,6 +884,9 @@ def main():
     d.add_argument("input")
     d.add_argument("--artist", choices=list(ARTIST_TARGET))
     d.add_argument("--target", type=float)
+    d.add_argument("--spectrograms", action="store_true",
+                   help="also write a spectrogram PNG per track (visual QA for "
+                        "suspect tapes: dropouts show as vertical stripes)")
     d.set_defaults(func=cmd_diagnose)
 
     p = sub.add_parser("process")
