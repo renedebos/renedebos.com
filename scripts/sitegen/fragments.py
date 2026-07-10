@@ -310,6 +310,14 @@ def show_row(show, with_artist=False):
         marker = f'<span class="show-tracks" title="{n} songs available">&#9834; {n}</span>'
     else:
         marker = '<span class="show-tracks"></span>'
+    # NR pill: shows whose provenance records manual pre-edits (noise
+    # reduction) get a marker on the listing, mirroring the show page's
+    # tech-table badge. Rendered inside the venue cell — the row is a fixed
+    # 5-column grid, so it must not be an extra grid child.
+    proc = load_processing(show["slug"])
+    nr_html = (f' <span class="proc-status pre-edit show-nr" '
+               f'title="{esc(proc["pre_edits"])}">NR</span>'
+               if proc and proc.get("pre_edits") else "")
     subtitle = f' &middot; <em>{esc(show["subtitle"])}</em>' if show.get("subtitle") else ""
     primary_size = next((r["size"] for r in show["recordings"] if not r["alternate"]), "—")
     info = esc(json.dumps([
@@ -325,7 +333,7 @@ def show_row(show, with_artist=False):
     artist_prefix = f'<span class="show-artist">{esc(artist["name"])}</span> &middot; ' if with_artist else ""
     return f'''      <a class="show-row" href="{show_url(show)}" data-info="{info}">
         <span class="show-date">{esc(show["date"] or "Unknown date")}</span>
-        <span class="show-venue">{artist_prefix}{esc(show["venue"] or "")}{subtitle}{extra_html}</span>
+        <span class="show-venue">{artist_prefix}{esc(show["venue"] or "")}{subtitle}{extra_html}{nr_html}</span>
         {marker}
         <span class="show-src src-{show["source"].lower()}">{esc(show["source"])}</span>
         <span class="show-arrow">&rarr;</span>

@@ -1703,3 +1703,7 @@ a.artist-chip:hover { filter: brightness(1.08); }
   font-size: 0.85em; background: var(--accent-light);
   padding: 0.05em 0.35em; border-radius: 4px;
 }
+
+/* NR pill on archive listing rows (mirrors the tech-table badge); lives
+   inside the venue cell so the fixed row grid is untouched */
+.show-nr { margin-left: 0.45rem; vertical-align: 1px; }
