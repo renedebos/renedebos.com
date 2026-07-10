@@ -27,11 +27,11 @@ def find_pieces(folder):
     if len(wavs) != 1:
         raise SystemExit(f"expected exactly one whole-show .wav in {folder}, "
                          f"found {len(wavs)}: {wavs}")
-    labels = os.path.join(folder, "labels.txt")
-    if not os.path.exists(labels):
+    lbl = [f for f in os.listdir(folder) if f.lower() == "labels.txt"]
+    if not lbl:
         raise SystemExit(f"no labels.txt in {folder} — export it from the Audacity "
                          "project first (File > Export > Labels)")
-    return os.path.join(folder, wavs[0]), labels
+    return os.path.join(folder, wavs[0]), os.path.join(folder, lbl[0])
 
 
 def read_labels(path):
@@ -45,7 +45,10 @@ def read_labels(path):
         parts = line.split("\t")
         if len(parts) < 3:
             raise SystemExit(f"malformed label line: {line!r}")
-        out.append((float(parts[0]), float(parts[1]), parts[2].strip()))
+        start, end = float(parts[0]), float(parts[1])
+        if end <= start:
+            continue        # point label = session annotation, not a track
+        out.append((start, end, parts[2].strip()))
     if not out:
         raise SystemExit(f"no labels found in {path}")
     return out
