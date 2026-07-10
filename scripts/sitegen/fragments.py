@@ -401,9 +401,18 @@ def status_line(show):
     if not st:
         return ""
     blurb = STATUS_BLURB.get(st, "")
+    # noise-reduced pill next to the status badge, same source of truth as
+    # the tech-table badge and the archive-row pill (sidecar pre_edits)
+    proc = load_processing(show["slug"])
+    nr = ""
+    if proc and proc.get("pre_edits"):
+        label = ("noise-reduced" if "noise reduction" in proc["pre_edits"].lower()
+                 else "pre-edited")
+        nr = (f'<span class="proc-status pre-edit" '
+              f'title="{esc(proc["pre_edits"])}">{label}</span>')
     return (f'''
   <p class="proc-status-line">Audio processing'''
-            f'<span class="proc-status status-{esc(st)}">{esc(st)}</span>'
+            f'<span class="proc-status status-{esc(st)}">{esc(st)}</span>{nr}'
             f'<span class="proc-status-blurb">{esc(blurb)}</span></p>''')
 
 def tech_data_section(show, proc):
