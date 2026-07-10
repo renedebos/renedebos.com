@@ -3,7 +3,7 @@
   "target_lufs": -20,
   "tp_ceiling": -1,
   "source": "24-bit / 32 kHz FLAC",
-  "pre_edits": "noise reduction (Audacity, whole show)",
+  "pre_edits": "noise reduction (Audacity, whole show; 6 dB, sensitivity 5)",
   "filters": "none",
   "tool": "ffmpeg loudnorm",
   "workflow_version": 2,
