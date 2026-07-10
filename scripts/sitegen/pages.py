@@ -168,6 +168,18 @@ def build_history():
         main=content("history.html"),
     )
 
+def build_process():
+    return page_shell(
+        title="The Process — The Hannan Tapes",
+        description="How a 25-year-old DAT tape becomes a track-listed show page — the archive's full audio pipeline, step by step.",
+        url="https://renedebos.com/process/",
+        eyebrow="The Hannan Tapes",
+        heading="The Process",
+        tagline="From DAT tape to show page, step by step",
+        nav=site_nav(),
+        main=content("process.html"),
+    )
+
 def build_contact():
     return page_shell(
         title="Contact — The Hannan Tapes",
@@ -550,4 +562,4 @@ def build_404():
         nav=site_nav(), main=main)
 
 
-__all__ = ['WAVESURFER_LAB_SLUG', 'build_404', 'build_archive', 'build_contact', 'build_history', 'build_home', 'build_playlist', 'build_search', 'build_show', 'build_song_page', 'build_songs_index', 'build_updates', 'build_wavesurfer_lab']
+__all__ = ['WAVESURFER_LAB_SLUG', 'build_404', 'build_archive', 'build_contact', 'build_history', 'build_home', 'build_playlist', 'build_process', 'build_search', 'build_show', 'build_song_page', 'build_songs_index', 'build_updates', 'build_wavesurfer_lab']

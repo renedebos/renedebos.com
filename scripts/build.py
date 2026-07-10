@@ -50,6 +50,7 @@ def main():
     write("playlist/index.html", build_playlist())
     write("updates/index.html", build_updates())
     write("history/index.html", build_history())
+    write("process/index.html", build_process())
     write("contact/index.html", build_contact())
     write("sitemap.xml", build_sitemap())
     write("feed.xml", build_feed())

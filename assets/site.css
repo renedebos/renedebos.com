@@ -1088,6 +1088,7 @@ main {
 .proc-status.status-partial { color: #d9b65c; }
 .proc-status.status-redo { color: #e08a4c; }
 .proc-status.status-needs-processing { color: var(--muted); }
+.proc-status.pre-edit { color: #6ea3d8; cursor: help; }
 .tech-table td.tver { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
 
 /* standalone audio-processing status line (top of every show page) */
@@ -1637,3 +1638,58 @@ a.artist-chip:hover { filter: brightness(1.08); }
 .pl-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .pl-share { color: var(--accent); background: transparent; border-color: var(--accent); }
 .pl-share:hover { color: #fff; background: var(--accent); opacity: 1; }
+
+/* ── /process/ — pipeline flowchart ─────────────────────────────────────── */
+.process-intro, .process-outro { max-width: 620px; margin: 0 auto 1.6rem; }
+.process-intro p, .process-outro p { color: var(--muted); line-height: 1.65; }
+.process-outro { margin-top: 1.8rem; }
+.flow { max-width: 620px; margin: 0 auto; }
+.flow-stage {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.1rem 1.3rem 1.15rem;
+}
+.flow-stage h2 {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  font-weight: 400;
+  margin: 0.15rem 0 0.5rem;
+}
+.flow-stage p { line-height: 1.6; margin: 0 0 0.6rem; }
+.flow-stage p:last-of-type { margin-bottom: 0; }
+.flow-kind {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--accent);
+}
+.flow-manual { border-left: 3px solid var(--accent); }
+.flow-optional {
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  background: var(--accent-light);
+}
+.flow-loc {
+  display: flex; flex-wrap: wrap; gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+.flow-loc span {
+  font-size: 11px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+  background: var(--bg);
+  font-variant-numeric: tabular-nums;
+}
+.flow-arrow {
+  text-align: center;
+  color: var(--accent);
+  font-size: 1.3rem;
+  line-height: 1;
+  padding: 0.45rem 0;
+  user-select: none;
+}

@@ -1,0 +1,101 @@
+  <section class="process-intro">
+    <p>
+      Every show on this site travels the same road from a 25-year-old DAT tape to the
+      player on its show page. This is that road &mdash; what happens to the audio at each
+      step, which of it is done by hand and which by machine, and where the files live
+      along the way. The measurements each step produces are published per show in the
+      &ldquo;Technical data&rdquo; table.
+    </p>
+  </section>
+
+  <section class="flow" aria-label="Processing pipeline flowchart">
+
+    <div class="flow-stage">
+      <div class="flow-kind">source</div>
+      <h2>1 &middot; The tape</h2>
+      <p>Audience and soundboard DAT recordings, 1999&ndash;2001, transferred to a single
+        whole-show WAV per tape (16&ndash;24-bit, 32&ndash;48&nbsp;kHz &mdash; whatever the
+        tape was).</p>
+      <div class="flow-loc"><span>Google&nbsp;Drive &middot; DAT Tapes WAV Files</span>
+        <span>Cloudflare&nbsp;R2 &middot; whole-show WAV downloads</span></div>
+    </div>
+
+    <div class="flow-arrow" aria-hidden="true">&darr;</div>
+
+    <div class="flow-stage flow-manual">
+      <div class="flow-kind">by hand &middot; Audacity</div>
+      <h2>2 &middot; Editing</h2>
+      <p>Working through the whole show in one project: every song gets a label at its
+        boundaries, a fade-in, and a studio fade-out on the applause; the loudest peaks
+        get individual clip repairs.</p>
+      <p class="flow-optional"><strong>Optional &mdash; noise reduction.</strong> When tape
+        hiss warrants it, broadband noise reduction is applied across the entire show
+        before splitting, so every track shares one noise profile. The settings are
+        recorded, and shows treated this way carry a
+        <span class="proc-status pre-edit">noise-reduced</span> badge on their technical
+        data.</p>
+      <p>The project is then exported as one FLAC per song.</p>
+      <div class="flow-loc"><span>Drive &middot; Work Folder/&lt;show&gt;/Tracks/</span>
+        <span>or &middot; Tracks Noise Reduction/</span></div>
+    </div>
+
+    <div class="flow-arrow" aria-hidden="true">&darr;</div>
+
+    <div class="flow-stage">
+      <div class="flow-kind">automated &middot; QA gate</div>
+      <h2>3 &middot; Diagnosis</h2>
+      <p>Every exported track is measured before anything is processed: integrated
+        loudness, true peak, loudness range, DC offset, and a clipping scan. A track that
+        fails goes back to the editing stage &mdash; nothing clipped gets published.</p>
+    </div>
+
+    <div class="flow-arrow" aria-hidden="true">&darr;</div>
+
+    <div class="flow-stage">
+      <div class="flow-kind">automated &middot; ffmpeg loudnorm</div>
+      <h2>4 &middot; Loudness normalization</h2>
+      <p>Each track is brought to the archive standard &mdash; <strong>&minus;20&nbsp;LUFS</strong>
+        integrated with a <strong>&minus;1&nbsp;dBTP</strong> true-peak ceiling &mdash; using
+        linear gain only: no compression, no EQ, the dynamics of the room stay intact.
+        The output is a FLAC master and a 320&nbsp;kbps MP3 per track, each with an audio
+        MD5 fingerprint.</p>
+      <p>A provenance record is written per show &mdash; source format, the exact filter
+        chain, per-track before/after measurements &mdash; and that record is what renders
+        as the show&rsquo;s &ldquo;Technical data&rdquo; table.</p>
+    </div>
+
+    <div class="flow-arrow" aria-hidden="true">&darr;</div>
+
+    <div class="flow-stage">
+      <div class="flow-kind">publish</div>
+      <h2>5 &middot; Distribution</h2>
+      <p>The processed tracks fan out to three places: the streaming/download store, a
+        Drive backup, and precomputed waveform shapes for the player. The files on the
+        store are then re-downloaded and their MD5s checked against the provenance
+        record &mdash; zero mismatches required.</p>
+      <div class="flow-loc"><span>R2 &middot; FLAC/&lt;show&gt;/ + MP3/&lt;show&gt;/</span>
+        <span>Drive &middot; Work Folder/&lt;show&gt;/Processed/</span>
+        <span>site &middot; waveform peaks</span></div>
+    </div>
+
+    <div class="flow-arrow" aria-hidden="true">&darr;</div>
+
+    <div class="flow-stage">
+      <div class="flow-kind">the site</div>
+      <h2>6 &middot; The show page</h2>
+      <p>Track list with the waveform player (streaming the MP3s), lossless FLAC
+        downloads, and the full technical data &mdash; loudness in and out, true peak,
+        dynamic range, and gain applied for every track.</p>
+    </div>
+
+  </section>
+
+  <section class="process-outro">
+    <p>
+      The archive&rsquo;s working rule: <strong>repairs by hand, loudness by machine, and a
+      paper trail for both.</strong> Anything artistic &mdash; where a song starts, how the
+      applause fades, whether the hiss is worth treating &mdash; is a human decision made
+      in Audacity. Everything mechanical is scripted, measured, and recorded, so any
+      track can be traced back to exactly what was done to it.
+    </p>
+  </section>

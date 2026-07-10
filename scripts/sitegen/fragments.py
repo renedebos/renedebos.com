@@ -120,6 +120,7 @@ def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main,
   Part of <a href="/">The Hannan Tapes</a> archive
   <span class="footer-links">
     <a href="/history/">The Story So Far</a> &middot;
+    <a href="/process/">The Process</a> &middot;
     <a href="/contact/">Contact</a> &middot;
     <a href="/feed.xml">RSS</a>
   </span>
@@ -141,6 +142,7 @@ SITE_PAGES = [
 
 EXTRA_PAGES = [
     ("History", "/history/"),
+    ("Process", "/process/"),
     ("Contact", "/contact/"),
 ]
 
@@ -298,11 +300,19 @@ def tech_data_section(show, proc):
         head_bits.append(f'workflow&nbsp;v{esc(proc["workflow_version"])}')
     if proc.get("date"):
         head_bits.append(esc(proc["date"]))
+    head_bits.append('<a href="/process/">how these tracks were made</a>')
     head = " &middot; ".join(head_bits)
     # show-level status badge (from recordings.json, written by `status --write`)
     status = show.get("processing_status")
     badge = (f' <span class="proc-status status-{esc(status)}">{esc(status)}</span>'
              if status else "")
+    # pre-edits badge: manual Audacity work beyond standard fades/clip-fixes stands
+    # out even while the table is collapsed; hover shows the recorded detail.
+    if proc.get("pre_edits"):
+        label = ("noise-reduced" if "noise reduction" in proc["pre_edits"].lower()
+                 else "pre-edited")
+        badge += (f' <span class="proc-status pre-edit" '
+                  f'title="{esc(proc["pre_edits"])}">{label}</span>')
     pt = proc.get("tracks", {})
     rows = []
     for t in show["tracks"]:
