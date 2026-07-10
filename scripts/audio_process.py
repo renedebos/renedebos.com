@@ -374,16 +374,21 @@ def cmd_process(args):
         # workflow version) and overlay the ones we just processed. This is what
         # lets one show hold a mix of versions — e.g. 29 tracks on v1 and a single
         # track later re-run on v2 with an added filter.
-        merged = {}
+        merged, prev = {}, {}
         if os.path.exists(dest):
             try:
-                merged = json.load(open(dest)).get("tracks", {})
+                prev = json.load(open(dest))
+                merged = prev.get("tracks", {})
             except Exception:
-                merged = {}
+                merged, prev = {}, {}
         merged.update(prov_tracks)
+        # manual Audacity work beyond the standard fades/clip-fixes (e.g. whole-show
+        # noise reduction); sticky across re-runs unless overridden on the CLI.
+        pre_edits = getattr(args, "pre_edits", None) or prev.get("pre_edits")
         prov = {
             "slug": args.slug, "target_lufs": whole(target), "tp_ceiling": whole(TP_CEILING),
             "source": f"{info0['bits']}-bit / {int(info0['sr'])//1000} kHz {cont}",
+            **({"pre_edits": pre_edits} if pre_edits else {}),
             "filters": filt or "none", "tool": "ffmpeg loudnorm",
             # last-run context; the per-track `ver`/`chain` are the authoritative
             # record for mixed-version shows.
@@ -566,6 +571,10 @@ def main():
     p.add_argument("--eq", help="literal ffmpeg corrective-EQ chain applied before "
                                 "loudnorm (e.g. de-mud + presence + air for a muffled tape); "
                                 "recorded per-track in provenance")
+    p.add_argument("--pre-edits", dest="pre_edits",
+                   help="non-standard manual edits already applied in Audacity before "
+                        "this run (e.g. 'noise reduction (Audacity, whole show)'); "
+                        "recorded show-level in provenance and shown on the site")
     p.add_argument("--slug", help="write provenance sidecar for this show slug")
     p.set_defaults(func=cmd_process)
 

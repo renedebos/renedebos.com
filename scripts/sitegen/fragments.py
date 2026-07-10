@@ -289,6 +289,8 @@ def tech_data_section(show, proc):
                  f'{proc["tp_ceiling"]} dBTP']
     if proc.get("source"):
         head_bits.append(f'Source: {esc(proc["source"])}')
+    if proc.get("pre_edits"):
+        head_bits.append(f'Pre-edits: {esc(proc["pre_edits"])}')
     if proc.get("filters"):
         head_bits.append(f'Filters: {esc(proc["filters"])}')
     head_bits.append(esc(proc.get("tool", "ffmpeg loudnorm")))
