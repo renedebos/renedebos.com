@@ -33,6 +33,8 @@ by hand, what Claude runs, and what every tool in `scripts/` is for.*
    in the Work Folder root, next to the WAV. It's a 2 KB text file and it is
    the raw archive's split recipe: WAV + labels can regenerate untouched
    per-song files forever, even if Audacity or `.aup3` files are long gone.
+   The pipeline checks for this file at both of its stages and nags until it
+   exists — it never blocks a publish, but don't let the nag scroll by.
 
 5. **Export the tracks**: *File → Export → Export Multiple*, split by labels,
    **FLAC**, numbered filenames (`01 Title.flac`, `02 Title.flac`, …) into:

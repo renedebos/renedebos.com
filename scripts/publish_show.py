@@ -127,6 +127,17 @@ def fetch_tracks(folder, sub, expected, dest):
         raise SystemExit(f"download incomplete: {got}/{len(expected)}")
 
 
+def labels_present(folder):
+    """The Audacity label export (labels.txt at the Work Folder root) is the
+    raw archive's split recipe — warn whenever it's missing, never block."""
+    return any(f.lower() == "labels.txt" for f in rclone_lsf(f"{DRIVE_WORK}/{folder}"))
+
+
+LABELS_NAG = ("⚠ labels.txt is MISSING from the Work Folder — the raw archive is "
+              "incomplete without it.\n  In Audacity: File > Export > Labels → save "
+              "as labels.txt next to the whole-show WAV, then copy to Drive.")
+
+
 def cmd_prepare(args):
     show = load_show(args.slug)
     folder = find_work_folder(show, args.folder)
@@ -134,6 +145,9 @@ def cmd_prepare(args):
     print(f"work folder : {folder}")
     print(f"tracks from : {sub}/  ({len(files)} files)")
     print(f"pre-edits   : {pre_edits or '(none — standard fades/clip-fixes)'}")
+    print(f"labels.txt  : {'present' if labels_present(folder) else 'MISSING'}")
+    if not labels_present(folder):
+        print(LABELS_NAG)
 
     dest = os.path.join(WORK_ROOT, args.slug, "tracks")
     fetch_tracks(folder, sub, files, dest)
@@ -214,6 +228,9 @@ done — still human:
   python3 scripts/draft_tracks.py {args.slug}     # metadata draft into recordings.json
   description + updates note, history.html
   python3 scripts/build.py && commit + push, then spot-check the live page""")
+    # re-check at publish time — the nag repeats until the file exists
+    if not labels_present(folder):
+        print("\n" + LABELS_NAG)
 
 
 def main():
