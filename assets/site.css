@@ -1703,34 +1703,3 @@ a.artist-chip:hover { filter: brightness(1.08); }
   font-size: 0.85em; background: var(--accent-light);
   padding: 0.05em 0.35em; border-radius: 4px;
 }
-
-/* ── /manual/ — rendered PUBLISHING.md ──────────────────────────────────── */
-.manual { max-width: 680px; margin: 0 auto; }
-.manual h2 {
-  font-family: var(--serif); font-size: 1.55rem; font-weight: 400;
-  margin: 2.2rem 0 0.8rem;
-}
-.manual h3 {
-  font-family: var(--serif); font-size: 1.2rem; font-weight: 400;
-  margin: 1.6rem 0 0.6rem;
-}
-.manual p { line-height: 1.7; margin-bottom: 0.9rem; }
-.manual ul, .manual ol { padding-left: 1.5rem; margin-bottom: 1rem; }
-.manual li { line-height: 1.7; margin-bottom: 0.55rem; }
-.manual li ul { margin: 0.4rem 0 0; }
-.manual hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
-.manual code {
-  font-size: 0.85em; background: var(--accent-light);
-  padding: 0.05em 0.35em; border-radius: 4px;
-}
-.manual a { color: var(--accent); }
-.md-scroll { overflow-x: auto; margin-bottom: 1.1rem; }
-.manual table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
-.manual th, .manual td {
-  text-align: left; padding: 0.5rem 0.7rem; vertical-align: top;
-  border-bottom: 1px solid var(--border); line-height: 1.55;
-}
-.manual th {
-  font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--muted); font-weight: 600;
-}

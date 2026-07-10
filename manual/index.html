@@ -1,60 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Manual — The Hannan Tapes</title>
-<meta name="description" content="The owner&#x27;s manual for processing and publishing a show, from Audacity to the live site.">
+<meta name="description" content="The owner's manual for processing and publishing a show, from Audacity to the live site.">
 <link rel="canonical" href="https://renedebos.com/manual/">
-<meta name="theme-color" content="#f5f2ed" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#17150f" media="(prefers-color-scheme: dark)">
-<meta property="og:title" content="The Manual — The Hannan Tapes">
-<meta property="og:description" content="The owner&#x27;s manual for processing and publishing a show, from Audacity to the live site.">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://renedebos.com/manual/">
-<meta property="og:image" content="https://renedebos.com/assets/og.png">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="The Manual — The Hannan Tapes">
-<meta name="twitter:description" content="The owner&#x27;s manual for processing and publishing a show, from Audacity to the live site.">
-<meta name="twitter:image" content="https://renedebos.com/assets/og.png">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♪</text></svg>">
-<link rel="alternate" type="application/rss+xml" title="The Hannan Tapes &mdash; Updates" href="https://renedebos.com/feed.xml">
-<link rel="stylesheet" href="/assets/fonts.css">
-<link rel="stylesheet" href="/assets/site.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f6f7f8; --panel: #ffffff; --text: #21262b; --muted: #5d6773;
+  --border: #dfe3e8; --accent: #135ec4; --chip: #eef1f5;
+  --warn-bg: #fdf3e0; --warn-bd: #d9a13e; --note-bg: #e9f1fd; --note-bd: #5b93e8;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14171a; --panel: #1c2126; --text: #d8dee5; --muted: #939ea9;
+    --border: #333a42; --accent: #77aef7; --chip: #262d34;
+    --warn-bg: #2b2312; --warn-bd: #c69a44; --note-bg: #182742; --note-bd: #4f83d6;
+  }
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 16.5px; line-height: 1.68; background: var(--bg); color: var(--text);
+}
+.wrap { max-width: 72rem; margin: 0 auto; padding: 2rem 1.4rem 5rem; }
+.mast { margin-bottom: 2.2rem; }
+.mast .crumb { font-size: 13px; }
+.mast .crumb a { color: var(--muted); text-decoration: none; }
+.mast .crumb a:hover { color: var(--accent); }
+.mast h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; margin-top: 0.7rem; }
+.mast .sub { color: var(--muted); margin-top: 0.35rem; font-size: 15px; }
+.cols { display: grid; grid-template-columns: 1fr; gap: 2.5rem; }
+@media (min-width: 1080px) {
+  .cols { grid-template-columns: 15rem minmax(0, 46rem); }
+  .toc { position: sticky; top: 1.2rem; align-self: start; max-height: calc(100vh - 3rem); overflow-y: auto; }
+}
+.toc { border: 1px solid var(--border); border-radius: 10px; background: var(--panel); padding: 1rem 1.1rem; font-size: 13.5px; }
+.toc .toc-title { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-bottom: 0.5rem; }
+.toc a { display: block; color: var(--muted); text-decoration: none; padding: 0.18rem 0; line-height: 1.45; }
+.toc a:hover { color: var(--accent); }
+.toc a.t2 { font-weight: 600; color: var(--text); margin-top: 0.45rem; }
+.toc a.t2:hover { color: var(--accent); }
+.toc a.t3 { padding-left: 0.9rem; }
+main h2 { font-size: 1.45rem; font-weight: 700; letter-spacing: -0.01em; margin: 2.6rem 0 0.9rem; padding-top: 1.6rem; border-top: 1px solid var(--border); }
+main h2:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+main h3 { font-size: 1.12rem; font-weight: 650; margin: 2rem 0 0.7rem; }
+main p { margin-bottom: 0.95rem; }
+main a { color: var(--accent); }
+main hr { border: none; margin: 0.4rem 0; }
+main em { color: var(--muted); }
+main code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.84em; background: var(--chip); border: 1px solid var(--border);
+  padding: 0.08em 0.4em; border-radius: 5px; white-space: nowrap;
+}
+main ul { padding-left: 1.4rem; margin-bottom: 1rem; }
+main li { margin-bottom: 0.55rem; }
+main li ul { margin: 0.45rem 0 0; }
+/* numbered steps as cards with big circled numerals (number from data-n) */
+main ol { list-style: none; margin-bottom: 1.1rem; }
+main ol > li {
+  position: relative;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  padding: 0.85rem 1.1rem 0.85rem 3.4rem; margin-bottom: 0.6rem;
+}
+main ol > li::before {
+  content: attr(data-n); position: absolute; left: 0.95rem; top: 0.95rem;
+  width: 1.65rem; height: 1.65rem; border-radius: 50%;
+  background: var(--accent); color: #fff; font-weight: 700; font-size: 0.85rem;
+  display: flex; align-items: center; justify-content: center;
+}
+blockquote.callout {
+  border-radius: 10px; padding: 0.85rem 1.1rem 0.85rem 1rem; margin: 0.9rem 0 1.1rem;
+  border-left: 4px solid var(--note-bd); background: var(--note-bg);
+}
+blockquote.callout.warn { border-left-color: var(--warn-bd); background: var(--warn-bg); }
+blockquote.callout p { margin: 0; }
+.md-scroll { overflow-x: auto; margin-bottom: 1.2rem; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); }
+main table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+main th, main td { text-align: left; padding: 0.6rem 0.85rem; vertical-align: top; line-height: 1.55; }
+main th {
+  font-size: 11.5px; letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--muted); border-bottom: 2px solid var(--border);
+}
+main td { border-top: 1px solid var(--border); }
+main tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--chip) 55%, transparent); }
+@media print {
+  body { background: #fff; color: #000; font-size: 11.5pt; }
+  .toc, .crumb { display: none; }
+  .cols { display: block; }
+  main ol > li, .md-scroll, .toc { border-color: #bbb; }
+  main a { color: #000; text-decoration: none; }
+}
+</style>
 </head>
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-
-<header>
-  <p class="site-eyebrow">The Hannan Tapes</p>
-  <h1>The Manual</h1>
-  <p class="site-tagline">Processing a show, from Audacity to the live site</p>
-</header>
-
-<nav>
-  <a href="/">Home</a>
-  <a href="/archive/">Archive</a>
-  <a href="/songs/">Songs</a>
-  <a href="/playlist/">Playlist</a>
-  <a href="/search/">Search</a>
-  <a href="/updates/">Updates</a>
-</nav>
-
-<main id="main">
-<section class="manual">
+<div class="wrap">
+  <header class="mast">
+    <div class="crumb"><a href="/">&larr; The Hannan Tapes</a> &nbsp;&middot;&nbsp; <a href="/process/">The Process</a></div>
+    <h1>Publishing a Show &mdash; Owner&rsquo;s Manual</h1>
+    <p class="sub">From the whole-show WAV in Audacity to the live site, and every tool along the way.</p>
+  </header>
+  <div class="cols">
+    <nav class="toc" aria-label="Contents">
+      <div class="toc-title">Contents</div>
+      <a class="t2" href="#part-1-your-steps-in-order">Part 1 — Your steps, in order</a>
+      <a class="t3" href="#stage-a-audacity-all-you-all-judgment">Stage A · Audacity (all you, all judgment)</a>
+      <a class="t3" href="#stage-b-the-pipeline-claude-automatic-you-just-answer-questions">Stage B · The pipeline (Claude, automatic — you just answer questions)</a>
+      <a class="t3" href="#stage-c-afterwards-optional-whenever">Stage C · Afterwards (optional, whenever)</a>
+      <a class="t2" href="#part-2-the-tools">Part 2 — The tools</a>
+      <a class="t3" href="#the-two-you-actually-use">The two you actually use</a>
+      <a class="t3" href="#the-pipeline-claude-runs-these-listed-so-you-know-what-s-happening">The pipeline (Claude runs these — listed so you know what&#x27;s happening)</a>
+      <a class="t3" href="#conventions-worth-remembering">Conventions worth remembering</a>
+    </nav>
+    <main>
 <p><em>How a show gets from a whole-show WAV to renedebos.com, what you do by hand, what Claude runs, and what every tool in <code>scripts/</code> is for.</em> <em>Last updated: 2026-07-09 (matches workflow v2 — publish_show orchestration).</em></p>
 <hr>
-<h2>Part 1 — Your steps, in order</h2>
-<h3>Stage A · Audacity (all you, all judgment)</h3>
-<ol><li><strong>Set up the Work Folder</strong> on Google Drive: <code>DAT Tapes/Work Folder/&lt;Artist&gt; - &lt;Venue&gt; &lt;date&gt;/</code> (e.g. <code>JerryHannan - 19 Broadway 1999-03-29</code>). Put the whole-show WAV there. Work on the local copy under <code>~/gdrive-mount/</code>.</li>
-<li><strong>Import the WAV into Audacity</strong> and do the whole show in one project:<ul><li>a <strong>label</strong> at every song&#x27;s boundaries (this is the most valuable thing you make — see step 4);</li><li><strong>fade-in</strong> at each song start, <strong>studio fade-out</strong> on the applause;</li><li><strong>clip repairs</strong> on the loudest peaks where needed.</li></ul></li>
-<li><strong>Noise reduction — only when the tape needs it:</strong><ul><li><em>Before</em> applying NR, export the untreated tracks once into <strong><code>Tracks (pre-NR archive)/</code></strong> — hand edits without NR can&#x27;t be regenerated later, so this is the only chance to keep them.</li><li>Apply NR across the <strong>whole show</strong> (one noise profile for the whole tape), ideally before the fade-outs, or check the faded tails after.</li></ul></li>
-<li><strong>Export the labels</strong>: <em>File → Export → Labels</em> → save as <strong><code>labels.txt</code></strong> in the Work Folder root, next to the WAV. It&#x27;s a 2 KB text file and it is the raw archive&#x27;s split recipe: WAV + labels can regenerate untouched per-song files forever, even if Audacity or <code>.aup3</code> files are long gone.</li>
-<li><strong>Export the tracks</strong>: <em>File → Export → Export Multiple</em>, split by labels, <strong>FLAC</strong>, numbered filenames (<code>01 Title.flac</code>, <code>02 Title.flac</code>, …) into:<ul><li><strong><code>Tracks/</code></strong> — the normal case;</li><li><strong><code>Tracks Noise Reduction/</code></strong> — if and only if you applied NR. <strong>Rule: exactly one of these two folders may contain audio.</strong> The pipeline refuses to run if both do — it never guesses which set is canonical.</li></ul></li>
-<li><strong>If you treated the tape</strong> (NR or anything else non-standard), drop a one-line <strong><code>notes.txt</code></strong> inside the tracks folder with the settings, e.g. <code>noise reduction 6 dB, sensitivity 5</code>. That exact text flows automatically into the show&#x27;s provenance record and the Technical data table on the site — nobody has to remember or retype it.</li>
-<li><strong>Save the <code>.aup3</code> project</strong> in the Work Folder and <strong>copy everything up to Google Drive</strong> via the ChromeOS Files app (your usual way). Drive is the source of truth; Claude verifies against it, not against your local copy.</li>
-<li><strong>Tell Claude:</strong> <em>&quot;process/publish show X to the website.&quot;</em> That&#x27;s the handoff.</li></ol>
-<h3>Stage B · The pipeline (Claude, automatic — you just answer questions)</h3>
+<h2 id="part-1-your-steps-in-order">Part 1 — Your steps, in order</h2>
+<h3 id="stage-a-audacity-all-you-all-judgment">Stage A · Audacity (all you, all judgment)</h3>
+<ol><li data-n="1"><strong>Set up the Work Folder</strong> on Google Drive: <code>DAT Tapes/Work Folder/&lt;Artist&gt; - &lt;Venue&gt; &lt;date&gt;/</code> (e.g. <code>JerryHannan - 19 Broadway 1999-03-29</code>). Put the whole-show WAV there. Work on the local copy under <code>~/gdrive-mount/</code>.</li>
+<li data-n="2"><strong>Import the WAV into Audacity</strong> and do the whole show in one project:<ul><li>a <strong>label</strong> at every song&#x27;s boundaries (this is the most valuable thing you make — see step 4);</li><li><strong>fade-in</strong> at each song start, <strong>studio fade-out</strong> on the applause;</li><li><strong>clip repairs</strong> on the loudest peaks where needed.</li></ul></li>
+<li data-n="3"><strong>Noise reduction — only when the tape needs it.</strong> Apply NR across the <strong>whole show</strong> (one noise profile for the whole tape), ideally before the fade-outs, or check the faded tails after.</li></ol>
+<blockquote class="callout warn"><p><strong>Before you apply NR:</strong> export the untreated tracks once into <strong><code>Tracks (pre-NR archive)/</code></strong>. Hand edits without NR can&#x27;t be regenerated later — this is the only chance to keep them.</p></blockquote>
+<ol start="4"><li data-n="4"><strong>Export the labels</strong>: <em>File → Export → Labels</em> → save as <strong><code>labels.txt</code></strong> in the Work Folder root, next to the WAV. It&#x27;s a 2 KB text file and it is the raw archive&#x27;s split recipe: WAV + labels can regenerate untouched per-song files forever, even if Audacity or <code>.aup3</code> files are long gone.</li>
+<li data-n="5"><strong>Export the tracks</strong>: <em>File → Export → Export Multiple</em>, split by labels, <strong>FLAC</strong>, numbered filenames (<code>01 Title.flac</code>, <code>02 Title.flac</code>, …) into:<ul><li><strong><code>Tracks/</code></strong> — the normal case;</li><li><strong><code>Tracks Noise Reduction/</code></strong> — if and only if you applied NR.</li></ul></li></ol>
+<blockquote class="callout warn"><p><strong>Rule:</strong> exactly one of those two folders may contain audio. The pipeline refuses to run if both do — it never guesses which set is canonical.</p></blockquote>
+<ol start="6"><li data-n="6"><strong>If you treated the tape</strong> (NR or anything else non-standard), drop a one-line <strong><code>notes.txt</code></strong> inside the tracks folder with the settings, e.g. <code>noise reduction 6 dB, sensitivity 5</code>. That exact text flows automatically into the show&#x27;s provenance record and the Technical data table on the site — nobody has to remember or retype it.</li>
+<li data-n="7"><strong>Save the <code>.aup3</code> project</strong> in the Work Folder and <strong>copy everything up to Google Drive</strong> via the ChromeOS Files app (your usual way). Drive is the source of truth; Claude verifies against it, not against your local copy.</li>
+<li data-n="8"><strong>Tell Claude:</strong> <em>&quot;process/publish show X to the website.&quot;</em> That&#x27;s the handoff.</li></ol>
+<h3 id="stage-b-the-pipeline-claude-automatic-you-just-answer-questions">Stage B · The pipeline (Claude, automatic — you just answer questions)</h3>
 <div class="md-scroll"><table><thead><tr><th>Step</th><th>What happens</th><th>Your involvement</th></tr></thead><tbody>
 <tr><td><code>publish_show.py prepare</code></td><td>Finds the Work Folder, picks <code>Tracks/</code> vs <code>Tracks Noise Reduction/</code>, reads <code>notes.txt</code>, copies tracks, runs the <strong>full diagnose</strong> (loudness, true peak, dynamics, DC offset, clipping scan on every track)</td><td>none</td></tr>
 <tr><td>Diagnose review</td><td>Claude reads the verdicts</td><td><strong>Only if real clipping is found</strong>: Claude sends the track list back to you — fix in Audacity, re-export those tracks, re-copy to Drive, say go. Benign/minor residual publishes as-is.</td></tr>
@@ -63,19 +139,19 @@
 <tr><td>Words</td><td>Claude writes the show description, the Updates note, and the <code>/history/</code> paragraph</td><td>edit afterwards if you want (<code>make edit</code>)</td></tr>
 <tr><td>Build + ship</td><td><code>build.py</code> (fails on integrity problems, warns on stale <code>rarity</code> tags), commit, push, watch the deploy, spot-check the live page</td><td>none</td></tr>
 </tbody></table></div>
-<h3>Stage C · Afterwards (optional, whenever)</h3>
+<h3 id="stage-c-afterwards-optional-whenever">Stage C · Afterwards (optional, whenever)</h3>
 <ul><li><strong>Review drafted tags/songwriters</strong> in the metadata editor (<code>make edit</code> or the &quot;Hannan Metadata Editor&quot; launcher), save, then tell Claude to rebuild and push.</li>
 <li><strong>Rarity drift warnings</strong> from the build (a song tagged <code>rarity</code> that now has 3+ appearances) are yours to adjudicate — untag or keep.</li>
 <li>If you kept a pre-NR archive: the <strong>Drive copy stays forever</strong>, the local copy gets deleted after publish.</li></ul>
 <hr>
-<h2>Part 2 — The tools</h2>
+<h2 id="part-2-the-tools">Part 2 — The tools</h2>
 <p>Everything lives in <code>scripts/</code> in the renedebos.com repo. <strong>&quot;Who runs it&quot;</strong> tells you whether you ever need to touch it.</p>
-<h3>The two you actually use</h3>
+<h3 id="the-two-you-actually-use">The two you actually use</h3>
 <div class="md-scroll"><table><thead><tr><th>Tool</th><th>What it does</th><th>Who runs it</th></tr></thead><tbody>
 <tr><td><strong><code>make edit</code></strong> (<code>edit_metadata.py</code>)</td><td>Browser editor for <code>recordings.json</code>: titles, descriptions, tags, songwriters, opt-in update notes. Machine fields (paths, durations, sizes) are read-only. Saves make a backup first.</td><td><strong>You.</strong> Then ask Claude to rebuild + push (or run <code>make build</code> and commit yourself).</td></tr>
 <tr><td><strong><code>split_raw.py</code></strong></td><td>Cuts the whole-show WAV at the <code>labels.txt</code> boundaries into raw, unedited per-song FLACs — sample-accurate, no fades, no processing. For when you want to hear or re-edit the untouched version of a song. Generated on demand; never archived.</td><td><strong>Either.</strong> Ask Claude, or yourself: <code>python3 scripts/split_raw.py &quot;&lt;work folder&gt;&quot;</code></td></tr>
 </tbody></table></div>
-<h3>The pipeline (Claude runs these — listed so you know what&#x27;s happening)</h3>
+<h3 id="the-pipeline-claude-runs-these-listed-so-you-know-what-s-happening">The pipeline (Claude runs these — listed so you know what&#x27;s happening)</h3>
 <div class="md-scroll"><table><thead><tr><th>Tool</th><th>What it does</th></tr></thead><tbody>
 <tr><td><strong><code>publish_show.py</code></strong></td><td>The orchestrator. <code>prepare &lt;slug&gt;</code> = locate + copy + diagnose, then stop for review. <code>publish &lt;slug&gt;</code> = normalize → R2 → peaks → verify → Drive backup → cleanup. One human gate in the middle, everything else automatic.</td></tr>
 <tr><td><strong><code>audio_process.py</code></strong></td><td>The engine underneath: <code>diagnose</code> (per-track measurements + clipping verdicts), <code>process</code> (the −20 LUFS loudnorm + FLAC/MP3 + provenance sidecar), <code>verify</code> (R2 MD5s vs sidecar), <code>status</code>/<code>history</code>/<code>versions</code> (what&#x27;s been done to what, per track).</td></tr>
@@ -86,24 +162,13 @@
 <tr><td><strong><code>update_tracks.py</code></strong></td><td>For re-publishing already-listed shows after re-processing (e.g. a loudness standard change). Rarely needed.</td></tr>
 <tr><td><strong><code>make refresh</code> / <code>diff</code> / <code>status</code> / <code>upload</code></strong></td><td>Whole-show WAV bookkeeping between Drive and R2 (the original archive layer, separate from split shows).</td></tr>
 </tbody></table></div>
-<h3>Conventions worth remembering</h3>
+<h3 id="conventions-worth-remembering">Conventions worth remembering</h3>
 <ul><li><strong>Folder meanings</strong>: root WAV + <code>labels.txt</code> + <code>.aup3</code> = raw archive · <code>Tracks/</code> or <code>Tracks Noise Reduction/</code> = your hand-edited export (pipeline input) · <code>Tracks (pre-NR archive)/</code> = untreated export kept when NR was used · <code>Processed/</code> = pipeline output backup (identical to what&#x27;s on the site).</li>
 <li><strong>The storage rule</strong>: <em>store what hands made; derive what machines can remake.</em> Raw splits are never stored (WAV + labels regenerate them); your edits always are.</li>
-<li><strong>Provenance</strong>: every processed show has <code>data/processing/&lt;slug&gt;.json</code> — the exact settings and measurements per track — rendered as the &quot;Technical data&quot; table on the show page. NR shows get a blue <strong>noise-reduced</strong> badge.</li>
-<li><strong>Drive is the source of truth.</strong> <code>~/gdrive-mount</code> is an ordinary local folder; nothing syncs by itself — you copy up via the Files app, Claude verifies against real Drive.</li></ul>
-</section>
-</main>
-
-<footer>
-  Part of <a href="/">The Hannan Tapes</a> archive
-  <span class="footer-links">
-    <a href="/history/">The Story So Far</a> &middot;
-    <a href="/process/">The Process</a> &middot;
-    <a href="/contact/">Contact</a> &middot;
-    <a href="/feed.xml">RSS</a>
-  </span>
-</footer>
-
-<script src="/assets/player.js"></script>
+<li><strong>Provenance</strong>: every processed show has <code>data/processing/&lt;slug&gt;.json</code> — the exact settings and measurements per track — rendered as the &quot;Technical data&quot; table on the show page. NR shows get a blue <strong>noise-reduced</strong> badge.</li></ul>
+<blockquote class="callout note"><p><strong>Drive is the source of truth.</strong> <code>~/gdrive-mount</code> is an ordinary local folder; nothing syncs by itself — you copy up via the Files app, Claude verifies against real Drive.</p></blockquote>
+    </main>
+  </div>
+</div>
 </body>
 </html>

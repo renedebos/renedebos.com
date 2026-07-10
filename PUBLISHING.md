@@ -21,12 +21,13 @@ by hand, what Claude runs, and what every tool in `scripts/` is for.*
    - **fade-in** at each song start, **studio fade-out** on the applause;
    - **clip repairs** on the loudest peaks where needed.
 
-3. **Noise reduction — only when the tape needs it:**
-   - *Before* applying NR, export the untreated tracks once into
-     **`Tracks (pre-NR archive)/`** — hand edits without NR can't be
-     regenerated later, so this is the only chance to keep them.
-   - Apply NR across the **whole show** (one noise profile for the whole
-     tape), ideally before the fade-outs, or check the faded tails after.
+3. **Noise reduction — only when the tape needs it.** Apply NR across the
+   **whole show** (one noise profile for the whole tape), ideally before the
+   fade-outs, or check the faded tails after.
+
+> **Before you apply NR:** export the untreated tracks once into
+> **`Tracks (pre-NR archive)/`**. Hand edits without NR can't be regenerated
+> later — this is the only chance to keep them.
 
 4. **Export the labels**: *File → Export → Labels* → save as **`labels.txt`**
    in the Work Folder root, next to the WAV. It's a 2 KB text file and it is
@@ -38,8 +39,8 @@ by hand, what Claude runs, and what every tool in `scripts/` is for.*
    - **`Tracks/`** — the normal case;
    - **`Tracks Noise Reduction/`** — if and only if you applied NR.
 
-   **Rule: exactly one of these two folders may contain audio.** The pipeline
-   refuses to run if both do — it never guesses which set is canonical.
+> **Rule:** exactly one of those two folders may contain audio. The pipeline
+> refuses to run if both do — it never guesses which set is canonical.
 
 6. **If you treated the tape** (NR or anything else non-standard), drop a
    one-line **`notes.txt`** inside the tracks folder with the settings, e.g.
@@ -116,6 +117,7 @@ tells you whether you ever need to touch it.
 - **Provenance**: every processed show has `data/processing/<slug>.json` —
   the exact settings and measurements per track — rendered as the "Technical
   data" table on the show page. NR shows get a blue **noise-reduced** badge.
-- **Drive is the source of truth.** `~/gdrive-mount` is an ordinary local
-  folder; nothing syncs by itself — you copy up via the Files app, Claude
-  verifies against real Drive.
+
+> **Drive is the source of truth.** `~/gdrive-mount` is an ordinary local
+> folder; nothing syncs by itself — you copy up via the Files app, Claude
+> verifies against real Drive.

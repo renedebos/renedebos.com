@@ -190,10 +190,26 @@ def md_to_html(md):
         if s.startswith("#"):
             flush_para()
             level = len(s) - len(s.lstrip("#"))
-            out.append(f"<h{level}>{inline(s.lstrip('# '))}</h{level}>")
+            text = s.lstrip("# ")
+            hid = re.sub(r"-+", "-", re.sub(r"[^a-z0-9]+", "-",
+                         re.sub(r"[*`]", "", text).lower())).strip("-")
+            out.append(f'<h{level} id="{hid}">{inline(text)}</h{level}>')
             i += 1; continue
         if s == "---":
             flush_para(); out.append("<hr>"); i += 1; continue
+        if s.startswith(">"):
+            flush_para()
+            quote = []
+            while i < len(lines) and lines[i].strip().startswith(">"):
+                quote.append(lines[i].strip().lstrip("> ").strip())
+                i += 1
+            body = inline(" ".join(q for q in quote if q))
+            # bolded lead-in decides the callout flavor (warnings vs notes)
+            kind = ("warn" if re.match(
+                r"<strong>(Rule|Before|Important|Warning|Never|Do not)",
+                body) else "note")
+            out.append(f'<blockquote class="callout {kind}"><p>{body}</p></blockquote>')
+            continue
         if s.startswith("|"):
             flush_para()
             rows = []
@@ -237,7 +253,8 @@ def md_to_html(md):
 def _md_list(block, inline):
     """One list block -> <ul>/<ol>, supporting continuation lines and one
     level of nested bullets under a top-level item."""
-    ordered = bool(re.match(r"^\d+\.", block[0].strip()))
+    first_num = re.match(r"^(\d+)\.", block[0].strip())
+    ordered = bool(first_num)
     items = []          # each: [text, [nested-bullet-texts]]
     for ln in block:
         m = re.match(r"^(\s*)([-*]|\d+\.)\s+(.*)$", ln)
@@ -248,13 +265,18 @@ def _md_list(block, inline):
         elif items:                                    # continuation line
             tgt = items[-1][1] if items[-1][1] else items[-1]
             tgt[-1 if items[-1][1] else 0] += " " + ln.strip()
-    tag = "ol" if ordered else "ul"
     lis = []
-    for text, nested in items:
+    for k, (text, nested) in enumerate(items):
         sub = ("<ul>" + "".join(f"<li>{inline(n)}</li>" for n in nested) + "</ul>"
                if nested else "")
-        lis.append(f"<li>{inline(text)}{sub}</li>")
-    return f"<{tag}>" + "\n".join(lis) + f"</{tag}>"
+        # ordered items carry their literal number (data-n for styling), so a
+        # callout can interrupt a numbered list without resetting the steps
+        n = f' data-n="{int(first_num.group(1)) + k}"' if ordered else ""
+        lis.append(f"<li{n}>{inline(text)}{sub}</li>")
+    if ordered:
+        start = f' start="{first_num.group(1)}"' if first_num.group(1) != "1" else ""
+        return f"<ol{start}>" + "\n".join(lis) + "</ol>"
+    return "<ul>" + "\n".join(lis) + "</ul>"
 
 def why_block():
     return content("why.html")

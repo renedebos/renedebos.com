@@ -183,19 +183,137 @@ def build_process():
 def build_manual():
     """Render PUBLISHING.md (the repo's owner's manual) as /manual/ — built
     from the same file every build, so an edited manual can never go stale on
-    the site (CI's fresh-build gate enforces it)."""
+    the site (CI's fresh-build gate enforces it). Deliberately NOT the site's
+    visual style: this is a working manual, so it gets its own standalone
+    document — readable type, a table of contents, step numbering, callouts,
+    and a print stylesheet."""
     md = open(os.path.join(ROOT, "PUBLISHING.md")).read()
-    md = re.sub(r"^# .*\n", "", md)          # page_shell provides the heading
-    return page_shell(
-        title="The Manual — The Hannan Tapes",
-        description="The owner's manual for processing and publishing a show, from Audacity to the live site.",
-        url="https://renedebos.com/manual/",
-        eyebrow="The Hannan Tapes",
-        heading="The Manual",
-        tagline="Processing a show, from Audacity to the live site",
-        nav=site_nav(),
-        main=f'<section class="manual">\n{md_to_html(md)}\n</section>',
-    )
+    md = re.sub(r"^# .*\n", "", md)          # the template provides the heading
+    body = md_to_html(md)
+    toc = "\n".join(
+        f'      <a class="t{lvl}" href="#{hid}">{txt}</a>'
+        for lvl, hid, txt in re.findall(
+            r'<h([23]) id="([^"]+)">(?:<[^>]+>)*([^<]+)', body))
+    return MANUAL_SHELL.format(toc=toc, body=body)
+
+MANUAL_SHELL = '''<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Manual — The Hannan Tapes</title>
+<meta name="description" content="The owner's manual for processing and publishing a show, from Audacity to the live site.">
+<link rel="canonical" href="https://renedebos.com/manual/">
+<style>
+*, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
+:root {{
+  --bg: #f6f7f8; --panel: #ffffff; --text: #21262b; --muted: #5d6773;
+  --border: #dfe3e8; --accent: #135ec4; --chip: #eef1f5;
+  --warn-bg: #fdf3e0; --warn-bd: #d9a13e; --note-bg: #e9f1fd; --note-bd: #5b93e8;
+}}
+@media (prefers-color-scheme: dark) {{
+  :root {{
+    --bg: #14171a; --panel: #1c2126; --text: #d8dee5; --muted: #939ea9;
+    --border: #333a42; --accent: #77aef7; --chip: #262d34;
+    --warn-bg: #2b2312; --warn-bd: #c69a44; --note-bg: #182742; --note-bd: #4f83d6;
+  }}
+}}
+html {{ scroll-behavior: smooth; }}
+body {{
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 16.5px; line-height: 1.68; background: var(--bg); color: var(--text);
+}}
+.wrap {{ max-width: 72rem; margin: 0 auto; padding: 2rem 1.4rem 5rem; }}
+.mast {{ margin-bottom: 2.2rem; }}
+.mast .crumb {{ font-size: 13px; }}
+.mast .crumb a {{ color: var(--muted); text-decoration: none; }}
+.mast .crumb a:hover {{ color: var(--accent); }}
+.mast h1 {{ font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; margin-top: 0.7rem; }}
+.mast .sub {{ color: var(--muted); margin-top: 0.35rem; font-size: 15px; }}
+.cols {{ display: grid; grid-template-columns: 1fr; gap: 2.5rem; }}
+@media (min-width: 1080px) {{
+  .cols {{ grid-template-columns: 15rem minmax(0, 46rem); }}
+  .toc {{ position: sticky; top: 1.2rem; align-self: start; max-height: calc(100vh - 3rem); overflow-y: auto; }}
+}}
+.toc {{ border: 1px solid var(--border); border-radius: 10px; background: var(--panel); padding: 1rem 1.1rem; font-size: 13.5px; }}
+.toc .toc-title {{ font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-bottom: 0.5rem; }}
+.toc a {{ display: block; color: var(--muted); text-decoration: none; padding: 0.18rem 0; line-height: 1.45; }}
+.toc a:hover {{ color: var(--accent); }}
+.toc a.t2 {{ font-weight: 600; color: var(--text); margin-top: 0.45rem; }}
+.toc a.t2:hover {{ color: var(--accent); }}
+.toc a.t3 {{ padding-left: 0.9rem; }}
+main h2 {{ font-size: 1.45rem; font-weight: 700; letter-spacing: -0.01em; margin: 2.6rem 0 0.9rem; padding-top: 1.6rem; border-top: 1px solid var(--border); }}
+main h2:first-child {{ margin-top: 0; padding-top: 0; border-top: none; }}
+main h3 {{ font-size: 1.12rem; font-weight: 650; margin: 2rem 0 0.7rem; }}
+main p {{ margin-bottom: 0.95rem; }}
+main a {{ color: var(--accent); }}
+main hr {{ border: none; margin: 0.4rem 0; }}
+main em {{ color: var(--muted); }}
+main code {{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.84em; background: var(--chip); border: 1px solid var(--border);
+  padding: 0.08em 0.4em; border-radius: 5px; white-space: nowrap;
+}}
+main ul {{ padding-left: 1.4rem; margin-bottom: 1rem; }}
+main li {{ margin-bottom: 0.55rem; }}
+main li ul {{ margin: 0.45rem 0 0; }}
+/* numbered steps as cards with big circled numerals (number from data-n) */
+main ol {{ list-style: none; margin-bottom: 1.1rem; }}
+main ol > li {{
+  position: relative;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  padding: 0.85rem 1.1rem 0.85rem 3.4rem; margin-bottom: 0.6rem;
+}}
+main ol > li::before {{
+  content: attr(data-n); position: absolute; left: 0.95rem; top: 0.95rem;
+  width: 1.65rem; height: 1.65rem; border-radius: 50%;
+  background: var(--accent); color: #fff; font-weight: 700; font-size: 0.85rem;
+  display: flex; align-items: center; justify-content: center;
+}}
+blockquote.callout {{
+  border-radius: 10px; padding: 0.85rem 1.1rem 0.85rem 1rem; margin: 0.9rem 0 1.1rem;
+  border-left: 4px solid var(--note-bd); background: var(--note-bg);
+}}
+blockquote.callout.warn {{ border-left-color: var(--warn-bd); background: var(--warn-bg); }}
+blockquote.callout p {{ margin: 0; }}
+.md-scroll {{ overflow-x: auto; margin-bottom: 1.2rem; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); }}
+main table {{ border-collapse: collapse; width: 100%; font-size: 14.5px; }}
+main th, main td {{ text-align: left; padding: 0.6rem 0.85rem; vertical-align: top; line-height: 1.55; }}
+main th {{
+  font-size: 11.5px; letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--muted); border-bottom: 2px solid var(--border);
+}}
+main td {{ border-top: 1px solid var(--border); }}
+main tbody tr:nth-child(even) td {{ background: color-mix(in srgb, var(--chip) 55%, transparent); }}
+@media print {{
+  body {{ background: #fff; color: #000; font-size: 11.5pt; }}
+  .toc, .crumb {{ display: none; }}
+  .cols {{ display: block; }}
+  main ol > li, .md-scroll, .toc {{ border-color: #bbb; }}
+  main a {{ color: #000; text-decoration: none; }}
+}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="mast">
+    <div class="crumb"><a href="/">&larr; The Hannan Tapes</a> &nbsp;&middot;&nbsp; <a href="/process/">The Process</a></div>
+    <h1>Publishing a Show &mdash; Owner&rsquo;s Manual</h1>
+    <p class="sub">From the whole-show WAV in Audacity to the live site, and every tool along the way.</p>
+  </header>
+  <div class="cols">
+    <nav class="toc" aria-label="Contents">
+      <div class="toc-title">Contents</div>
+{toc}
+    </nav>
+    <main>
+{body}
+    </main>
+  </div>
+</div>
+</body>
+</html>
+'''
 
 def build_contact():
     return page_shell(
