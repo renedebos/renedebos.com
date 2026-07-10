@@ -203,6 +203,27 @@ def check_orphan_song_dirs():
         cmds = "\n  ".join(f"git rm -r 'songs/{d}/'" for d in orphans)
         raise SystemExit(f"orphaned song page dir(s) no longer produced by the build:\n  {cmds}")
 
+def check_rarity_drift():
+    """'rarity' means played once or almost never (TAGS.md) — but it's applied
+    at publish time and goes stale as later shows add appearances. Warn (never
+    fail: the final call is Rene's) when a rarity-tagged song now has 3+
+    appearances in the songs matrix."""
+    warned = []
+    for song in collect_songs()[0]:
+        if song["plays"] < 3:
+            continue
+        by_show = {(o["slug"], o["num"]) for o in song["occ"]}
+        for s in M["shows"]:
+            for t in (s.get("tracks") or []):
+                if (s["slug"], t["num"]) in by_show and "rarity" in (t.get("tags") or []):
+                    warned.append(f'{song["canonical"]!r} plays {song["plays"]}x '
+                                  f'but is tagged rarity on {s["slug"]} #{t["num"]:02d}')
+    if warned:
+        print(f"⚠ rarity drift — {len(warned)} track(s) tagged 'rarity' on songs "
+              "with 3+ appearances (warning only, review the tags):")
+        for w in sorted(set(warned)):
+            print(f"    {w}")
+
 SONG_MANUAL_MERGE = {
     "ABC - Sesame Street": "ABC",
     "The German Clock Winder": "The German Clockwinder",
@@ -292,4 +313,4 @@ def write(path, content):
         f.write(content)
 
 
-__all__ = ['write', 'ARTIST_SHORT', 'DURATION_RE', 'LEGACY_KEY_NAMING', 'M', 'ROOT', 'SONG_CANONICAL_OVERRIDE', 'SONG_MANUAL_MERGE', 'SOURCE_LABEL', 'TAG_VOCAB', 'WORKER', '_ARTIST_ORDER', '_duration_sec', 'added_sort_key', 'artist_name', 'check_orphan_song_dirs', 'collect_songs', 'date_with_subtitle', 'esc', 'iso_duration', 'load_processing', 'show_city', 'show_title', 'show_url', 'singles_for_show', 'song_norm', 'song_slug', 'sort_key', 'stamp_added_dates', 'stream_url', 'track_total', 'validate']
+__all__ = ['write', 'ARTIST_SHORT', 'DURATION_RE', 'LEGACY_KEY_NAMING', 'M', 'ROOT', 'SONG_CANONICAL_OVERRIDE', 'SONG_MANUAL_MERGE', 'SOURCE_LABEL', 'TAG_VOCAB', 'WORKER', '_ARTIST_ORDER', '_duration_sec', 'added_sort_key', 'artist_name', 'check_orphan_song_dirs', 'check_rarity_drift', 'collect_songs', 'date_with_subtitle', 'esc', 'iso_duration', 'load_processing', 'show_city', 'show_title', 'show_url', 'singles_for_show', 'song_norm', 'song_slug', 'sort_key', 'stamp_added_dates', 'stream_url', 'track_total', 'validate']

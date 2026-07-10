@@ -27,13 +27,15 @@
       <h2>2 &middot; Editing</h2>
       <p>Working through the whole show in one project: every song gets a label at its
         boundaries, a fade-in, and a studio fade-out on the applause; the loudest peaks
-        get individual clip repairs.</p>
+        get individual clip repairs. The labels are also exported as a tiny plain-text
+        file (<code>labels.txt</code>) alongside the tape &mdash; more on why below.</p>
       <p class="flow-optional"><strong>Optional &mdash; noise reduction.</strong> When tape
         hiss warrants it, broadband noise reduction is applied across the entire show
         before splitting, so every track shares one noise profile. The settings are
-        recorded, and shows treated this way carry a
-        <span class="proc-status pre-edit">noise-reduced</span> badge on their technical
-        data.</p>
+        recorded in a note kept with the exported tracks, and shows treated this way
+        carry a <span class="proc-status pre-edit">noise-reduced</span> badge on their
+        technical data. The untreated export is archived too, so the un-reduced
+        version of every hand edit survives.</p>
       <p>The project is then exported as one FLAC per song.</p>
       <div class="flow-loc"><span>Drive &middot; Work Folder/&lt;show&gt;/Tracks/</span>
         <span>or &middot; Tracks Noise Reduction/</span></div>
@@ -91,11 +93,33 @@
   </section>
 
   <section class="process-outro">
+    <h2>The raw archive</h2>
     <p>
-      The archive&rsquo;s working rule: <strong>repairs by hand, loudness by machine, and a
-      paper trail for both.</strong> Anything artistic &mdash; where a song starts, how the
-      applause fades, whether the hiss is worth treating &mdash; is a human decision made
-      in Audacity. Everything mechanical is scripted, measured, and recorded, so any
-      track can be traced back to exactly what was done to it.
+      Everything above describes the <em>listening</em> copies. The raw archive &mdash;
+      the recordings exactly as they came off the tape, before any fade, clip repair,
+      or noise treatment &mdash; is preserved separately, and deliberately small:
+    </p>
+    <ul class="reasons">
+      <li>The <strong>whole-show WAV</strong> is the raw archive: an untouched,
+        sample-for-sample transfer of the tape, kept on two services.</li>
+      <li>The <strong>labels file</strong> is the split recipe: a few kilobytes of plain
+        text recording where every song starts and ends. Together, WAV&nbsp;+&nbsp;labels
+        can regenerate a folder of raw, unedited per-song files at any time, with a
+        single command &mdash; so those files are never stored, only their recipe. A
+        plain-text file will outlive any project format or audio tool.</li>
+      <li>When a show gets extra treatment (like noise reduction), the export
+        <em>without</em> that treatment is archived as well &mdash; hand edits are the one
+        thing no recipe can regenerate.</li>
+    </ul>
+    <p>
+      The rule behind all of it: <strong>store what hands made; derive what machines can
+      remake.</strong>
+    </p>
+    <p>
+      And the archive&rsquo;s working rule overall: <strong>repairs by hand, loudness by
+      machine, and a paper trail for both.</strong> Anything artistic &mdash; where a song
+      starts, how the applause fades, whether the hiss is worth treating &mdash; is a
+      human decision made in Audacity. Everything mechanical is scripted, measured, and
+      recorded, so any track can be traced back to exactly what was done to it.
     </p>
   </section>

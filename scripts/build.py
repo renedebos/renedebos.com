@@ -26,6 +26,7 @@ from sitegen.feeds import *      # noqa: F401,F403
 def main():
     validate()
     check_orphan_song_dirs()
+    check_rarity_drift()
     if "--check" in sys.argv[1:]:
         n_shows = len(M["shows"])
         n_tracks = sum(len(s["tracks"] or []) for s in M["shows"])
