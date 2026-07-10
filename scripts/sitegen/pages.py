@@ -39,10 +39,13 @@ def _home_info_card(name, summary_label):
       </details>
     </div>'''
 
+HOME_SOURCE_SHORT = {"SBD": "Soundboard", "AUD": "Audience"}
+
 def _home_show_card(show, featured=False):
     n = len(show["tracks"])
-    tags = ('<span class="tag featured">Featured</span>' if featured else "") + \
-           f'<span class="tag">{esc(SOURCE_LABEL.get(show["source"], show["source"]))}</span>'
+    tags = (('<span class="tag featured">Featured</span>' if featured else "") +
+            f'<span class="tag">{esc(ARTIST_SHORT.get(show["artist"], artist_name(show["artist"])))}</span>' +
+            f'<span class="tag">{esc(HOME_SOURCE_SHORT.get(show["source"], show["source"]))}</span>')
     added = show.get("added")
     added_html = f'\n      <div class="added">ADDED {esc(added)}</div>' if added else ""
     venue = show["venue"] or show["venue_short"] or ""
