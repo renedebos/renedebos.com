@@ -25,17 +25,42 @@ const ID_RE = /^[a-z0-9-]{1,80}$/;
 const SLUG_RE = /^\/play\/([a-f0-9]{6,64})\/?$/i;
 const MAX_TRACKS = 500;
 
+// Applied to every response. CSP: the site is dependency-free, so everything
+// is same-origin except the wav-download Worker (audio streams + gated
+// downloads). Show pages carry small inline bootstrap <script>s and the
+// manual an inline <style>, hence 'unsafe-inline' — external injection is
+// still blocked, which is the attack that matters on a static site.
+const WAV_WORKER = "https://wav-download.renedebos.workers.dev";
+const SECURITY_HEADERS = {
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "SAMEORIGIN",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+  "Content-Security-Policy":
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; " +
+    "style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
+    `connect-src 'self' ${WAV_WORKER}; media-src 'self' ${WAV_WORKER}; ` +
+    "object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'",
+};
+
+function secure(resp) {
+  const out = new Response(resp.body, resp);
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) out.headers.set(k, v);
+  return out;
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
     if (url.pathname === "/api/playlist" && request.method === "POST") {
-      return createShortLink(request, env, url.origin);
+      return secure(await createShortLink(request, env, url.origin));
     }
 
     const m = url.pathname.match(SLUG_RE);
     if (m && (request.method === "GET" || request.method === "HEAD")) {
-      return resolveShortLink(m[1].toLowerCase(), env);
+      return secure(await resolveShortLink(m[1].toLowerCase(), env));
     }
 
     const resp = await env.ASSETS.fetch(request);
@@ -43,14 +68,29 @@ export default {
       // Serve the branded 404 ourselves (see routing note above); no-store so
       // a transient miss (mid-deploy, propagation) can't shadow a fix later.
       const page = await env.ASSETS.fetch(new URL("/404.html", url));
-      return new Response(request.method === "HEAD" ? null : page.body, {
+      return secure(new Response(request.method === "HEAD" ? null : page.body, {
         status: 404,
         headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
-      });
+      }));
     }
-    return resp;
+    return secure(resp);
   },
 };
+
+// Per-IP daily cap on NEW playlist creates. Dedupe hits (same content, same
+// slug) don't count. Coarse on purpose: KV is eventually consistent, so this
+// won't stop a fast burst, but it stops any sustained attempt to burn the KV
+// write quota. 40/day is far beyond honest use.
+const CREATES_PER_DAY = 40;
+
+async function overCreateLimit(request, env) {
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  const key = `rl:${ip}:${new Date().toISOString().slice(0, 10)}`;
+  const n = parseInt((await env.PLAYLISTS.get(key)) || "0", 10);
+  if (n >= CREATES_PER_DAY) return true;
+  await env.PLAYLISTS.put(key, String(n + 1), { expirationTtl: 90000 });
+  return false;
+}
 
 async function createShortLink(request, env, origin) {
   let body;
@@ -75,6 +115,10 @@ async function createShortLink(request, env, origin) {
     const slug = hex.slice(0, len);
     const existing = await env.PLAYLISTS.get(slug);
     if (existing === null) {
+      // only a genuinely NEW playlist consumes rate-limit budget
+      if (await overCreateLimit(request, env)) {
+        return err(429, "too many new playlists today — try again tomorrow");
+      }
       await env.PLAYLISTS.put(slug, value);
       return ok(slug, origin);
     }

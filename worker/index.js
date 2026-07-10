@@ -97,6 +97,44 @@ async function handleStream(request, env, url, origin) {
 // ── POST /auth  body: { password, filename } ──────────────────────────────────
 // Verifies the password against WAV_PASSWORD env secret.
 // Returns a short-lived HMAC-signed token the client uses for /download.
+
+// Constant-time equality via HMAC comparison: hash both sides with a random
+// per-isolate key and compare the digests — comparing digests leaks nothing
+// about where the plaintexts differ. Key is created lazily: the Workers
+// runtime disallows random generation in global scope.
+let ctKeyPromise = null;
+function ctKey() {
+  if (!ctKeyPromise) {
+    ctKeyPromise = crypto.subtle.importKey('raw',
+      crypto.getRandomValues(new Uint8Array(32)),
+      { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  }
+  return ctKeyPromise;
+}
+async function timingSafeEqual(a, b) {
+  const key = await ctKey();
+  const enc = new TextEncoder();
+  const [da, db] = await Promise.all([
+    crypto.subtle.sign('HMAC', key, enc.encode(a)),
+    crypto.subtle.sign('HMAC', key, enc.encode(b)),
+  ]);
+  const ua = new Uint8Array(da), ub = new Uint8Array(db);
+  let diff = 0;
+  for (let i = 0; i < ua.length; i++) diff |= ua[i] ^ ub[i];
+  return diff === 0;
+}
+
+// Best-effort brute-force damping (per isolate): a failure budget per minute
+// plus a fixed delay on every wrong password. Not a hard guarantee — isolates
+// are many — but it turns online guessing from thousands/sec into a crawl;
+// the password's strength is the real defence.
+let authFails = 0, authWindow = 0;
+function authThrottled() {
+  const now = Date.now();
+  if (now - authWindow > 60000) { authWindow = now; authFails = 0; }
+  return authFails >= 20;
+}
+
 async function handleAuth(request, env, origin) {
   if (request.method !== 'POST') {
     return new Response('Method not allowed', { status: 405, headers: corsHeaders(origin) });
@@ -108,7 +146,16 @@ async function handleAuth(request, env, origin) {
 
   const { password, filename } = body;
 
-  if (!password || password !== env.WAV_PASSWORD) {
+  if (authThrottled()) {
+    return new Response(JSON.stringify({ error: 'Too many attempts — wait a minute' }), {
+      status: 429,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+    });
+  }
+
+  if (!password || !(await timingSafeEqual(password, env.WAV_PASSWORD))) {
+    authFails++;
+    await new Promise((r) => setTimeout(r, 1000));
     return new Response(JSON.stringify({ error: 'Incorrect password' }), {
       status: 401,
       headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
@@ -179,7 +226,11 @@ async function handleDownload(request, env, url, origin) {
   const filename = file.split('/').pop();
   const headers = new Headers(corsHeaders(origin));
   headers.set('Content-Type', audioType(file));
-  headers.set('Content-Disposition', `attachment; filename="${filename}"`);
+  // ASCII-safe quoted filename (quotes/control chars stripped) plus RFC 5987
+  // filename* for the full UTF-8 name — no way to malform the header.
+  const ascii = filename.replace(/["\\\u0000-\u001f\u007f-\uffff]/g, '_');
+  headers.set('Content-Disposition',
+    `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(filename)}`);
   headers.set('Content-Length', String(object.size));
 
   return new Response(object.body, { status: 200, headers });

@@ -8,7 +8,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # SHA-pinned (= v4.3.0): a floating tag lets a compromised action release
+      # run with this repo's secrets. Update the SHA deliberately, not implicitly.
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
       # Gate 1: recordings.json integrity — tag vocabulary, songwriter rules,
       # R2 key conventions, peaks/processing sidecars, orphan song pages.
       - name: Integrity check
@@ -27,7 +29,10 @@ jobs:
       # endpoints, config in wrangler.jsonc) — this is what serves renedebos.com
       # via Worker custom domains. The old hannan-audio Pages project is no
       # longer deployed. The wav-download Worker (worker/) deploys separately.
+      # wrangler version pinned for the same reason — `npx wrangler` floats to
+      # latest, handing the Cloudflare token to whatever shipped overnight.
+      # Bump the pin deliberately after checking release notes.
       - name: Deploy renedebos-site Worker
-        run: npx wrangler deploy
+        run: npx wrangler@4.110.0 deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
