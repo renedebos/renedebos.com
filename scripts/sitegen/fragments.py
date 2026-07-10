@@ -143,6 +143,7 @@ SITE_PAGES = [
 EXTRA_PAGES = [
     ("History", "/history/"),
     ("Process", "/process/"),
+    ("Manual", "/manual/"),
     ("Contact", "/contact/"),
 ]
 
@@ -160,6 +161,100 @@ def content(name):
 
 def about_block():
     return content("about.html")
+
+def md_to_html(md):
+    """Render the subset of Markdown that repo docs (PUBLISHING.md) use into
+    site HTML: #/##/### headings, ---, paragraphs, tables, bullet + numbered
+    lists (one nesting level), **bold**, *italic*, `code`, [text](url).
+    Dependency-free on purpose — CI builds on stock python3."""
+    def inline(s):
+        s = esc(s)
+        s = re.sub(r"`([^`]+)`", r"<code>\1</code>", s)
+        s = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", s)
+        s = re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"<em>\1</em>", s)
+        s = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2">\1</a>', s)
+        return s
+
+    out, i, lines = [], 0, md.splitlines()
+    para = []
+    def flush_para():
+        if para:
+            out.append(f"<p>{inline(' '.join(para))}</p>")
+            para.clear()
+
+    while i < len(lines):
+        ln = lines[i]
+        s = ln.strip()
+        if not s:
+            flush_para(); i += 1; continue
+        if s.startswith("#"):
+            flush_para()
+            level = len(s) - len(s.lstrip("#"))
+            out.append(f"<h{level}>{inline(s.lstrip('# '))}</h{level}>")
+            i += 1; continue
+        if s == "---":
+            flush_para(); out.append("<hr>"); i += 1; continue
+        if s.startswith("|"):
+            flush_para()
+            rows = []
+            while i < len(lines) and lines[i].strip().startswith("|"):
+                cells = [c.strip() for c in lines[i].strip().strip("|").split("|")]
+                if not all(re.fullmatch(r":?-+:?", c) for c in cells):
+                    rows.append(cells)
+                i += 1
+            head, body = rows[0], rows[1:]
+            th = "".join(f"<th>{inline(c)}</th>" for c in head)
+            tb = "\n".join("<tr>" + "".join(f"<td>{inline(c)}</td>" for c in r) + "</tr>"
+                           for r in body)
+            out.append(f'<div class="md-scroll"><table><thead><tr>{th}</tr></thead>'
+                       f"<tbody>\n{tb}\n</tbody></table></div>")
+            continue
+        m = re.match(r"^(\s*)([-*]|\d+\.)\s+(.*)$", ln)
+        if m:
+            flush_para()
+            # gather the whole list block: items, indented continuations, nested
+            # items, and blank lines *between* items (common in numbered lists)
+            item_re = re.compile(r"^(\s*)([-*]|\d+\.)\s+")
+            block = []
+            while i < len(lines):
+                cur = lines[i]
+                if cur.strip() == "":
+                    nxt = lines[i + 1] if i + 1 < len(lines) else ""
+                    if block and (item_re.match(nxt) or
+                                  (nxt.startswith("  ") and nxt.strip())):
+                        i += 1; continue
+                    break
+                if item_re.match(cur) or (block and cur.startswith("  ")):
+                    block.append(cur); i += 1
+                else:
+                    break
+            out.append(_md_list(block, inline))
+            continue
+        para.append(s); i += 1
+    flush_para()
+    return "\n".join(out)
+
+def _md_list(block, inline):
+    """One list block -> <ul>/<ol>, supporting continuation lines and one
+    level of nested bullets under a top-level item."""
+    ordered = bool(re.match(r"^\d+\.", block[0].strip()))
+    items = []          # each: [text, [nested-bullet-texts]]
+    for ln in block:
+        m = re.match(r"^(\s*)([-*]|\d+\.)\s+(.*)$", ln)
+        if m and not m.group(1):                       # top-level item
+            items.append([m.group(3), []])
+        elif m and items:                              # nested bullet
+            items[-1][1].append(m.group(3))
+        elif items:                                    # continuation line
+            tgt = items[-1][1] if items[-1][1] else items[-1]
+            tgt[-1 if items[-1][1] else 0] += " " + ln.strip()
+    tag = "ol" if ordered else "ul"
+    lis = []
+    for text, nested in items:
+        sub = ("<ul>" + "".join(f"<li>{inline(n)}</li>" for n in nested) + "</ul>"
+               if nested else "")
+        lis.append(f"<li>{inline(text)}{sub}</li>")
+    return f"<{tag}>" + "\n".join(lis) + f"</{tag}>"
 
 def why_block():
     return content("why.html")
@@ -535,4 +630,4 @@ def song_jsonld(s):
     })
 
 
-__all__ = ['DL_SVG', 'EXTRA_PAGES', 'PLAY_SVG', 'SITE_PAGES', 'STATUS_BLURB', '_show_label', '_song_occ_html', '_src_tag', 'about_block', 'artist_notes_block', 'artist_sections', 'contact_block', 'content', 'date_sorted_list', 'dl_button', 'featured_card', 'home_jsonld', 'jsonld', 'page_shell', 'player', 'recording_card', 'show_jsonld', 'show_row', 'site_nav', 'song_jsonld', 'status_line', 'tech_data_section', 'updates_list', 'why_block']
+__all__ = ['DL_SVG', 'EXTRA_PAGES', 'PLAY_SVG', 'SITE_PAGES', 'STATUS_BLURB', '_show_label', '_song_occ_html', '_src_tag', 'about_block', 'artist_notes_block', 'artist_sections', 'contact_block', 'content', 'date_sorted_list', 'dl_button', 'featured_card', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'player', 'recording_card', 'show_jsonld', 'show_row', 'site_nav', 'song_jsonld', 'status_line', 'tech_data_section', 'updates_list', 'why_block']

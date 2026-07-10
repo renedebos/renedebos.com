@@ -180,6 +180,23 @@ def build_process():
         main=content("process.html"),
     )
 
+def build_manual():
+    """Render PUBLISHING.md (the repo's owner's manual) as /manual/ — built
+    from the same file every build, so an edited manual can never go stale on
+    the site (CI's fresh-build gate enforces it)."""
+    md = open(os.path.join(ROOT, "PUBLISHING.md")).read()
+    md = re.sub(r"^# .*\n", "", md)          # page_shell provides the heading
+    return page_shell(
+        title="The Manual — The Hannan Tapes",
+        description="The owner's manual for processing and publishing a show, from Audacity to the live site.",
+        url="https://renedebos.com/manual/",
+        eyebrow="The Hannan Tapes",
+        heading="The Manual",
+        tagline="Processing a show, from Audacity to the live site",
+        nav=site_nav(),
+        main=f'<section class="manual">\n{md_to_html(md)}\n</section>',
+    )
+
 def build_contact():
     return page_shell(
         title="Contact — The Hannan Tapes",
@@ -562,4 +579,4 @@ def build_404():
         nav=site_nav(), main=main)
 
 
-__all__ = ['WAVESURFER_LAB_SLUG', 'build_404', 'build_archive', 'build_contact', 'build_history', 'build_home', 'build_playlist', 'build_process', 'build_search', 'build_show', 'build_song_page', 'build_songs_index', 'build_updates', 'build_wavesurfer_lab']
+__all__ = ['WAVESURFER_LAB_SLUG', 'build_404', 'build_archive', 'build_contact', 'build_history', 'build_home', 'build_manual', 'build_playlist', 'build_process', 'build_search', 'build_show', 'build_song_page', 'build_songs_index', 'build_updates', 'build_wavesurfer_lab']

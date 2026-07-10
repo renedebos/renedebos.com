@@ -52,6 +52,7 @@ def main():
     write("updates/index.html", build_updates())
     write("history/index.html", build_history())
     write("process/index.html", build_process())
+    write("manual/index.html", build_manual())
     write("contact/index.html", build_contact())
     write("sitemap.xml", build_sitemap())
     write("feed.xml", build_feed())
