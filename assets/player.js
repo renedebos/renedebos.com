@@ -200,26 +200,6 @@ modal.addEventListener('click', e => {
 });
 
 document.querySelectorAll('a.download-btn').forEach(btn => {
-  if (!btn.querySelector('.dl-label')) {
-    const label = document.createElement('span');
-    label.className = 'dl-label';
-    label.textContent = 'Download';
-    btn.appendChild(label);
-  }
-
-  btn.classList.add('wav-protected');
-  if (!btn.querySelector('.lock-icon')) {
-    const lockSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    lockSvg.setAttribute('viewBox', '0 0 24 24');
-    lockSvg.setAttribute('fill', 'none');
-    lockSvg.setAttribute('stroke', 'currentColor');
-    lockSvg.setAttribute('stroke-width', '2');
-    lockSvg.setAttribute('stroke-linecap', 'round');
-    lockSvg.setAttribute('stroke-linejoin', 'round');
-    lockSvg.classList.add('lock-icon');
-    lockSvg.innerHTML = '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>';
-    btn.insertBefore(lockSvg, btn.firstChild);
-  }
   btn.addEventListener('click', e => {
     e.preventDefault();
     const fileParam = new URL(btn.href).searchParams.get('file');

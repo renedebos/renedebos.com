@@ -392,7 +392,7 @@ def build_show(show):
             dl_btns = []
             if t.get("flac"):
                 flac_title = "Download FLAC (password protected)" + (f" · {t['flac_size_mb']} MB" if t.get("flac_size_mb") else "")
-                dl_btns.append(dl_button(t["flac"], label="FLAC", title=flac_title))
+                dl_btns.append(dl_button(t["flac"], title=flac_title))
             if has_waves:
                 # waveform replaces the progress bar; the download (if any) keeps the
                 # .ws-dl wrapper so the mobile grouping styles apply (matches the lab page).
@@ -527,7 +527,7 @@ def build_wavesurfer_lab():
         dl_btns = []
         if t.get("flac"):
             flac_title = "Download FLAC (password protected)" + (f" · {t['flac_size_mb']} MB" if t.get("flac_size_mb") else "")
-            dl_btns.append(dl_button(t["flac"], label="FLAC", title=flac_title))
+            dl_btns.append(dl_button(t["flac"], title=flac_title))
         dl_inner = "".join("\n          " + b for b in dl_btns)
         dl = f'\n        <div class="ws-dl">{dl_inner}\n        </div>' if dl_btns else ""
         rows.append(f'''      <div class="ws-row" id="track-{t["num"]}" data-trackid="{t["num"]}" data-src="{esc(stream)}">

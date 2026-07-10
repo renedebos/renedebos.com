@@ -12,18 +12,21 @@ from .core import *  # noqa: F401,F403
 # scripts/ directory — prose fragments live in scripts/content/
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-DL_SVG = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" '
-          'stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/>'
-          '<path d="M7 10l5 5 5-5"/><path d="M3 18h18"/></svg>')
+DL_SVG = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
+          'stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v13"/>'
+          '<path d="M6 12l6 6 6-6"/></svg>')
 
 PLAY_SVG = '<svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg>'
 
-def dl_button(file, *, label=None, title="Download"):
+def dl_button(file, *, title="Download"):
+    # Icon-only (no text label): with only the password-protected lossless
+    # download left, the format doesn't need spelling out in the button —
+    # it's in the hover title, and the password modal makes the gating clear
+    # on first click. `title` doubles as the accessible name.
     url = stream_url(file)
     name = file.split("/")[-1]
-    label_html = f'<span class="dl-label">{esc(label)}</span>' if label else ""
-    return (f'<a class="download-btn" href="{esc(url)}" '
-            f'download="{esc(name)}" title="{esc(title)}">{DL_SVG}{label_html}</a>')
+    return (f'<a class="download-btn" href="{esc(url)}" aria-label="{esc(title)}" '
+            f'download="{esc(name)}" title="{esc(title)}">{DL_SVG}</a>')
 
 def player(file, duration=None, download_file=None, version=None):
     """A custom-player row: play button, progress bar, and (optionally) a
@@ -39,7 +42,7 @@ def player(file, duration=None, download_file=None, version=None):
     end_label = f'<span class="time-label">{esc(duration)}</span>' if duration else ""
     if download_file:
         loss_fmt = download_file.rsplit(".", 1)[-1].upper()
-        downloads = dl_button(download_file, label=loss_fmt,
+        downloads = dl_button(download_file,
                               title=f"Download lossless {loss_fmt} (password protected)")
     else:
         downloads = ""

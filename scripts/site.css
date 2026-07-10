@@ -664,15 +664,13 @@ main {
 }
 
 .track-row .download-btn {
-  padding: 5px 7px;
-  gap: 4px;
+  width: 24px;
+  height: 24px;
   background: transparent;
   color: var(--muted);
 }
 .track-row .download-btn:hover { background: var(--accent-light); color: var(--accent); }
-.track-row .dl-label { display: inline; font-size: 10px; }
 .track-row .download-btn svg { width: 12px; height: 12px; }
-.track-row .lock-icon { display: inline-block; width: 9px; height: 9px; }
 
 .share-btn {
   display: inline-flex;
@@ -721,7 +719,8 @@ main {
   /* larger touch targets for thumbs */
   .track-row.ws-track .play-btn { width: 44px; height: 44px; }
   .track-row.ws-track .play-btn svg { width: 15px; height: 15px; }
-  .track-row.ws-track .download-btn { padding: 9px 11px; min-height: 40px; }
+  .track-row.ws-track .download-btn { width: 40px; height: 40px; }
+  .track-row.ws-track .download-btn svg { width: 16px; height: 16px; }
 }
 
 /* ── wavesurfer.js prototype (lab page) ──────────────────────────────────── */
@@ -787,15 +786,13 @@ main {
 }
 
 .ws-row .download-btn {
-  padding: 5px 7px;
-  gap: 4px;
+  width: 24px;
+  height: 24px;
   background: transparent;
   color: var(--muted);
 }
 .ws-row .download-btn:hover { background: var(--accent-light); color: var(--accent); }
-.ws-row .dl-label { display: inline; font-size: 10px; }
 .ws-row .download-btn svg { width: 12px; height: 12px; }
-.ws-row .lock-icon { display: inline-block; width: 9px; height: 9px; }
 
 /* the download link's wrapper is transparent to the flex layout */
 .ws-dl { display: contents; }
@@ -808,7 +805,8 @@ main {
   /* larger touch targets for thumbs */
   .ws-row .play-btn { width: 44px; height: 44px; }
   .ws-row .play-btn svg { width: 15px; height: 15px; }
-  .ws-row .download-btn { padding: 9px 11px; min-height: 40px; }
+  .ws-row .download-btn { width: 40px; height: 40px; }
+  .ws-row .download-btn svg { width: 16px; height: 16px; }
 }
 
 /* ── recording cards & player ────────────────────────────────────────────── */
@@ -974,38 +972,25 @@ main {
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Icon-only download button — a plain arrow, no text label. There's only one
+   download option now (password-protected lossless), so the format doesn't
+   need spelling out in the button itself; it's in the hover title. */
 .download-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  padding: 5px 12px;
-  border-radius: 3px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
   background: var(--accent-light);
   color: var(--accent);
   text-decoration: none;
   flex-shrink: 0;
   transition: background 0.2s, color 0.2s;
-  white-space: nowrap;
 }
 
 .download-btn:hover { background: var(--accent); color: white; }
-.download-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
-.download-btn.wav-protected { padding-left: 8px; }
-
-.lock-icon {
-  width: 11px;
-  height: 11px;
-  flex-shrink: 0;
-}
-
-.dl-label {
-  font-family: var(--sans);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
+.download-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
 
 /* ── alternates disclosure ───────────────────────────────────────────────── */
 
@@ -1490,15 +1475,18 @@ a.artist-chip:hover { filter: brightness(1.08); }
 }
 .song-name:hover { text-decoration: underline; }
 .song-chips { margin-left: auto; display: flex; align-items: center; gap: .4rem; flex-shrink: 0; }
-.song-occs { padding: .25rem 0 1rem 1.6rem; }
+.song-occs { padding: .2rem 0 .8rem 1.6rem; }
 
+/* Tighter card now that the download button is a small icon rather than a
+   labeled pill — songs played a dozen-plus times (the top of the list runs
+   to 14) stay scannable instead of scrolling forever. */
 .song-occ {
-  border: 1px solid var(--border); border-radius: 10px;
-  background: var(--surface); padding: .7rem .85rem; margin: .6rem 0;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--surface); padding: .55rem .75rem; margin: .4rem 0;
 }
 .song-occ-head {
   display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
-  margin-bottom: .5rem; font-size: 13px;
+  margin-bottom: .4rem; font-size: 13px;
 }
 .song-occ-where { color: var(--muted); }
 .song-occ-open {
