@@ -18,35 +18,31 @@ DL_SVG = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wid
 
 PLAY_SVG = '<svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg>'
 
-def dl_button(file, *, free, label=None, title="Download"):
+def dl_button(file, *, label=None, title="Download"):
     url = stream_url(file)
     name = file.split("/")[-1]
-    free_attr = ' data-free="true"' if free else ""
     label_html = f'<span class="dl-label">{esc(label)}</span>' if label else ""
-    return (f'<a class="download-btn"{free_attr} href="{esc(url)}" '
+    return (f'<a class="download-btn" href="{esc(url)}" '
             f'download="{esc(name)}" title="{esc(title)}">{DL_SVG}{label_html}</a>')
 
-def player(file, free=False, duration=None, download_file=None, version=None):
-    """A custom-player row: play button, progress bar, download button(s).
+def player(file, duration=None, download_file=None, version=None):
+    """A custom-player row: play button, progress bar, and (optionally) a
+    password-protected download button.
 
-    Streams `file`. When `download_file` differs (e.g. stream a lossy 320 kbps
-    MP3 proxy but keep the lossless original available), the row offers two
-    downloads: the free MP3 and the lossless original. Otherwise a single
-    download button for the streamed file. `version` cache-busts the stream URL
-    (pass a track's MD5) so a re-normalized upload goes live immediately.
+    Streams `file` (the lossy MP3 proxy). When `download_file` is given — the
+    lossless original — the row offers its password-gated download; there are
+    no free downloads, streaming is the only ungated path. `version`
+    cache-busts the stream URL (pass a track's MD5) so a re-normalized upload
+    goes live immediately.
     """
     stream = stream_url(file, version)
     end_label = f'<span class="time-label">{esc(duration)}</span>' if duration else ""
-    if download_file and download_file != file:
-        mp3_fmt = file.rsplit(".", 1)[-1].upper()
+    if download_file:
         loss_fmt = download_file.rsplit(".", 1)[-1].upper()
-        downloads = (
-            dl_button(file, free=True, label=mp3_fmt, title="Download 320 kbps MP3")
-            + "\n          "
-            + dl_button(download_file, free=free, label=loss_fmt,
-                        title=f"Download lossless {loss_fmt}"))
+        downloads = dl_button(download_file, label=loss_fmt,
+                              title=f"Download lossless {loss_fmt} (password protected)")
     else:
-        downloads = dl_button(download_file or file, free=free)
+        downloads = ""
     return f'''<div class="custom-player" data-src="{esc(stream)}">
           <button class="play-btn" aria-label="Play">{PLAY_SVG}</button>
           <div class="progress-wrap">
@@ -56,13 +52,14 @@ def player(file, free=False, duration=None, download_file=None, version=None):
           {downloads}
         </div>'''
 
-def recording_card(title, meta_pairs, badge, file, free, stream_file=None):
-    # If a lossy stream proxy exists (stream_file), play it for free and gate the
-    # lossless `file` behind the download/password flow; otherwise stream `file`.
+def recording_card(title, meta_pairs, badge, file, stream_file=None):
+    # Stream the lossy proxy (stream_file) when one exists; the lossless `file`
+    # is only reachable through the download/password flow.
     grid = "".join(f'<span class="meta-label">{esc(k)}</span><span class="meta-value">{esc(v)}</span>'
                    for k, v in meta_pairs if v)
-    play = player(stream_file or file, free,
-                  download_file=file if stream_file else None)
+    lossless = file.rsplit(".", 1)[-1].lower() in ("wav", "flac")
+    play = player(stream_file or file,
+                  download_file=file if lossless else None)
     return f'''      <div class="recording-item">
         <div class="recording-meta">
           <div>
@@ -590,7 +587,7 @@ def contact_block():
   </script>'''
 
 def _song_occ_html(o):
-    p = player(o["file"], free=True, duration=o.get("duration"), version=o["ver"])
+    p = player(o["file"], duration=o.get("duration"), version=o["ver"])
     anchor = f'{esc(o["url"])}#track-{o["num"]}'
     return f'''<div class="song-occ">
         <div class="song-occ-head">

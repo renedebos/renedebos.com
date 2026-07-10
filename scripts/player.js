@@ -108,9 +108,9 @@ document.addEventListener('keydown', e => {
 });
 
 // ── downloads ────────────────────────────────────────────────────────────────
-// MP3/M4A and free files download directly through the Worker; protected
-// lossless files (WAV/FLAC) go through the password modal (/auth issues an
-// HMAC token for /download).
+// All downloads are password protected: every download button goes through
+// the password modal (/auth issues an HMAC token for /download). Streaming
+// is the only ungated path.
 
 const modal = document.createElement('div');
 modal.className = 'pw-overlay';
@@ -207,38 +207,25 @@ document.querySelectorAll('a.download-btn').forEach(btn => {
     btn.appendChild(label);
   }
 
-  const href = (btn.href || '').toLowerCase();
-  const isProtected = href.includes('.wav') || href.includes('.flac');
-  const isFree = btn.dataset.free === 'true';
-
-  if (isProtected && !isFree) {
-    btn.classList.add('wav-protected');
-    if (!btn.querySelector('.lock-icon')) {
-      const lockSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      lockSvg.setAttribute('viewBox', '0 0 24 24');
-      lockSvg.setAttribute('fill', 'none');
-      lockSvg.setAttribute('stroke', 'currentColor');
-      lockSvg.setAttribute('stroke-width', '2');
-      lockSvg.setAttribute('stroke-linecap', 'round');
-      lockSvg.setAttribute('stroke-linejoin', 'round');
-      lockSvg.classList.add('lock-icon');
-      lockSvg.innerHTML = '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>';
-      btn.insertBefore(lockSvg, btn.firstChild);
-    }
-    btn.addEventListener('click', e => {
-      e.preventDefault();
-      const fileParam = new URL(btn.href).searchParams.get('file');
-      const displayName = btn.getAttribute('download') || decodeURIComponent(fileParam.split('/').pop());
-      openPasswordModal(fileParam, displayName);
-    });
-  } else {
-    btn.addEventListener('click', e => {
-      e.preventDefault();
-      const fileParam = new URL(btn.href).searchParams.get('file');
-      const filename = btn.getAttribute('download') || decodeURIComponent(fileParam.split('/').pop());
-      triggerDownload(WORKER + '/download?file=' + encodeURIComponent(fileParam), filename);
-    });
+  btn.classList.add('wav-protected');
+  if (!btn.querySelector('.lock-icon')) {
+    const lockSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    lockSvg.setAttribute('viewBox', '0 0 24 24');
+    lockSvg.setAttribute('fill', 'none');
+    lockSvg.setAttribute('stroke', 'currentColor');
+    lockSvg.setAttribute('stroke-width', '2');
+    lockSvg.setAttribute('stroke-linecap', 'round');
+    lockSvg.setAttribute('stroke-linejoin', 'round');
+    lockSvg.classList.add('lock-icon');
+    lockSvg.innerHTML = '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>';
+    btn.insertBefore(lockSvg, btn.firstChild);
   }
+  btn.addEventListener('click', e => {
+    e.preventDefault();
+    const fileParam = new URL(btn.href).searchParams.get('file');
+    const displayName = btn.getAttribute('download') || decodeURIComponent(fileParam.split('/').pop());
+    openPasswordModal(fileParam, displayName);
+  });
 });
 
 // ── hover info tooltip ───────────────────────────────────────────────────────

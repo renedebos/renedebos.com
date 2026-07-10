@@ -706,14 +706,17 @@ main {
 
 /* waveform track rows (show pages with pre-computed peaks) reuse the bare .ws-wave
    rule; the title yields space so the waveform can fill the row */
-.track-row.ws-track .track-main { flex: 0 1 170px; }
+.track-row.ws-track .track-main { flex: 0 1 220px; }
 
 @media (max-width: 600px) {
+  /* long titles wrap instead of truncating */
+  .track-row .track-title { white-space: normal; line-height: 1.35; }
+  .track-row:not(.ws-track) { padding: 0.55rem 1.1rem; }
+  /* two lines per waveform track: [play · # · title · time · FLAC] over a
+     full-width waveform */
   .track-row.ws-track { flex-wrap: wrap; row-gap: 0.5rem; padding: 0.7rem 1.1rem; }
   .track-row.ws-track .track-main { flex: 1 1 auto; }
   .track-row.ws-track .time-label { margin-left: auto; }
-  /* both downloads always sit together on their own full-width line */
-  .track-row.ws-track .ws-dl { display: flex; flex: 1 1 100%; order: 4; gap: 8px; }
   .track-row.ws-track .ws-wave { flex: 1 1 100%; order: 5; }
   /* larger touch targets for thumbs */
   .track-row.ws-track .play-btn { width: 44px; height: 44px; }
@@ -794,15 +797,13 @@ main {
 .ws-row .download-btn svg { width: 12px; height: 12px; }
 .ws-row .lock-icon { display: inline-block; width: 9px; height: 9px; }
 
-/* download links share a wrapper; transparent to the flex layout on desktop */
+/* the download link's wrapper is transparent to the flex layout */
 .ws-dl { display: contents; }
 
 @media (max-width: 600px) {
   .ws-row { flex-wrap: wrap; row-gap: 0.5rem; padding: 0.7rem 1.1rem; }
-  .ws-row .track-title { flex: 1 1 auto; }
+  .ws-row .track-title { flex: 1 1 auto; white-space: normal; line-height: 1.35; }
   .ws-row .time-label { margin-left: auto; }
-  /* both downloads always sit together on their own full-width line */
-  .ws-dl { display: flex; flex: 1 1 100%; order: 4; gap: 8px; }
   .ws-wave { flex: 1 1 100%; order: 5; }
   /* larger touch targets for thumbs */
   .ws-row .play-btn { width: 44px; height: 44px; }
@@ -1471,7 +1472,7 @@ a.artist-chip:hover { filter: brightness(1.08); }
 .song-item { border-bottom: 1px solid var(--border); }
 .song-item > summary {
   display: flex; align-items: center; gap: .7rem; cursor: pointer;
-  padding: .42rem .25rem; list-style: none;
+  padding: .55rem .25rem; list-style: none;
 }
 .song-item > summary::-webkit-details-marker { display: none; }
 .song-item > summary::before {
@@ -1534,7 +1535,13 @@ a.artist-chip:hover { filter: brightness(1.08); }
   text-align: left; white-space: nowrap; font-weight: 500;
   border-right: 2px solid var(--border);
 }
-.song-grid th.g-song a { color: var(--text); text-decoration: none; }
+/* Cap the sticky song column so one long title can't swallow the viewport —
+   the full name is on the hover title and the song page. */
+.song-grid th.g-song a {
+  color: var(--text); text-decoration: none;
+  display: inline-block; max-width: 15rem;
+  overflow: hidden; text-overflow: ellipsis; vertical-align: bottom;
+}
 .song-grid th.g-song a:hover { color: var(--accent); text-decoration: underline; }
 .song-grid th.g-song .g-count { color: var(--muted); font-size: 11px; margin-left: .4em; }
 .song-grid td.hit a { text-decoration: none; font-size: 14px; }
@@ -1552,6 +1559,10 @@ a.artist-chip:hover { filter: brightness(1.08); }
 @media (max-width: 600px) {
   .song-occs { padding-left: .5rem; }
   .song-occ-open { margin-left: 0; }
+  /* phone grid view: keep the sticky song column to ~a third of the screen
+     so the show columns stay visible and horizontal scrolling works */
+  .song-grid th.g-song a { max-width: 34vw; }
+  .song-grid th, .song-grid td { padding: .35rem .45rem; }
 }
 
 /* ── playlist generator (/playlist/) ───────────────────────────────────── */

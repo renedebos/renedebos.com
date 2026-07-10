@@ -2,13 +2,6 @@
 // change under worker/ — no manual `wrangler deploy` needed since 2026-07-10.
 const WORKER_ORIGIN = 'https://wav-download.renedebos.workers.dev';
 
-const FREE_FILES = new Set([
-  'JerryHannan - 19 Broadway 2001-01-08 SBD (Rugburns).wav',
-  'Soundcloud/JerryHannan_CafeJava_ThePatriotGame.wav',
-  'MadHannans_Sweetwater_2000-02-17 CLEAR HEADED Normalized -3.wav',
-  'MadHannans_Sweetwater_2000-02-17 DA DA DA Normalized.wav',
-]);
-
 function audioType(file) {
   const f = file.toLowerCase();
   if (f.endsWith('.wav')) return 'audio/wav';
@@ -54,9 +47,9 @@ async function handleStream(request, env, url, origin) {
 
   // The player only ever streams the lossy MP3 proxies. Refuse lossless keys so
   // the password-gated WAV/FLAC can't be reassembled from Range requests here,
-  // bypassing /auth + /download. Freely-downloadable files are exempt.
+  // bypassing /auth + /download.
   const lower = file.toLowerCase();
-  if ((lower.endsWith('.wav') || lower.endsWith('.flac')) && !FREE_FILES.has(file)) {
+  if (lower.endsWith('.wav') || lower.endsWith('.flac')) {
     return new Response('Forbidden', { status: 403, headers: corsHeaders(origin) });
   }
 
@@ -186,40 +179,36 @@ async function handleAuth(request, env, origin) {
 }
 
 // ── /download?file=ENCODED_PATH&token=TOKEN&expires=TS ────────────────────────
-// For WAV files: validates HMAC token before serving.
-// For non-WAV (MP3 etc.): no token required.
+// Every download requires a valid HMAC token from /auth — free downloads were
+// removed from the site (2026-07-10); streaming via /stream is the only
+// ungated path.
 async function handleDownload(request, env, url, origin) {
   const file = url.searchParams.get('file');
   if (!file) return new Response('Missing file', { status: 400 });
 
-  const lower = file.toLowerCase();
-  const isLossless = lower.endsWith('.wav') || lower.endsWith('.flac');
+  const token = url.searchParams.get('token');
+  const expires = parseInt(url.searchParams.get('expires') || '0', 10);
 
-  if (isLossless && !FREE_FILES.has(file)) {
-    const token = url.searchParams.get('token');
-    const expires = parseInt(url.searchParams.get('expires') || '0', 10);
+  if (!token || !expires) {
+    return new Response('Unauthorized', { status: 401, headers: corsHeaders(origin) });
+  }
+  if (Date.now() > expires) {
+    return new Response('Token expired', { status: 401, headers: corsHeaders(origin) });
+  }
 
-    if (!token || !expires) {
-      return new Response('Unauthorized', { status: 401, headers: corsHeaders(origin) });
-    }
-    if (Date.now() > expires) {
-      return new Response('Token expired', { status: 401, headers: corsHeaders(origin) });
-    }
+  const message = `${file}:${expires}`;
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(env.TOKEN_SECRET),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['verify'],
+  );
+  const sigBytes = Uint8Array.from(atob(token), c => c.charCodeAt(0));
+  const valid = await crypto.subtle.verify('HMAC', key, sigBytes, new TextEncoder().encode(message));
 
-    const message = `${file}:${expires}`;
-    const key = await crypto.subtle.importKey(
-      'raw',
-      new TextEncoder().encode(env.TOKEN_SECRET),
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['verify'],
-    );
-    const sigBytes = Uint8Array.from(atob(token), c => c.charCodeAt(0));
-    const valid = await crypto.subtle.verify('HMAC', key, sigBytes, new TextEncoder().encode(message));
-
-    if (!valid) {
-      return new Response('Invalid token', { status: 401, headers: corsHeaders(origin) });
-    }
+  if (!valid) {
+    return new Response('Invalid token', { status: 401, headers: corsHeaders(origin) });
   }
 
   const object = await env.R2_BUCKET.get(file);
