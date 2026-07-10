@@ -160,7 +160,7 @@ player.
 - **FLAC** files store tags as **Vorbis comments** (the FLAC-native tag
   block); **MP3** files use **ID3v2.3** (chosen over 2.4 for maximum player
   compatibility). ffmpeg writes both from the same generic keys.
-- Tags live in the file&rsquo;s *container* (the envelope), not in the audio
+- Tags live in the file’s *container* (the envelope), not in the audio
   stream. Retagging is a container rewrite (`ffmpeg -c copy`): the audio
   bytes pass through untouched, so the **audio MD5 in the provenance sidecar
   stays valid** — `verify` proves after every retag that the music is
@@ -168,7 +168,7 @@ player.
 - Every retagged track is MD5-checked *before* upload; a track whose audio
   would change is refused.
 - Where the tagged copies are: **R2** (streams + downloads). The website
-  itself doesn&rsquo;t read the tags — pages render from the catalog. Drive
+  itself doesn’t read the tags — pages render from the catalog. Drive
   `Processed/` backups from before 2026-07-10 are untagged (deliberate: tags
   are reproducible in one command, so ~8 GB of Drive re-uploads bought
   nothing); shows published after that date carry tags everywhere.
