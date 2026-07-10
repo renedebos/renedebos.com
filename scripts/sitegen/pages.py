@@ -127,7 +127,7 @@ HOME_SHELL = '''<!DOCTYPE html>
 <div class="wrap">
 
   <header>
-    <div class="brand">The <em>Hannan</em> Tapes</div>
+    <a class="mark" href="/" aria-label="The Hannan Tapes &mdash; home">&#9834;</a>
     <nav>
     {nav_links}
     </nav>
@@ -136,7 +136,7 @@ HOME_SHELL = '''<!DOCTYPE html>
   <main id="main">
   <section class="hero">
     <div class="eyebrow">Live &middot; DAT-sourced &middot; 1998&ndash;2003</div>
-    <h1>Bar-room tapes, cleaned up and <em>put back on the shelf.</em></h1>
+    <h1>The <em>Hannan</em> Tapes</h1>
     <p class="lede">Live recordings of Jerry Hannan, Sean Hannan, and the Mad Hannans, taped from the audience and soundboard at clubs across Marin and the Bay Area. Digitized, cataloged, and streamable &mdash; hiss and all.</p>
     <div class="actions">
       <a class="btn btn-primary" href="/archive/" id="randomTape">
