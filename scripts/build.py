@@ -41,6 +41,7 @@ def main():
     write("assets/search.js", open(os.path.join(here, "search.js")).read())
     write("assets/playlist.js", open(os.path.join(here, "playlist.js")).read())
     write("assets/songs.js", open(os.path.join(here, "songs.js")).read())
+    write("assets/feed.xsl", open(os.path.join(here, "feed.xsl")).read())
     write("assets/search-index.json", json.dumps(build_search_index(), ensure_ascii=False))
     write("assets/tracks.json", json.dumps(build_track_catalog(), ensure_ascii=False))
     write("lab/wavesurfer/index.html", build_wavesurfer_lab())

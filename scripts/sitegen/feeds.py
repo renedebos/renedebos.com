@@ -111,6 +111,7 @@ def build_feed():
             f"    <guid isPermaLink=\"false\">{esc(guid)}</guid>\n"
             f"    <pubDate>{pub}</pubDate>\n    <description>{plain}</description>\n  </item>")
     return ('<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<?xml-stylesheet type="text/xsl" href="/assets/feed.xsl"?>\n'
             '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">\n<channel>\n'
             "  <title>The Hannan Tapes &#8212; Updates</title>\n"
             f"  <link>{base}/updates/</link>\n"
