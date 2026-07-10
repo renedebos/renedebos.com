@@ -112,12 +112,15 @@ def show_tags(slug):
         return None
 
 
-def tag_args(ctx, filename, num, total, target):
+def tag_args(ctx, filename, num, total, target, title=None):
     """ffmpeg -metadata args for one track. Works for FLAC (vorbis comments)
-    and MP3 (id3v2) alike — ffmpeg maps the generic keys per container."""
+    and MP3 (id3v2) alike — ffmpeg maps the generic keys per container.
+    `title` overrides the filename-derived title: retag passes the catalog
+    title so a `make edit` retitle flows into the files; at process time the
+    catalog entry doesn't exist yet, so the filename is the only source."""
     if ctx is None:
         return []
-    title = re.sub(r"^\d+\s+", "", os.path.splitext(filename)[0])
+    title = title or re.sub(r"^\d+\s+", "", os.path.splitext(filename)[0])
     pairs = {
         "title": title, "artist": ctx["artist"], "album_artist": ctx["artist"],
         "album": ctx["album"],
@@ -628,8 +631,9 @@ def cmd_retag(args):
         slug = show["slug"]
         prov_path = os.path.join(ROOT, "data", "processing", f"{slug}.json")
         prov = json.load(open(prov_path)) if os.path.exists(prov_path) else {}
-        if prov.get("tags_embedded"):
-            print(f"{slug}: already tagged ({prov['tags_embedded']}) — skipping")
+        if prov.get("tags_embedded") and not args.force:
+            print(f"{slug}: already tagged ({prov['tags_embedded']}) — skipping "
+                  "(--force to re-tag, e.g. after a make-edit retitle)")
             continue
         ctx = show_tags(slug)
         tracks = show["tracks"]
@@ -646,7 +650,7 @@ def cmd_retag(args):
                                    "--s3-no-check-bucket"]).returncode != 0:
                     print(f"  DOWNLOAD FAIL {key}"); bad += 1; continue
                 tags = tag_args(ctx, name, t["num"], len(tracks),
-                                prov.get("target_lufs", -20))
+                                prov.get("target_lufs", -20), title=t.get("title"))
                 extra = ["-id3v2_version", "3"] if name.lower().endswith(".mp3") else []
                 r = subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
                                     "-i", local, "-map", "0", "-c", "copy"]
@@ -817,6 +821,8 @@ def main():
                                       "(container rewrite, audio MD5 preserved)")
     rt.add_argument("slug", nargs="?")
     rt.add_argument("--all", action="store_true", help="every track-listed show")
+    rt.add_argument("--force", action="store_true",
+                    help="re-tag even if already tags_embedded (after catalog edits)")
     rt.set_defaults(func=cmd_retag)
 
     vs = sub.add_parser("versions", help="describe what each workflow version does")

@@ -126,3 +126,65 @@ tells you whether you ever need to touch it.
 > **Drive is the source of truth.** `~/gdrive-mount` is an ordinary local
 > folder; nothing syncs by itself — you copy up via the Files app, Claude
 > verifies against real Drive.
+
+---
+
+## Part 3 — Metadata: the catalog and the tags inside the files
+
+The archive has **two metadata layers**. Everything editorial lives in one
+place; the audio files carry a derived copy so downloads look right in any
+player.
+
+| Layer | Where it lives | Who reads it | How you edit it |
+|---|---|---|---|
+| **The catalog** — `data/recordings.json` | the site's git repo | every page of the website (built from it), the playlist, search, the technical tables | `make edit` → Save → build + push |
+| **Embedded tags** — inside each FLAC/MP3 | the file copies on R2 (what people stream and download) | music players, phones, car stereos, anything that opens a downloaded file | never by hand — regenerated from the catalog with `retag` |
+
+> **The catalog is the single source of truth.** The embedded tags are a
+> derived copy, written by the pipeline. If the two ever disagree, the
+> catalog wins and a `retag` makes the files match it.
+
+### What's embedded in every track
+
+| Tag | Example | Comes from |
+|---|---|---|
+| `title` | Open Door | the catalog title (falls back to the filename at first processing, before the catalog entry exists) |
+| `artist` / `album_artist` | Sean Hannan | the catalog's artist entry |
+| `album` | 19 Broadway — February 21, 2000 | catalog venue + display date |
+| `track` | 1/11 | track number / show total |
+| `date` | 2000 | show date (year) |
+| `comment` | The Hannan Tapes (renedebos.com) — loudness-normalized to −20 LUFS | fixed provenance note |
+
+### The technical part
+
+- **FLAC** files store tags as **Vorbis comments** (the FLAC-native tag
+  block); **MP3** files use **ID3v2.3** (chosen over 2.4 for maximum player
+  compatibility). ffmpeg writes both from the same generic keys.
+- Tags live in the file&rsquo;s *container* (the envelope), not in the audio
+  stream. Retagging is a container rewrite (`ffmpeg -c copy`): the audio
+  bytes pass through untouched, so the **audio MD5 in the provenance sidecar
+  stays valid** — `verify` proves after every retag that the music is
+  bit-identical.
+- Every retagged track is MD5-checked *before* upload; a track whose audio
+  would change is refused.
+- Where the tagged copies are: **R2** (streams + downloads). The website
+  itself doesn&rsquo;t read the tags — pages render from the catalog. Drive
+  `Processed/` backups from before 2026-07-10 are untagged (deliberate: tags
+  are reproducible in one command, so ~8 GB of Drive re-uploads bought
+  nothing); shows published after that date carry tags everywhere.
+
+### Changing metadata, end to end
+
+1. **Edit the catalog**: `make edit` → change titles, venue, dates, artist
+   credits, songwriter, tags → Save.
+2. **Update the site**: build + push (or ask Claude) — the pages now show
+   the new values.
+3. **Update the files**: `python3 scripts/audio_process.py retag <slug>
+   --force` — re-derives every tag for that show from the catalog and
+   rewrites the file envelopes on R2. A few minutes per show; audio provably
+   untouched.
+
+> **Never edit tags directly in the files** (with a tag editor or
+> otherwise). The next `retag` would overwrite your edit, and the R2 copy
+> would silently disagree with the catalog. Change the catalog; let the
+> pipeline propagate it.
