@@ -1,0 +1,24 @@
+name: Deploy wav-download Worker
+
+# The wav-download Worker (worker/) is deployed separately from the site —
+# historically a manual `wrangler deploy` that was easy to forget, leaving
+# stale worker code live after a push. This closes that gap: any change under
+# worker/ on main deploys it automatically. Ordinary site commits don't
+# trigger it (paths filter). Same supply-chain pinning rules as deploy.yml.
+
+on:
+  push:
+    branches: [main]
+    paths: ['worker/**', '.github/workflows/deploy-worker.yml']
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # SHA-pinned (= v4.3.0), same as deploy.yml
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      - name: Deploy wav-download Worker
+        run: npx wrangler@4.110.0 deploy --config wrangler.toml
+        working-directory: worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

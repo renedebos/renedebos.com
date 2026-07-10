@@ -1,3 +1,5 @@
+// Deployed automatically by .github/workflows/deploy-worker.yml on any
+// change under worker/ — no manual `wrangler deploy` needed since 2026-07-10.
 const WORKER_ORIGIN = 'https://wav-download.renedebos.workers.dev';
 
 const FREE_FILES = new Set([

@@ -206,7 +206,7 @@ per-show step; it matters when something breaks or gets upgraded.
 | What | How it deploys |
 |---|---|
 | **The site** (`renedebos-site` Worker: all pages, assets, playlist short links) | Automatically on every push to `main`: the GitHub Action runs the integrity checks, verifies the committed output matches a fresh build, then deploys. The Action's dependencies are version-pinned on purpose — bump them deliberately, never implicitly. |
-| **The download/stream worker** (`wav-download`, in `worker/`) | **Manually**, and easy to forget: `cd worker && npx wrangler deploy --config wrangler.toml`. The Action does NOT deploy it. |
+| **The download/stream worker** (`wav-download`, in `worker/`) | Automatically too (since 2026-07-10): a second Action fires on any `worker/**` change on `main`. Manual fallback if ever needed: `cd worker && npx wrangler deploy --config wrangler.toml`. |
 
 > **Important: a green Action is not proof the site works.** After a deploy,
 > always spot-check a URL only the new deploy can serve, on renedebos.com itself.

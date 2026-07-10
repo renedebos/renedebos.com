@@ -209,7 +209,7 @@ main tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--chip) 55
 <h3 id="how-deploys-work">How deploys work</h3>
 <div class="md-scroll"><table><thead><tr><th>What</th><th>How it deploys</th></tr></thead><tbody>
 <tr><td><strong>The site</strong> (<code>renedebos-site</code> Worker: all pages, assets, playlist short links)</td><td>Automatically on every push to <code>main</code>: the GitHub Action runs the integrity checks, verifies the committed output matches a fresh build, then deploys. The Action&#x27;s dependencies are version-pinned on purpose — bump them deliberately, never implicitly.</td></tr>
-<tr><td><strong>The download/stream worker</strong> (<code>wav-download</code>, in <code>worker/</code>)</td><td><strong>Manually</strong>, and easy to forget: <code>cd worker &amp;&amp; npx wrangler deploy --config wrangler.toml</code>. The Action does NOT deploy it.</td></tr>
+<tr><td><strong>The download/stream worker</strong> (<code>wav-download</code>, in <code>worker/</code>)</td><td>Automatically too (since 2026-07-10): a second Action fires on any <code>worker/**</code> change on <code>main</code>. Manual fallback if ever needed: <code>cd worker &amp;&amp; npx wrangler deploy --config wrangler.toml</code>.</td></tr>
 </tbody></table></div>
 <blockquote class="callout warn"><p><strong>Important: a green Action is not proof the site works.</strong> After a deploy, always spot-check a URL only the new deploy can serve, on renedebos.com itself. Also: edge caching means header/page changes can take a while to appear on already-cached pages — Cloudflare dashboard → Purge Cache makes it instant.</p></blockquote>
 <h3 id="security-posture-hardened-2026-07-10">Security posture (hardened 2026-07-10)</h3>
