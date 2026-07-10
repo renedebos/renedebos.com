@@ -1,6 +1,6 @@
 # Publishing a Show — Owner's Manual
 
-*For Rene. How a show gets from a whole-show WAV to renedebos.com, what you do
+*How a show gets from a whole-show WAV to renedebos.com, what you do
 by hand, what Claude runs, and what every tool in `scripts/` is for.*
 *Last updated: 2026-07-09 (matches workflow v2 — publish_show orchestration).*
 
