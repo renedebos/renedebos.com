@@ -10,18 +10,173 @@ import urllib.parse
 from .core import *       # noqa: F401,F403
 from .fragments import *  # noqa: F401,F403
 
+RING_ICON_SVG = ('<svg width="24" height="24" viewBox="0 0 24 24" fill="none">'
+                  '<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.2"/>'
+                  '<circle cx="12" cy="12" r="6" stroke="currentColor" stroke-width="1.2"/>'
+                  '<circle cx="12" cy="12" r="2" fill="currentColor"/></svg>')
+
+def _home_content_blocks(name):
+    """Pull the ordered blocks (h2 heading, then each p/ol element) out of a
+    scripts/content/*.html prose fragment — lets the homepage show a one-paragraph
+    teaser plus an expandable "rest" without rewriting a word of the original."""
+    src = content(name)
+    heading = re.search(r"<h2>(.*?)</h2>", src, re.S).group(1)
+    blocks = re.findall(r"<(?:p|ol)\b[^>]*>.*?</(?:p|ol)>", src, re.S)
+    return heading, blocks
+
+def _home_info_card(name, summary_label):
+    heading, blocks = _home_content_blocks(name)
+    teaser, rest = blocks[0], blocks[1:]
+    rest_html = "\n        ".join(rest)
+    return f'''    <div class="info-card">
+      <h2>{heading}</h2>
+      {teaser}
+      <details class="info-expand">
+        <summary>{esc(summary_label)}</summary>
+        <div class="info-expand-body">
+        {rest_html}
+        </div>
+      </details>
+    </div>'''
+
+def _home_show_card(show, featured=False):
+    n = len(show["tracks"])
+    tags = ('<span class="tag featured">Featured</span>' if featured else "") + \
+           f'<span class="tag">{esc(SOURCE_LABEL.get(show["source"], show["source"]))}</span>'
+    added = show.get("added")
+    added_html = f'\n      <div class="added">ADDED {esc(added)}</div>' if added else ""
+    venue = show["venue"] or show["venue_short"] or ""
+    return f'''    <a class="card" href="{show_url(show)}">
+      <div class="card-top">
+        <span class="ring-icon">{RING_ICON_SVG}</span>
+        <span class="count">{n} TRACK{"S" if n != 1 else ""}</span>
+      </div>
+      <h3>{esc(artist_name(show["artist"]))} &mdash; {esc(show["venue_short"] or "Unknown venue")}</h3>
+      <div class="venue">{esc(venue)} &middot; {esc(date_with_subtitle(show))}</div>{added_html}
+      <div class="tags">{tags}</div>
+      <div class="stream">Stream &middot; {esc(track_total(show["tracks"]))}</div>
+    </a>'''
+
+RANDOM_TAPE_SCRIPT = '''
+<script>
+(function () {
+  var btn = document.getElementById('randomTape');
+  if (!btn) return;
+  btn.addEventListener('click', function (e) {
+    e.preventDefault();
+    fetch('/assets/tracks.json').then(function (r) { return r.json(); }).then(function (rows) {
+      if (!rows.length) { location.href = '/archive/'; return; }
+      location.href = rows[Math.floor(Math.random() * rows.length)].url;
+    }).catch(function () { location.href = '/archive/'; });
+  });
+})();
+</script>'''
+
 def build_home():
-    return page_shell(
-        title="The Hannan Tapes",
-        description="Live recordings archive — Jerry Hannan, Sean Hannan, and Mad Hannans performing at clubs in Marin and the Bay Area in the late 1990s and early 2000s.",
-        url="https://renedebos.com",
-        eyebrow="Live Recordings Archive",
-        heading="The <em>Hannan</em><br>Tapes",
-        tagline="Live performances &mdash; San Francisco Bay Area",
-        nav=site_nav("Home"),
-        main=about_block() + why_block() + featured_card() + artist_notes_block(),
-        extra_head=home_jsonld(),
+    """The homepage is a standalone document (like /manual/) rather than
+    page_shell + site.css — a deliberately different "tape deck" look the
+    rest of the site doesn't share, per the 2026-07-10 redesign."""
+    tracked = [s for s in M["shows"] if s.get("tracks")]
+    n_tracks = sum(len(s["tracks"]) for s in tracked)
+    featured_slug = M["featured"][0] if M.get("featured") else None
+    featured = next((s for s in tracked if s["slug"] == featured_slug), None)
+    rest = sorted((s for s in tracked if s["slug"] != featured_slug),
+                  key=added_sort_key, reverse=True)
+    grid_shows = ([featured] if featured else []) + rest[:6 - (1 if featured else 0)]
+    cards = "\n".join(_home_show_card(s, featured=(s is featured)) for s in grid_shows)
+
+    notes = [a for a in M["artists"] if a.get("note")]
+    artist_links = (f'\n    <div class="artist-links">{" &middot; ".join(a["note"] for a in notes)}</div>'
+                     if notes else "")
+
+    return HOME_SHELL.format(
+        nav_links="\n    ".join(f'<a href="{href}">{label}</a>'
+                                 for label, href in SITE_PAGES[1:]),
+        n_shows=len(tracked),
+        n_tracks=n_tracks,
+        cards=cards,
+        why_card=_home_info_card("why.html", "Read the full story"),
+        what_card=_home_info_card("about.html", "Read more"),
+        artist_links=artist_links,
+        random_tape_script=RANDOM_TAPE_SCRIPT,
+        jsonld=home_jsonld(),
     )
+
+HOME_SHELL = '''<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Hannan Tapes</title>
+<meta name="description" content="Live recordings archive — Jerry Hannan, Sean Hannan, and Mad Hannans performing at clubs in Marin and the Bay Area in the late 1990s and early 2000s.">
+<link rel="canonical" href="https://renedebos.com">
+<meta name="theme-color" content="#17150f">
+<meta property="og:title" content="The Hannan Tapes">
+<meta property="og:description" content="Live recordings archive — Jerry Hannan, Sean Hannan, and Mad Hannans.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://renedebos.com">
+<meta property="og:image" content="https://renedebos.com/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9834;</text></svg>">
+<link rel="alternate" type="application/rss+xml" title="The Hannan Tapes &mdash; Updates" href="https://renedebos.com/feed.xml">
+<link rel="stylesheet" href="/assets/home-fonts.css">
+<link rel="stylesheet" href="/assets/home.css">{jsonld}
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="wrap">
+
+  <header>
+    <div class="brand">The <em>Hannan</em> Tapes</div>
+    <nav>
+    {nav_links}
+    </nav>
+  </header>
+
+  <main id="main">
+  <section class="hero">
+    <div class="eyebrow">Live &middot; DAT-sourced &middot; 1998&ndash;2003</div>
+    <h1>Bar-room tapes, cleaned up and <em>put back on the shelf.</em></h1>
+    <p class="lede">Live recordings of Jerry Hannan, Sean Hannan, and the Mad Hannans, taped from the audience and soundboard at clubs across Marin and the Bay Area. Digitized, cataloged, and streamable &mdash; hiss and all.</p>
+    <div class="actions">
+      <a class="btn btn-primary" href="/archive/" id="randomTape">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.6" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><path d="M8 1.4v2M8 12.6v2M1.4 8h2M12.6 8h2" stroke="currentColor" stroke-width="1.3"/></svg>
+        Play a random tape
+      </a>
+      <a class="btn btn-secondary" href="/playlist/">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 4h9M2 8h9M2 12h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M13 9v5M13 14l-1.7-1.4M13 14l1.7-1.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Build a playlist
+      </a>
+    </div>
+  </section>
+
+  <div class="grid-head">
+    <h2>Recently Added</h2>
+    <span>{n_shows} SHOWS &middot; {n_tracks} TRACKS</span>
+  </div>
+
+  <div class="grid">
+{cards}
+  </div>
+
+  <div class="all-shows"><a href="/archive/">Browse all shows &rarr;</a></div>
+
+  <section class="home-about-grid">
+{why_card}
+{what_card}
+  </section>
+  </main>
+
+  <footer>
+    <span>Part of <a href="/">The Hannan Tapes</a> archive</span>
+    <span><a href="/history/">The Story So Far</a> &middot; <a href="/contact/">Contact</a> &middot; <a href="/feed.xml">RSS</a></span>{artist_links}
+  </footer>
+
+</div>
+{random_tape_script}
+</body>
+</html>
+'''
 
 def build_archive():
     # Absorbs the old /shows/ page (2026-07-08): the four view combinations

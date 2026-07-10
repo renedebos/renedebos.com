@@ -159,9 +159,6 @@ def content(name):
     narrative (a standing weekly task) never touches Python."""
     return open(os.path.join(HERE, "content", name)).read()
 
-def about_block():
-    return content("about.html")
-
 def md_to_html(md):
     """Render the subset of Markdown that repo docs (PUBLISHING.md) use into
     site HTML: #/##/### headings, ---, paragraphs, tables, bullet + numbered
@@ -278,23 +275,6 @@ def _md_list(block, inline):
         return f"<ol{start}>" + "\n".join(lis) + "</ol>"
     return "<ul>" + "\n".join(lis) + "</ul>"
 
-def why_block():
-    return content("why.html")
-
-def featured_card():
-    featured = next(s for s in M["shows"] if s["slug"] in M["featured"])
-    tracks = featured["tracks"]
-    return f'''
-  <a class="featured-card" href="{show_url(featured)}">
-    <div>
-      <p class="featured-eyebrow">Featured &middot; Curated Show</p>
-      <p class="featured-title">{esc(show_title(featured))}</p>
-      <p class="featured-sub">{esc(date_with_subtitle(featured))} &middot; {SOURCE_LABEL.get(featured["source"], featured["source"])} &middot; {len(tracks)} tracks &middot; {track_total(tracks)}</p>
-      <p class="featured-note">Every song split out and streamable.</p>
-    </div>
-    <span class="featured-cta">Listen &rarr;</span>
-  </a>'''
-
 def show_row(show, with_artist=False):
     artist = next(a for a in M["artists"] if a["id"] == show["artist"])
     n_alt = sum(1 for r in show["recordings"] if r["alternate"])
@@ -371,18 +351,6 @@ def date_sorted_list(only_tracks=False):
     <div class="show-list">
 {rows}
     </div>
-  </section>'''
-
-def artist_notes_block():
-    notes = [a for a in M["artists"] if a.get("note")]
-    if not notes:
-        return ""
-    lines = "\n".join(
-        f'    <p class="artist-note"><strong>{esc(a["name"])}</strong> &mdash; {a["note"]}</p>'
-        for a in notes)
-    return f'''
-  <section class="home-notes">
-{lines}
   </section>'''
 
 STATUS_BLURB = {
@@ -669,4 +637,4 @@ def song_jsonld(s):
     })
 
 
-__all__ = ['DL_SVG', 'EXTRA_PAGES', 'PLAY_SVG', 'SITE_PAGES', 'STATUS_BLURB', '_show_label', '_song_occ_html', '_src_tag', 'about_block', 'artist_notes_block', 'artist_sections', 'contact_block', 'content', 'date_sorted_list', 'dl_button', 'featured_card', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'player', 'recording_card', 'show_jsonld', 'show_row', 'site_nav', 'song_jsonld', 'status_line', 'tech_data_section', 'updates_list', 'why_block']
+__all__ = ['DL_SVG', 'EXTRA_PAGES', 'PLAY_SVG', 'SITE_PAGES', 'STATUS_BLURB', '_show_label', '_song_occ_html', '_src_tag', 'artist_sections', 'contact_block', 'content', 'date_sorted_list', 'dl_button', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'player', 'recording_card', 'show_jsonld', 'show_row', 'site_nav', 'song_jsonld', 'status_line', 'tech_data_section', 'updates_list']
