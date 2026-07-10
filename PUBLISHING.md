@@ -111,8 +111,11 @@ tells you whether you ever need to touch it.
 - **Folder meanings**: root WAV + `labels.txt` + `.aup3` = raw archive ·
   `Tracks/` or `Tracks Noise Reduction/` = your hand-edited export (pipeline
   input) · `Tracks (pre-NR archive)/` = untreated export kept when NR was
-  used · `Processed/` = pipeline output backup (identical to what's on the
-  site).
+  used · `Processed/` = pipeline output backup (audio-identical to what's on
+  the site; tags are reproducible from the catalog via `retag`). Anything
+  suffixed **"(… superseded)"** is a retired earlier generation — draft
+  exports or old processing runs — kept for the record, never used by the
+  pipeline (archive-wide cleanup 2026-07-10).
 - **The storage rule**: *store what hands made; derive what machines can
   remake.* Raw splits are never stored (WAV + labels regenerate them); your
   edits always are.

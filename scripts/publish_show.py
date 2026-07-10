@@ -244,8 +244,11 @@ def cmd_cleanup(args):
     n = len(tracks)
 
     page = (show.get("page") or f"shows/{args.slug}") + "/"
-    req = urllib.request.Request(f"https://renedebos.com/{page}",
-                                 headers={"Sec-Fetch-Mode": "navigate"})
+    req = urllib.request.Request(
+        f"https://renedebos.com/{page}",
+        headers={"Sec-Fetch-Mode": "navigate",
+                 # Cloudflare 403s urllib's default UA
+                 "User-Agent": "Mozilla/5.0 (publish-show cleanup check)"})
     if urllib.request.urlopen(req).status != 200:
         raise SystemExit("live page check failed — refusing")
 

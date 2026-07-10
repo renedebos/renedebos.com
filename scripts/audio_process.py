@@ -668,6 +668,10 @@ def cmd_retag(args):
             json.dump(prov, open(prov_path, "w"), indent=2, ensure_ascii=False)
             open(prov_path, "a").write("\n")
             print(f"{slug}: done, sidecar marked tags_embedded")
+        # local copies are per-show scratch — drop them immediately or a long
+        # --all run fills the disk (learned 2026-07-10: 5 shows died on ENOSPC)
+        import shutil
+        shutil.rmtree(work, ignore_errors=True)
 
 
 def cmd_versions(args):
