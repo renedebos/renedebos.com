@@ -62,9 +62,9 @@ by hand, what Claude runs, and what every tool in `scripts/` is for.*
 
 | Step | What happens | Your involvement |
 |---|---|---|
-| `publish_show.py prepare` | Finds the Work Folder, picks `Tracks/` vs `Tracks Noise Reduction/`, reads `notes.txt`, copies tracks, runs the **full diagnose** (loudness, true peak, dynamics, DC offset, clipping scan on every track) | none |
+| `publish_show.py prepare` | Finds the Work Folder, picks `Tracks/` vs `Tracks Noise Reduction/`, reads `notes.txt`, copies tracks, runs the **full diagnose** (loudness, true peak, dynamics, DC offset, clipping scan, DAT dropout scan, bandwidth-vs-sample-rate check, channel balance/phase on every track) | none |
 | Diagnose review | Claude reads the verdicts | **Only if real clipping is found**: Claude sends the track list back to you — fix in Audacity, re-export those tracks, re-copy to Drive, say go. Benign/minor residual publishes as-is. |
-| `publish_show.py publish` | Loudness-normalize every track to **−20 LUFS / −1 dBTP** (linear gain only — no compression, no EQ), make FLAC master + 320k MP3, upload to R2, generate waveform peaks, verify R2 MD5s against the provenance record, back up processed files to Drive `Processed/`, clean up | none |
+| `publish_show.py publish` | Loudness-normalize every track to **−20 LUFS / −1 dBTP** (linear gain only — no compression, no EQ), make FLAC master + 320k MP3 with **embedded metadata tags** (title/artist/show/track/year, so downloads display properly in any player) and an MP3 true-peak check, upload to R2, generate waveform peaks, verify R2 MD5s against the provenance record, back up processed files to Drive `Processed/`, clean up | none |
 | `draft_tracks.py` | Drafts the track list into `recordings.json`: durations, sizes, and each song's established songwriter + tags reused from the catalog | **Answer the flags**: titles new to the archive need your songwriter/tags call |
 | Words | Claude writes the show description, the Updates note, and the `/history/` paragraph | edit afterwards if you want (`make edit`) |
 | Build + ship | `build.py` (fails on integrity problems, warns on stale `rarity` tags), commit, push, watch the deploy, spot-check the live page | none |
@@ -97,8 +97,8 @@ tells you whether you ever need to touch it.
 
 | Tool | What it does |
 |---|---|
-| **`publish_show.py`** | The orchestrator. `prepare <slug>` = locate + copy + diagnose, then stop for review. `publish <slug>` = normalize → R2 → peaks → verify → Drive backup → cleanup. One human gate in the middle, everything else automatic. |
-| **`audio_process.py`** | The engine underneath: `diagnose` (per-track measurements + clipping verdicts), `process` (the −20 LUFS loudnorm + FLAC/MP3 + provenance sidecar), `verify` (R2 MD5s vs sidecar), `status`/`history`/`versions` (what's been done to what, per track). |
+| **`publish_show.py`** | The orchestrator. `prepare <slug>` = locate + copy + diagnose, then stop for review. `publish <slug>` = normalize → R2 → peaks → verify → Drive backup. `cleanup <slug>` = delete the local work copies, but only after verifying the show is live, complete on R2, and backed up on Drive. One human gate in the middle, everything else automatic. |
+| **`audio_process.py`** | The engine underneath: `diagnose` (per-track measurements + clipping/dropout/bandwidth/channel verdicts), `process` (the −20 LUFS loudnorm + tagged FLAC/MP3 + provenance sidecar), `verify` (R2 MD5s vs sidecar), `retag` (retro-fit tags without touching the audio), `status`/`history`/`versions` (what's been done to what, per track). |
 | **`draft_tracks.py`** | Drafts `tracks[]` metadata from the processed files + the existing catalog; flags anything needing a human call. |
 | **`gen_peaks.py`** | Precomputes the waveform shapes the player draws. Runs inside `publish`. |
 | **`build.py`** | Generates the whole site from `recordings.json` + content fragments. Fails on integrity problems (bad tags, broken paths, missing peaks/sidecars, orphan song pages); warns on rarity drift. CI runs the same checks before every deploy. |

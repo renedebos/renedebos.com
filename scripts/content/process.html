@@ -47,7 +47,11 @@
       <div class="flow-kind">automated &middot; QA gate</div>
       <h2>3 &middot; Diagnosis</h2>
       <p>Every exported track is measured before anything is processed: integrated
-        loudness, true peak, loudness range, DC offset, and a clipping scan. A track that
+        loudness, true peak, loudness range, DC offset, a clipping scan, a
+        <strong>DAT dropout scan</strong> (held or muted samples from tape error
+        concealment), an <strong>effective-bandwidth check</strong> against the file&rsquo;s
+        sample rate (catches mislabelled rates and lossy-sourced files), and
+        <strong>channel health</strong> &mdash; left/right balance and phase. A track that
         fails goes back to the editing stage &mdash; nothing clipped gets published.</p>
     </div>
 
@@ -60,7 +64,9 @@
         integrated with a <strong>&minus;1&nbsp;dBTP</strong> true-peak ceiling &mdash; using
         linear gain only: no compression, no EQ, the dynamics of the room stay intact.
         The output is a FLAC master and a 320&nbsp;kbps MP3 per track, each with an audio
-        MD5 fingerprint.</p>
+        MD5 fingerprint, full <strong>embedded metadata</strong> (title, artist, show,
+        track number, year) so downloads display properly in any player, and a
+        true-peak check on the MP3 itself (lossy encoding can overshoot peaks).</p>
       <p>A provenance record is written per show &mdash; source format, the exact filter
         chain, per-track before/after measurements &mdash; and that record is what renders
         as the show&rsquo;s &ldquo;Technical data&rdquo; table.</p>

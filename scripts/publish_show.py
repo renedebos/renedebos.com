@@ -233,17 +233,58 @@ done — still human:
         print("\n" + LABELS_NAG)
 
 
+def cmd_cleanup(args):
+    """Delete ~/work/<slug> once the show is provably safe everywhere else:
+    live on the site, complete on R2, and backed up to Drive Processed/."""
+    import urllib.request
+    show = load_show(args.slug)
+    tracks = show.get("tracks") or []
+    if not tracks or show.get("processing_status") != "done":
+        raise SystemExit(f"{args.slug} is not a published track-listed show — refusing")
+    n = len(tracks)
+
+    page = (show.get("page") or f"shows/{args.slug}") + "/"
+    req = urllib.request.Request(f"https://renedebos.com/{page}",
+                                 headers={"Sec-Fetch-Mode": "navigate"})
+    if urllib.request.urlopen(req).status != 200:
+        raise SystemExit("live page check failed — refusing")
+
+    r2dir = tracks[0]["file"].split("/")[1]
+    for top in ("FLAC", "MP3"):
+        have = len(rclone_lsf(f"{R2}/{top}/{r2dir}"))
+        if have < n:
+            raise SystemExit(f"R2 {top} has {have}/{n} — refusing")
+    st = state_path(args.slug)
+    folder = json.load(open(st))["folder"] if os.path.exists(st) else r2dir
+    have = len([f for f in rclone_lsf(f"{DRIVE_WORK}/{folder}/Processed")
+                if f.lower().endswith((".flac", ".mp3"))])
+    if have < 2 * n:
+        raise SystemExit(f"Drive Processed has {have}/{2*n} — refusing")
+
+    freed = 0
+    for d in (os.path.join(WORK_ROOT, args.slug),
+              os.path.join(WORK_ROOT, "retag", args.slug)):
+        if os.path.isdir(d):
+            freed += sum(os.path.getsize(os.path.join(r, f))
+                         for r, _, fs in os.walk(d) for f in fs)
+            if not DRY:
+                shutil.rmtree(d)
+            print(f"removed {d}")
+    print(f"verified live + R2 {n}+{n} + Drive {have} — freed {freed/1e9:.2f} GB")
+
+
 def main():
     global DRY
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("phase", choices=["prepare", "publish"])
+    ap.add_argument("phase", choices=["prepare", "publish", "cleanup"])
     ap.add_argument("slug")
     ap.add_argument("--folder", help="Drive Work Folder name (when date search is ambiguous)")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
     DRY = args.dry_run
-    (cmd_prepare if args.phase == "prepare" else cmd_publish)(args)
+    {"prepare": cmd_prepare, "publish": cmd_publish,
+     "cleanup": cmd_cleanup}[args.phase](args)
 
 
 if __name__ == "__main__":

@@ -54,7 +54,7 @@ LUFS_TOL = 0.5    # warn if achieved LUFS drifts from target by more than this
 # re-run later with a newer version). The registry is the human-readable decode
 # of a version number; the per-track `chain` is the self-contained ground truth;
 # the `md5` proves the live audio is that exact output.
-WORKFLOW_VERSION = 2
+WORKFLOW_VERSION = 3
 WORKFLOW_VERSIONS = {
     1: {
         "desc": "Two-pass ffmpeg loudnorm to the per-artist target "
@@ -79,7 +79,58 @@ WORKFLOW_VERSIONS = {
         "optional_filters": ["--eq <literal ffmpeg filter chain>", "highpass=f=80",
                              "lowpass=f=18000", "60Hz notch"],
     },
+    3: {
+        "desc": "As v2 (audio processing unchanged), plus: embedded metadata tags "
+                "(title/artist/album/track/date/comment from recordings.json) written "
+                "into both the FLAC master and the MP3, and a true-peak measurement "
+                "of the encoded MP3 (lossy encoding overshoots peaks; warn above "
+                "0 dBTP, recorded per-track as mp3_tp). `retag` retro-fits tags onto "
+                "already-published shows via a container rewrite (-c copy) that "
+                "leaves the audio stream — and therefore the provenance MD5 — intact.",
+        "loudnorm": "I=<target>:LRA=11:TP=-1:linear=true",
+        "targets": dict(ARTIST_TARGET),
+        "optional_filters": ["--eq <literal ffmpeg filter chain>", "highpass=f=80",
+                             "lowpass=f=18000", "60Hz notch"],
+    },
 }
+
+
+def show_tags(slug):
+    """Per-show tag context from recordings.json: (artist name, album string).
+    None if the slug isn't in the catalog (tags are then skipped)."""
+    try:
+        data = json.load(open(os.path.join(ROOT, "data", "recordings.json")))
+        show = next(s for s in data["shows"] if s["slug"] == slug)
+        artist = next((a["name"] for a in data["artists"] if a["id"] == show["artist"]),
+                      show["artist"].title())
+        venue = show.get("venue_short") or show.get("venue") or ""
+        when = show.get("date_display") or show.get("date") or ""
+        album = f"{venue} — {when}" if venue and when else (venue or when or slug)
+        year = (show.get("date") or "")[:4]
+        return {"artist": artist, "album": album, "year": year}
+    except (StopIteration, FileNotFoundError, json.JSONDecodeError):
+        return None
+
+
+def tag_args(ctx, filename, num, total, target):
+    """ffmpeg -metadata args for one track. Works for FLAC (vorbis comments)
+    and MP3 (id3v2) alike — ffmpeg maps the generic keys per container."""
+    if ctx is None:
+        return []
+    title = re.sub(r"^\d+\s+", "", os.path.splitext(filename)[0])
+    pairs = {
+        "title": title, "artist": ctx["artist"], "album_artist": ctx["artist"],
+        "album": ctx["album"],
+        "track": f"{num}/{total}" if num is not None else None,
+        "date": ctx["year"] or None,
+        "comment": f"The Hannan Tapes (renedebos.com) — loudness-normalized "
+                   f"to {int(target)} LUFS",
+    }
+    out = []
+    for k, v in pairs.items():
+        if v:
+            out += ["-metadata", f"{k}={v}"]
+    return out
 
 
 def ffmpeg_version():
@@ -145,6 +196,61 @@ def astats_field(path, field):
     return m.group(1) if m else None
 
 
+def astats_channels(path):
+    """One astats pass: per-channel RMS (dB) plus overall peak and DC offset."""
+    err = ff_err(["-i", path, "-af", "astats", "-f", "null", "-"])
+    section, rms, peak, dc = None, [], None, None
+    for line in err.splitlines():
+        if re.search(r"Channel:\s*\d+", line):
+            section = "ch"
+        elif "Overall" in line:
+            section = "all"
+        m = re.search(r"RMS level dB:\s*([-\d.]+|-inf|inf)", line)
+        if m and section == "ch":
+            rms.append(float(m.group(1)) if "inf" not in m.group(1) else None)
+        if section == "all":
+            m = re.search(r"Peak level dB:\s*([-\d.]+|inf|-inf)", line)
+            if m:
+                peak = m.group(1)
+            m = re.search(r"DC offset:\s*([-\d.]+)", line)
+            if m:
+                dc = m.group(1)
+    return rms, peak, dc
+
+
+def dropout_scan(path, sr, ch, min_ms=2.0, edge_s=2.0):
+    """DAT-style dropout detector: runs of IDENTICAL sample values (any level,
+    including digital zero) of >= min_ms, ignoring edge_s at each end where
+    fades legitimately sit at zero. Error concealment on a failing DAT holds
+    or mutes samples — a different defect from clipping, which only lives at
+    full scale. Returns (events, worst_run_ms). Skip-sampled for speed; runs
+    are confirmed exactly before they count."""
+    a = clipcheck.decode_f32(path)
+    n = len(a) // ch
+    N = max(32, int(sr * min_ms / 1000))
+    M = max(16, N // 3)
+    events, worst = 0, 0
+    for c in range(ch):
+        s = a[c::ch]
+        lo, hi = int(edge_s * sr), n - int(edge_s * sr)
+        p = lo
+        while p < hi - M:
+            if s[p] == s[p + M]:
+                v, j, k = s[p], p, p + M
+                while j > lo and s[j - 1] == v:
+                    j -= 1
+                while k < hi - 1 and s[k + 1] == v:
+                    k += 1
+                run = k - j + 1
+                if run >= N and s[j:k + 1].count(v) == run:
+                    events += 1
+                    worst = max(worst, run)
+                p = k + M
+            else:
+                p += M
+    return events, round(worst * 1000 / sr, 1)
+
+
 def mean_vol(path, af):
     err = ff_err(["-i", path, "-af", af + ",volumedetect", "-f", "null", "-"])
     m = re.search(r"mean_volume:\s*([-\d.]+) dB", err)
@@ -207,25 +313,53 @@ def cmd_diagnose(args):
     for f in files:
         p = os.path.join(folder, f)
         info = probe(p)
+        sr, nch = int(info["sr"]), 2
         j = measure(p, target)
         I, LRA, TP = float(j["input_i"]), float(j["input_lra"]), float(j["input_tp"])
-        peak_db = astats_field(p, "Peak level dB")
-        dc = astats_field(p, "DC offset")
+        ch_rms, peak_db, dc = astats_channels(p)
+        nch = len(ch_rms) or 2
         pred = TP + (target - I)
         maxlin = I - TP - 1
         # clipping: astats screen, then run-length verdict only if peak at ceiling
         clip = "NONE"
         if peak_db is not None and peak_db not in ("inf", "-inf") and float(peak_db) >= -0.1:
-            ch, sr = clipcheck.probe(p)
+            ch, srp = clipcheck.probe(p)
             a = clipcheck.decode_f32(p)
             worst_run = events = 0
             for c in range(ch):
                 _, run, ev = clipcheck.analyse_channel(a[c::ch])
                 worst_run = max(worst_run, run)
                 events += ev
-            clip, _ = clipcheck.classify(worst_run, sr, events)
+            clip, _ = clipcheck.classify(worst_run, srp, events)
         dc_bad = dc is not None and abs(float(dc)) > 0.01
-        rows.append((f, info, I, LRA, TP, pred, maxlin, clip, dc_bad))
+
+        # DAT dropout scan: identical-sample runs at any level, mid-track
+        drops, drop_ms = dropout_scan(p, sr, nch)
+        # effective bandwidth vs container rate (catches mislabelled sample
+        # rates and lossy-sourced files): high-band mean vs full-band mean
+        cut = int(0.43 * sr)
+        # 6 chained poles ≈ 36 dB/oct: steep enough that LF energy can't leak
+        # through and mask a genuine null above the cutoff (a 2-pole highpass
+        # measured a true 32k→48k upsample at only -37 dB; 6-pole: -63 dB)
+        hp6 = ",".join([f"highpass=f={cut}"] * 6)
+        full_v, hp_v = mean_vol(p, "anull"), mean_vol(p, hp6)
+        # hp_v None with a measurable full band = literally nothing above the
+        # cutoff (volumedetect can't say "-inf") — maximally deficient
+        bw_delta = ((hp_v - full_v) if hp_v is not None else -99.0) \
+            if full_v is not None else None
+        bw_bad = bw_delta is not None and bw_delta < -55
+        # channel health: L/R balance and mid/side relationship (phase)
+        bal = (abs(ch_rms[0] - ch_rms[1])
+               if nch == 2 and None not in ch_rms[:2] else None)
+        sm = None
+        if nch == 2:
+            mid_v = mean_vol(p, "pan=mono|c0=0.5*c0+0.5*c1")
+            side_v = mean_vol(p, "pan=mono|c0=0.5*c0-0.5*c1")
+            if mid_v is not None and side_v is not None:
+                sm = side_v - mid_v
+
+        rows.append((f, info, I, LRA, TP, pred, maxlin, clip, dc_bad,
+                     drops, drop_ms, bw_delta, bal, sm))
         if clip == "CLIPPING":
             flags.append(f"CLIPPING: {f} — likely audible; review/declip in Audacity.")
         if pred > -1:
@@ -235,8 +369,20 @@ def cmd_diagnose(args):
             flags.append(f"HIGH_LRA: {f} — LRA {LRA:.1f} (very dynamic).")
         if dc_bad:
             flags.append(f"DC: {f} — DC offset {dc}.")
+        if drops:
+            flags.append(f"DROPOUT: {f} — {drops} identical-sample run(s) mid-track, "
+                         f"worst {drop_ms} ms (DAT error concealment?). Listen there.")
+        if bw_bad:
+            flags.append(f"BANDWIDTH: {f} — energy above {cut/1000:.1f} kHz is "
+                         f"{bw_delta:.0f} dB below full-band: content doesn't fill the "
+                         f"{sr//1000} kHz container (mislabelled rate or lossy source?).")
+        if bal is not None and bal > 4:
+            flags.append(f"BALANCE: {f} — L/R RMS differs by {bal:.1f} dB.")
+        if sm is not None and sm > 3:
+            flags.append(f"PHASE: {f} — side energy {sm:+.1f} dB above mid: channels "
+                         "largely out of phase (inverted channel?).")
         print(f"  {f}: in {I:.1f} LUFS, LRA {LRA:.1f}, TP {TP:.1f}, pred@{target} "
-              f"{pred:+.1f}, clip {clip}", flush=True)
+              f"{pred:+.1f}, clip {clip}, drops {drops}", flush=True)
 
     out = os.path.join(folder, "diagnostic_report.txt")
     L = ["DIAGNOSTIC REPORT",
@@ -244,11 +390,16 @@ def cmd_diagnose(args):
          f"Files analyzed: {len(rows)}",
          f"Loudness target: {target} LUFS / {TP_CEILING} dBTP",
          "=" * 43, "",
-         f"{'File':40s}|{'LUFS':7s}|{'LRA':5s}|{'TruePk':8s}|{'Pred':7s}|{'Clip':9s}|DC",
-         "-" * 90]
-    for f, info, I, LRA, TP, pred, maxlin, clip, dc_bad in rows:
+         f"{'File':40s}|{'LUFS':7s}|{'LRA':5s}|{'TruePk':8s}|{'Pred':7s}|{'Clip':9s}|"
+         f"{'DC':6s}|{'Drop':5s}|{'HiBand':7s}|{'Bal':5s}|S-M",
+         "-" * 118]
+    for f, info, I, LRA, TP, pred, maxlin, clip, dc_bad, drops, drop_ms, bw, bal, sm in rows:
         L.append(f"{f[:40]:40s}|{I:7.1f}|{LRA:5.1f}|{TP:7.1f}T|{pred:+6.1f}|{clip:9s}|"
-                 + ("OFFSET" if dc_bad else "OK"))
+                 + ("OFFSET" if dc_bad else "OK    ").ljust(6)
+                 + f"|{drops:5d}|"
+                 + (f"{bw:+6.1f} " if bw is not None else "   --  ") + "|"
+                 + (f"{bal:4.1f} " if bal is not None else "  -- ") + "|"
+                 + (f"{sm:+.1f}" if sm is not None else "--"))
     L += ["", "FLAGS", "-----"]
     L += ["⚠ " + x for x in flags] if flags else ["(none)"]
     open(out, "w").write("\n".join(L) + "\n")
@@ -288,6 +439,10 @@ def cmd_process(args):
     chain_str = ((filt + ",") if filt else "") + \
         f"loudnorm=I={_w(target)}:LRA=11:TP={_w(TP_CEILING)}:linear=true"
 
+    tag_ctx = show_tags(args.slug) if args.slug else None
+    if args.slug and tag_ctx is None:
+        print(f"note: {args.slug} not in recordings.json — no tags embedded")
+
     prov_tracks, report, warnings = {}, [], []
     for i, f in enumerate(files, 1):
         src = os.path.join(infolder, f)
@@ -313,14 +468,16 @@ def cmd_process(args):
                   f"measured_tp={j['input_tp']}:measured_thresh={j['input_thresh']}:"
                   f"offset={j['target_offset']}:linear=true:print_format=summary")
             codec = output_codec(info["bits"], info["sample_fmt"], container)
+            tags = tag_args(tag_ctx, f, num, len(files), target)
             r = subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
                                 "-i", src, "-af", af, "-ar", str(info["sr"])] + codec
-                               + [out_audio], capture_output=True, text=True)
+                               + tags + [out_audio], capture_output=True, text=True)
             if r.returncode != 0:
                 print(f"  FAIL {f}: {r.stderr[-200:]}", flush=True)
                 continue
             r2 = subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
-                                 "-i", out_audio, "-b:a", "320k", out_mp3],
+                                 "-i", out_audio, "-b:a", "320k", "-id3v2_version", "3"]
+                                + tags + [out_mp3],
                                 capture_output=True, text=True)
             if r2.returncode != 0:
                 print(f"  MP3 FAIL {f}: {r2.stderr[-200:]}", flush=True)
@@ -329,6 +486,9 @@ def cmd_process(args):
 
         out_I, out_TP, out_LRA = float(j2["input_i"]), float(j2["input_tp"]), float(j2["input_lra"])
         md5 = audio_md5(out_audio)
+        # the lossy encode can overshoot the FLAC's peaks — measure the MP3's
+        # true peak too and warn if it would clip on decode
+        mp3_tp = float(measure(out_mp3, target)["input_tp"])
         # verification (#7)
         status = "OK"
         if out_TP > TP_CEILING + TP_TOL:
@@ -337,14 +497,20 @@ def cmd_process(args):
         if abs(out_I - target) > LUFS_TOL:
             status = "LUFS drift"
             warnings.append(f"{f}: achieved {out_I:.2f} LUFS drifts > {LUFS_TOL} from {target}")
+        if mp3_tp > 0.0:
+            status = "MP3 clips"
+            warnings.append(f"{f}: MP3 true peak {mp3_tp:+.2f} dBTP — lossy overshoot "
+                            "clips on decode (FLAC is fine; consider re-encode headroom)")
         if num is not None:
             entry = {"ver": WORKFLOW_VERSION, "chain": chain_str,
                      "lufs": round(out_I, 2), "tp": round(out_TP, 2),
+                     "mp3_tp": round(mp3_tp, 2),
                      "lra": round(out_LRA, 2), "md5": md5}
             if in_I is not None:
                 entry = {"ver": WORKFLOW_VERSION, "chain": chain_str,
                          "in_lufs": round(in_I, 1),
                          "lufs": round(out_I, 2), "tp": round(out_TP, 2),
+                         "mp3_tp": round(mp3_tp, 2),
                          "lra": round(out_LRA, 2), "md5": md5}
             prov_tracks[str(num)] = entry
         report.append((f, in_I, out_I, out_TP, status))
@@ -442,6 +608,66 @@ def cmd_verify(args):
                   "skipping unless filename known)")
     print(f"\n{len(prov['tracks'])} track(s) checked, {bad} mismatch(es).")
     sys.exit(1 if bad else 0)
+
+
+def cmd_retag(args):
+    """Retro-fit embedded metadata tags onto already-published shows: download
+    each FLAC+MP3 from R2, rewrite the container with tags (-c copy — the audio
+    stream and its provenance MD5 are untouched), verify, and upload back.
+    Records `tags_embedded` in the sidecar. Drive Processed/ backups are NOT
+    refreshed here (slow, stall-prone) — do that separately per show."""
+    data = json.load(open(os.path.join(ROOT, "data", "recordings.json")))
+    if args.slug:
+        shows = [s for s in data["shows"] if s["slug"] == args.slug]
+    elif args.all:
+        shows = [s for s in data["shows"] if s.get("tracks")]
+    else:
+        raise SystemExit("give a slug or --all")
+
+    for show in shows:
+        slug = show["slug"]
+        prov_path = os.path.join(ROOT, "data", "processing", f"{slug}.json")
+        prov = json.load(open(prov_path)) if os.path.exists(prov_path) else {}
+        if prov.get("tags_embedded"):
+            print(f"{slug}: already tagged ({prov['tags_embedded']}) — skipping")
+            continue
+        ctx = show_tags(slug)
+        tracks = show["tracks"]
+        work = os.path.expanduser(f"~/work/retag/{slug}")
+        os.makedirs(work, exist_ok=True)
+        print(f"\n{slug}: {len(tracks)} track(s)")
+        bad = 0
+        for t in tracks:
+            for key in filter(None, (t.get("flac"), t.get("file"))):
+                name = key.split("/")[-1]
+                local = os.path.join(work, name)
+                tmp = os.path.join(work, "tagged_" + name)
+                if subprocess.run(["rclone", "copyto", f"{BUCKET}/{key}", local,
+                                   "--s3-no-check-bucket"]).returncode != 0:
+                    print(f"  DOWNLOAD FAIL {key}"); bad += 1; continue
+                tags = tag_args(ctx, name, t["num"], len(tracks),
+                                prov.get("target_lufs", -20))
+                extra = ["-id3v2_version", "3"] if name.lower().endswith(".mp3") else []
+                r = subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+                                    "-i", local, "-map", "0", "-c", "copy"]
+                                   + extra + tags + [tmp],
+                                   capture_output=True, text=True)
+                if r.returncode != 0:
+                    print(f"  RETAG FAIL {key}: {r.stderr[-120:]}"); bad += 1; continue
+                if audio_md5(tmp) != audio_md5(local):
+                    print(f"  AUDIO CHANGED (refusing) {key}"); bad += 1; continue
+                os.replace(tmp, local)
+                if subprocess.run(["rclone", "copyto", local, f"{BUCKET}/{key}",
+                                   "--s3-no-check-bucket"]).returncode != 0:
+                    print(f"  UPLOAD FAIL {key}"); bad += 1; continue
+            print(f"  [{t['num']:02d}] {t['title']} ok", flush=True)
+        if bad:
+            print(f"{slug}: {bad} failure(s) — NOT marking tagged")
+        else:
+            prov["tags_embedded"] = datetime.date.today().isoformat()
+            json.dump(prov, open(prov_path, "w"), indent=2, ensure_ascii=False)
+            open(prov_path, "a").write("\n")
+            print(f"{slug}: done, sidecar marked tags_embedded")
 
 
 def cmd_versions(args):
@@ -582,6 +808,12 @@ def main():
     v.add_argument("slug")
     v.add_argument("--drive", help="Drive Processed/ path (best-effort)")
     v.set_defaults(func=cmd_verify)
+
+    rt = sub.add_parser("retag", help="retro-fit embedded tags onto published shows "
+                                      "(container rewrite, audio MD5 preserved)")
+    rt.add_argument("slug", nargs="?")
+    rt.add_argument("--all", action="store_true", help="every track-listed show")
+    rt.set_defaults(func=cmd_retag)
 
     vs = sub.add_parser("versions", help="describe what each workflow version does")
     vs.set_defaults(func=cmd_versions)
