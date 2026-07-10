@@ -118,9 +118,13 @@ main tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--chip) 55
       <a class="t3" href="#what-s-embedded-in-every-track">What&#x27;s embedded in every track</a>
       <a class="t3" href="#the-technical-part">The technical part</a>
       <a class="t3" href="#changing-metadata-end-to-end">Changing metadata, end to end</a>
+      <a class="t2" href="#part-4-site-operations">Part 4 — Site operations</a>
+      <a class="t3" href="#how-deploys-work">How deploys work</a>
+      <a class="t3" href="#security-posture-hardened-2026-07-10">Security posture (hardened 2026-07-10)</a>
+      <a class="t3" href="#if-things-go-wrong">If things go wrong</a>
     </nav>
     <main>
-<p><em>How a show gets from a whole-show WAV to renedebos.com, what you do by hand, what Claude runs, and what every tool in <code>scripts/</code> is for.</em> <em>Last updated: 2026-07-09 (matches workflow v2 — publish_show orchestration).</em></p>
+<p><em>How a show gets from a whole-show WAV to renedebos.com, what you do by hand, what Claude runs, and what every tool in <code>scripts/</code> is for.</em> <em>Last updated: 2026-07-10 (matches workflow v3 — embedded tags, extended diagnose, publish_show orchestration).</em></p>
 <hr>
 <h2 id="part-1-your-steps-in-order">Part 1 — Your steps, in order</h2>
 <h3 id="stage-a-audacity-all-you-all-judgment">Stage A · Audacity (all you, all judgment)</h3>
@@ -146,7 +150,8 @@ main tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--chip) 55
 <h3 id="stage-c-afterwards-optional-whenever">Stage C · Afterwards (optional, whenever)</h3>
 <ul><li><strong>Review drafted tags/songwriters</strong> in the metadata editor (<code>make edit</code> or the &quot;Hannan Metadata Editor&quot; launcher), save, then tell Claude to rebuild and push.</li>
 <li><strong>Rarity drift warnings</strong> from the build (a song tagged <code>rarity</code> that now has 3+ appearances) are yours to adjudicate — untag or keep.</li>
-<li>If you kept a pre-NR archive: the <strong>Drive copy stays forever</strong>, the local copy gets deleted after publish.</li></ul>
+<li>If you kept a pre-NR archive: the <strong>Drive copy stays forever</strong>, the local copy gets deleted after publish.</li>
+<li><strong>Reclaim disk space</strong>: <code>python3 scripts/publish_show.py cleanup &lt;slug&gt;</code> deletes the local working copies — but only after verifying the show is live on the site, complete on R2, and backed up on Drive. It refuses otherwise.</li></ul>
 <hr>
 <h2 id="part-2-the-tools">Part 2 — The tools</h2>
 <p>Everything lives in <code>scripts/</code> in the renedebos.com repo. <strong>&quot;Who runs it&quot;</strong> tells you whether you ever need to touch it.</p>
@@ -198,6 +203,25 @@ main tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--chip) 55
 <li data-n="2"><strong>Update the site</strong>: build + push (or ask Claude) — the pages now show the new values.</li>
 <li data-n="3"><strong>Update the files</strong>: <code>python3 scripts/audio_process.py retag &lt;slug&gt; --force</code> — re-derives every tag for that show from the catalog and rewrites the file envelopes on R2. A few minutes per show; audio provably untouched.</li></ol>
 <blockquote class="callout warn"><p><strong>Never edit tags directly in the files</strong> (with a tag editor or otherwise). The next <code>retag</code> would overwrite your edit, and the R2 copy would silently disagree with the catalog. Change the catalog; let the pipeline propagate it.</p></blockquote>
+<hr>
+<h2 id="part-4-site-operations">Part 4 — Site operations</h2>
+<p>Reference facts about how the site itself runs. Nothing here is a per-show step; it matters when something breaks or gets upgraded.</p>
+<h3 id="how-deploys-work">How deploys work</h3>
+<div class="md-scroll"><table><thead><tr><th>What</th><th>How it deploys</th></tr></thead><tbody>
+<tr><td><strong>The site</strong> (<code>renedebos-site</code> Worker: all pages, assets, playlist short links)</td><td>Automatically on every push to <code>main</code>: the GitHub Action runs the integrity checks, verifies the committed output matches a fresh build, then deploys. The Action&#x27;s dependencies are version-pinned on purpose — bump them deliberately, never implicitly.</td></tr>
+<tr><td><strong>The download/stream worker</strong> (<code>wav-download</code>, in <code>worker/</code>)</td><td><strong>Manually</strong>, and easy to forget: <code>cd worker &amp;&amp; npx wrangler deploy --config wrangler.toml</code>. The Action does NOT deploy it.</td></tr>
+</tbody></table></div>
+<blockquote class="callout warn"><p><strong>Important: a green Action is not proof the site works.</strong> After a deploy, always spot-check a URL only the new deploy can serve, on renedebos.com itself. Also: edge caching means header/page changes can take a while to appear on already-cached pages — Cloudflare dashboard → Purge Cache makes it instant.</p></blockquote>
+<h3 id="security-posture-hardened-2026-07-10">Security posture (hardened 2026-07-10)</h3>
+<ul><li>Every site response carries security headers (HSTS, CSP, nosniff, frame/referrer policies).</li>
+<li>The WAV download password can&#x27;t be brute-forced quickly: constant-time comparison, a 1-second delay per wrong guess, and a per-minute attempt budget. The password&#x27;s strength is still the real defence.</li>
+<li>Playlist short-link creation is capped per IP per day (re-sharing an existing playlist doesn&#x27;t count against it).</li>
+<li>Lossless files can&#x27;t be reassembled through the streaming endpoint — it refuses WAV/FLAC keys outright.</li></ul>
+<h3 id="if-things-go-wrong">If things go wrong</h3>
+<ul><li><strong>R2 audio lost or corrupted</strong>: every processed file is on Drive under <code>&lt;show&gt;/Processed/</code>. Re-upload, run <code>retag --all --force</code> (pre-2026-07-10 Drive backups have no embedded tags), then <code>verify &lt;slug&gt;</code> per show — zero mismatches required.</li>
+<li><strong>A show sounds wrong on the site</strong>: <code>verify &lt;slug&gt;</code> compares the live R2 audio against the provenance MD5s and pinpoints any drifted track.</li>
+<li><strong>The site itself</strong>: everything is in the git repo — pages, assets, data, workers. A <code>git push</code> (or <code>wrangler rollback</code> for a bad worker version) restores it.</li>
+<li><strong>Raw archive</strong>: whole-show WAVs + <code>labels.txt</code> + <code>.aup3</code> projects live on Drive; the tapes themselves remain the last resort.</li></ul>
     </main>
   </div>
 </div>

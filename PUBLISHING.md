@@ -2,7 +2,8 @@
 
 *How a show gets from a whole-show WAV to renedebos.com, what you do
 by hand, what Claude runs, and what every tool in `scripts/` is for.*
-*Last updated: 2026-07-09 (matches workflow v2 — publish_show orchestration).*
+*Last updated: 2026-07-10 (matches workflow v3 — embedded tags, extended
+diagnose, publish_show orchestration).*
 
 ---
 
@@ -78,6 +79,10 @@ by hand, what Claude runs, and what every tool in `scripts/` is for.*
   has 3+ appearances) are yours to adjudicate — untag or keep.
 - If you kept a pre-NR archive: the **Drive copy stays forever**, the local
   copy gets deleted after publish.
+- **Reclaim disk space**: `python3 scripts/publish_show.py cleanup <slug>`
+  deletes the local working copies — but only after verifying the show is
+  live on the site, complete on R2, and backed up on Drive. It refuses
+  otherwise.
 
 ---
 
@@ -188,3 +193,48 @@ player.
 > otherwise). The next `retag` would overwrite your edit, and the R2 copy
 > would silently disagree with the catalog. Change the catalog; let the
 > pipeline propagate it.
+
+---
+
+## Part 4 — Site operations
+
+Reference facts about how the site itself runs. Nothing here is a
+per-show step; it matters when something breaks or gets upgraded.
+
+### How deploys work
+
+| What | How it deploys |
+|---|---|
+| **The site** (`renedebos-site` Worker: all pages, assets, playlist short links) | Automatically on every push to `main`: the GitHub Action runs the integrity checks, verifies the committed output matches a fresh build, then deploys. The Action's dependencies are version-pinned on purpose — bump them deliberately, never implicitly. |
+| **The download/stream worker** (`wav-download`, in `worker/`) | **Manually**, and easy to forget: `cd worker && npx wrangler deploy --config wrangler.toml`. The Action does NOT deploy it. |
+
+> **Important: a green Action is not proof the site works.** After a deploy,
+> always spot-check a URL only the new deploy can serve, on renedebos.com itself.
+> Also: edge caching means header/page changes can take a while to appear on
+> already-cached pages — Cloudflare dashboard → Purge Cache makes it instant.
+
+### Security posture (hardened 2026-07-10)
+
+- Every site response carries security headers (HSTS, CSP, nosniff,
+  frame/referrer policies).
+- The WAV download password can't be brute-forced quickly: constant-time
+  comparison, a 1-second delay per wrong guess, and a per-minute attempt
+  budget. The password's strength is still the real defence.
+- Playlist short-link creation is capped per IP per day (re-sharing an
+  existing playlist doesn't count against it).
+- Lossless files can't be reassembled through the streaming endpoint —
+  it refuses WAV/FLAC keys outright.
+
+### If things go wrong
+
+- **R2 audio lost or corrupted**: every processed file is on Drive under
+  `<show>/Processed/`. Re-upload, run `retag --all --force` (pre-2026-07-10
+  Drive backups have no embedded tags), then `verify <slug>` per show —
+  zero mismatches required.
+- **A show sounds wrong on the site**: `verify <slug>` compares the live R2
+  audio against the provenance MD5s and pinpoints any drifted track.
+- **The site itself**: everything is in the git repo — pages, assets,
+  data, workers. A `git push` (or `wrangler rollback` for a bad worker
+  version) restores it.
+- **Raw archive**: whole-show WAVs + `labels.txt` + `.aup3` projects live
+  on Drive; the tapes themselves remain the last resort.
