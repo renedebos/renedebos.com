@@ -54,10 +54,13 @@ def _home_show_card(show, featured=False):
         <span class="ring-icon">{RING_ICON_SVG}</span>
         <span class="count">{n} TRACK{"S" if n != 1 else ""}</span>
       </div>
-      <h3>{esc(artist_name(show["artist"]))} &mdash; {esc(show["venue_short"] or "Unknown venue")}</h3>
-      <div class="venue">{esc(venue)} &middot; {esc(date_with_subtitle(show))}</div>{added_html}
+      <h3>{esc(artist_name(show["artist"]))} &mdash; {esc(date_with_subtitle(show))}</h3>
+      <div class="venue">{esc(venue)}</div>{added_html}
       <div class="tags">{tags}</div>
-      <div class="stream">Stream &middot; {esc(track_total(show["tracks"]))}</div>
+      <div class="card-foot">
+        <span class="stream">Stream</span>
+        <span class="dur">{esc(track_total(show["tracks"]))}</span>
+      </div>
     </a>'''
 
 RANDOM_TAPE_SCRIPT = '''
@@ -111,7 +114,7 @@ HOME_SHELL = '''<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Hannan Tapes</title>
-<meta name="description" content="Live recordings archive — Jerry Hannan, Sean Hannan, and Mad Hannans performing at clubs in Marin and the Bay Area in the late 1990s and early 2000s.">
+<meta name="description" content="Live recordings archive — Jerry Hannan, Sean Hannan, and Mad Hannans performing at clubs in Marin County in the late 1990s and early 2000s.">
 <link rel="canonical" href="https://renedebos.com">
 <meta name="theme-color" content="#17150f">
 <meta property="og:title" content="The Hannan Tapes">
@@ -140,7 +143,7 @@ HOME_SHELL = '''<!DOCTYPE html>
   <section class="hero">
     <div class="eyebrow">Live &middot; DAT-sourced &middot; 1998&ndash;2003</div>
     <h1>The <em>Hannan</em> Tapes</h1>
-    <p class="lede">Live recordings of Jerry Hannan, Sean Hannan, and the Mad Hannans, taped from the audience and soundboard at clubs across Marin and the Bay Area. Digitized, cataloged, and streamable &mdash; hiss and all.</p>
+    <p class="lede">Live recordings of Jerry Hannan, Sean Hannan, and the Mad Hannans, taped from the audience and soundboard at clubs across Marin County. Digitized, cataloged, and streamable &mdash; hiss and all.</p>
     <div class="actions">
       <a class="btn btn-primary" href="/archive/" id="randomTape">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.6" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><path d="M8 1.4v2M8 12.6v2M1.4 8h2M12.6 8h2" stroke="currentColor" stroke-width="1.3"/></svg>
