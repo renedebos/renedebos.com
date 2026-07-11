@@ -24,95 +24,104 @@ function setPlayState(btn, playing, iconHtml) {
 let activePlayer = null;
 const RANGE_MAX = 1000;
 
-document.querySelectorAll('.custom-player').forEach(player => {
-  const src = player.dataset.src;
-  const audio = new Audio();
-  audio.preload = 'none';
+// Wires up every .custom-player under `root` that isn't already initialized.
+// Runs once for the whole document on load; the Songs page also calls this
+// itself (see songs.js) after inserting a song's performance rows lazily, so
+// those newly-added players get the same play/pause/seek wiring.
+function initCustomPlayers(root) {
+  root.querySelectorAll('.custom-player').forEach(player => {
+    if (player._audio) return;
+    const src = player.dataset.src;
+    const audio = new Audio();
+    audio.preload = 'none';
 
-  const btn = player.querySelector('.play-btn');
-  const range = player.querySelector('.progress-range');
-  const currentEl = player.querySelector('.current');
+    const btn = player.querySelector('.play-btn');
+    const range = player.querySelector('.progress-range');
+    const currentEl = player.querySelector('.current');
 
-  let loaded = false;
-  let seeking = false;
+    let loaded = false;
+    let seeking = false;
 
-  function load() {
-    if (!loaded) { audio.src = src; loaded = true; }
-  }
-
-  function setFill(pct) {
-    range.style.background = `linear-gradient(to right, var(--accent) ${pct}%, var(--border) ${pct}%)`;
-  }
-
-  audio.addEventListener('timeupdate', () => {
-    const pct = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
-    if (!seeking) {
-      range.value = Math.round(pct * RANGE_MAX / 100);
-      setFill(pct);
+    function load() {
+      if (!loaded) { audio.src = src; loaded = true; }
     }
-    currentEl.textContent = formatTime(audio.currentTime);
-    range.setAttribute('aria-valuetext', formatTime(audio.currentTime));
-  });
 
-  audio.addEventListener('waiting', () => {
-    btn.innerHTML = loadingIcon;
-  });
-
-  audio.addEventListener('playing', () => {
-    setPlayState(btn, true, pauseIcon);
-    activePlayer = player;
-  });
-
-  audio.addEventListener('play', () => player.classList.add('playing'));
-  audio.addEventListener('pause', () => player.classList.remove('playing'));
-
-  audio.addEventListener('ended', () => {
-    setPlayState(btn, false, playIcon);
-    range.value = 0;
-    setFill(0);
-    currentEl.textContent = currentEl.dataset.duration || '0:00';
-    player.classList.remove('playing');
-    if (activePlayer === player) activePlayer = null;
-    // Auto-advance within lists that opt in (the curated track lists)
-    const list = player.closest('[data-autoplay-next]');
-    if (list) {
-      const items = Array.from(list.querySelectorAll('.custom-player'));
-      const next = items[items.indexOf(player) + 1];
-      if (next) next.querySelector('.play-btn').click();
+    function setFill(pct) {
+      range.style.background = `linear-gradient(to right, var(--accent) ${pct}%, var(--border) ${pct}%)`;
     }
-  });
 
-  btn.addEventListener('click', () => {
-    load();
-    if (audio.paused) {
-      document.querySelectorAll('.custom-player').forEach(p => {
-        if (p !== player) {
-          const a = p._audio;
-          if (a && !a.paused) { a.pause(); setPlayState(p.querySelector('.play-btn'), false, playIcon); }
-        }
-      });
-      audio.play().catch(() => setPlayState(btn, false, playIcon));
-      setPlayState(btn, true, audio.readyState < 3 ? loadingIcon : pauseIcon);
-    } else {
-      audio.pause();
+    audio.addEventListener('timeupdate', () => {
+      const pct = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+      if (!seeking) {
+        range.value = Math.round(pct * RANGE_MAX / 100);
+        setFill(pct);
+      }
+      currentEl.textContent = formatTime(audio.currentTime);
+      range.setAttribute('aria-valuetext', formatTime(audio.currentTime));
+    });
+
+    audio.addEventListener('waiting', () => {
+      btn.innerHTML = loadingIcon;
+    });
+
+    audio.addEventListener('playing', () => {
+      setPlayState(btn, true, pauseIcon);
+      activePlayer = player;
+    });
+
+    audio.addEventListener('play', () => player.classList.add('playing'));
+    audio.addEventListener('pause', () => player.classList.remove('playing'));
+
+    audio.addEventListener('ended', () => {
       setPlayState(btn, false, playIcon);
-    }
-  });
+      range.value = 0;
+      setFill(0);
+      currentEl.textContent = currentEl.dataset.duration || '0:00';
+      player.classList.remove('playing');
+      if (activePlayer === player) activePlayer = null;
+      // Auto-advance within lists that opt in (the curated track lists)
+      const list = player.closest('[data-autoplay-next]');
+      if (list) {
+        const items = Array.from(list.querySelectorAll('.custom-player'));
+        const next = items[items.indexOf(player) + 1];
+        if (next) next.querySelector('.play-btn').click();
+      }
+    });
 
-  // Native range: dragging, clicking, and arrow-key seeking all fire 'input'
-  // uniformly, so this one handler covers mouse, touch, and keyboard.
-  range.addEventListener('mousedown', () => { seeking = true; });
-  range.addEventListener('touchstart', () => { seeking = true; });
-  range.addEventListener('input', () => {
-    load();
-    const pct = (range.value / RANGE_MAX) * 100;
-    setFill(pct);
-    if (audio.duration) audio.currentTime = (pct / 100) * audio.duration;
-  });
-  range.addEventListener('change', () => { seeking = false; });
+    btn.addEventListener('click', () => {
+      load();
+      if (audio.paused) {
+        document.querySelectorAll('.custom-player').forEach(p => {
+          if (p !== player) {
+            const a = p._audio;
+            if (a && !a.paused) { a.pause(); setPlayState(p.querySelector('.play-btn'), false, playIcon); }
+          }
+        });
+        audio.play().catch(() => setPlayState(btn, false, playIcon));
+        setPlayState(btn, true, audio.readyState < 3 ? loadingIcon : pauseIcon);
+      } else {
+        audio.pause();
+        setPlayState(btn, false, playIcon);
+      }
+    });
 
-  player._audio = audio;
-});
+    // Native range: dragging, clicking, and arrow-key seeking all fire 'input'
+    // uniformly, so this one handler covers mouse, touch, and keyboard.
+    range.addEventListener('mousedown', () => { seeking = true; });
+    range.addEventListener('touchstart', () => { seeking = true; });
+    range.addEventListener('input', () => {
+      load();
+      const pct = (range.value / RANGE_MAX) * 100;
+      setFill(pct);
+      if (audio.duration) audio.currentTime = (pct / 100) * audio.duration;
+    });
+    range.addEventListener('change', () => { seeking = false; });
+
+    player._audio = audio;
+  });
+}
+window.initCustomPlayers = initCustomPlayers;
+initCustomPlayers(document);
 
 document.addEventListener('keydown', e => {
   if (e.code !== 'Space') return;

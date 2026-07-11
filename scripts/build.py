@@ -46,6 +46,7 @@ def main():
     write("assets/fonts.css", open(os.path.join(here, "fonts.css")).read())
     write("assets/search-index.json", json.dumps(build_search_index(), ensure_ascii=False))
     write("assets/tracks.json", json.dumps(build_track_catalog(), ensure_ascii=False))
+    write("assets/song-occurrences.json", json.dumps(build_song_occurrences(), ensure_ascii=False))
     write("lab/wavesurfer/index.html", build_wavesurfer_lab())
     write("index.html", build_home())
     write("archive/index.html", build_archive())

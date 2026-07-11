@@ -43,7 +43,14 @@
 <main id="main">
 
   <section class="playlist">
+    <p class="pl-intro">Filter the archive by artist, venue, source, or mood, then build a set — a fixed number of songs, a target length, or endless shuffle. Each playlist uses one randomly chosen performance of a song, so one played a dozen times over the years never repeats within a single set.</p>
+    <div class="pl-presets">
+      <button type="button" class="pl-preset" data-preset="mixed45">45-minute mixed set</button>
+      <button type="button" class="pl-preset" data-preset="traditional">Traditional &amp; Irish</button>
+      <button type="button" class="pl-preset" data-preset="soundboard">Soundboard recordings</button>
+    </div>
     <div class="pl-panel">
+      <div class="pl-panel-head"><span class="pl-filter-label">Filters</span><button type="button" id="pl-clear" class="pl-clear" hidden>Clear filters</button></div>
       <div id="pl-filters" class="pl-filter-groups"></div>
     </div>
     <div class="pl-panel pl-panel-build">

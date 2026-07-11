@@ -1260,6 +1260,17 @@ footer a:hover { text-decoration: underline; }
 .archive-controls { display: flex; flex-wrap: wrap; gap: 0.6rem; }
 .archive-controls .view-toggle { margin: 0 0 2.2rem; }
 
+/* Legend for the row abbreviations — tooltips exist but don't help touch
+   users, and this is more discoverable than hover-only affordances. */
+.archive-legend {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.5rem;
+  font-size: 12px; color: var(--muted); font-weight: 300;
+  margin: 0 0 2.2rem;
+}
+.archive-legend .src-tag,
+.archive-legend .proc-status,
+.archive-legend .show-tracks { flex-shrink: 0; }
+
 /* Tablet pass: give the two wide scroll containers a little more room */
 @media (max-width: 900px) {
   .song-grid-wrap { font-size: 13px; }
@@ -1510,6 +1521,22 @@ a.artist-chip:hover { filter: brightness(1.08); }
 
 /* ── playlist generator (/playlist/) ───────────────────────────────────── */
 
+.pl-intro {
+  max-width: 620px; margin: 0 0 1.2rem;
+  font-size: 14px; color: var(--muted); font-weight: 300; line-height: 1.7;
+}
+
+/* One-click starting points — most visitors don't want to build a set from
+   a blank slate; these generate immediately rather than just pre-filling. */
+.pl-presets { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.2rem; }
+.pl-preset {
+  font-family: var(--sans); font-size: 12.5px; font-weight: 500;
+  color: var(--accent); background: var(--accent-light);
+  border: 1px solid transparent; border-radius: 999px;
+  padding: 0.45rem 1rem; cursor: pointer; transition: background 0.15s, opacity 0.15s;
+}
+.pl-preset:hover { opacity: 0.85; }
+
 /* Two cards: narrow-it-down filters, then build-and-play. Replaces the old
    flat stack of unlabeled chip rows, which read as one undifferentiated
    wall of buttons once artist/venue/source/tags were all on screen. */
@@ -1517,6 +1544,18 @@ a.artist-chip:hover { filter: brightness(1.08); }
   background: var(--surface); border: 1px solid var(--border);
   border-radius: 10px; padding: 1.1rem 1.2rem; margin: 1.2rem 0;
 }
+.pl-panel-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.7rem;
+}
+.pl-panel-head .pl-filter-label { margin: 0; }
+.pl-clear {
+  font-family: var(--sans); font-size: 11px; font-weight: 500;
+  letter-spacing: 0.04em; color: var(--muted); background: none;
+  border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.25rem 0.75rem; cursor: pointer; transition: color 0.15s, border-color 0.15s;
+}
+.pl-clear:hover { color: var(--accent); border-color: var(--accent); }
 .pl-panel-build { display: flex; flex-direction: column; gap: 0.2rem; }
 .pl-panel-build .search-status { margin: 0.7rem 0 0; }
 .pl-panel-build .pl-actions { margin: 0.9rem 0 0; }

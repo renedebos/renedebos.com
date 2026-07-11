@@ -1,9 +1,67 @@
 /* Song concordance controls: view (list/grid), sort (plays/A–Z), artist filter.
-   Pure DOM reordering + hiding — no data fetch. Players are handled by player.js. */
+   Pure DOM reordering + hiding for the list/grid itself — no data fetch there.
+   Performance rows (each with its own player) are a separate concern: fetched
+   from assets/song-occurrences.json and rendered into a song's .song-occs the
+   first time its <details> opens, so the ~400 players across the whole index
+   aren't sitting in the page (and initialized) until actually requested.
+   Reuses player.js's playIcon/RANGE_MAX/WORKER/initCustomPlayers — both scripts
+   are classic (non-module), so top-level const/function declarations in one
+   are visible by name in the other as long as player.js loads first. */
 (function () {
   var listEl = document.getElementById("song-list");
   var gridEl = document.getElementById("song-grid");
   if (!listEl) return;
+
+  var escOcc = function (s) {
+    return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  };
+
+  var occPromise = null;
+  function loadOccurrences() {
+    if (!occPromise) occPromise = fetch("/assets/song-occurrences.json").then(function (r) { return r.json(); });
+    return occPromise;
+  }
+
+  function occRowHtml(o, songTitle) {
+    var label = songTitle + ", " + o.artist_name + ", " + o.date;
+    var anchor = o.url + "#track-" + o.num;
+    var stream = WORKER + "/stream?file=" + encodeURIComponent(o.file) + (o.ver ? "&v=" + o.ver : "");
+    var dur = o.duration ? '<span class="time-label">' + escOcc(o.duration) + "</span>" : "";
+    return '<div class="song-occ">'
+      + '<div class="song-occ-head">'
+      + '<a class="artist-chip artist-' + o.artist + '" href="' + escOcc(anchor) + '">' + escOcc(o.artist_name) + "</a>"
+      + '<span class="song-occ-where">' + escOcc(o.venue) + " &middot; " + escOcc(o.date) + "</span>"
+      + '<a class="song-occ-open" href="' + escOcc(anchor) + '">open on show page &rarr;</a>'
+      + "</div>"
+      + '<div class="custom-player" data-src="' + escOcc(stream) + '">'
+      + '<button class="play-btn" aria-label="Play ' + escOcc(label) + '" data-play-label="' + escOcc(label) + '">' + playIcon + "</button>"
+      + '<div class="progress-wrap">'
+      + '<input type="range" class="progress-range" min="0" max="' + RANGE_MAX + '" value="0" step="1" aria-label="Seek ' + escOcc(label) + '" aria-valuetext="0:00">'
+      + '<div class="time-row"><span class="time-label current">0:00</span>' + dur + "</div>"
+      + "</div>"
+      + "</div>"
+      + "</div>";
+  }
+
+  function renderSongOccs(details) {
+    var container = details.querySelector(".song-occs");
+    if (!container || container.childElementCount) return; // already rendered
+    var slug = container.dataset.song;
+    loadOccurrences().then(function (data) {
+      var entry = data[slug];
+      if (!entry) return;
+      container.innerHTML = entry.occ.map(function (o) { return occRowHtml(o, entry.title); }).join("\n");
+      initCustomPlayers(container);
+    });
+  }
+
+  listEl.querySelectorAll(".song-item").forEach(function (details) {
+    details.addEventListener("toggle", function () {
+      if (details.open) renderSongOccs(details);
+    });
+  });
 
   var state = { view: "list", sort: "plays", artist: "all", query: "" };
 

@@ -201,7 +201,13 @@ def build_archive():
     <div class="view-toggle" role="group" aria-label="Filter shows">
       <button type="button" class="seg" data-split="1" aria-pressed="false">&#9834; Split shows only ({n_split})</button>
     </div>
-  </div>'''
+  </div>
+  <p class="archive-legend">
+    <span class="src-tag src-sbd">SBD</span> Soundboard &middot;
+    <span class="src-tag">AUD</span> Audience recording &middot;
+    <span class="proc-status pre-edit">NR</span> Noise-reduced &middot;
+    <span class="show-tracks">&#9834; N</span> Individual tracks available
+  </p>'''
     views = f'''
   <div class="archive-view" data-view="artist" data-split="all">{artist_sections(only_tracks=False)}
   </div>
@@ -287,7 +293,14 @@ def build_playlist():
         nav=site_nav("Playlist"),
         main='''
   <section class="playlist">
+    <p class="pl-intro">Filter the archive by artist, venue, source, or mood, then build a set — a fixed number of songs, a target length, or endless shuffle. Each playlist uses one randomly chosen performance of a song, so one played a dozen times over the years never repeats within a single set.</p>
+    <div class="pl-presets">
+      <button type="button" class="pl-preset" data-preset="mixed45">45-minute mixed set</button>
+      <button type="button" class="pl-preset" data-preset="traditional">Traditional &amp; Irish</button>
+      <button type="button" class="pl-preset" data-preset="soundboard">Soundboard recordings</button>
+    </div>
     <div class="pl-panel">
+      <div class="pl-panel-head"><span class="pl-filter-label">Filters</span><button type="button" id="pl-clear" class="pl-clear" hidden>Clear filters</button></div>
       <div id="pl-filters" class="pl-filter-groups"></div>
     </div>
     <div class="pl-panel pl-panel-build">
@@ -836,16 +849,18 @@ def build_songs_index():
              if a in s["artists"]
              else '<span class="artist-dot empty"></span>')
             for a in present)
-        occs = "\n".join(_song_occ_html(o, s["canonical"]) for o in s["occ"])
+        # Occurrence rows (each with its own player) aren't rendered here — with
+        # 400+ of them across the index that's a lot of embedded HTML and live
+        # audio elements for content most visitors never open. songs.js fetches
+        # assets/song-occurrences.json and renders a song's rows into
+        # .song-occs the first time its <details> is expanded.
         items.append(f'''    <details class="song-item" data-artists="{' '.join(s['artists'])}" data-plays="{s['plays']}" data-title="{esc(song_norm(s['canonical']))}">
       <summary>
         <span class="song-plays">{s['plays']}&times;</span>
         <a class="song-name" href="/songs/{s['slug']}/">{esc(s['canonical'])}</a>
         <span class="song-chips">{chips}</span>
       </summary>
-      <div class="song-occs">
-{occs}
-      </div>
+      <div class="song-occs" data-song="{s['slug']}"></div>
     </details>''')
 
     col_head = "".join(

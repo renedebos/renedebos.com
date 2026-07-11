@@ -8,6 +8,8 @@
   var goBtn = document.getElementById("pl-generate");
   var nowEl = document.getElementById("pl-now");
   var queueEl = document.getElementById("pl-queue");
+  var presetsEl = document.querySelector(".pl-presets");
+  var clearBtn = document.getElementById("pl-clear");
 
   var CATALOG = [];
   var ARTIST_NAMES = { jerry: "Jerry Hannan", sean: "Sean Hannan",
@@ -121,15 +123,35 @@
       + "</div></div>";
   }
 
+  // A rough preview of what Generate would actually produce, so the mode/
+  // amount inputs aren't a guessing game. Exact for "minutes" (buildQueue
+  // fills to the budget by design); an average-based estimate for "songs"
+  // (the real pick is random each time); the pool's own total for "endless".
+  function estimateDuration(dedupedPool) {
+    if (!dedupedPool.length) return null;
+    if (mode === "minutes") return amounts.minutes + " min";
+    if (mode === "endless") return "~" + totalStr(dedupedPool) + " of unique songs";
+    var n = Math.min(amounts.songs, dedupedPool.length);
+    var avg = dedupedPool.reduce(function (s, t) { return s + t.durationSec; }, 0) / dedupedPool.length;
+    return "~" + totalStr([{ durationSec: avg * n }]);
+  }
+
   function updateStatus() {
     var p = pool();
-    var uniq = dedupe(p).length;
+    var deduped = dedupe(p);
+    var uniq = deduped.length;
+    var est = estimateDuration(deduped);
     statusEl.textContent = p.length
       ? p.length + " of " + CATALOG.length + " recordings match — "
         + uniq + (uniq === 1 ? " song" : " different songs")
-        + " (one performance of each per playlist)."
+        + " (one performance of each per playlist)"
+        + (est ? " — about " + est + "." : ".")
       : "No tracks match — loosen the filters.";
     goBtn.disabled = !p.length;
+    if (clearBtn) {
+      clearBtn.hidden = !(filters.artist.length || filters.venue.length
+        || filters.source.length || filters.tags.length);
+    }
   }
 
   filtersEl.addEventListener("click", function (e) {
@@ -152,12 +174,49 @@
     if (!b || b.dataset.group !== "mode") return;
     mode = b.dataset.value;
     renderLength();
+    updateStatus();
   });
   lengthEl.addEventListener("input", function (e) {
     if (e.target.id !== "pl-amount") return;
     var v = parseInt(e.target.value, 10);
-    if (v > 0) amounts[mode] = v;
+    if (v > 0) { amounts[mode] = v; updateStatus(); }
   });
+
+  if (clearBtn) {
+    clearBtn.addEventListener("click", function () {
+      filters = { artist: [], venue: [], source: [], tags: [] };
+      renderFilters();
+      updateStatus();
+    });
+  }
+
+  // One-click starting points: set filters/mode/amount, then generate right
+  // away — most visitors want a set to press play on, not a pre-filled form.
+  var PRESETS = {
+    mixed45: { filters: { artist: [], venue: [], source: [], tags: [] }, mode: "minutes", amount: 45 },
+    traditional: { filters: { artist: [], venue: [], source: [], tags: ["traditional"] }, mode: "songs", amount: 12 },
+    soundboard: { filters: { artist: [], venue: [], source: ["sbd"], tags: [] }, mode: "endless" },
+  };
+  if (presetsEl) {
+    presetsEl.addEventListener("click", function (e) {
+      var b = e.target.closest(".pl-preset");
+      if (!b) return;
+      var preset = PRESETS[b.dataset.preset];
+      if (!preset) return;
+      filters = { artist: preset.filters.artist.slice(), venue: preset.filters.venue.slice(),
+                  source: preset.filters.source.slice(), tags: preset.filters.tags.slice() };
+      mode = preset.mode;
+      if (preset.amount) amounts[mode] = preset.amount;
+      renderFilters();
+      renderLength();
+      updateStatus();
+      queue = buildQueue();
+      if (!queue.length) return;
+      renderQueue();
+      syncHash();
+      playAt(0);
+    });
+  }
 
   // ── queue building ────────────────────────────────────────────────────────
 

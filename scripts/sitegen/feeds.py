@@ -84,6 +84,15 @@ def build_track_catalog():
             })
     return rows
 
+def build_song_occurrences():
+    """Per-song performance data (assets/song-occurrences.json) — fetched once
+    by songs.js and rendered into a song's <details> only when it's opened, so
+    the Songs index doesn't have to embed every occurrence's player HTML (400+
+    of them) in the initial page. Keyed by song slug; each occurrence carries
+    exactly what _song_occ_html() needs to build a row client-side."""
+    songs, _ = collect_songs()
+    return {s["slug"]: {"title": s["canonical"], "occ": s["occ"]} for s in songs}
+
 def _xesc(t):
     return t.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
@@ -131,4 +140,4 @@ def build_sitemap():
             f"{items}\n</urlset>\n")
 
 
-__all__ = ['_xesc', 'build_feed', 'build_search_index', 'build_sitemap', 'build_track_catalog']
+__all__ = ['_xesc', 'build_feed', 'build_search_index', 'build_sitemap', 'build_song_occurrences', 'build_track_catalog']
