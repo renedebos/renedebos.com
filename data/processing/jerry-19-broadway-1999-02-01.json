@@ -1,0 +1,224 @@
+{
+  "slug": "jerry-19-broadway-1999-02-01",
+  "target_lufs": -20,
+  "tp_ceiling": -1,
+  "source": "24-bit / 32 kHz FLAC",
+  "pre_edits": "Noise Reduction applied in Audacity — Noise Reduction (dB): 6 — Sensitivity: 5 — Applied to: whole show",
+  "filters": "none",
+  "tool": "ffmpeg loudnorm",
+  "workflow_version": 3,
+  "ffmpeg": "7.1.3-0+deb13u1",
+  "date": "2026-07-11",
+  "tracks": {
+    "1": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.2,
+      "lufs": -20.03,
+      "tp": -0.99,
+      "mp3_tp": -0.94,
+      "lra": 11.0,
+      "md5": "b2ecb5dcc4703ef69a4adacf48048871"
+    },
+    "2": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -21.6,
+      "lufs": -20.29,
+      "tp": -0.99,
+      "mp3_tp": -0.99,
+      "lra": 13.9,
+      "md5": "86b27798deab71749eec9380d8c134b9"
+    },
+    "3": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -24.4,
+      "lufs": -19.99,
+      "tp": -0.95,
+      "mp3_tp": -0.93,
+      "lra": 11.3,
+      "md5": "ca5c91cea5f1ba509c263004d25aedfe"
+    },
+    "4": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -24.1,
+      "lufs": -20.1,
+      "tp": -0.87,
+      "mp3_tp": -0.78,
+      "lra": 10.6,
+      "md5": "f7cd644a0f7327c3a125dee06bdca535"
+    },
+    "5": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.7,
+      "lufs": -20.0,
+      "tp": -1.0,
+      "mp3_tp": -1.0,
+      "lra": 10.5,
+      "md5": "9a1e0eac7af70565e3cad729f6899ec3"
+    },
+    "6": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -18.4,
+      "lufs": -20.17,
+      "tp": -1.76,
+      "mp3_tp": -1.75,
+      "lra": 11.0,
+      "md5": "f86d2ed3417470d0f98a42bffc91d2b1"
+    },
+    "7": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -14.3,
+      "lufs": -20.03,
+      "tp": -3.91,
+      "mp3_tp": -3.83,
+      "lra": 9.1,
+      "md5": "c1b34b7e11bbb478fb62f30bf94c8f6e"
+    },
+    "8": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -17.5,
+      "lufs": -20.51,
+      "tp": -3.27,
+      "mp3_tp": -3.26,
+      "lra": 16.4,
+      "md5": "77fcdd09c3173dbd81782fcee67ffe54"
+    },
+    "9": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -19.2,
+      "lufs": -20.05,
+      "tp": -0.88,
+      "mp3_tp": -0.75,
+      "lra": 13.0,
+      "md5": "6006ea1dbd15090b91328e9a94fd8b93"
+    },
+    "10": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -17.2,
+      "lufs": -20.0,
+      "tp": -2.66,
+      "mp3_tp": -2.66,
+      "lra": 9.9,
+      "md5": "5b6a4aac5748e86df42a2142b442f94d"
+    },
+    "11": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -16.7,
+      "lufs": -20.32,
+      "tp": -1.84,
+      "mp3_tp": -1.81,
+      "lra": 16.3,
+      "md5": "ad2ce53e48e556c0747d6e829ab3da0e"
+    },
+    "12": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -19.2,
+      "lufs": -20.04,
+      "tp": -1.76,
+      "mp3_tp": -1.79,
+      "lra": 9.8,
+      "md5": "0ec90cb9a85e3505fc28547ce5e15922"
+    },
+    "13": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -15.5,
+      "lufs": -20.31,
+      "tp": -0.99,
+      "mp3_tp": -0.74,
+      "lra": 16.5,
+      "md5": "02996eb1b52e807123bd68f446062112"
+    },
+    "14": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -16.8,
+      "lufs": -20.08,
+      "tp": -3.58,
+      "mp3_tp": -3.44,
+      "lra": 13.4,
+      "md5": "f50ddb36160fab431e0413aee2dde4ca"
+    },
+    "15": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -26.2,
+      "lufs": -20.38,
+      "tp": -0.99,
+      "mp3_tp": -0.93,
+      "lra": 13.7,
+      "md5": "35aaa7c344caffa246ef305dcd83ad80"
+    },
+    "16": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -19.1,
+      "lufs": -20.03,
+      "tp": -1.0,
+      "mp3_tp": -0.98,
+      "lra": 12.3,
+      "md5": "144f3fdd2bc432fafb7ba06a7abfdd1d"
+    },
+    "17": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.7,
+      "lufs": -20.15,
+      "tp": -1.77,
+      "mp3_tp": -1.81,
+      "lra": 15.2,
+      "md5": "d734ec83c3d893582a54bda60ca0ffeb"
+    },
+    "18": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.2,
+      "lufs": -20.05,
+      "tp": -1.0,
+      "mp3_tp": -0.98,
+      "lra": 10.6,
+      "md5": "ae3644b262bc90514c434854ff9820cc"
+    },
+    "19": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -22.6,
+      "lufs": -20.34,
+      "tp": -0.99,
+      "mp3_tp": -0.97,
+      "lra": 15.1,
+      "md5": "6d7bf902aec7bbfc2682f7f6a904fd01"
+    },
+    "20": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -23.2,
+      "lufs": -20.1,
+      "tp": -1.0,
+      "mp3_tp": -1.0,
+      "lra": 12.4,
+      "md5": "39c2eeccad945fa3b9d7c084ab4491ef"
+    },
+    "21": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -28.6,
+      "lufs": -20.03,
+      "tp": -1.0,
+      "mp3_tp": -1.01,
+      "lra": 13.3,
+      "md5": "2fb6891c3c1ac4d4c6c237e8ea21b5ab"
+    }
+  }
+}
