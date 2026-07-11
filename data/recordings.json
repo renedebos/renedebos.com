@@ -3318,8 +3318,7 @@
           "processed": true,
           "tags": [
             "cover",
-            "rock",
-            "rarity"
+            "rock"
           ]
         },
         {
@@ -3441,7 +3440,8 @@
           "processed": true,
           "tags": [
             "cover",
-            "story"
+            "story",
+            "rarity"
           ],
           "songwriter": "Lennon-McCartney"
         },
@@ -3634,7 +3634,8 @@
       ],
       "description": [
         "This solo set from Sean Hannan at 19 Broadway in Fairfax was recorded from the audience on a DAT recorder.",
-        "The full tape has been split into its 21 individual songs — Sean’s originals alongside traditional Irish tunes and a handful of covers, including Bob Dylan, Tom Petty, Cat Stevens, and the Beatles. Each track streams here as a 320 kbps MP3, or can be downloaded as a lossless FLAC (password protected)."
+        "The full tape has been split into its 21 individual songs — Sean’s originals alongside traditional Irish tunes and a handful of covers, including Bob Dylan, Tom Petty, Cat Stevens, and the Beatles. Each track streams here as a 320 kbps MP3, or can be downloaded as a lossless FLAC (password protected).",
+        "This show is a rather poor one ; lots of rowdy background noise with the local crew and at the end of the evening Jerry who can be heard playing along on percussion on some songs calls it quits on behalf of Sean. Rough night and rough recording. Quite a few of the songs have the applause edited out due to the very loud volume levels. No need to do any noise reduction effects on this tape as it is a bit of a lost cause. The show does include a Beatles cover of 'Rocky Raccoon'."
       ],
       "page": null,
       "processing_status": "done",
