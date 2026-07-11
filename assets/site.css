@@ -9,12 +9,15 @@
   --accent: #2c4a3e;
   --accent-light: #e8efe8;
   --player-bg: #ffffff;
-  --sans: 'DM Sans', sans-serif;
-  --serif: 'DM Serif Display', serif;
+  --sans: 'Karla', sans-serif;
+  --serif: 'Cormorant Garamond', serif;
+  --mono: 'Space Mono', monospace;
 }
 
 /* Dark theme — follows the OS preference; a [data-theme] override wins if a
-   toggle is ever added. Keeps the warm, paper-like character of the light theme. */
+   toggle is ever added. Keeps the warm, paper-like character of the light theme.
+   Accent is richened vs. the original pale sage (#8fb9a4) for more presence
+   against the dark brown (2026-07-11 type/palette refresh — "Hannan Classic"). */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #17150f;
@@ -22,7 +25,7 @@
     --text: #ece7dc;
     --muted: #a49b8b;
     --border: #363126;
-    --accent: #8fb9a4;
+    --accent: #7FA37A;
     --accent-light: #232e28;
     --player-bg: #201d16;
     --artist-jerry: #5f93b3;
@@ -33,7 +36,7 @@
 }
 :root[data-theme="dark"] {
   --bg: #17150f; --surface: #201d16; --text: #ece7dc; --muted: #a49b8b;
-  --border: #363126; --accent: #8fb9a4; --accent-light: #232e28; --player-bg: #201d16;
+  --border: #363126; --accent: #7FA37A; --accent-light: #232e28; --player-bg: #201d16;
   --artist-jerry: #5f93b3; --artist-mad: #d1875a; --artist-sean: #8fb85f; --artist-seanjerry: #9a8ad4;
 }
 
@@ -72,6 +75,7 @@ header {
 }
 
 .site-eyebrow {
+  font-family: var(--mono);
   font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -241,6 +245,7 @@ main {
 }
 
 .group-label-bare {
+  font-family: var(--mono);
   font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -270,6 +275,7 @@ main {
 .update-item:first-child { border-top: none; }
 
 .update-date {
+  font-family: var(--mono);
   font-size: 12px;
   color: var(--muted);
   font-weight: 500;
@@ -370,12 +376,13 @@ main {
 }
 .sr-sub { font-size: 12px; color: var(--muted); font-weight: 300; display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
 .sr-tag {
+  font-family: var(--mono);
   font-size: 10px; letter-spacing: 0.04em; color: var(--accent);
   background: var(--accent-light); border-radius: 3px; padding: 1px 6px; font-weight: 500;
 }
 .sr-src { flex-shrink: 0; }
 .sr-meta {
-  flex-shrink: 0; font-size: 11px; color: var(--muted);
+  flex-shrink: 0; font-family: var(--mono); font-size: 11px; color: var(--muted);
   font-variant-numeric: tabular-nums; min-width: 2.6em; text-align: right;
 }
 
@@ -409,6 +416,7 @@ main {
 .show-row:hover .show-date { color: var(--accent); }
 
 .show-date {
+  font-family: var(--mono);
   font-size: 14px;
   font-weight: 500;
   color: var(--text);
@@ -429,6 +437,7 @@ main {
 
 .show-tracks {
   justify-self: end;
+  font-family: var(--mono);
   font-size: 12px;
   color: var(--accent);
   font-weight: 500;
@@ -444,6 +453,7 @@ main {
 
 .show-src,
 .src-tag {
+  font-family: var(--mono);
   font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -784,6 +794,7 @@ main {
 .recording-item .recording-meta-grid + .recording-detail { padding-left: 0; }
 
 .recording-badge {
+  font-family: var(--mono);
   font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -964,6 +975,7 @@ main {
   white-space: nowrap;
 }
 .tech-table th {
+  font-family: var(--mono);
   font-size: 11px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -972,12 +984,13 @@ main {
 }
 .tech-table td.tnum,
 .tech-table th { font-variant-numeric: tabular-nums; }
-.tech-table td.tnum { text-align: right; color: var(--muted); }
+.tech-table td.tnum { font-family: var(--mono); text-align: right; color: var(--muted); }
 .tech-table tbody tr:hover { background: rgba(255, 255, 255, 0.03); }
 
 /* processing status badge (in the technical-data summary) */
 .proc-status {
   display: inline-block;
+  font-family: var(--mono);
   margin-left: 0.5rem;
   padding: 0.05rem 0.5rem;
   border-radius: 999px;
@@ -992,7 +1005,7 @@ main {
 .proc-status.status-redo { color: #e08a4c; }
 .proc-status.status-needs-processing { color: var(--muted); }
 .proc-status.pre-edit { color: #6ea3d8; cursor: help; }
-.tech-table td.tver { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tech-table td.tver { font-family: var(--mono); text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
 
 /* standalone audio-processing status line (top of every show page) */
 .proc-status-line {
@@ -1000,6 +1013,7 @@ main {
   align-items: center;
   flex-wrap: wrap;
   gap: 0.4rem;
+  font-family: var(--mono);
   font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;

@@ -1,20 +1,30 @@
-/* Homepage-only stylesheet. Deliberately not the rest of the site's visual
-   system (warm paper, DM Sans/Serif, light+dark) — this is a standalone dark
-   "tape deck" look, the same way /manual/ gets its own document instead of
-   reusing site.css. Self-hosted fonts live in home-fonts.css. */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
 :root {
-  --bg: #17150f;
-  --panel: #211d15;
-  --panel-hover: #2a251a;
-  --ink: #ECE3D0;
-  --ink-dim: #a89f8c;
-  --hairline: rgba(236, 227, 208, 0.12);
-  --amber: #D9A441;
-  --amber-hover: #e3b558;
-  --amber-dim: rgba(217, 164, 65, 0.12);
+  --bg: #f5f2ed; --panel: #faf8f5; --panel-hover: #f0ece4;
+  --ink: #1a1916; --ink-dim: #5c584f; --hairline: #dedad3;
+  --accent: #2c4a3e; --accent-hover: #3a5f50; --accent-dim: #e8efe8;
+  --on-accent: #ffffff;
 }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+  --bg: #17150f; --panel: #201d16; --panel-hover: #2a251a;
+  --ink: #ece7dc; --ink-dim: #a49b8b; --hairline: #363126;
+  --accent: #7FA37A; --accent-hover: #93BC9E; --accent-dim: rgba(127,163,122,0.14);
+  --on-accent: #17150f;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17150f; --panel: #201d16; --panel-hover: #2a251a;
+  --ink: #ece7dc; --ink-dim: #a49b8b; --hairline: #363126;
+  --accent: #7FA37A; --accent-hover: #93BC9E; --accent-dim: rgba(127,163,122,0.14);
+  --on-accent: #17150f;
+}
+
+/* Homepage-only stylesheet — the layout (hero, show grid, expandable info
+   cards) is unique to this page, but the color tokens and fonts below match
+   site.css exactly ("Hannan Classic", 2026-07-11), so the homepage no longer
+   looks like a different site once you click through. Fonts self-hosted in
+   the shared assets/fonts.css. */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   margin: 0;
@@ -28,11 +38,11 @@ body {
 a { color: inherit; text-decoration: none; }
 .wrap { max-width: 1080px; margin: 0 auto; padding: 0 28px; }
 
-:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .skip-link {
   position: absolute; left: 8px; top: -48px; z-index: 100;
-  background: var(--amber); color: #241f13; padding: .5rem .9rem;
+  background: var(--accent); color: var(--on-accent); padding: .5rem .9rem;
   border-radius: 6px; text-decoration: none; transition: top .15s ease;
 }
 .skip-link:focus { top: 8px; }
@@ -49,26 +59,26 @@ header {
   display: inline-flex; align-items: center; justify-content: center;
   width: 34px; height: 34px; border-radius: 50%;
   background: var(--panel); border: 1px solid var(--hairline);
-  color: var(--amber); font-size: 1.05rem;
+  color: var(--accent); font-size: 1.05rem;
   transition: border-color 0.18s ease, background 0.18s ease;
 }
-.mark:hover, .mark:focus-visible { border-color: var(--amber); background: var(--amber-dim); outline: none; }
+.mark:hover, .mark:focus-visible { border-color: var(--accent); background: var(--accent-dim); outline: none; }
 nav { display: flex; gap: 26px; font-size: 0.85rem; color: var(--ink-dim); }
-nav a:hover, nav a:focus-visible { color: var(--amber); outline: none; }
+nav a:hover, nav a:focus-visible { color: var(--accent); outline: none; }
 
 /* ── hero ────────────────────────────────────────────────────────────────── */
 
 .hero { padding: 60px 0 44px; border-bottom: 1px solid var(--hairline); }
 .eyebrow {
   font-family: 'Space Mono', monospace; font-size: 0.7rem; letter-spacing: 0.16em;
-  text-transform: uppercase; color: var(--amber); margin-bottom: 14px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 14px;
 }
 h1 {
   font-family: 'Cormorant Garamond', serif; font-weight: 600;
   font-size: clamp(2.3rem, 5vw, 3.5rem); line-height: 1.08;
   margin: 0 0 16px; max-width: 680px; color: var(--ink);
 }
-h1 em { font-style: italic; color: var(--amber); }
+h1 em { font-style: italic; color: var(--accent); }
 .lede { color: var(--ink-dim); max-width: 520px; margin: 0 0 26px; font-size: 1rem; }
 
 .actions { display: flex; gap: 12px; flex-wrap: wrap; }
@@ -78,11 +88,11 @@ h1 em { font-style: italic; color: var(--amber); }
   border-radius: 99px; padding: 11px 22px; border: 1px solid transparent;
   cursor: pointer; transition: background 0.18s ease, border-color 0.18s ease;
 }
-.btn-primary { background: var(--amber); color: #241f13; }
-.btn-primary:hover, .btn-primary:focus-visible { background: var(--amber-hover); outline: none; }
-.btn-secondary { border-color: rgba(217, 164, 65, 0.45); color: var(--amber); background: none; }
+.btn-primary { background: var(--accent); color: var(--on-accent); }
+.btn-primary:hover, .btn-primary:focus-visible { background: var(--accent-hover); outline: none; }
+.btn-secondary { border-color: color-mix(in srgb, var(--accent) 45%, transparent); color: var(--accent); background: none; }
 .btn-secondary:hover, .btn-secondary:focus-visible {
-  background: var(--amber-dim); border-color: var(--amber); outline: none;
+  background: var(--accent-dim); border-color: var(--accent); outline: none;
 }
 
 /* ── show grid ───────────────────────────────────────────────────────────── */
@@ -102,10 +112,10 @@ h1 em { font-style: italic; color: var(--amber); }
   padding: 22px; display: flex; flex-direction: column; gap: 10px;
   transition: background 0.18s ease, border-color 0.18s ease;
 }
-.card:hover, .card:focus-visible { background: var(--panel-hover); border-color: rgba(217, 164, 65, 0.5); }
+.card:hover, .card:focus-visible { background: var(--panel-hover); border-color: color-mix(in srgb, var(--accent) 50%, var(--hairline)); }
 .card-top { display: flex; justify-content: space-between; align-items: center; }
 .ring-icon { display: inline-flex; color: var(--ink-dim); transition: color 0.18s ease; }
-.card:hover .ring-icon { color: var(--amber); }
+.card:hover .ring-icon { color: var(--accent); }
 .count { font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--ink-dim); letter-spacing: 0.03em; }
 
 .card h3 { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 1.25rem; margin: 0; line-height: 1.25; }
@@ -115,23 +125,23 @@ h1 em { font-style: italic; color: var(--amber); }
 .tags { display: flex; gap: 6px; flex-wrap: wrap; }
 .tag {
   font-family: 'Space Mono', monospace; font-size: 0.62rem; letter-spacing: 0.05em;
-  background: var(--amber-dim); border: 1px solid rgba(217, 164, 65, 0.3);
-  border-radius: 99px; padding: 3px 9px; color: var(--amber);
+  background: var(--accent-dim); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  border-radius: 99px; padding: 3px 9px; color: var(--accent);
 }
-.tag.featured { background: var(--amber); color: #241f13; border-color: var(--amber); font-weight: 700; }
+.tag.featured { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 700; }
 
 .card-foot { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
-.stream { display: flex; align-items: center; gap: 7px; font-size: 0.8rem; color: var(--amber); font-weight: 700; }
-.stream::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--amber); }
+.stream { display: flex; align-items: center; gap: 7px; font-size: 0.8rem; color: var(--accent); font-weight: 700; }
+.stream::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
 .dur { font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--ink-dim); letter-spacing: 0.03em; }
 
 .all-shows { padding: 6px 0 60px; }
 .all-shows a {
   font-family: 'Space Mono', monospace; font-size: 0.74rem; letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--amber); border: 1px solid rgba(217, 164, 65, 0.4); border-radius: 99px;
+  color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); border-radius: 99px;
   padding: 9px 18px; display: inline-block; transition: background 0.18s ease;
 }
-.all-shows a:hover, .all-shows a:focus-visible { background: var(--amber-dim); outline: none; }
+.all-shows a:hover, .all-shows a:focus-visible { background: var(--accent-dim); outline: none; }
 
 /* ── about / why cards ───────────────────────────────────────────────────── */
 
@@ -148,12 +158,12 @@ h1 em { font-style: italic; color: var(--amber); }
 .info-expand summary {
   cursor: pointer; list-style: none;
   font-family: 'Space Mono', monospace; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--amber); display: inline-flex; align-items: center; gap: 6px;
+  color: var(--accent); display: inline-flex; align-items: center; gap: 6px;
 }
 .info-expand summary::-webkit-details-marker { display: none; }
 .info-expand summary::after { content: '\2193'; font-size: 0.8em; transition: transform 0.15s ease; }
 .info-expand[open] summary::after { transform: rotate(180deg); }
-.info-expand summary:hover, .info-expand summary:focus-visible { color: var(--amber-hover); outline: none; }
+.info-expand summary:hover, .info-expand summary:focus-visible { color: var(--accent-hover); outline: none; }
 .info-expand-body { padding-top: 14px; }
 .info-expand-body p { margin: 0 0 12px; }
 .info-expand-body p:last-child { margin-bottom: 0; }
@@ -161,7 +171,7 @@ h1 em { font-style: italic; color: var(--amber); }
 .info-expand-body .reasons li { margin-bottom: 0.8rem; line-height: 1.6; }
 .info-expand-body .reasons li:last-child { margin-bottom: 0; }
 .info-expand-body .reasons strong { color: var(--ink); font-weight: 700; }
-.info-expand-body a { color: var(--amber); text-decoration: underline; }
+.info-expand-body a { color: var(--accent); text-decoration: underline; }
 
 /* ── footer ──────────────────────────────────────────────────────────────── */
 
@@ -171,9 +181,9 @@ footer {
   font-size: 0.78rem; color: var(--ink-dim);
 }
 footer a { color: var(--ink-dim); text-decoration: none; }
-footer a:hover, footer a:focus-visible { color: var(--amber); outline: none; }
+footer a:hover, footer a:focus-visible { color: var(--accent); outline: none; }
 .artist-links { flex-basis: 100%; font-size: 0.75rem; }
-.artist-links a { color: var(--amber); text-decoration: underline; }
+.artist-links a { color: var(--accent); text-decoration: underline; }
 
 @media (max-width: 860px) {
   .grid { grid-template-columns: repeat(2, 1fr); }

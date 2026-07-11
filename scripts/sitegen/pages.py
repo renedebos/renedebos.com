@@ -116,7 +116,8 @@ HOME_SHELL = '''<!DOCTYPE html>
 <title>The Hannan Tapes</title>
 <meta name="description" content="Live recordings archive — Jerry Hannan, Sean Hannan, and Mad Hannans performing at clubs in Marin County in the late 1990s and early 2000s.">
 <link rel="canonical" href="https://renedebos.com">
-<meta name="theme-color" content="#17150f">
+<meta name="theme-color" content="#f5f2ed" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#17150f" media="(prefers-color-scheme: dark)">
 <meta property="og:title" content="The Hannan Tapes">
 <meta property="og:description" content="Live recordings archive — Jerry Hannan, Sean Hannan, and Mad Hannans.">
 <meta property="og:type" content="website">
@@ -125,7 +126,7 @@ HOME_SHELL = '''<!DOCTYPE html>
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9834;</text></svg>">
 <link rel="alternate" type="application/rss+xml" title="The Hannan Tapes &mdash; Updates" href="https://renedebos.com/feed.xml">
-<link rel="stylesheet" href="/assets/home-fonts.css">
+<link rel="stylesheet" href="/assets/fonts.css">
 <link rel="stylesheet" href="/assets/home.css">{jsonld}
 </head>
 <body>
@@ -330,16 +331,102 @@ def build_history():
     )
 
 def build_process():
-    return page_shell(
-        title="The Process — The Hannan Tapes",
-        description="How a 25-year-old DAT tape becomes a track-listed show page — the archive's full audio pipeline, step by step.",
-        url="https://renedebos.com/process/",
-        eyebrow="The Hannan Tapes",
-        heading="The Process",
-        tagline="From DAT tape to show page, step by step",
-        nav=site_nav(),
-        main=content("process.html"),
-    )
+    """Like /manual/, a standalone document — not the site's visual system.
+    Grouped with the Manual as the two "how this archive works" reference
+    pages, reading well in daylight, distinct from the interactive site."""
+    return PROCESS_SHELL.format(body=content("process.html"))
+
+PROCESS_SHELL = '''<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Process — The Hannan Tapes</title>
+<meta name="description" content="How a 25-year-old DAT tape becomes a track-listed show page — the archive's full audio pipeline, step by step.">
+<link rel="canonical" href="https://renedebos.com/process/">
+<style>
+*, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
+:root {{
+  --bg: #f6f7f8; --panel: #ffffff; --text: #21262b; --muted: #5d6773;
+  --border: #dfe3e8; --accent: #135ec4; --chip: #eef1f5;
+}}
+@media (prefers-color-scheme: dark) {{
+  :root {{
+    --bg: #14171a; --panel: #1c2126; --text: #d8dee5; --muted: #939ea9;
+    --border: #333a42; --accent: #77aef7; --chip: #262d34;
+  }}
+}}
+body {{
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 16.5px; line-height: 1.68; background: var(--bg); color: var(--text);
+}}
+.wrap {{ max-width: 40rem; margin: 0 auto; padding: 2rem 1.4rem 5rem; }}
+.mast {{ margin-bottom: 2.2rem; }}
+.mast .crumb {{ font-size: 13px; }}
+.mast .crumb a {{ color: var(--muted); text-decoration: none; }}
+.mast .crumb a:hover {{ color: var(--accent); }}
+.mast h1 {{ font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; margin-top: 0.7rem; }}
+.mast .sub {{ color: var(--muted); margin-top: 0.35rem; font-size: 15px; }}
+main p {{ margin-bottom: 0.95rem; color: var(--muted); }}
+main a {{ color: var(--accent); }}
+main em {{ color: var(--muted); }}
+main strong {{ color: var(--text); }}
+.process-intro, .process-outro {{ margin-bottom: 1.6rem; }}
+.process-outro {{ margin-top: 1.8rem; }}
+.process-outro h2 {{ font-size: 1.3rem; font-weight: 700; margin-bottom: 0.7rem; color: var(--text); }}
+.process-outro .reasons {{ padding-left: 1.3rem; margin-bottom: 1rem; }}
+.process-outro .reasons li {{ margin-bottom: 0.6rem; color: var(--muted); }}
+.flow {{ display: flex; flex-direction: column; }}
+.flow-stage {{
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  padding: 1.1rem 1.3rem 1.15rem;
+}}
+.flow-stage h2 {{ font-size: 1.2rem; font-weight: 700; margin: 0.15rem 0 0.5rem; color: var(--text); }}
+.flow-stage p {{ margin-bottom: 0.6rem; }}
+.flow-stage p:last-of-type {{ margin-bottom: 0; }}
+.flow-kind {{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600;
+  color: var(--accent);
+}}
+.flow-manual {{ border-left: 3px solid var(--accent); }}
+.flow-optional {{
+  border: 1px dashed var(--border); border-radius: 8px;
+  padding: 0.6rem 0.8rem; background: var(--chip); margin-top: 0.6rem;
+}}
+.flow-loc {{ display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.75rem; }}
+.flow-loc span {{
+  font-size: 11px; color: var(--muted); border: 1px solid var(--border);
+  border-radius: 999px; padding: 0.1rem 0.6rem; background: var(--bg);
+}}
+.flow-arrow {{ text-align: center; color: var(--accent); font-size: 1.3rem; line-height: 1; padding: 0.45rem 0; }}
+.proc-status.pre-edit {{
+  display: inline-block; border: 1px solid var(--accent); color: var(--accent);
+  border-radius: 999px; font-size: 10px; letter-spacing: 0.04em; font-weight: 600;
+  padding: 0.05rem 0.5rem; margin-left: 0.3rem;
+}}
+main code {{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.84em; background: var(--chip); border: 1px solid var(--border);
+  padding: 0.08em 0.4em; border-radius: 5px; white-space: nowrap;
+}}
+@media print {{ body {{ background: #fff; color: #000; font-size: 11.5pt; }} .crumb {{ display: none; }} }}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="mast">
+    <div class="crumb"><a href="/">&larr; The Hannan Tapes</a> &nbsp;&middot;&nbsp; <a href="/manual/">The Manual</a></div>
+    <h1>The Process</h1>
+    <p class="sub">From DAT tape to show page, step by step.</p>
+  </header>
+  <main>
+{body}
+  </main>
+</div>
+</body>
+</html>
+'''
 
 def build_manual():
     """Render PUBLISHING.md (the repo's owner's manual) as /manual/ — built
