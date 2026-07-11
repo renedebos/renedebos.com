@@ -27,6 +27,8 @@
   var idx = -1;
   var audio = new Audio();
   audio.preload = "none";
+  var seeking = false;
+  var RANGE_MAX = 1000;
 
   var esc = function (s) {
     return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
@@ -280,7 +282,7 @@
     }
     idx = i;
     audio.src = streamUrl(queue[idx]);
-    audio.play();
+    attemptPlay();
     renderNow();
     highlight();
     if ("mediaSession" in navigator) {
@@ -301,9 +303,14 @@
 
   audio.addEventListener("ended", function () { playAt(idx + 1); });
   audio.addEventListener("timeupdate", function () {
-    var fill = nowEl.querySelector(".progress-bar-fill");
+    var range = nowEl.querySelector(".progress-range");
     var cur = nowEl.querySelector(".pl-time-current");
-    if (fill) fill.style.width = (audio.duration ? audio.currentTime / audio.duration * 100 : 0) + "%";
+    var pct = audio.duration ? audio.currentTime / audio.duration * 100 : 0;
+    if (range && !seeking) {
+      range.value = Math.round(pct * RANGE_MAX / 100);
+      range.style.background = "linear-gradient(to right, var(--accent) " + pct + "%, var(--border) " + pct + "%)";
+      range.setAttribute("aria-valuetext", formatTime(audio.currentTime));
+    }
     if (cur) cur.textContent = formatTime(audio.currentTime);
   });
   audio.addEventListener("play", function () { syncPlayBtn(); });
@@ -312,6 +319,18 @@
   function syncPlayBtn() {
     var b = nowEl.querySelector('[data-act="play"]');
     if (b) b.textContent = audio.paused ? "▶" : "❚❚";
+  }
+
+  // audio.play() returns a promise that rejects on autoplay blocks, decode
+  // errors, or a dropped connection — unhandled, that fails silently and the
+  // UI just looks stuck. Surface it in the status line instead.
+  function attemptPlay() {
+    var p = audio.play();
+    if (p && p.catch) {
+      p.catch(function () {
+        statusEl.textContent = "Couldn't start playback — tap play to try again.";
+      });
+    }
   }
 
   function trackMeta(t) {
@@ -335,7 +354,8 @@
       + '<button type="button" class="pl-btn" data-act="next" aria-label="Next">⏭</button>'
       + "</div>"
       + '<div class="pl-progress"><span class="pl-time-current">0:00</span>'
-      + '<div class="progress-bar-track"><div class="progress-bar-fill"></div></div>'
+      + '<input type="range" class="progress-range" min="0" max="' + RANGE_MAX + '" value="0" step="1" '
+      + 'aria-label="Seek ' + esc(t.title) + '" aria-valuetext="0:00">'
       + "<span>" + formatTime(t.durationSec) + "</span></div>";
   }
 
@@ -345,14 +365,22 @@
       if (b.dataset.act === "prev") {
         if (audio.currentTime > 3) audio.currentTime = 0; else playAt(idx - 1);
       } else if (b.dataset.act === "next") playAt(idx + 1);
-      else audio.paused ? audio.play() : audio.pause();
-      return;
+      else if (audio.paused) attemptPlay(); else audio.pause();
     }
-    var bar = e.target.closest(".progress-bar-track");
-    if (bar && audio.duration) {
-      var r = bar.getBoundingClientRect();
-      audio.currentTime = (e.clientX - r.left) / r.width * audio.duration;
-    }
+  });
+
+  // Native range: dragging, clicking, and arrow-key seeking all fire 'input'
+  // uniformly, so one delegated handler covers mouse, touch, and keyboard —
+  // delegated since renderNow() replaces the element on every track change.
+  nowEl.addEventListener("mousedown", function (e) { if (e.target.closest(".progress-range")) seeking = true; });
+  nowEl.addEventListener("touchstart", function (e) { if (e.target.closest(".progress-range")) seeking = true; });
+  nowEl.addEventListener("change", function (e) { if (e.target.closest(".progress-range")) seeking = false; });
+  nowEl.addEventListener("input", function (e) {
+    var range = e.target.closest(".progress-range");
+    if (!range || !audio.duration) return;
+    var pct = (range.value / RANGE_MAX) * 100;
+    range.style.background = "linear-gradient(to right, var(--accent) " + pct + "%, var(--border) " + pct + "%)";
+    audio.currentTime = (pct / 100) * audio.duration;
   });
 
   // ── queue list ────────────────────────────────────────────────────────────

@@ -98,7 +98,8 @@ def build_home():
     return HOME_SHELL.format(
         nav_links="\n    ".join(f'<a href="{href}">{label}</a>'
                                  for label, href in SITE_PAGES[1:]),
-        n_shows=len(tracked),
+        n_shows=len(M["shows"]),
+        n_indexed=len(tracked),
         n_tracks=n_tracks,
         cards=cards,
         why_card=_home_info_card("why.html", "Read the full story"),
@@ -142,7 +143,7 @@ HOME_SHELL = '''<!DOCTYPE html>
 
   <main id="main">
   <section class="hero">
-    <div class="eyebrow">Live &middot; DAT-sourced &middot; 1998&ndash;2003</div>
+    <div class="eyebrow">Live &middot; DAT-sourced &middot; primarily 1998&ndash;2003</div>
     <h1>The <em>Hannan</em> Tapes</h1>
     <p class="lede">Live recordings of Jerry Hannan, Sean Hannan, and the Mad Hannans, taped from the audience and soundboard at clubs across Marin County. Digitized, cataloged, and streamable &mdash; hiss and all.</p>
     <div class="actions">
@@ -159,7 +160,7 @@ HOME_SHELL = '''<!DOCTYPE html>
 
   <div class="grid-head">
     <h2>Recently Added</h2>
-    <span>{n_shows} SHOWS &middot; {n_tracks} TRACKS</span>
+    <span>{n_shows} SHOWS &middot; {n_indexed} INDEXED &middot; {n_tracks} TRACKS</span>
   </div>
 
   <div class="grid">
@@ -635,6 +636,7 @@ def build_show(show):
                      ' — audible dropouts">dropouts</span>') if t.get("dropouts") else ""
             title_html = (f'<div class="track-main"><span class="track-title" data-info="{info}">'
                           f'{esc(t["title"])}</span>{badge}</div>')
+            play_label = esc(f'{t["title"]}, {track_artist}, {date_with_subtitle(show)}')
             # Password-protected lossless FLAC download when a FLAC exists;
             # otherwise the track is stream-only.
             dl_btns = []
@@ -648,7 +650,7 @@ def build_show(show):
                       "".join("\n          " + b for b in dl_btns) +
                       "\n        </div>") if dl_btns else ""
                 rows.append(f'''      <div class="track-row ws-track" id="track-{t["num"]}" data-trackid="{t["num"]}" data-src="{esc(stream)}">
-        <button class="play-btn" aria-label="Play">{PLAY_SVG}</button>
+        <button class="play-btn" aria-label="Play {play_label}" data-play-label="{play_label}">{PLAY_SVG}</button>
         <span class="track-num">{t["num"]:02d}</span>
         {title_html}
         <div class="ws-wave"></div>
@@ -657,11 +659,11 @@ def build_show(show):
             else:
                 dl = "".join("\n        " + b for b in dl_btns)
                 rows.append(f'''      <div class="track-row custom-player" id="track-{t["num"]}" data-src="{esc(stream)}">
-        <button class="play-btn" aria-label="Play">{PLAY_SVG}</button>
+        <button class="play-btn" aria-label="Play {play_label}" data-play-label="{play_label}">{PLAY_SVG}</button>
         <span class="track-num">{t["num"]:02d}</span>
         {title_html}
         <span class="time-label current" data-duration="{esc(t["duration"])}">{esc(t["duration"])}</span>{dl}
-        <div class="progress-bar-track"><div class="progress-bar-fill"></div></div>
+        <input type="range" class="progress-range" min="0" max="1000" value="0" step="1" aria-label="Seek {play_label}" aria-valuetext="0:00">
       </div>''')
         hint = ("Every song streams in full &middot; lossless FLAC downloads are password protected"
                 if has_flac else "Every song streams in full")
@@ -683,7 +685,8 @@ def build_show(show):
     for r in canon:
         title = r["label"] or "Complete show"
         meta = [("Source", r["source"]), ("Format", r["format"]), ("Size", r["size"])]
-        cards.append(recording_card(title, meta, r["source"], r["file"], r.get("stream")))
+        play_label = f'{title}, {artist["name"]}, {date_with_subtitle(show)}'
+        cards.append(recording_card(title, meta, r["source"], r["file"], r.get("stream"), play_label))
     label = "Full Recording" if len(canon) == 1 else "Full Recording &middot; " + f"{len(canon)} parts"
     streamed = any(r.get("stream") for r in canon)
     hint = ('\n    <p class="track-hint">Full shows stream as 320&nbsp;kbps MP3 &mdash; '
@@ -701,7 +704,8 @@ def build_show(show):
         cards = []
         for r in alts:
             meta = [("Source", r["source"]), ("Format", r["format"]), ("Size", r["size"])]
-            cards.append(recording_card(r["alt_label"], meta, r["source"], r["file"], r.get("stream")))
+            play_label = f'{r["alt_label"]}, {artist["name"]}, {date_with_subtitle(show)}'
+            cards.append(recording_card(r["alt_label"], meta, r["source"], r["file"], r.get("stream"), play_label))
         parts.append(f'''
   <section>
     <details class="alt-details">
@@ -778,8 +782,9 @@ def build_wavesurfer_lab():
             dl_btns.append(dl_button(t["flac"], title=flac_title))
         dl_inner = "".join("\n          " + b for b in dl_btns)
         dl = f'\n        <div class="ws-dl">{dl_inner}\n        </div>' if dl_btns else ""
+        play_label = esc(f'{t["title"]}, {track_artist}, {date_with_subtitle(show)}')
         rows.append(f'''      <div class="ws-row" id="track-{t["num"]}" data-trackid="{t["num"]}" data-src="{esc(stream)}">
-        <button class="play-btn" aria-label="Play">{PLAY_SVG}</button>
+        <button class="play-btn" aria-label="Play {play_label}" data-play-label="{play_label}">{PLAY_SVG}</button>
         <span class="track-num">{t["num"]:02d}</span>
         <span class="track-title" data-info="{info}">{esc(t["title"])}</span>
         <div class="ws-wave"></div>
@@ -831,7 +836,7 @@ def build_songs_index():
              if a in s["artists"]
              else '<span class="artist-dot empty"></span>')
             for a in present)
-        occs = "\n".join(_song_occ_html(o) for o in s["occ"])
+        occs = "\n".join(_song_occ_html(o, s["canonical"]) for o in s["occ"])
         items.append(f'''    <details class="song-item" data-artists="{' '.join(s['artists'])}" data-plays="{s['plays']}" data-title="{esc(song_norm(s['canonical']))}">
       <summary>
         <span class="song-plays">{s['plays']}&times;</span>
@@ -908,7 +913,7 @@ def build_song_page(s):
         if alt:
             parts.append(f'''
   <section class="about"><p class="song-variants">Also listed as: {alt}</p></section>''')
-    occs = "\n".join(_song_occ_html(o) for o in s["occ"])
+    occs = "\n".join(_song_occ_html(o, s["canonical"]) for o in s["occ"])
     parts.append(f'''
   <section id="tracks">
     <div class="group-label-bare">Played {s['plays']} time{plural} &middot; {esc(arts)}</div>

@@ -615,19 +615,25 @@ main {
 .share-btn:hover { background: var(--accent-light); color: var(--accent); }
 .share-btn svg { width: 14px; height: 14px; display: block; }
 
-.track-row .progress-bar-track {
+.track-row .progress-range {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
   width: 100%;
   height: 2px;
-  background: transparent;
   border-radius: 0;
+  background: transparent;
   opacity: 0;
   transition: opacity 0.15s;
 }
-.track-row.playing .progress-bar-track { opacity: 1; background: var(--border); }
+.track-row.playing .progress-range,
+.track-row .progress-range:focus-visible { opacity: 1; }
+.track-row .progress-range::-webkit-slider-runnable-track { height: 2px; border-radius: 0; background: transparent; }
+.track-row .progress-range::-webkit-slider-thumb { width: 8px; height: 8px; margin-top: -3px; }
+.track-row .progress-range::-moz-range-track { height: 2px; border-radius: 0; }
+.track-row .progress-range::-moz-range-progress { height: 2px; border-radius: 0; }
+.track-row .progress-range::-moz-range-thumb { width: 8px; height: 8px; }
 
 /* waveform track rows (show pages with pre-computed peaks) reuse the bare .ws-wave
    rule; the title yields space so the waveform can fill the row */
@@ -868,22 +874,41 @@ main {
   gap: 5px;
 }
 
-.progress-bar-track {
+/* Native <input type="range"> seek control — keyboard, touch, and mouse all
+   work natively (arrow keys, dragging, click-to-seek), unlike the div-based
+   bar this replaced. JS sets the filled portion via an inline background
+   gradient (WebKit/Blink reads the input's own background through a
+   transparent ::-webkit-slider-runnable-track); Firefox fills natively via
+   ::-moz-range-progress. */
+.progress-range {
+  -webkit-appearance: none;
+  appearance: none;
   width: 100%;
   height: 3px;
+  border-radius: 2px;
   background: var(--border);
-  border-radius: 2px;
   cursor: pointer;
-  position: relative;
-  overflow: hidden;
+  outline-offset: 4px;
 }
-
-.progress-bar-fill {
-  height: 100%;
+.progress-range::-webkit-slider-runnable-track { height: 3px; border-radius: 2px; background: transparent; }
+.progress-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 11px;
+  height: 11px;
+  margin-top: -4px;
+  border-radius: 50%;
   background: var(--accent);
-  border-radius: 2px;
-  width: 0%;
-  transition: width 0.1s linear;
+  cursor: pointer;
+}
+.progress-range::-moz-range-track { height: 3px; border-radius: 2px; background: var(--border); }
+.progress-range::-moz-range-progress { height: 3px; border-radius: 2px; background: var(--accent); }
+.progress-range::-moz-range-thumb {
+  width: 11px;
+  height: 11px;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
 }
 
 .time-row {
@@ -1553,7 +1578,7 @@ a.artist-chip:hover { filter: brightness(1.08); }
   display: flex; align-items: center; gap: 0.6rem;
   font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums;
 }
-.pl-progress .progress-bar-track { flex: 1; }
+.pl-progress .progress-range { flex: 1; }
 
 /* Queue rows are buttons but dress like search results. */
 .pl-row {

@@ -19,6 +19,15 @@ const fmt = (s) => {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 };
 
+// Mirrors player.js's setPlayState — the accessible name includes the track
+// (song/artist/date) from data-play-label, so a screen reader doesn't hear an
+// undifferentiated "Play" on every single row.
+function setPlayState(btn, playing, iconHtml) {
+  btn.innerHTML = iconHtml;
+  const label = btn.dataset.playLabel;
+  btn.setAttribute('aria-label', label ? `${playing ? 'Pause' : 'Play'} ${label}` : (playing ? 'Pause' : 'Play'));
+}
+
 function build(PEAKS) {
   const rows = Array.from(document.querySelectorAll('.ws-row, .ws-track'));
   const instances = [];
@@ -65,16 +74,16 @@ function build(PEAKS) {
     ws.on('play', () => {
       instances.forEach((w, i) => { if (i !== idx) w.pause(); });
       row.classList.add('playing');
-      btn.innerHTML = PAUSE;
+      setPlayState(btn, true, PAUSE);
     });
     ws.on('pause', () => {
       row.classList.remove('playing');
-      btn.innerHTML = PLAY;
+      setPlayState(btn, false, PLAY);
     });
     ws.on('timeupdate', (t) => { time.textContent = fmt(t); });
     ws.on('finish', () => {
       row.classList.remove('playing');
-      btn.innerHTML = PLAY;
+      setPlayState(btn, false, PLAY);
       time.textContent = durLabel;
       // Natural end fires 'finish' twice (reactive duration check + media 'ended'),
       // so advance with an idempotent play() — never the play/pause toggle, which a

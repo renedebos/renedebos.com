@@ -28,7 +28,7 @@ def dl_button(file, *, title="Download"):
     return (f'<a class="download-btn" href="{esc(url)}" aria-label="{esc(title)}" '
             f'download="{esc(name)}" title="{esc(title)}">{DL_SVG}</a>')
 
-def player(file, duration=None, download_file=None, version=None):
+def player(file, duration=None, download_file=None, version=None, label=None):
     """A custom-player row: play button, progress bar, and (optionally) a
     password-protected download button.
 
@@ -36,7 +36,9 @@ def player(file, duration=None, download_file=None, version=None):
     lossless original — the row offers its password-gated download; there are
     no free downloads, streaming is the only ungated path. `version`
     cache-busts the stream URL (pass a track's MD5) so a re-normalized upload
-    goes live immediately.
+    goes live immediately. `label` (song/artist/date) becomes the play
+    button's accessible name — otherwise a screen reader hears "Play" on
+    every single instance with no way to tell them apart.
     """
     stream = stream_url(file, version)
     end_label = f'<span class="time-label">{esc(duration)}</span>' if duration else ""
@@ -46,23 +48,26 @@ def player(file, duration=None, download_file=None, version=None):
                               title=f"Download lossless {loss_fmt} (password protected)")
     else:
         downloads = ""
+    play_label = f' {esc(label)}' if label else ""
+    play_data = f' data-play-label="{esc(label)}"' if label else ""
+    seek_label = f'Seek{play_label}' if label else "Seek"
     return f'''<div class="custom-player" data-src="{esc(stream)}">
-          <button class="play-btn" aria-label="Play">{PLAY_SVG}</button>
+          <button class="play-btn" aria-label="Play{play_label}"{play_data}>{PLAY_SVG}</button>
           <div class="progress-wrap">
-            <div class="progress-bar-track"><div class="progress-bar-fill"></div></div>
+            <input type="range" class="progress-range" min="0" max="1000" value="0" step="1" aria-label="{seek_label}" aria-valuetext="0:00">
             <div class="time-row"><span class="time-label current">0:00</span>{end_label}</div>
           </div>
           {downloads}
         </div>'''
 
-def recording_card(title, meta_pairs, badge, file, stream_file=None):
+def recording_card(title, meta_pairs, badge, file, stream_file=None, play_label=None):
     # Stream the lossy proxy (stream_file) when one exists; the lossless `file`
     # is only reachable through the download/password flow.
     grid = "".join(f'<span class="meta-label">{esc(k)}</span><span class="meta-value">{esc(v)}</span>'
                    for k, v in meta_pairs if v)
     lossless = file.rsplit(".", 1)[-1].lower() in ("wav", "flac")
     play = player(stream_file or file,
-                  download_file=file if lossless else None)
+                  download_file=file if lossless else None, label=play_label)
     return f'''      <div class="recording-item">
         <div class="recording-meta">
           <div>
@@ -557,8 +562,9 @@ def contact_block():
   });
   </script>'''
 
-def _song_occ_html(o):
-    p = player(o["file"], duration=o.get("duration"), version=o["ver"])
+def _song_occ_html(o, song_title):
+    label = f'{song_title}, {o["artist_name"]}, {o["date"]}'
+    p = player(o["file"], duration=o.get("duration"), version=o["ver"], label=label)
     anchor = f'{esc(o["url"])}#track-{o["num"]}'
     return f'''<div class="song-occ">
         <div class="song-occ-head">

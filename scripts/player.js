@@ -12,7 +12,17 @@ const playIcon = `<svg viewBox="0 0 16 16" fill="currentColor"><polygon points="
 const pauseIcon = `<svg viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="2" width="4" height="12"/><rect x="9" y="2" width="4" height="12"/></svg>`;
 const loadingIcon = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 0.75s linear infinite;display:block"><circle cx="8" cy="8" r="5.5" stroke-dasharray="20" stroke-dashoffset="6" stroke-linecap="round"/></svg>`;
 
+// Every play button carries the track it controls in data-play-label (song,
+// artist, date) so a screen reader hears "Play <track>" / "Pause <track>"
+// instead of an undifferentiated "Play" repeated on every row.
+function setPlayState(btn, playing, iconHtml) {
+  btn.innerHTML = iconHtml;
+  const label = btn.dataset.playLabel;
+  btn.setAttribute('aria-label', label ? `${playing ? 'Pause' : 'Play'} ${label}` : (playing ? 'Pause' : 'Play'));
+}
+
 let activePlayer = null;
+const RANGE_MAX = 1000;
 
 document.querySelectorAll('.custom-player').forEach(player => {
   const src = player.dataset.src;
@@ -20,20 +30,28 @@ document.querySelectorAll('.custom-player').forEach(player => {
   audio.preload = 'none';
 
   const btn = player.querySelector('.play-btn');
-  const fill = player.querySelector('.progress-bar-fill');
-  const track = player.querySelector('.progress-bar-track');
+  const range = player.querySelector('.progress-range');
   const currentEl = player.querySelector('.current');
 
   let loaded = false;
+  let seeking = false;
 
   function load() {
     if (!loaded) { audio.src = src; loaded = true; }
   }
 
+  function setFill(pct) {
+    range.style.background = `linear-gradient(to right, var(--accent) ${pct}%, var(--border) ${pct}%)`;
+  }
+
   audio.addEventListener('timeupdate', () => {
     const pct = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
-    fill.style.width = pct + '%';
+    if (!seeking) {
+      range.value = Math.round(pct * RANGE_MAX / 100);
+      setFill(pct);
+    }
     currentEl.textContent = formatTime(audio.currentTime);
+    range.setAttribute('aria-valuetext', formatTime(audio.currentTime));
   });
 
   audio.addEventListener('waiting', () => {
@@ -41,7 +59,7 @@ document.querySelectorAll('.custom-player').forEach(player => {
   });
 
   audio.addEventListener('playing', () => {
-    btn.innerHTML = pauseIcon;
+    setPlayState(btn, true, pauseIcon);
     activePlayer = player;
   });
 
@@ -49,8 +67,9 @@ document.querySelectorAll('.custom-player').forEach(player => {
   audio.addEventListener('pause', () => player.classList.remove('playing'));
 
   audio.addEventListener('ended', () => {
-    btn.innerHTML = playIcon;
-    fill.style.width = '0%';
+    setPlayState(btn, false, playIcon);
+    range.value = 0;
+    setFill(0);
     currentEl.textContent = currentEl.dataset.duration || '0:00';
     player.classList.remove('playing');
     if (activePlayer === player) activePlayer = null;
@@ -69,23 +88,28 @@ document.querySelectorAll('.custom-player').forEach(player => {
       document.querySelectorAll('.custom-player').forEach(p => {
         if (p !== player) {
           const a = p._audio;
-          if (a && !a.paused) { a.pause(); p.querySelector('.play-btn').innerHTML = playIcon; }
+          if (a && !a.paused) { a.pause(); setPlayState(p.querySelector('.play-btn'), false, playIcon); }
         }
       });
-      audio.play();
-      btn.innerHTML = audio.readyState < 3 ? loadingIcon : pauseIcon;
+      audio.play().catch(() => setPlayState(btn, false, playIcon));
+      setPlayState(btn, true, audio.readyState < 3 ? loadingIcon : pauseIcon);
     } else {
       audio.pause();
-      btn.innerHTML = playIcon;
+      setPlayState(btn, false, playIcon);
     }
   });
 
-  track.addEventListener('click', e => {
+  // Native range: dragging, clicking, and arrow-key seeking all fire 'input'
+  // uniformly, so this one handler covers mouse, touch, and keyboard.
+  range.addEventListener('mousedown', () => { seeking = true; });
+  range.addEventListener('touchstart', () => { seeking = true; });
+  range.addEventListener('input', () => {
     load();
-    const rect = track.getBoundingClientRect();
-    const pct = (e.clientX - rect.left) / rect.width;
-    if (audio.duration) audio.currentTime = pct * audio.duration;
+    const pct = (range.value / RANGE_MAX) * 100;
+    setFill(pct);
+    if (audio.duration) audio.currentTime = (pct / 100) * audio.duration;
   });
+  range.addEventListener('change', () => { seeking = false; });
 
   player._audio = audio;
 });
@@ -99,11 +123,11 @@ document.addEventListener('keydown', e => {
   const audio = activePlayer._audio;
   const btn = activePlayer.querySelector('.play-btn');
   if (audio.paused) {
-    audio.play();
-    btn.innerHTML = loadingIcon;
+    audio.play().catch(() => setPlayState(btn, false, playIcon));
+    setPlayState(btn, true, loadingIcon);
   } else {
     audio.pause();
-    btn.innerHTML = playIcon;
+    setPlayState(btn, false, playIcon);
   }
 });
 
