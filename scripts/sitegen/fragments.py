@@ -14,7 +14,7 @@ HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 DL_SVG = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
           'stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v13"/>'
-          '<path d="M6 12l6 6 6-6"/></svg>')
+          '<path d="M6 12l6 6 6-6"/><path d="M8 21h8"/></svg>')
 
 PLAY_SVG = '<svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg>'
 
