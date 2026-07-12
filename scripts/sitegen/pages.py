@@ -205,8 +205,8 @@ def build_archive():
   <p class="archive-legend">
     <span class="src-tag src-sbd">SBD</span> Soundboard &middot;
     <span class="src-tag">AUD</span> Audience recording &middot;
-    <span class="proc-status pre-edit">NR</span> Noise-reduced &middot;
-    <span class="proc-status pre-edit">PE</span> Pre-edited (EQ, etc.) &middot;
+    <span class="proc-status pre-edit pre-edit-nr">NR</span> Noise-reduced &middot;
+    <span class="proc-status pre-edit pre-edit-pe">PE</span> Pre-edited (EQ, etc.) &middot;
     <span class="show-tracks">&#9834; N</span> Individual tracks available
   </p>'''
     views = f'''

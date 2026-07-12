@@ -1029,7 +1029,9 @@ main {
 .proc-status.status-partial { color: #d9b65c; }
 .proc-status.status-redo { color: #e08a4c; }
 .proc-status.status-needs-processing { color: var(--muted); }
-.proc-status.pre-edit { color: #6ea3d8; cursor: help; }
+.proc-status.pre-edit { cursor: help; }
+.proc-status.pre-edit-nr { color: #6ea3d8; }
+.proc-status.pre-edit-pe { color: #9d85c9; }
 .tech-table td.tver { font-family: var(--mono); text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
 
 /* standalone audio-processing status line (top of every show page) */

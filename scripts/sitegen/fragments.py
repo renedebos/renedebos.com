@@ -286,6 +286,11 @@ def _pre_edit_label(pre_edits):
     manual Audacity work (EQ, etc.) gets the generic "pre-edited" bucket."""
     return "noise-reduced" if "noise reduction" in pre_edits.lower() else "pre-edited"
 
+def _pre_edit_class(label):
+    """CSS modifier so the NR badge and the generic pre-edited badge don't
+    share a color with each other or with the "done" status badge."""
+    return "pre-edit-nr" if label == "noise-reduced" else "pre-edit-pe"
+
 def show_row(show, with_artist=False):
     artist = next(a for a in M["artists"] if a["id"] == show["artist"])
     n_alt = sum(1 for r in show["recordings"] if r["alternate"])
@@ -310,7 +315,7 @@ def show_row(show, with_artist=False):
     if proc and proc.get("pre_edits"):
         label = _pre_edit_label(proc["pre_edits"])
         tag = "NR" if label == "noise-reduced" else "PE"
-        nr_html = (f' <span class="proc-status pre-edit show-nr" '
+        nr_html = (f' <span class="proc-status pre-edit {_pre_edit_class(label)} show-nr" '
                    f'title="{esc(proc["pre_edits"])}">{tag}</span>')
     subtitle = f' &middot; <em>{esc(show["subtitle"])}</em>' if show.get("subtitle") else ""
     primary_size = next((r["size"] for r in show["recordings"] if not r["alternate"]), "—")
@@ -389,7 +394,7 @@ def status_line(show):
     nr = ""
     if proc and proc.get("pre_edits"):
         label = _pre_edit_label(proc["pre_edits"])
-        nr = (f'<span class="proc-status pre-edit" '
+        nr = (f'<span class="proc-status pre-edit {_pre_edit_class(label)}" '
               f'title="{esc(proc["pre_edits"])}">{label}</span>')
     return (f'''
   <p class="proc-status-line">Audio processing'''
@@ -425,7 +430,7 @@ def tech_data_section(show, proc):
     # out even while the table is collapsed; hover shows the recorded detail.
     if proc.get("pre_edits"):
         label = _pre_edit_label(proc["pre_edits"])
-        badge += (f' <span class="proc-status pre-edit" '
+        badge += (f' <span class="proc-status pre-edit {_pre_edit_class(label)}" '
                   f'title="{esc(proc["pre_edits"])}">{label}</span>')
     pt = proc.get("tracks", {})
     rows = []
