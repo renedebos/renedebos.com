@@ -19,6 +19,12 @@
 // collision with different content — so the same playlist always maps to the
 // same slug and re-shares dedupe. Entries never expire.
 
+// Permanent redirects for retired URLs (SEO/bookmarks), checked before the
+// asset layer. Add an entry here whenever a page's path changes.
+const LEGACY_REDIRECTS = {
+  "/jerry-hannan-19-broadway-2001/": "/shows/jerry-19-broadway-2001-01-08/",
+};
+
 const ID_RE = /^[a-z0-9-]{1,80}$/;
 // Liberal in what we accept: trailing slash (chat apps often append one when
 // linkifying), any letter case, and HEAD as well as GET (link previewers).
@@ -53,6 +59,9 @@ function secure(resp) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+
+    const legacyTarget = LEGACY_REDIRECTS[url.pathname];
+    if (legacyTarget) return secure(redirect(legacyTarget, {}, 301));
 
     if (url.pathname === "/api/playlist" && request.method === "POST") {
       return secure(await createShortLink(request, env, url.origin));
@@ -165,7 +174,7 @@ function err(status, message) {
     { status, headers: { "Content-Type": "application/json" } });
 }
 
-function redirect(to, extra) {
+function redirect(to, extra, status) {
   return new Response(null,
-    { status: 302, headers: Object.assign({ Location: to }, extra || {}) });
+    { status: status || 302, headers: Object.assign({ Location: to }, extra || {}) });
 }
