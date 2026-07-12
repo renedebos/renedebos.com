@@ -41,10 +41,9 @@ def _home_info_card(name, summary_label):
 
 HOME_SOURCE_SHORT = {"SBD": "Soundboard", "AUD": "Audience"}
 
-def _home_show_card(show, featured=False):
+def _home_show_card(show):
     n = len(show["tracks"])
-    tags = (('<span class="tag featured">Featured</span>' if featured else "") +
-            ('<span class="tag highlight">&#9733; Highlight</span>' if show.get("highlight") else "") +
+    tags = (('<span class="tag highlight">&#9733; Highlight</span>' if show.get("highlight") else "") +
             f'<span class="tag">{esc(ARTIST_SHORT.get(show["artist"], artist_name(show["artist"])))}</span>' +
             f'<span class="tag">{esc(HOME_SOURCE_SHORT.get(show["source"], show["source"]))}</span>')
     added = show.get("added")
@@ -85,12 +84,8 @@ def build_home():
     rest of the site doesn't share, per the 2026-07-10 redesign."""
     tracked = [s for s in M["shows"] if s.get("tracks")]
     n_tracks = sum(len(s["tracks"]) for s in tracked)
-    featured_slug = M["featured"][0] if M.get("featured") else None
-    featured = next((s for s in tracked if s["slug"] == featured_slug), None)
-    rest = sorted((s for s in tracked if s["slug"] != featured_slug),
-                  key=added_sort_key, reverse=True)
-    grid_shows = ([featured] if featured else []) + rest[:6 - (1 if featured else 0)]
-    cards = "\n".join(_home_show_card(s, featured=(s is featured)) for s in grid_shows)
+    grid_shows = sorted(tracked, key=added_sort_key, reverse=True)[:6]
+    cards = "\n".join(_home_show_card(s) for s in grid_shows)
 
     notes = [a for a in M["artists"] if a.get("note")]
     artist_links = (f'\n    <div class="artist-links">{" &middot; ".join(a["note"] for a in notes)}</div>'

@@ -131,7 +131,6 @@ h1 em { font-style: italic; color: var(--accent); }
   background: var(--accent-dim); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
   border-radius: 99px; padding: 3px 9px; color: var(--accent);
 }
-.tag.featured { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 700; }
 .tag.highlight { background: none; border-color: color-mix(in srgb, var(--highlight) 40%, transparent); color: var(--highlight); font-weight: 700; }
 
 .card-foot { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
