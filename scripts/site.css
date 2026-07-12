@@ -67,8 +67,44 @@ body {
   line-height: 1.6;
 }
 
+/* Compact top bar — logo mark + inline nav, matching the homepage's header
+   (2026-07-12) so the nav no longer jumps position when leaving Home. The
+   per-page title (eyebrow/h1/tagline) moved to .page-title below it. */
 header {
-  padding: 5rem 2rem 4rem;
+  display: flex;
+  align-items: center;
+  gap: 1.6rem;
+  padding: 1rem 2rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-size: 1.05rem;
+  flex-shrink: 0;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.mark:hover, .mark:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  outline: none;
+}
+
+.page-title {
+  padding: 3.5rem 2rem 3rem;
   text-align: center;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
@@ -108,24 +144,14 @@ h1 em {
 
 nav {
   display: flex;
-  justify-content: center;
   flex-wrap: wrap;
-  gap: 2rem;
-  padding: 1.5rem 2rem;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  gap: 0.5rem 1.6rem;
 }
 
 nav a {
-  font-size: 13px;
+  font-size: 0.85rem;
   text-decoration: none;
   color: var(--muted);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  font-weight: 500;
   transition: color 0.2s;
   padding-bottom: 2px;
   border-bottom: 1.5px solid transparent;

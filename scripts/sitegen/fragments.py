@@ -108,14 +108,17 @@ def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main,
 <a class="skip-link" href="#main">Skip to content</a>
 
 <header>
+  <a class="mark" href="/" aria-label="The Hannan Tapes &mdash; home">&#9834;</a>
+  <nav>
+{nav}
+  </nav>
+</header>
+
+<div class="page-title">
   <p class="site-eyebrow">{eyebrow}</p>
   <h1>{heading}</h1>
   <p class="site-tagline">{tagline}</p>
-</header>
-
-<nav>
-{nav}
-</nav>
+</div>
 
 <main id="main">
 {main}
@@ -154,7 +157,7 @@ EXTRA_PAGES = [
 
 def site_nav(active=None):
     links = []
-    for label, href in SITE_PAGES:
+    for label, href in SITE_PAGES[1:]:  # skip Home — the header's logo mark covers it
         cls = ' class="active"' if label == active else ""
         links.append(f'  <a href="{href}"{cls}>{label}</a>')
     return "\n".join(links)
