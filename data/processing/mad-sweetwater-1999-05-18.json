@@ -1,0 +1,234 @@
+{
+  "slug": "mad-sweetwater-1999-05-18",
+  "target_lufs": -20,
+  "tp_ceiling": -1,
+  "source": "24-bit / 48 kHz FLAC",
+  "pre_edits": "EQ applied in Audacity — Treatment: brightened the muddy Sweetwater room sound — Applied to: whole show",
+  "filters": "none",
+  "tool": "ffmpeg loudnorm",
+  "workflow_version": 3,
+  "ffmpeg": "7.1.3-0+deb13u1",
+  "date": "2026-07-11",
+  "tracks": {
+    "1": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -25.4,
+      "lufs": -19.97,
+      "tp": -0.63,
+      "mp3_tp": -0.31,
+      "lra": 7.3,
+      "md5": "46298d7d17ea0812877dc3d8430da8af"
+    },
+    "2": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -22.4,
+      "lufs": -20.14,
+      "tp": -0.98,
+      "mp3_tp": -0.53,
+      "lra": 13.4,
+      "md5": "590f6a25429d8e2ff76a497f40578dd9"
+    },
+    "3": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -22.3,
+      "lufs": -19.97,
+      "tp": -0.98,
+      "mp3_tp": -0.74,
+      "lra": 8.9,
+      "md5": "b142e586dfc153236fd2e124dfe48c71"
+    },
+    "4": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -23.5,
+      "lufs": -20.11,
+      "tp": -0.98,
+      "mp3_tp": -0.56,
+      "lra": 9.1,
+      "md5": "d38bf63d88938db9c5fcbd5dc0d403e1"
+    },
+    "5": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.0,
+      "lufs": -20.05,
+      "tp": -0.97,
+      "mp3_tp": -0.69,
+      "lra": 12.6,
+      "md5": "5593834ceea4232e0d8bbe0e05cebeff"
+    },
+    "6": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -22.6,
+      "lufs": -19.99,
+      "tp": -0.99,
+      "mp3_tp": -0.81,
+      "lra": 4.3,
+      "md5": "eeb27b475105d96dec747d3e7d37f713"
+    },
+    "7": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.5,
+      "lufs": -20.12,
+      "tp": -0.92,
+      "mp3_tp": -0.68,
+      "lra": 13.8,
+      "md5": "281f959aae349851d88138df3e29d8fb"
+    },
+    "8": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -24.2,
+      "lufs": -20.15,
+      "tp": -0.93,
+      "mp3_tp": -0.75,
+      "lra": 9.1,
+      "md5": "875ae6dceb0f2013f619b9f32744a943"
+    },
+    "9": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -36.2,
+      "lufs": -20.0,
+      "tp": -2.14,
+      "mp3_tp": -2.12,
+      "lra": 7.4,
+      "md5": "4110059548ad35bc150723118596e707"
+    },
+    "10": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.8,
+      "lufs": -20.16,
+      "tp": -1.0,
+      "mp3_tp": -0.72,
+      "lra": 17.7,
+      "md5": "24421f82050b7a0231fd165f8c41b7f8"
+    },
+    "11": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -19.5,
+      "lufs": -20.0,
+      "tp": -1.09,
+      "mp3_tp": -0.96,
+      "lra": 9.2,
+      "md5": "921947139ff498aeb077e8616b33e7f3"
+    },
+    "12": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -19.7,
+      "lufs": -20.09,
+      "tp": -0.95,
+      "mp3_tp": -0.68,
+      "lra": 9.7,
+      "md5": "90c3ea2e8a4ece3d43c84e7fd33b42b7"
+    },
+    "13": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -24.3,
+      "lufs": -19.96,
+      "tp": -0.85,
+      "mp3_tp": 0.08,
+      "lra": 10.2,
+      "md5": "047a0ec2be2be81014a8f2af7f4b5e9f"
+    },
+    "14": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -22.1,
+      "lufs": -20.03,
+      "tp": -0.81,
+      "mp3_tp": -0.53,
+      "lra": 7.5,
+      "md5": "5c32146cd7299e1415d1cadfbb84a0b8"
+    },
+    "15": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.2,
+      "lufs": -20.05,
+      "tp": -0.92,
+      "mp3_tp": -0.74,
+      "lra": 7.9,
+      "md5": "64f225b31266a037ca9a153ac70c05e9"
+    },
+    "16": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.3,
+      "lufs": -20.0,
+      "tp": -2.18,
+      "mp3_tp": -2.1,
+      "lra": 8.5,
+      "md5": "d9630ddcf9b41a3d83869032b5a6c436"
+    },
+    "17": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -32.5,
+      "lufs": -19.99,
+      "tp": -4.44,
+      "mp3_tp": -4.44,
+      "lra": 6.7,
+      "md5": "efde80160189d1f0e724a25911195815"
+    },
+    "18": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -32.0,
+      "lufs": -20.01,
+      "tp": -0.97,
+      "mp3_tp": -0.91,
+      "lra": 7.3,
+      "md5": "f698f61267c31ffc8e29039a8f201047"
+    },
+    "19": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -28.6,
+      "lufs": -19.98,
+      "tp": -0.99,
+      "mp3_tp": -0.92,
+      "lra": 9.5,
+      "md5": "9bfde3893b8e4919296335d59664ae3f"
+    },
+    "20": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -22.1,
+      "lufs": -20.22,
+      "tp": -0.98,
+      "mp3_tp": -0.6,
+      "lra": 11.7,
+      "md5": "4fc03b29b9bf74538c691858f431310f"
+    },
+    "21": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -21.4,
+      "lufs": -20.17,
+      "tp": -0.97,
+      "mp3_tp": -0.58,
+      "lra": 9.9,
+      "md5": "b76d3af5d56f62f3ff632865180c47d7"
+    },
+    "22": {
+      "ver": 3,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -19.9,
+      "lufs": -20.05,
+      "tp": -0.91,
+      "mp3_tp": -0.8,
+      "lra": 14.4,
+      "md5": "25c9ee8e42c2f74339ccecdde59b2fd8"
+    }
+  }
+}

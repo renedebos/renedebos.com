@@ -280,6 +280,12 @@ def _md_list(block, inline):
         return f"<ol{start}>" + "\n".join(lis) + "</ol>"
     return "<ul>" + "\n".join(lis) + "</ul>"
 
+def _pre_edit_label(pre_edits):
+    """Short badge text for a show's recorded pre_edits provenance: only
+    actual noise reduction gets called "noise-reduced" / "NR" — any other
+    manual Audacity work (EQ, etc.) gets the generic "pre-edited" bucket."""
+    return "noise-reduced" if "noise reduction" in pre_edits.lower() else "pre-edited"
+
 def show_row(show, with_artist=False):
     artist = next(a for a in M["artists"] if a["id"] == show["artist"])
     n_alt = sum(1 for r in show["recordings"] if r["alternate"])
@@ -295,14 +301,17 @@ def show_row(show, with_artist=False):
         marker = f'<span class="show-tracks" title="{n} songs available">&#9834; {n}</span>'
     else:
         marker = '<span class="show-tracks"></span>'
-    # NR pill: shows whose provenance records manual pre-edits (noise
-    # reduction) get a marker on the listing, mirroring the show page's
-    # tech-table badge. Rendered inside the venue cell — the row is a fixed
-    # 5-column grid, so it must not be an extra grid child.
+    # Pre-edit pill: shows whose provenance records manual pre-edits get a
+    # marker on the listing, mirroring the show page's tech-table badge.
+    # Rendered inside the venue cell — the row is a fixed 5-column grid, so
+    # it must not be an extra grid child.
     proc = load_processing(show["slug"])
-    nr_html = (f' <span class="proc-status pre-edit show-nr" '
-               f'title="{esc(proc["pre_edits"])}">NR</span>'
-               if proc and proc.get("pre_edits") else "")
+    nr_html = ""
+    if proc and proc.get("pre_edits"):
+        label = _pre_edit_label(proc["pre_edits"])
+        tag = "NR" if label == "noise-reduced" else "PE"
+        nr_html = (f' <span class="proc-status pre-edit show-nr" '
+                   f'title="{esc(proc["pre_edits"])}">{tag}</span>')
     subtitle = f' &middot; <em>{esc(show["subtitle"])}</em>' if show.get("subtitle") else ""
     primary_size = next((r["size"] for r in show["recordings"] if not r["alternate"]), "—")
     info = esc(json.dumps([
@@ -379,8 +388,7 @@ def status_line(show):
     proc = load_processing(show["slug"])
     nr = ""
     if proc and proc.get("pre_edits"):
-        label = ("noise-reduced" if "noise reduction" in proc["pre_edits"].lower()
-                 else "pre-edited")
+        label = _pre_edit_label(proc["pre_edits"])
         nr = (f'<span class="proc-status pre-edit" '
               f'title="{esc(proc["pre_edits"])}">{label}</span>')
     return (f'''
@@ -416,8 +424,7 @@ def tech_data_section(show, proc):
     # pre-edits badge: manual Audacity work beyond standard fades/clip-fixes stands
     # out even while the table is collapsed; hover shows the recorded detail.
     if proc.get("pre_edits"):
-        label = ("noise-reduced" if "noise reduction" in proc["pre_edits"].lower()
-                 else "pre-edited")
+        label = _pre_edit_label(proc["pre_edits"])
         badge += (f' <span class="proc-status pre-edit" '
                   f'title="{esc(proc["pre_edits"])}">{label}</span>')
     pt = proc.get("tracks", {})

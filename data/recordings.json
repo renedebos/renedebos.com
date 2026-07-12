@@ -6842,10 +6842,342 @@
           "stream": "MP3/Full/WAV_Files/MadHannans - Sweetwater 1999-05-18.mp3"
         }
       ],
-      "tracks": null,
-      "description": null,
+      "tracks": [
+        {
+          "num": 1,
+          "title": "Smoke in Heaven",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:30",
+          "size_mb": 6,
+          "file": "MP3/MadHannans - Sweetwater 1999-05-18/01 Smoke in Heaven.mp3",
+          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/01 Smoke in Heaven.flac",
+          "flac_size_mb": 32,
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
+        },
+        {
+          "num": 2,
+          "title": "Truck",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:44",
+          "size_mb": 9,
+          "file": "MP3/MadHannans - Sweetwater 1999-05-18/02 Truck.mp3",
+          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/02 Truck.flac",
+          "flac_size_mb": 47,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 3,
+          "title": "Blind Man",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:15",
+          "size_mb": 8,
+          "file": "MP3/MadHannans - Sweetwater 1999-05-18/03 Blind Man.mp3",
+          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/03 Blind Man.flac",
+          "flac_size_mb": 42,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 4,
+          "title": "Clear Headed",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:30",
+          "size_mb": 11,
+          "file": "MP3/MadHannans - Sweetwater 1999-05-18/04 Clear Headed.mp3",
+          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/04 Clear Headed.flac",
+          "flac_size_mb": 57,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 5,
+          "title": "Hard Drinkin'",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:48",
+          "size_mb": 9,
+          "file": "MP3/MadHannans - Sweetwater 1999-05-18/05 Hard Drinkin'.mp3",
+          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/05 Hard Drinkin'.flac",
+          "flac_size_mb": 48,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 6,
+          "title": "Luxury of Murder",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:47",
+          "size_mb": 7,
+          "file": "MP3/MadHannans - Sweetwater 1999-05-18/06 Luxury of Murder.mp3",
+          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/06 Luxury of Murder.flac",
+          "flac_size_mb": 36,
+          "processed": true,
+          "tags": [
+            "original",
+            "story"
+          ]
+        },
+        {
+          "num": 7,
+          "title": "Recycle",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "5:23",
+          "size_mb": 13,
+          "file": "MP3/MadHannans - Sweetwater 1999-05-18/07 Recycle.mp3",
+          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/07 Recycle.flac",
+          "flac_size_mb": 67,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 8,
+          "title": "Blahana",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:13",
+          "size_mb": 10,
+          "file": "MP3/MadHannans - Sweetwater 1999-05-18/08 Blahana.mp3",
+          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/08 Blahana.flac",
+          "flac_size_mb": 53,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 9,
+          "title": "Plastic Lemons",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:55",
+          "size_mb": 7,
+          "file": "MP3/MadHannans - Sweetwater 1999-05-18/09 Plastic Lemons.mp3",
+          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/09 Plastic Lemons.flac",
+          "flac_size_mb": 36,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 10,
+          "title": "Madeline",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:47",
+          "size_mb": 7,
+          "file": "MP3/MadHannans - Sweetwater 1999-05-18/10 Madeline.mp3",
+          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/10 Madeline.flac",
+          "flac_size_mb": 35,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 11,
+          "title": "The Rodeo Song",
+          "duration": "3:17",
+          "size_mb": 8,
+          "file": "MP3/MadHannans - Sweetwater 1999-05-18/11 Rodeo Song.mp3",
+          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/11 Rodeo Song.flac",
+          "flac_size_mb": 43,
+          "processed": true,
+          "tags": [
+            "cover",
+            "upbeat"
+          ],
+          "songwriter": "Gary Lee and the Showdown"
+        },
+        {
+          "num": 12,
+          "title": "ABC - Sesame Street",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:43",
+          "size_mb": 11,
+          "file": "MP3/MadHannans - Sweetwater 1999-05-18/12 ABC - Sesame Street.mp3",
+          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/12 ABC - Sesame Street.flac",
+          "flac_size_mb": 60,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 13,
+          "title": "Long Black Veil",
+          "songwriter": "Lefty Frizzell",
+          "duration": "2:32",
+          "size_mb": 6,
+          "file": "MP3/MadHannans - Sweetwater 1999-05-18/13 Long Black Veil.mp3",
+          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/13 Long Black Veil.flac",
+          "flac_size_mb": 31,
+          "processed": true,
+          "tags": [
+            "cover",
+            "country",
+            "ballad",
+            "story"
+          ]
+        },
+        {
+          "num": 14,
+          "title": "Rocky Road to Dublin",
+          "songwriter": "Traditional",
+          "duration": "2:20",
+          "size_mb": 6,
+          "file": "MP3/MadHannans - Sweetwater 1999-05-18/14 Rocky Road to Dublin.mp3",
+          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/14 Rocky Road to Dublin.flac",
+          "flac_size_mb": 29,
+          "processed": true,
+          "tags": [
+            "traditional",
+            "irish",
+            "upbeat",
+            "singalong"
+          ]
+        },
+        {
+          "num": 15,
+          "title": "Dysfunctional Guy",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:35",
+          "size_mb": 11,
+          "file": "MP3/MadHannans - Sweetwater 1999-05-18/15 Dysfunctional Guy.mp3",
+          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/15 Dysfunctional Guy.flac",
+          "flac_size_mb": 58,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 16,
+          "title": "Baby",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:10",
+          "size_mb": 8,
+          "file": "MP3/MadHannans - Sweetwater 1999-05-18/16 Baby.mp3",
+          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/16 Baby.flac",
+          "flac_size_mb": 41,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 17,
+          "title": "Butter",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:26",
+          "size_mb": 8,
+          "file": "MP3/MadHannans - Sweetwater 1999-05-18/17 Butter.mp3",
+          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/17 Butter.flac",
+          "flac_size_mb": 41,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 18,
+          "title": "Anna May",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:59",
+          "size_mb": 7,
+          "file": "MP3/MadHannans - Sweetwater 1999-05-18/18 Anna May.mp3",
+          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/18 Anna May.flac",
+          "flac_size_mb": 35,
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
+        },
+        {
+          "num": 19,
+          "title": "Everything Reminds Me of You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:30",
+          "size_mb": 6,
+          "file": "MP3/MadHannans - Sweetwater 1999-05-18/19 Everything Reminds Me of You.mp3",
+          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/19 Everything Reminds Me of You.flac",
+          "flac_size_mb": 31,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 20,
+          "title": "I Need a Lover",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:04",
+          "size_mb": 7,
+          "file": "MP3/MadHannans - Sweetwater 1999-05-18/20 I Need a Lover.mp3",
+          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/20 I Need a Lover.flac",
+          "flac_size_mb": 38,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 21,
+          "title": "Good Life",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:33",
+          "size_mb": 9,
+          "file": "MP3/MadHannans - Sweetwater 1999-05-18/21 Good Life.mp3",
+          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/21 Good Life.flac",
+          "flac_size_mb": 44,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 22,
+          "title": "The Kiss - Da Da Da (Slave to an Angel)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "6:18",
+          "size_mb": 15,
+          "file": "MP3/MadHannans - Sweetwater 1999-05-18/22 The Kiss - Da Da Da (Slave to an Angel).mp3",
+          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/22 The Kiss - Da Da Da (Slave to an Angel).flac",
+          "flac_size_mb": 75,
+          "processed": true,
+          "tags": [
+            "original",
+            "medley"
+          ]
+        }
+      ],
+      "description": [
+        "A Mad Hannans set at the Sweetwater in Mill Valley, almost entirely original material apart from covers of Gary Lee and the Showdown’s “The Rodeo Song,” Lefty Frizzell’s “Long Black Veil,” and a singalong run through the traditional “Rocky Road to Dublin.”",
+        "The room sound on this tape ran muddy; EQ was applied across the whole recording in Audacity to brighten it up before the tracks were split, then each track was loudness-normalized to −20 LUFS."
+      ],
       "page": null,
-      "processing_status": "needs-processing"
+      "processing_status": "done",
+      "added": "2026-07-11",
+      "added_ts": "2026-07-11T21:38:34.444345"
     },
     {
       "slug": "mad-sweetwater-2001-01-06",
@@ -8044,6 +8376,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-07-11",
+      "ts": "2026-07-11T21:50:00",
+      "slug": "mad-sweetwater-1999-05-18",
+      "report": true,
+      "text": "Added the May 18, 1999 Mad Hannans show at the Sweetwater as 22 individual tracks, EQ-brightened across the whole tape to tame a muddy room sound, then normalized to −20 LUFS."
+    },
     {
       "date": "2026-07-11",
       "ts": "2026-07-11T12:30:00",
