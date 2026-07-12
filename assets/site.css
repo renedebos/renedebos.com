@@ -91,17 +91,16 @@ header {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  color: var(--accent);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: var(--bg);
   font-size: 1.05rem;
   flex-shrink: 0;
-  transition: border-color 0.18s ease, background 0.18s ease;
+  transition: filter 0.18s ease;
 }
 
 .mark:hover, .mark:focus-visible {
-  border-color: var(--accent);
-  background: var(--accent-light);
+  filter: brightness(1.12);
   outline: none;
 }
 
