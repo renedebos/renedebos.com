@@ -72,6 +72,9 @@
   .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.7rem 1.2rem; margin: 0.9rem 0; }
   .field { display: flex; flex-direction: column; gap: 0.25rem; }
   .field.full { grid-column: 1 / -1; }
+  .field.checkbox-field { flex-direction: row; align-items: center; gap: 0.5rem; }
+  .field.checkbox-field input[type="checkbox"] { width: auto; margin: 0; }
+  .field.checkbox-field label { margin: 0; }
   label { font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
   label .ro { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--muted); }
   input, select, textarea {
@@ -186,6 +189,9 @@ function render() {
             <input data-show="${si}" data-field="date_display" value="${esc(show.date_display || "")}"></div>
           <div class="field full"><label>Subtitle <span class="ro">(optional, e.g. Birthday Show)</span></label>
             <input data-show="${si}" data-field="subtitle" value="${esc(show.subtitle || "")}"></div>
+          <div class="field checkbox-field full">
+            <input type="checkbox" data-show="${si}" data-field="highlight" ${show.highlight ? "checked" : ""}>
+            <label>Highlight <span class="ro">(standout performance — independent of recording quality)</span></label></div>
           <div class="field full"><label>Description <span class="ro">(one paragraph per line)</span></label>
             <textarea data-show="${si}" data-field="description">${esc((show.description || []).join("\n"))}</textarea></div>
           <div class="field full"><label>Slug <span class="ro">(read-only — changing the URL is a separate task)</span></label>
@@ -211,8 +217,11 @@ el("#shows").addEventListener("input", (e) => {
   if (!f) return;
   const show = DATA.shows[+t.dataset.show];
   const obj = t.dataset.track !== undefined ? show.tracks[+t.dataset.track] : show;
-  const v = t.value;
-  apply(obj, f, v, show);
+  if (t.type === "checkbox") {
+    if (t.checked) obj[f] = true; else delete obj[f];
+  } else {
+    apply(obj, f, t.value, show);
+  }
   setDirty();
 });
 

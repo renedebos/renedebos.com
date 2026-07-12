@@ -8,6 +8,7 @@
   --border: #dedad3;
   --accent: #2c4a3e;
   --accent-light: #e8efe8;
+  --highlight: #b8862a;
   --player-bg: #ffffff;
   --sans: 'Karla', sans-serif;
   --serif: 'Cormorant Garamond', serif;
@@ -27,6 +28,7 @@
     --border: #363126;
     --accent: #7FA37A;
     --accent-light: #232e28;
+    --highlight: #d4a63c;
     --player-bg: #201d16;
     --artist-jerry: #5f93b3;
     --artist-mad:   #d1875a;
@@ -36,7 +38,7 @@
 }
 :root[data-theme="dark"] {
   --bg: #17150f; --surface: #201d16; --text: #ece7dc; --muted: #a49b8b;
-  --border: #363126; --accent: #7FA37A; --accent-light: #232e28; --player-bg: #201d16;
+  --border: #363126; --accent: #7FA37A; --accent-light: #232e28; --highlight: #d4a63c; --player-bg: #201d16;
   --artist-jerry: #5f93b3; --artist-mad: #d1875a; --artist-sean: #8fb85f; --artist-seanjerry: #9a8ad4;
 }
 
@@ -1059,6 +1061,30 @@ main {
 .proc-status.pre-edit-nr { color: #6ea3d8; }
 .proc-status.pre-edit-pe { color: #9d85c9; }
 .tech-table td.tver { font-family: var(--mono); text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* highlight badge — Rene's editorial call on the performance itself,
+   independent of recording quality (the pre-edit/NR/PE badges above) */
+.h-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--highlight);
+  cursor: help;
+}
+.h-badge svg { flex-shrink: 0; display: block; }
+.show-venue .h-badge { margin-left: 0.5rem; vertical-align: 1px; }
+.highlight-line {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--highlight);
+  font-weight: 500;
+  margin: 0 0 1.4rem;
+}
 
 /* standalone audio-processing status line (top of every show page) */
 .proc-status-line {

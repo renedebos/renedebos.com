@@ -128,6 +128,10 @@ def validate():
         # value such as a bare string is the footgun (renders char-by-char).
         if s.get("description") is not None and not isinstance(s["description"], list):
             errors.append(f"{where}: description must be a list of paragraph strings, not {type(s['description']).__name__}")
+        # highlight is an editorial flag on the performance itself (independent of
+        # recording quality); omit the key entirely rather than storing false.
+        if "highlight" in s and s["highlight"] is not True:
+            errors.append(f"{where}: highlight must be true, or the key omitted (not {s['highlight']!r})")
         folders = set()
         for t in s.get("tracks") or []:
             tw = f"{where} track {t.get('num')}"

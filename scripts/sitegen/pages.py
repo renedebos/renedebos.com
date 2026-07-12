@@ -44,6 +44,7 @@ HOME_SOURCE_SHORT = {"SBD": "Soundboard", "AUD": "Audience"}
 def _home_show_card(show, featured=False):
     n = len(show["tracks"])
     tags = (('<span class="tag featured">Featured</span>' if featured else "") +
+            ('<span class="tag highlight">&#9733; Highlight</span>' if show.get("highlight") else "") +
             f'<span class="tag">{esc(ARTIST_SHORT.get(show["artist"], artist_name(show["artist"])))}</span>' +
             f'<span class="tag">{esc(HOME_SOURCE_SHORT.get(show["source"], show["source"]))}</span>')
     added = show.get("added")
@@ -207,6 +208,7 @@ def build_archive():
     <span class="src-tag">AUD</span> Audience recording &middot;
     <span class="proc-status pre-edit pre-edit-nr">NR</span> Noise-reduced &middot;
     <span class="proc-status pre-edit pre-edit-pe">PE</span> Pre-edited (EQ, etc.) &middot;
+    <span class="h-badge">{HIGHLIGHT_STAR_SVG}</span> Highlight show &middot;
     <span class="show-tracks">&#9834; N</span> Individual tracks available
   </p>'''
     views = f'''
@@ -605,6 +607,11 @@ def build_show(show):
     # Audio-processing status badge — shown on every show page (the technical-data
     # table only appears for already-processed shows).
     parts.append(status_line(show))
+
+    # Highlight flag — Rene's editorial call on the performance, independent
+    # of the audio-processing badge above (a rough tape can still be a highlight).
+    if show.get("highlight"):
+        parts.append(f'\n  <p class="highlight-line">{HIGHLIGHT_STAR_SVG} Highlight show</p>')
 
     if show.get("description"):
         desc = "".join(f"\n    <p>{p}</p>" for p in show["description"])

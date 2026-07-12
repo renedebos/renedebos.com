@@ -294,6 +294,19 @@ def _pre_edit_class(label):
     share a color with each other or with the "done" status badge."""
     return "pre-edit-nr" if label == "noise-reduced" else "pre-edit-pe"
 
+HIGHLIGHT_STAR_SVG = ('<svg width="12" height="12" viewBox="0 0 12 12">'
+                      '<path d="M6 0l1.8 3.8L12 4.4l-3 3 .8 4.4L6 9.8 2.2 11.8 3 7.4 0 4.4l4.2-.6z" '
+                      'fill="currentColor"/></svg>')
+
+def highlight_badge(show):
+    """Rene's editorial flag for a standout performance — independent of
+    recording quality (the pre-edit/NR/PE badges), so a rough tape can still
+    be a highlight and vice versa."""
+    if not show.get("highlight"):
+        return ""
+    return (f' <span class="h-badge" title="A particularly good performance">'
+            f'{HIGHLIGHT_STAR_SVG}</span>')
+
 def show_row(show, with_artist=False):
     artist = next(a for a in M["artists"] if a["id"] == show["artist"])
     n_alt = sum(1 for r in show["recordings"] if r["alternate"])
@@ -320,6 +333,7 @@ def show_row(show, with_artist=False):
         tag = "NR" if label == "noise-reduced" else "PE"
         nr_html = (f' <span class="proc-status pre-edit {_pre_edit_class(label)} show-nr" '
                    f'title="{esc(proc["pre_edits"])}">{tag}</span>')
+    hl_html = highlight_badge(show)
     subtitle = f' &middot; <em>{esc(show["subtitle"])}</em>' if show.get("subtitle") else ""
     primary_size = next((r["size"] for r in show["recordings"] if not r["alternate"]), "—")
     info = esc(json.dumps([
@@ -335,7 +349,7 @@ def show_row(show, with_artist=False):
     artist_prefix = f'<span class="show-artist">{esc(artist["name"])}</span> &middot; ' if with_artist else ""
     return f'''      <a class="show-row" href="{show_url(show)}" data-info="{info}">
         <span class="show-date">{esc(show["date"] or "Unknown date")}</span>
-        <span class="show-venue">{artist_prefix}{esc(show["venue"] or "")}{subtitle}{extra_html}{nr_html}</span>
+        <span class="show-venue">{artist_prefix}{esc(show["venue"] or "")}{subtitle}{extra_html}{nr_html}{hl_html}</span>
         {marker}
         <span class="show-src src-{show["source"].lower()}">{esc(show["source"])}</span>
         <span class="show-arrow">&rarr;</span>
@@ -658,4 +672,4 @@ def song_jsonld(s):
     })
 
 
-__all__ = ['DL_SVG', 'EXTRA_PAGES', 'PLAY_SVG', 'SITE_PAGES', 'STATUS_BLURB', '_show_label', '_song_occ_html', '_src_tag', 'artist_sections', 'contact_block', 'content', 'date_sorted_list', 'dl_button', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'player', 'recording_card', 'show_jsonld', 'show_row', 'site_nav', 'song_jsonld', 'status_line', 'tech_data_section', 'updates_list']
+__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'PLAY_SVG', 'SITE_PAGES', 'STATUS_BLURB', '_show_label', '_song_occ_html', '_src_tag', 'artist_sections', 'contact_block', 'content', 'date_sorted_list', 'dl_button', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'player', 'recording_card', 'show_jsonld', 'show_row', 'site_nav', 'song_jsonld', 'status_line', 'tech_data_section', 'updates_list']

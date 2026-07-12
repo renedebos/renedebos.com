@@ -2,6 +2,7 @@
   --bg: #f5f2ed; --panel: #faf8f5; --panel-hover: #f0ece4;
   --ink: #1a1916; --ink-dim: #5c584f; --hairline: #dedad3;
   --accent: #2c4a3e; --accent-hover: #3a5f50; --accent-dim: #e8efe8;
+  --highlight: #b8862a;
   --on-accent: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
@@ -9,6 +10,7 @@
   --bg: #17150f; --panel: #201d16; --panel-hover: #2a251a;
   --ink: #ece7dc; --ink-dim: #a49b8b; --hairline: #363126;
   --accent: #7FA37A; --accent-hover: #93BC9E; --accent-dim: rgba(127,163,122,0.14);
+  --highlight: #d4a63c;
   --on-accent: #17150f;
   }
 }
@@ -16,6 +18,7 @@
   --bg: #17150f; --panel: #201d16; --panel-hover: #2a251a;
   --ink: #ece7dc; --ink-dim: #a49b8b; --hairline: #363126;
   --accent: #7FA37A; --accent-hover: #93BC9E; --accent-dim: rgba(127,163,122,0.14);
+  --highlight: #d4a63c;
   --on-accent: #17150f;
 }
 
@@ -129,6 +132,7 @@ h1 em { font-style: italic; color: var(--accent); }
   border-radius: 99px; padding: 3px 9px; color: var(--accent);
 }
 .tag.featured { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 700; }
+.tag.highlight { background: none; border-color: color-mix(in srgb, var(--highlight) 40%, transparent); color: var(--highlight); font-weight: 700; }
 
 .card-foot { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
 .stream { display: flex; align-items: center; gap: 7px; font-size: 0.8rem; color: var(--accent); font-weight: 700; }
