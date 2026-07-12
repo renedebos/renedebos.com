@@ -145,7 +145,7 @@ HOME_SHELL = '''<!DOCTYPE html>
     <div class="actions">
       <a class="btn btn-primary" href="/archive/" id="randomTape">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.6" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><path d="M8 1.4v2M8 12.6v2M1.4 8h2M12.6 8h2" stroke="currentColor" stroke-width="1.3"/></svg>
-        Play a random tape
+        Play random tape
       </a>
       <a class="btn btn-secondary" href="/playlist/">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 4h9M2 8h9M2 12h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M13 9v5M13 14l-1.7-1.4M13 14l1.7-1.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
