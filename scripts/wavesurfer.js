@@ -88,8 +88,13 @@ function build(PEAKS) {
       // Natural end fires 'finish' twice (reactive duration check + media 'ended'),
       // so advance with an idempotent play() — never the play/pause toggle, which a
       // second finish would use to pause the next track right after starting it.
+      // iOS Safari can refuse to load+play a not-yet-started <audio> element outside
+      // a direct user gesture (same constraint as the seek handler above); catching
+      // the rejection leaves the next row in its normal paused state so a tap on its
+      // play button still works, instead of an unhandled rejection and a track that
+      // silently never starts.
       const next = instances[idx + 1];
-      if (next) next.play();
+      if (next) next.play().catch(() => {});
     });
 
     instances.push(ws);
