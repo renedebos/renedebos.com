@@ -166,13 +166,34 @@ def cmd_prepare(args):
     print(f"Clean?  python3 scripts/publish_show.py publish {args.slug}")
 
 
-def drive_backup(folder, out, n_expected):
+MANUAL_BACKUP_GRACE_SECONDS = 180
+MANUAL_BACKUP_POLL_SECONDS = 15
+
+
+def drive_backup(folder, out, n_expected, manual_first=False):
     dst = f"{DRIVE_WORK}/{folder}/Processed"
-    for attempt in range(1, 21):
-        have = len([f for f in rclone_lsf(dst)
+
+    def have():
+        return len([f for f in rclone_lsf(dst)
                     if f.lower().endswith((".flac", ".mp3"))])
-        print(f"  [backup attempt {attempt}] Drive Processed has {have}/{n_expected}")
-        if have >= n_expected or DRY:
+
+    if manual_first and not DRY:
+        print(f"\n[Drive backup] copy {out} -> '{dst}' yourself now if you want "
+              f"— manual copy is often faster than rclone here. Waiting up to "
+              f"{MANUAL_BACKUP_GRACE_SECONDS}s before falling back to rclone.")
+        deadline = time.time() + MANUAL_BACKUP_GRACE_SECONDS
+        while time.time() < deadline:
+            h = have()
+            print(f"  [waiting for manual copy] Drive Processed has {h}/{n_expected}")
+            if h >= n_expected:
+                return
+            time.sleep(MANUAL_BACKUP_POLL_SECONDS)
+        print("  no manual copy detected — falling back to rclone")
+
+    for attempt in range(1, 21):
+        h = have()
+        print(f"  [backup attempt {attempt}] Drive Processed has {h}/{n_expected}")
+        if h >= n_expected or DRY:
             return
         run(["timeout", "1200", "rclone", "copy", out, dst,
              "--include", "*.flac", "--include", "*.mp3", "--transfers", "4"])
@@ -217,7 +238,7 @@ def cmd_publish(args):
         raise SystemExit("MD5 verify FAILED — do not ship")
 
     print("[5/6] Drive backup of processed files")
-    drive_backup(folder, out, 2 * n)
+    drive_backup(folder, out, 2 * n, manual_first=args.manual_drive_backup)
 
     print("[6/6] cleanup local tracks copy (out/ kept until the show is shipped)")
     if not DRY:
@@ -284,6 +305,10 @@ def main():
     ap.add_argument("slug")
     ap.add_argument("--folder", help="Drive Work Folder name (when date search is ambiguous)")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--manual-drive-backup", action="store_true",
+                     help="publish: give a few minutes to manually copy out/ to "
+                          "Drive Processed/ (often faster than rclone) before "
+                          "falling back to the automated rclone copy")
     args = ap.parse_args()
     DRY = args.dry_run
     {"prepare": cmd_prepare, "publish": cmd_publish,
