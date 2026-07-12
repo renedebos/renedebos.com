@@ -196,7 +196,8 @@ def drive_backup(folder, out, n_expected, manual_first=False):
         if h >= n_expected or DRY:
             return
         run(["timeout", "1200", "rclone", "copy", out, dst,
-             "--include", "*.flac", "--include", "*.mp3", "--transfers", "4"])
+             "--include", "*.flac", "--include", "*.mp3",
+             "--include", "processing_report.txt", "--transfers", "4"])
         time.sleep(2)
     raise SystemExit("Drive backup did not complete after 20 attempts")
 
