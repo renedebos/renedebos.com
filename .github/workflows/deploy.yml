@@ -43,10 +43,15 @@ jobs:
       # permission (deploy-only today) and a CLOUDFLARE_ZONE_ID repo secret —
       # until both are added this step fails with 403/400.
       - name: Purge Cloudflare cache
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
         run: |
+          token=$(printf '%s' "$CF_TOKEN" | tr -d '[:space:]')
+          zone=$(printf '%s' "$CF_ZONE_ID" | tr -d '[:space:]')
           resp=$(curl -sS -w '\n%{http_code}' -X POST \
-            "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
-            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            "https://api.cloudflare.com/client/v4/zones/$zone/purge_cache" \
+            -H "Authorization: Bearer $token" \
             -H "Content-Type: application/json" \
             --data '{"purge_everything":true}')
           code=$(echo "$resp" | tail -n1)
