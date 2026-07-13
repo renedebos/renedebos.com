@@ -61,6 +61,11 @@ APPLAUSE_WIN_S = 5.0          # window size for the peak/RMS scan
 APPLAUSE_LIMIT_DB = -1.2      # sample-peak limiter threshold (margin under the -1 dBTP ceiling)
 APPLAUSE_MIN_BENEFIT = 1.0    # dB of loudness recovered below which a limiter isn't worth it
 APPLAUSE_LRA_TOL = 0.5        # QA gate: output LRA must match source LRA within this
+APPLAUSE_TP_MAX_ATTEMPTS = 5  # alimiter limits SAMPLE peaks, not oversampled true peak — inter-
+                              # sample reconstruction overs can still exceed the ceiling on hot
+                              # transients, so the render is measured and gain backed off until
+                              # the ACTUAL output true peak (not just the limiter's threshold)
+                              # complies, instead of trusting a fixed margin
 
 # ── workflow versioning ───────────────────────────────────────────────────────
 # Bump WORKFLOW_VERSION whenever the processing *functionality* changes (a new
@@ -144,9 +149,19 @@ WORKFLOW_VERSIONS = {
                 "at -1.2 dB that only applause transients can reach. Music remains "
                 "strictly linear-only; ambiguous cases (mid-song high-crest peaks, "
                 "music-set ceilings, < 1 dB benefit) fall back to the v4 reduced "
-                "target and are flagged for ears. QA gates: output LRA must match "
-                "source LRA within 0.5 LU; limited regions recorded in provenance. "
-                "The `plan` command dry-runs all decisions without writing audio.",
+                "target and are flagged for ears. Caught during the first real "
+                "reprocess (jerry-cafe-java-1999-03-25, trk 5 'Anna May'): alimiter "
+                "thresholds SAMPLE peaks, but the archive's ceiling is a TRUE "
+                "(oversampled) peak — inter-sample reconstruction overs on hot "
+                "transients exceeded the limiter's own -1.2 dB threshold by 0.4 dB. "
+                "Fixed with a measure-and-correct loop in `process`: render, measure "
+                "the ACTUAL output true peak, back the gain off and re-render if it "
+                "overshot (up to 5 attempts) — never trusts the threshold alone. QA "
+                "gates: output LRA must match source LRA within 0.5 LU; limited "
+                "regions recorded in provenance. The `plan` command dry-runs the "
+                "sizing decision without writing audio or running the true-peak "
+                "safety loop, so a hot limiter track's actual output can land a bit "
+                "quieter than plan predicted.",
         "loudnorm": "linear modes as v4; applause-limiter mode uses no loudnorm: "
                     "volume=<gain>dB,alimiter=limit=<-1.2 dB>:attack=5:release=100:"
                     "level=false:latency=1",
@@ -705,22 +720,39 @@ def plan_track(path, target, pre=""):
         plan["flags"].append(f"applause limiting would only recover "
                              f"{max(benefit, 0):.1f} dB — not worth a limiter")
         return plan
-    regions = [(round(t0, 1), round(min(t0 + APPLAUSE_WIN_S, dur), 1),
-                round(p + gain - APPLAUSE_LIMIT_DB, 1))
-               for t0, p in applause if p + gain > APPLAUSE_LIMIT_DB]
+    plan.update(mode="applause-limiter", gain_db=gain, limit_db=APPLAUSE_LIMIT_DB,
+                music_peak_db=music_peak, applause_windows=applause, dur=dur)
+    limiter_finalize(plan)
+    return plan
+
+
+def limiter_regions(applause, gain, limit_db, dur):
+    return [(round(t0, 1), round(min(t0 + APPLAUSE_WIN_S, dur), 1),
+             round(p + gain - limit_db, 1))
+            for t0, p in applause if p + gain > limit_db]
+
+
+def limiter_finalize(plan):
+    """(Re)derive target/regions/note from plan's current gain_db/limit_db.
+    Called after the initial sizing and again by cmd_process's true-peak
+    safety loop whenever gain_db is backed off, so the provenance note always
+    describes what was actually rendered, not the first guess."""
+    regions = limiter_regions(plan["applause_windows"], plan["gain_db"],
+                              plan["limit_db"], plan["dur"])
     max_red = max((r for _, _, r in regions), default=0.0)
     reg_txt = ", ".join(f"{fmt_dur(a)}–{fmt_dur(b)}" for a, b, _ in regions)
-    plan.update(mode="applause-limiter", target=round(in_I + gain, 2),
-                gain_db=gain, limit_db=APPLAUSE_LIMIT_DB, regions=regions,
-                max_reduction_db=max_red, music_peak_db=music_peak,
-                note=f"applause (not music) set the ceiling: one constant "
-                     f"{gain:+.1f} dB gain sized to the music peaks ({music_peak:.1f} dB), "
-                     f"with only the applause transients at {reg_txt} limited "
-                     f"(up to {max_red:.1f} dB); the music is untouched linear")
-    if plan["max_reduction_db"] > 10:
-        plan["flags"].append(f"limiter would cut applause peaks by "
-                             f"{plan['max_reduction_db']:.1f} dB — heavy; listen to the applause")
-    return plan
+    plan["target"] = round(float(plan["measure"]["input_i"]) + plan["gain_db"], 2)
+    plan["regions"], plan["max_reduction_db"] = regions, max_red
+    plan["note"] = (f"applause (not music) set the ceiling: one constant "
+                    f"{plan['gain_db']:+.1f} dB gain sized to the music peaks "
+                    f"({plan['music_peak_db']:.1f} dB), with only the applause "
+                    f"transients at {reg_txt} limited (up to {max_red:.1f} dB); "
+                    f"the music is untouched linear")
+    if max_red > 10:
+        note = "limiter would cut applause peaks by " \
+               f"{max_red:.1f} dB — heavy; listen to the applause"
+        if note not in plan["flags"]:
+            plan["flags"].append(note)
 
 
 def limiter_chain(plan, pre=""):
@@ -826,12 +858,25 @@ def cmd_process(args):
             print(f"  ⚠ {f}: {fl}", flush=True)
 
         if os.path.exists(out_audio) and os.path.exists(out_mp3):
+            # still record provenance from the existing output. For a limiter
+            # track this is a re-run after a prior interruption (e.g. a killed
+            # job) — plan_track's fresh guess doesn't know the true-peak safety
+            # loop backed the gain off last time, so it would describe a gain
+            # that doesn't match what's actually in the file. Reconcile against
+            # the real render before trusting any of plan's descriptive fields.
+            if limiter:
+                j2 = measure(out_audio, plan["target"])
+                actual_gain = round(float(j2["input_i"]) - in_I_chk, 2)
+                if actual_gain != plan["gain_db"]:
+                    plan["gain_db"] = actual_gain
+                    limiter_finalize(plan)
+                used_target = plan["target"]
+            else:
+                j2 = measure(out_audio, used_target)
             note = {"linear-reduced": f" [target {used_target:+.1f} LUFS, linear-preserving]",
                     "applause-limiter": f" [target {used_target:+.1f} LUFS, applause-limited]",
                     }.get(plan["mode"], "")
             print(f"[{i:02d}/{len(files)}] {f} — exists, skipping (resume){note}", flush=True)
-            # still record provenance from the existing output
-            j2 = measure(out_audio, used_target)
             in_I = in_I_chk if os.path.exists(src) else None
         else:
             if limiter:
@@ -847,9 +892,34 @@ def cmd_process(args):
             info = probe(src)
             in_I = in_I_chk
             pre = (filt + ",") if filt else ""
+            codec = output_codec(info["bits"], info["sample_fmt"], container)
             if limiter:
-                af = limiter_chain(plan, pre=filt)
+                # alimiter thresholds SAMPLE peaks; the archive's ceiling is a
+                # TRUE (oversampled) peak. Render, measure the real output TP,
+                # and back the gain off if it overshot — don't trust the
+                # threshold alone (see APPLAUSE_TP_MAX_ATTEMPTS). Tags are
+                # rebuilt each attempt so the final render's embedded "-N LUFS"
+                # comment always matches what was actually achieved.
+                for attempt in range(1, APPLAUSE_TP_MAX_ATTEMPTS + 1):
+                    tags = tag_args(tag_ctx, f, num, len(files), plan["target"])
+                    af = limiter_chain(plan, pre=filt)
+                    r = subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+                                        "-i", src, "-af", af, "-ar", str(info["sr"])] + codec
+                                       + tags + [out_audio], capture_output=True, text=True)
+                    if r.returncode != 0:
+                        break
+                    tp_now = float(measure(out_audio, plan["target"])["input_tp"])
+                    if tp_now <= TP_CEILING + TP_TOL:
+                        break
+                    overshoot = tp_now - TP_CEILING
+                    print(f"  {f}: attempt {attempt} measured {tp_now:+.2f} dBTP "
+                          f"(> {TP_CEILING}) — backing gain off {overshoot + 0.15:.2f} dB "
+                          "and re-rendering", flush=True)
+                    plan["gain_db"] = round(plan["gain_db"] - overshoot - 0.15, 2)
+                    limiter_finalize(plan)
+                used_target = plan["target"]
             else:
+                tags = tag_args(tag_ctx, f, num, len(files), used_target)
                 # loudnorm values measured on the post-EQ signal (so the gain is
                 # right); in_I is the RAW input loudness, kept for provenance.
                 j = measure(src, used_target, pre=filt)
@@ -857,11 +927,9 @@ def cmd_process(args):
                       f"measured_I={j['input_i']}:measured_LRA={j['input_lra']}:"
                       f"measured_tp={j['input_tp']}:measured_thresh={j['input_thresh']}:"
                       f"offset={j['target_offset']}:linear=true:print_format=summary")
-            codec = output_codec(info["bits"], info["sample_fmt"], container)
-            tags = tag_args(tag_ctx, f, num, len(files), used_target)
-            r = subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
-                                "-i", src, "-af", af, "-ar", str(info["sr"])] + codec
-                               + tags + [out_audio], capture_output=True, text=True)
+                r = subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+                                    "-i", src, "-af", af, "-ar", str(info["sr"])] + codec
+                                   + tags + [out_audio], capture_output=True, text=True)
             if r.returncode != 0:
                 print(f"  FAIL {f}: {r.stderr[-200:]}", flush=True)
                 continue

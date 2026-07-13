@@ -6,219 +6,333 @@
   "pre_edits": "Broadband noise reduction (noise reduction = 8dB, sensitivity = 5) applied to the full recording in Audacity before the tracks were split.",
   "filters": "none",
   "tool": "ffmpeg loudnorm",
-  "workflow_version": 3,
+  "workflow_version": 5,
   "ffmpeg": "7.1.3-0+deb13u1",
-  "date": "2026-07-12",
+  "date": "2026-07-13",
   "tracks": {
     "1": {
-      "ver": 3,
-      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "ver": 5,
+      "chain": "loudnorm=I=-20.16:LRA=11:TP=-1:linear=true",
       "in_lufs": -25.2,
-      "lufs": -20.01,
-      "tp": -1.29,
-      "mp3_tp": -1.39,
-      "lra": 7.6,
-      "md5": "6beb5f84902476dcda15089f72935ce2"
+      "lufs": -20.15,
+      "tp": -1.0,
+      "mp3_tp": -0.91,
+      "lra": 8.6,
+      "md5": "6fede67ef24a297a9e7dcaa198242a66",
+      "target_lufs": -20.16,
+      "mode": "linear-reduced",
+      "note": "gain to -20 LUFS would overshoot the TP ceiling by 0.2 dB — small enough to simply take the track's own max linear target; dynamics untouched"
     },
     "2": {
-      "ver": 3,
-      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "ver": 5,
+      "chain": "volume=8.91dB,alimiter=limit=0.870964:attack=5:release=100:level=false:latency=1",
       "in_lufs": -30.3,
-      "lufs": -19.99,
-      "tp": -0.99,
-      "mp3_tp": -1.0,
-      "lra": 6.4,
-      "md5": "bad55fea08413ba0776ff59536089e67"
+      "lufs": -21.39,
+      "tp": -1.19,
+      "mp3_tp": -1.19,
+      "lra": 6.9,
+      "md5": "f6f6875552c0f7c6242cd162b51023f0",
+      "target_lufs": -21.39,
+      "applause_limiter": {
+        "gain_db": 8.91,
+        "limit_db": -1.2,
+        "regions": [
+          [
+            165.0,
+            170.0,
+            2.1
+          ]
+        ]
+      },
+      "mode": "applause-limiter",
+      "note": "applause (not music) set the ceiling: one constant +8.9 dB gain sized to the music peaks (-10.1 dB), with only the applause transients at 2:45–2:50 limited (up to 2.1 dB); the music is untouched linear"
     },
     "3": {
-      "ver": 3,
-      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "ver": 5,
+      "chain": "loudnorm=I=-21.57:LRA=11:TP=-1:linear=true",
       "in_lufs": -27.2,
-      "lufs": -19.9,
-      "tp": -0.99,
-      "mp3_tp": -0.98,
-      "lra": 8.6,
-      "md5": "02da6b8d46af36cf55fecfb86c7f69bd"
+      "lufs": -21.56,
+      "tp": -1.0,
+      "mp3_tp": -1.0,
+      "lra": 9.6,
+      "md5": "64b5c7ff5d36324ae49f8364499d4a8a",
+      "target_lufs": -21.57,
+      "mode": "linear-reduced",
+      "note": "gain to -20 LUFS would overshoot the TP ceiling by 1.6 dB — small enough to simply take the track's own max linear target; dynamics untouched"
     },
     "4": {
-      "ver": 3,
-      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "ver": 5,
+      "chain": "volume=8.84dB,alimiter=limit=0.870964:attack=5:release=100:level=false:latency=1",
       "in_lufs": -30.5,
-      "lufs": -20.0,
-      "tp": -0.97,
-      "mp3_tp": -0.92,
-      "lra": 9.5,
-      "md5": "64decc281a5019c3d65ffc817afff70c"
+      "lufs": -21.65,
+      "tp": -1.03,
+      "mp3_tp": -0.97,
+      "lra": 10.6,
+      "md5": "abb8717965addbe2fd861ec45c43a752",
+      "target_lufs": -21.65,
+      "applause_limiter": {
+        "gain_db": 8.84,
+        "limit_db": -1.2,
+        "regions": [
+          [
+            210.0,
+            215.0,
+            6.0
+          ]
+        ]
+      },
+      "mode": "applause-limiter",
+      "note": "applause (not music) set the ceiling: one constant +8.8 dB gain sized to the music peaks (-10.1 dB), with only the applause transients at 3:30–3:35 limited (up to 6.0 dB); the music is untouched linear"
     },
     "5": {
-      "ver": 3,
-      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "ver": 5,
+      "chain": "volume=3.97dB,alimiter=limit=0.870964:attack=5:release=100:level=false:latency=1",
       "in_lufs": -28.7,
-      "lufs": -20.0,
-      "tp": -0.87,
-      "mp3_tp": -0.82,
-      "lra": 10.6,
-      "md5": "8fa0fed45a935051f362f4a57bc1c505"
+      "lufs": -24.76,
+      "tp": -1.15,
+      "mp3_tp": -1.17,
+      "lra": 13.3,
+      "md5": "ae8b09d56888af939cde7c2d0279713e",
+      "target_lufs": -24.76,
+      "applause_limiter": {
+        "gain_db": 3.97,
+        "limit_db": -1.2,
+        "regions": [
+          [
+            170.0,
+            175.0,
+            1.0
+          ]
+        ]
+      },
+      "mode": "applause-limiter",
+      "note": "applause (not music) set the ceiling: one constant +4.0 dB gain sized to the music peaks (-6.0 dB), with only the applause transients at 2:50–2:55 limited (up to 1.0 dB); the music is untouched linear"
     },
     "6": {
-      "ver": 3,
-      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "ver": 5,
+      "chain": "loudnorm=I=-23.65:LRA=11:TP=-1:linear=true",
       "in_lufs": -26.3,
-      "lufs": -19.96,
-      "tp": -1.0,
-      "mp3_tp": -1.0,
+      "lufs": -23.66,
+      "tp": -2.21,
+      "mp3_tp": -2.28,
       "lra": 5.1,
-      "md5": "c114849f3d8a4659530f261ca6186814"
+      "md5": "c6109ab367ea8cbe4eed55df2e000df7",
+      "target_lufs": -23.65,
+      "mode": "linear-reduced",
+      "note": "gain to -20 LUFS would overshoot the TP ceiling by 3.7 dB; the loudest peaks are in (or within 2 dB of) the music itself, so limiting would only recover 0.0 dB — the track takes its honest quieter max linear target instead [review: applause limiting would only recover 0.0 dB — not worth a limiter]"
     },
     "7": {
-      "ver": 3,
-      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "ver": 5,
+      "chain": "loudnorm=I=-21.11:LRA=11:TP=-1:linear=true",
       "in_lufs": -25.6,
-      "lufs": -20.07,
+      "lufs": -21.11,
       "tp": -1.0,
-      "mp3_tp": -1.0,
-      "lra": 7.1,
-      "md5": "9ee7b0316366d0a6952c38f6234f3254"
+      "mp3_tp": -1.01,
+      "lra": 6.6,
+      "md5": "a17a1f6e404bb7f4ee5cb210ac8066ea",
+      "target_lufs": -21.11,
+      "mode": "linear-reduced",
+      "note": "gain to -20 LUFS would overshoot the TP ceiling by 1.1 dB — small enough to simply take the track's own max linear target; dynamics untouched"
     },
     "8": {
-      "ver": 3,
-      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "ver": 5,
+      "chain": "loudnorm=I=-21.54:LRA=11:TP=-1:linear=true",
       "in_lufs": -24.8,
-      "lufs": -20.0,
-      "tp": -0.93,
-      "mp3_tp": -0.88,
-      "lra": 5.7,
-      "md5": "199c2bd4f89517be0783f779d73390d3"
+      "lufs": -21.54,
+      "tp": -1.71,
+      "mp3_tp": -1.74,
+      "lra": 5.6,
+      "md5": "0de9740803603a9fa9acf424fc546633",
+      "target_lufs": -21.54,
+      "mode": "linear-reduced",
+      "note": "gain to -20 LUFS would overshoot the TP ceiling by 1.5 dB — small enough to simply take the track's own max linear target; dynamics untouched"
     },
     "9": {
-      "ver": 3,
-      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "ver": 5,
+      "chain": "loudnorm=I=-22.97:LRA=11:TP=-1:linear=true",
       "in_lufs": -26.9,
-      "lufs": -19.99,
+      "lufs": -22.97,
       "tp": -1.0,
-      "mp3_tp": -0.99,
-      "lra": 9.2,
-      "md5": "27d36b850ce0f39244ddb6ea5926e71a"
+      "mp3_tp": -0.97,
+      "lra": 9.5,
+      "md5": "5f933ef3bdd2bd495e00e8ee9a67af1d",
+      "target_lufs": -22.97,
+      "mode": "linear-reduced",
+      "note": "gain to -20 LUFS would overshoot the TP ceiling by 3.0 dB; the loudest peaks are in (or within 2 dB of) the music itself, so limiting would only recover 0.0 dB — the track takes its honest quieter max linear target instead [review: applause limiting would only recover 0.0 dB — not worth a limiter]"
     },
     "10": {
-      "ver": 3,
-      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "ver": 5,
+      "chain": "loudnorm=I=-20.2:LRA=11:TP=-1:linear=true",
       "in_lufs": -23.6,
-      "lufs": -20.0,
-      "tp": -0.99,
-      "mp3_tp": -0.98,
+      "lufs": -20.2,
+      "tp": -1.17,
+      "mp3_tp": -1.17,
       "lra": 6.5,
-      "md5": "de82139f79fa1fbccd1a6e23e18b4529"
+      "md5": "f837ab584f4622798d2d029aeb0e6110",
+      "target_lufs": -20.2,
+      "mode": "linear-reduced",
+      "note": "gain to -20 LUFS would overshoot the TP ceiling by 0.2 dB — small enough to simply take the track's own max linear target; dynamics untouched"
     },
     "11": {
-      "ver": 3,
-      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "ver": 5,
+      "chain": "loudnorm=I=-20.56:LRA=11:TP=-1:linear=true",
       "in_lufs": -22.6,
-      "lufs": -20.07,
+      "lufs": -20.56,
       "tp": -1.0,
-      "mp3_tp": -0.97,
-      "lra": 7.3,
-      "md5": "ba9979d48da68d0ef5abf7eb440401c7"
+      "mp3_tp": -0.99,
+      "lra": 8.0,
+      "md5": "f4c41829010aa0193d5c591324dd7abc",
+      "target_lufs": -20.56,
+      "mode": "linear-reduced",
+      "note": "gain to -20 LUFS would overshoot the TP ceiling by 0.6 dB — small enough to simply take the track's own max linear target; dynamics untouched"
     },
     "12": {
-      "ver": 3,
-      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "ver": 5,
+      "chain": "loudnorm=I=-20.77:LRA=11:TP=-1:linear=true",
       "in_lufs": -23.5,
-      "lufs": -20.19,
-      "tp": -0.99,
-      "mp3_tp": -0.97,
+      "lufs": -20.98,
+      "tp": -1.76,
+      "mp3_tp": -1.76,
       "lra": 9.6,
-      "md5": "4d59e33f1b5188f3733f941277b05653"
+      "md5": "32f8bbb9aa18d2a5f2e4dea2131795d5",
+      "target_lufs": -20.77,
+      "mode": "linear-reduced",
+      "note": "gain to -20 LUFS would overshoot the TP ceiling by 0.8 dB — small enough to simply take the track's own max linear target; dynamics untouched"
     },
     "13": {
-      "ver": 3,
-      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "ver": 5,
+      "chain": "volume=6.41dB,alimiter=limit=0.870964:attack=5:release=100:level=false:latency=1",
       "in_lufs": -27.0,
-      "lufs": -20.11,
-      "tp": -0.99,
-      "mp3_tp": -0.97,
-      "lra": 12.2,
-      "md5": "32984978e7505f6efdc1811cebd5791b"
+      "lufs": -20.58,
+      "tp": -1.01,
+      "mp3_tp": -0.98,
+      "lra": 16.0,
+      "md5": "d339194f8551fef75b15314fd91b4b84",
+      "target_lufs": -20.58,
+      "applause_limiter": {
+        "gain_db": 6.41,
+        "limit_db": -1.2,
+        "regions": [
+          [
+            155.0,
+            160.0,
+            2.8
+          ]
+        ]
+      },
+      "mode": "applause-limiter",
+      "note": "applause (not music) set the ceiling: one constant +6.4 dB gain sized to the music peaks (-7.6 dB), with only the applause transients at 2:35–2:40 limited (up to 2.8 dB); the music is untouched linear"
     },
     "14": {
-      "ver": 3,
+      "ver": 5,
       "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
       "in_lufs": -24.7,
       "lufs": -20.0,
       "tp": -1.0,
       "mp3_tp": -0.99,
       "lra": 8.9,
-      "md5": "2c1ba25a96297ab7e65420dbd74ac713"
+      "md5": "2c1ba25a96297ab7e65420dbd74ac713",
+      "mode": "linear",
+      "note": "one constant gain to the show target; predicted TP -1.4 dBTP fits under the -1 ceiling"
     },
     "15": {
-      "ver": 3,
+      "ver": 5,
       "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
       "in_lufs": -25.1,
       "lufs": -20.02,
       "tp": -1.53,
       "mp3_tp": -1.52,
       "lra": 12.7,
-      "md5": "8919416a234104a33d239a6406507410"
+      "md5": "8919416a234104a33d239a6406507410",
+      "mode": "linear",
+      "note": "one constant gain to the show target; predicted TP -1.0 dBTP fits under the -1 ceiling"
     },
     "16": {
-      "ver": 3,
+      "ver": 5,
       "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
       "in_lufs": -22.5,
       "lufs": -20.0,
       "tp": -1.24,
       "mp3_tp": -1.25,
       "lra": 9.9,
-      "md5": "ebb062cab7f674a3e1bcd1273d1e8a08"
+      "md5": "ebb062cab7f674a3e1bcd1273d1e8a08",
+      "mode": "linear",
+      "note": "one constant gain to the show target; predicted TP -1.2 dBTP fits under the -1 ceiling"
     },
     "17": {
-      "ver": 3,
-      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "ver": 5,
+      "chain": "volume=3.89dB,alimiter=limit=0.870964:attack=5:release=100:level=false:latency=1",
       "in_lufs": -24.6,
-      "lufs": -20.01,
-      "tp": -0.97,
-      "mp3_tp": -0.97,
-      "lra": 10.3,
-      "md5": "911c6efa67e92746a0a47eaed41d4eca"
+      "lufs": -20.68,
+      "tp": -1.08,
+      "mp3_tp": -1.08,
+      "lra": 12.2,
+      "md5": "5a1caae9afe3793654e5229f7e980d5d",
+      "target_lufs": -20.68,
+      "applause_limiter": {
+        "gain_db": 3.89,
+        "limit_db": -1.2,
+        "regions": [
+          [
+            190.0,
+            195.0,
+            2.1
+          ]
+        ]
+      },
+      "mode": "applause-limiter",
+      "note": "applause (not music) set the ceiling: one constant +3.9 dB gain sized to the music peaks (-5.1 dB), with only the applause transients at 3:10–3:15 limited (up to 2.1 dB); the music is untouched linear"
     },
     "18": {
-      "ver": 3,
-      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "ver": 5,
+      "chain": "loudnorm=I=-21.06:LRA=11:TP=-1:linear=true",
       "in_lufs": -23.8,
-      "lufs": -20.14,
-      "tp": -1.55,
-      "mp3_tp": -1.53,
-      "lra": 10.6,
-      "md5": "71c0e7612e0dc329890cb1642a737c36"
+      "lufs": -21.21,
+      "tp": -2.62,
+      "mp3_tp": -2.62,
+      "lra": 10.5,
+      "md5": "f212c44d4d8a8456033153f404aacd5b",
+      "target_lufs": -21.06,
+      "mode": "linear-reduced",
+      "note": "gain to -20 LUFS would overshoot the TP ceiling by 1.1 dB — small enough to simply take the track's own max linear target; dynamics untouched"
     },
     "19": {
-      "ver": 3,
+      "ver": 5,
       "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
       "in_lufs": -23.0,
       "lufs": -20.0,
       "tp": -2.31,
       "mp3_tp": -2.29,
       "lra": 10.0,
-      "md5": "f4137a088d972bf0e773e07339933eb1"
+      "md5": "f4137a088d972bf0e773e07339933eb1",
+      "mode": "linear",
+      "note": "one constant gain to the show target; predicted TP -2.3 dBTP fits under the -1 ceiling"
     },
     "20": {
-      "ver": 3,
-      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "ver": 5,
+      "chain": "loudnorm=I=-20.24:LRA=11:TP=-1:linear=true",
       "in_lufs": -23.9,
-      "lufs": -20.03,
-      "tp": -1.0,
-      "mp3_tp": -0.97,
-      "lra": 10.4,
-      "md5": "8558bfcc063a3dffbb32ffefb673d6bf"
+      "lufs": -20.27,
+      "tp": -1.21,
+      "mp3_tp": -1.21,
+      "lra": 10.5,
+      "md5": "dc8ae5943bd788de09583eb61dbfd144",
+      "target_lufs": -20.24,
+      "mode": "linear-reduced",
+      "note": "gain to -20 LUFS would overshoot the TP ceiling by 0.2 dB — small enough to simply take the track's own max linear target; dynamics untouched"
     },
     "21": {
-      "ver": 3,
-      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "ver": 5,
+      "chain": "loudnorm=I=-21.47:LRA=11:TP=-1:linear=true",
       "in_lufs": -25.1,
-      "lufs": -20.02,
+      "lufs": -21.47,
       "tp": -1.0,
-      "mp3_tp": -0.99,
-      "lra": 9.5,
-      "md5": "bed08022f25f057cfde8e0397853cab0"
+      "mp3_tp": -1.0,
+      "lra": 9.6,
+      "md5": "c4606a65f230cf5e102f87a8a9ff5fdc",
+      "target_lufs": -21.47,
+      "mode": "linear-reduced",
+      "note": "gain to -20 LUFS would overshoot the TP ceiling by 1.5 dB — small enough to simply take the track's own max linear target; dynamics untouched"
     }
   }
 }

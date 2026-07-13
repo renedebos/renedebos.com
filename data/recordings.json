@@ -3474,7 +3474,7 @@
           "size_mb": 9,
           "file": "MP3/JerryHannan - Cafe Java 1999-03-25/03 Truck.mp3",
           "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/03 Truck.flac",
-          "flac_size_mb": 32,
+          "flac_size_mb": 31,
           "processed": true,
           "tags": [
             "original",
@@ -3489,7 +3489,7 @@
           "size_mb": 9,
           "file": "MP3/JerryHannan - Cafe Java 1999-03-25/04 Butter.mp3",
           "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/04 Butter.flac",
-          "flac_size_mb": 30,
+          "flac_size_mb": 29,
           "processed": true,
           "tags": [
             "original",
@@ -3504,7 +3504,7 @@
           "size_mb": 7,
           "file": "MP3/JerryHannan - Cafe Java 1999-03-25/05 Anna May.mp3",
           "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/05 Anna May.flac",
-          "flac_size_mb": 24,
+          "flac_size_mb": 23,
           "processed": true,
           "tags": [
             "original",
@@ -3563,7 +3563,7 @@
           "size_mb": 7,
           "file": "MP3/JerryHannan - Cafe Java 1999-03-25/09 Luxury of Murder.mp3",
           "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/09 Luxury of Murder.flac",
-          "flac_size_mb": 25,
+          "flac_size_mb": 24,
           "processed": true,
           "tags": [
             "original",
@@ -9367,6 +9367,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-07-13",
+      "ts": "2026-07-13T09:58:17",
+      "slug": "jerry-cafe-java-1999-03-25",
+      "report": true,
+      "text": "Re-normalized all 21 tracks: a bug in the loudness pipeline had silently switched several tracks into dynamic (compressor-like) processing instead of true linear gain, flattening hand-drawn fades and room dynamics. Tracks where audience applause — not the music — was the loudest thing on the tape now get linear gain sized to the music itself, with only the applause gently limited, using the automated audio engineering workflow with ffmpeg"
+    },
     {
       "date": "2026-07-12",
       "ts": "2026-07-12T21:20:00",
