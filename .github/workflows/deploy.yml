@@ -44,8 +44,15 @@ jobs:
       # until both are added this step fails with 403/400.
       - name: Purge Cloudflare cache
         run: |
-          curl -sS --fail -X POST \
+          resp=$(curl -sS -w '\n%{http_code}' -X POST \
             "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
             -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
             -H "Content-Type: application/json" \
-            --data '{"purge_everything":true}'
+            --data '{"purge_everything":true}')
+          code=$(echo "$resp" | tail -n1)
+          body=$(echo "$resp" | sed '$d')
+          echo "$body"
+          if [ "$code" -ge 400 ]; then
+            echo "::error::Cache purge failed with HTTP $code"
+            exit 1
+          fi
