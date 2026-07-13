@@ -2,8 +2,8 @@
 
 *How a show gets from a whole-show WAV to renedebos.com, what you do
 by hand, what Claude runs, and what every tool in `scripts/` is for.*
-*Last updated: 2026-07-10 (matches workflow v3 — embedded tags, extended
-diagnose, publish_show orchestration).*
+*Last updated: 2026-07-13 (matches workflow v5 — applause-aware headroom
+recovery with a true-peak safety loop, per-track treatment audit trail).*
 
 ---
 
@@ -65,7 +65,7 @@ diagnose, publish_show orchestration).*
 |---|---|---|
 | `publish_show.py prepare` | Finds the Work Folder, picks `Tracks/` vs `Tracks Noise Reduction/`, reads `notes.txt`, copies tracks, runs the **full diagnose** (loudness, true peak, dynamics, DC offset, clipping scan, DAT dropout scan, digital click/discontinuity scan — defects reported with exact timestamps — bandwidth-vs-sample-rate check, channel balance/phase on every track; `--spectrograms` adds a PNG per track for visual inspection of suspect tapes) | none |
 | Diagnose review | Claude reads the verdicts | **Only if real clipping is found**: Claude sends the track list back to you — fix in Audacity, re-export those tracks, re-copy to Drive, say go. Benign/minor residual publishes as-is. |
-| `publish_show.py publish` | Loudness-normalize every track to **−20 LUFS / −1 dBTP** (linear gain only — no compression, no EQ), make FLAC master + 320k MP3 with **embedded metadata tags** (title/artist/show/track/year, so downloads display properly in any player) and an MP3 true-peak check, upload to R2, generate waveform peaks, verify R2 MD5s against the provenance record, back up processed files to Drive `Processed/`, clean up | none |
+| `publish_show.py publish` | Loudness-normalize every track to **−20 LUFS / −1 dBTP**: plain linear gain when the track allows it, one constant linear boost sized to the *music* with only applause transients gently capped when applause (not the music) is what's loudest, or an honest quieter linear target when neither applies — never a compressor-style squash (see [Loudness normalization](#loudness-normalization) below). Make FLAC master + 320k MP3 with **embedded metadata tags** (title/artist/show/track/year) and an MP3 true-peak check, upload to R2, generate waveform peaks, verify R2 MD5s against the provenance record, back up processed files to Drive `Processed/`, clean up | none |
 | `draft_tracks.py` | Drafts the track list into `recordings.json`: durations, sizes, and each song's established songwriter + tags reused from the catalog | **Answer the flags**: titles new to the archive need your songwriter/tags call |
 | Words | Claude writes the show description, the Updates note, and the `/history/` paragraph | edit afterwards if you want (`make edit`) |
 | Build + ship | `build.py` (fails on integrity problems, warns on stale `rarity` tags), commit, push, watch the deploy, spot-check the live page | none |
@@ -83,6 +83,57 @@ diagnose, publish_show orchestration).*
   deletes the local working copies — but only after verifying the show is
   live on the site, complete on R2, and backed up on Drive. It refuses
   otherwise.
+
+### Loudness normalization
+
+**Policy: linear gain only, never dynamic (compressor-style) processing —
+no exceptions.** These are acoustic live recordings with wide, intentional
+dynamics (quiet fingerpicked verses next to loud strummed choruses,
+hand-drawn fade-outs); the −20 LUFS target is chosen for comfortable
+listening, not competitive loudness, so there's never a reason to squash a
+track's dynamics to hit it exactly. `process` decides per track, in order:
+
+1. **Plain linear** — the show's nominal target (−20 LUFS for every artist)
+   fits under the −1 dBTP ceiling with a single constant gain. Most tracks.
+2. **Linear, reduced target** — the nominal target would push true peak past
+   the ceiling by a small margin (≤ 2 dB). ffmpeg's `linear=true` is only a
+   *request*: past that margin it silently falls back to dynamic
+   normalization, which rides gain up on quiet passages and can flatten a
+   hand-drawn fade — completely invisible in the logs. So instead the track
+   takes its own honest "max linear target" (the same number `diagnose`
+   reports as `PRED_TP`'s max linear target) — a few dB quieter than its
+   neighbors, always still one constant gain, dynamics untouched.
+3. **Applause-limited** — some audience tapes had the mic close to the
+   crowd, and a clap can peak louder than anything in the music itself,
+   forcing option 2 several dB quieter than the music needs. When the
+   overshoot is large, the loudest moments are located and classified by
+   *behavior*, not loudness: a window counts as applause only if it sits
+   within `min(30s, track-length/6)` of the very start or end (tracks are
+   split from one continuous tape — applause lives at those boundaries,
+   never mid-song) **and** either towers ≥ 27 dB over its own local average
+   (a clap's signature — sustained music measures 19–22 dB) or beats the
+   loudest moment in the song's body by ≥ 2 dB (catches a final chord ringing
+   out under the applause, which would otherwise hide the clap signature).
+   If applause is what's eating the headroom, the music gets one constant
+   gain sized to the music's own peaks — the limiter is mathematically
+   incapable of touching anything classified as music — with a lookahead
+   limiter engaging only on the applause. Ambiguous cases (a loud moment
+   mid-song, or where limiting would barely help) fall back to option 2 and
+   are flagged for a listen.
+4. **True-peak safety loop** (applause-limited tracks only) — the limiter
+   caps *sample* peaks, but the archive's −1 dBTP ceiling is a *true*
+   (oversampled) peak; on hot transients the two can disagree by a few
+   tenths of a dB. So the applause-limited render is measured after the
+   fact, and if the real output overshoots, the gain is backed off and
+   re-rendered (up to 5 attempts) — the ceiling is never trusted to the
+   limiter's math alone.
+
+Every track's processing sidecar (`data/processing/<slug>.json`) records
+which of the above it got and *why*, in plain language — that's the
+Treatment column (hover for the reasoning) in each show's Technical data
+table. A `python3 scripts/audio_process.py plan <folder> --artist <name>`
+dry run shows every decision for a folder of tracks without writing any
+audio — useful before committing to a reprocess.
 
 ---
 
@@ -103,7 +154,7 @@ tells you whether you ever need to touch it.
 | Tool | What it does |
 |---|---|
 | **`publish_show.py`** | The orchestrator. `prepare <slug>` = locate + copy + diagnose, then stop for review. `publish <slug>` = normalize → R2 → peaks → verify → Drive backup. `cleanup <slug>` = delete the local work copies, but only after verifying the show is live, complete on R2, and backed up on Drive. One human gate in the middle, everything else automatic. |
-| **`audio_process.py`** | The engine underneath: `diagnose` (per-track measurements + clipping/dropout/bandwidth/channel verdicts), `process` (the −20 LUFS loudnorm + tagged FLAC/MP3 + provenance sidecar), `verify` (R2 MD5s vs sidecar), `retag` (retro-fit tags without touching the audio), `status`/`history`/`versions` (what's been done to what, per track). |
+| **`audio_process.py`** | The engine underneath: `diagnose` (per-track measurements + clipping/dropout/bandwidth/channel verdicts), `plan` (dry run — every track's normalization decision, no audio written; see [Loudness normalization](#loudness-normalization)), `process` (the −20 LUFS loudnorm + tagged FLAC/MP3 + provenance sidecar), `verify` (R2 MD5s vs sidecar), `retag` (retro-fit tags without touching the audio), `status`/`history`/`versions` (what's been done to what, per track). |
 | **`draft_tracks.py`** | Drafts `tracks[]` metadata from the processed files + the existing catalog; flags anything needing a human call. |
 | **`gen_peaks.py`** | Precomputes the waveform shapes the player draws. Runs inside `publish`. |
 | **`build.py`** | Generates the whole site from `recordings.json` + content fragments. Fails on integrity problems (bad tags, broken paths, missing peaks/sidecars, orphan song pages); warns on rarity drift. CI runs the same checks before every deploy. |
@@ -127,6 +178,9 @@ tells you whether you ever need to touch it.
 - **Provenance**: every processed show has `data/processing/<slug>.json` —
   the exact settings and measurements per track — rendered as the "Technical
   data" table on the show page. NR shows get a blue **noise-reduced** badge.
+  A per-track **Treatment** column (workflow v5+) shows which normalization
+  mode the track got, with the plain-language reasoning on hover; a `—`
+  means the track predates v5 and hasn't been reprocessed yet.
 
 > **Drive is the source of truth.** `~/gdrive-mount` is an ordinary local
 > folder; nothing syncs by itself — you copy up via the Files app, Claude
@@ -212,6 +266,15 @@ per-show step; it matters when something breaks or gets upgraded.
 > always spot-check a URL only the new deploy can serve, on renedebos.com itself.
 > Also: edge caching means header/page changes can take a while to appear on
 > already-cached pages — Cloudflare dashboard → Purge Cache makes it instant.
+> **`/shows/<slug>/` pages specifically ignore `?cache-bust` query strings**
+> (confirmed 2026-07-13: `/updates/` and `/songs/*/` fetch fresh every time,
+> but a `/shows/*/` URL kept serving `cf-cache-status: HIT` on the old page
+> through several cache-busted requests). After reprocessing a show, check
+> `/updates/` or a song page first to confirm the deploy itself landed, then
+> purge that show's URL by hand: dashboard → **Caching → Configuration →
+> Purge Cache → Custom Purge**, paste the exact show URL. The deploy Action's
+> `CLOUDFLARE_API_TOKEN` is scoped to Workers deploy only — it can't purge
+> cache, so this step has to be manual.
 
 ### Security posture (hardened 2026-07-10)
 

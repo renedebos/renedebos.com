@@ -67,14 +67,24 @@
       <h2>4 &middot; Loudness normalization</h2>
       <p>Each track is brought to the archive standard &mdash; <strong>&minus;20&nbsp;LUFS</strong>
         integrated with a <strong>&minus;1&nbsp;dBTP</strong> true-peak ceiling &mdash; using
-        linear gain only: no compression, no EQ, the dynamics of the room stay intact.
-        The output is a FLAC master and a 320&nbsp;kbps MP3 per track, each with an audio
+        linear gain: one constant boost for the whole track, no compression, no EQ, so the
+        music&rsquo;s own dynamics stay intact. On some audience tapes the loudest thing on
+        the recording is a burst of applause rather than the music itself &mdash; when that
+        happens, the track&rsquo;s music still gets a plain linear boost, sized to the music
+        alone, and only the applause is gently capped so it can&rsquo;t overshoot; if the
+        loudest moment is inside the performance instead, nothing is capped and the track
+        simply lands a little quieter and honest. Either way, dynamics are never squashed
+        to hit the target louder &mdash; a track landing a few dB quieter than its neighbors
+        is preferred over flattening a fade or a clap-driven track pumping the room noise.</p>
+      <p>The output is a FLAC master and a 320&nbsp;kbps MP3 per track, each with an audio
         MD5 fingerprint, full <strong>embedded metadata</strong> (title, artist, show,
         track number, year) so downloads display properly in any player, and a
         true-peak check on the MP3 itself (lossy encoding can overshoot peaks).</p>
       <p>A provenance record is written per show &mdash; source format, the exact filter
-        chain, per-track before/after measurements &mdash; and that record is what renders
-        as the show&rsquo;s &ldquo;Technical data&rdquo; table.</p>
+        chain, per-track before/after measurements, and which of the above treatments
+        each track got &mdash; and that record is what renders as the show&rsquo;s
+        &ldquo;Technical data&rdquo; table, including a Treatment column you can hover
+        for the exact reasoning.</p>
     </div>
 
     <div class="flow-arrow" aria-hidden="true">&darr;</div>
