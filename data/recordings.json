@@ -3855,10 +3855,338 @@
           "stream": "MP3/Full/WAV_Files/JerryHannan_CafeJava_1999-05-10 DIGITAL.mp3"
         }
       ],
-      "tracks": null,
-      "description": null,
+      "tracks": [
+        {
+          "num": 1,
+          "title": "Model Family Man",
+          "songwriter": "Paddy Nash",
+          "duration": "3:45",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - Cafe Java 1999-05-10/01 Model Family Man.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-05-10/01 Model Family Man.flac",
+          "flac_size_mb": 45,
+          "processed": true,
+          "tags": [
+            "cover"
+          ]
+        },
+        {
+          "num": 2,
+          "title": "The Patriot Game",
+          "songwriter": "Traditional",
+          "duration": "3:17",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - Cafe Java 1999-05-10/02 Patriot Game.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-05-10/02 Patriot Game.flac",
+          "flac_size_mb": 38,
+          "processed": true,
+          "tags": [
+            "traditional",
+            "irish",
+            "ballad",
+            "story"
+          ]
+        },
+        {
+          "num": 3,
+          "title": "I Thought I Was You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:44",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - Cafe Java 1999-05-10/03 I Thought I Was You .mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-05-10/03 I Thought I Was You .flac",
+          "flac_size_mb": 44,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 4,
+          "title": "Truck",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:45",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - Cafe Java 1999-05-10/04 Truck.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-05-10/04 Truck.flac",
+          "flac_size_mb": 44,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 5,
+          "title": "Getaway Blues",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:58",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - Cafe Java 1999-05-10/05 Getaway Blues.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-05-10/05 Getaway Blues.flac",
+          "flac_size_mb": 34,
+          "processed": true,
+          "tags": [
+            "original",
+            "blues"
+          ]
+        },
+        {
+          "num": 6,
+          "title": "Sam Hall",
+          "songwriter": "John Prine",
+          "duration": "4:02",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - Cafe Java 1999-05-10/06 Sam Hall.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-05-10/06 Sam Hall.flac",
+          "flac_size_mb": 47,
+          "processed": true,
+          "tags": [
+            "cover",
+            "story"
+          ]
+        },
+        {
+          "num": 7,
+          "title": "Highway Patrolman",
+          "songwriter": "Bruce Springsteen",
+          "duration": "5:32",
+          "size_mb": 13,
+          "file": "MP3/JerryHannan - Cafe Java 1999-05-10/07 Highway Patrolman.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-05-10/07 Highway Patrolman.flac",
+          "flac_size_mb": 64,
+          "processed": true,
+          "tags": [
+            "cover"
+          ]
+        },
+        {
+          "num": 8,
+          "title": "The Oldest Baby in the World",
+          "songwriter": "John Prine",
+          "duration": "2:21",
+          "size_mb": 6,
+          "file": "MP3/JerryHannan - Cafe Java 1999-05-10/08 The Oldest Baby in the World.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-05-10/08 The Oldest Baby in the World.flac",
+          "flac_size_mb": 27,
+          "processed": true,
+          "tags": [
+            "cover",
+            "ballad",
+            "rarity"
+          ]
+        },
+        {
+          "num": 9,
+          "title": "Illegal Smile",
+          "songwriter": "John Prine",
+          "duration": "2:46",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - Cafe Java 1999-05-10/09 Illegal Smile.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-05-10/09 Illegal Smile.flac",
+          "flac_size_mb": 32,
+          "processed": true,
+          "tags": [
+            "cover",
+            "folk",
+            "upbeat",
+            "singalong"
+          ]
+        },
+        {
+          "num": 10,
+          "title": "Ted Kennedy Song",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "0:31",
+          "size_mb": 1,
+          "file": "MP3/JerryHannan - Cafe Java 1999-05-10/10 Ted Kennedy Song.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-05-10/10 Ted Kennedy Song.flac",
+          "flac_size_mb": 6,
+          "processed": true,
+          "tags": [
+            "original",
+            "story",
+            "rarity"
+          ]
+        },
+        {
+          "num": 11,
+          "title": "Smoke in Heaven",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:54",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - Cafe Java 1999-05-10/11 Smoke in Heaven.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-05-10/11 Smoke in Heaven.flac",
+          "flac_size_mb": 34,
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
+        },
+        {
+          "num": 12,
+          "title": "Luxury of Murder",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:00",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - Cafe Java 1999-05-10/12 Luxury of Murder.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-05-10/12 Luxury of Murder.flac",
+          "flac_size_mb": 36,
+          "processed": true,
+          "tags": [
+            "original",
+            "story"
+          ]
+        },
+        {
+          "num": 13,
+          "title": "Butter",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:19",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - Cafe Java 1999-05-10/13 Butter.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-05-10/13 Butter.flac",
+          "flac_size_mb": 40,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 14,
+          "title": "Anna May",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:59",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - Cafe Java 1999-05-10/14 Anna May.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-05-10/14 Anna May.flac",
+          "flac_size_mb": 35,
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
+        },
+        {
+          "num": 15,
+          "title": "Recycle",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:30",
+          "size_mb": 11,
+          "file": "MP3/JerryHannan - Cafe Java 1999-05-10/15 Recycle.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-05-10/15 Recycle.flac",
+          "flac_size_mb": 52,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 16,
+          "title": "Born to Run",
+          "songwriter": "Bruce Springsteen",
+          "duration": "4:16",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - Cafe Java 1999-05-10/16 Born to Run.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-05-10/16 Born to Run.flac",
+          "flac_size_mb": 51,
+          "processed": true,
+          "tags": [
+            "cover",
+            "rarity"
+          ]
+        },
+        {
+          "num": 17,
+          "title": "I Need a Lover",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:55",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - Cafe Java 1999-05-10/17 I Need a Lover.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-05-10/17 I Need a Lover.flac",
+          "flac_size_mb": 35,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 18,
+          "title": "Jerry is Gone",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:20",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - Cafe Java 1999-05-10/18 Jerry is Gone.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-05-10/18 Jerry is Gone.flac",
+          "flac_size_mb": 40,
+          "processed": true,
+          "tags": [
+            "original",
+            "rarity"
+          ]
+        },
+        {
+          "num": 19,
+          "title": "ABC",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:13",
+          "size_mb": 5,
+          "file": "MP3/JerryHannan - Cafe Java 1999-05-10/19 ABC .mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-05-10/19 ABC .flac",
+          "flac_size_mb": 26,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 20,
+          "title": "The Parting Glass",
+          "songwriter": "Traditional",
+          "duration": "3:53",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - Cafe Java 1999-05-10/20 The Parting Glass.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-05-10/20 The Parting Glass.flac",
+          "flac_size_mb": 44,
+          "processed": true,
+          "tags": [
+            "traditional",
+            "irish",
+            "ballad"
+          ]
+        },
+        {
+          "num": 21,
+          "title": "Kilkelly Ireland",
+          "songwriter": "Peter Jones",
+          "duration": "5:44",
+          "size_mb": 14,
+          "file": "MP3/JerryHannan - Cafe Java 1999-05-10/21 Kilkelly Ireland.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-05-10/21 Kilkelly Ireland.flac",
+          "flac_size_mb": 67,
+          "processed": true,
+          "tags": [
+            "cover",
+            "irish",
+            "ballad",
+            "story"
+          ]
+        }
+      ],
+      "description": [
+        "Recorded from the audience on DAT at Cafe Java in Larkspur on May 10, 1999 — a 21-song solo set of Hannan originals alongside covers of Bruce Springsteen (“Highway Patrolman,” “Born to Run”), three John Prine songs, Paddy Nash, and the Irish traditional “The Patriot Game.”",
+        "The show has been split into individual songs and loudness-normalized to an even listening level.",
+        "The set closes with Peter Jones' “Kilkelly, Ireland,” a story-song about a family split by emigration."
+      ],
       "page": null,
-      "processing_status": "needs-processing"
+      "processing_status": "done",
+      "added": "2026-07-12",
+      "added_ts": "2026-07-12T17:24:43.157502"
     },
     {
       "slug": "jerry-cafe-java-1999-06-17",
@@ -8690,6 +9018,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-07-12",
+      "ts": "2026-07-12T17:24:43",
+      "slug": "jerry-cafe-java-1999-05-10",
+      "report": true,
+      "text": "Added the May 10, 1999 solo show at Cafe Java as 21 individual tracks, normalized to −20 LUFS."
+    },
     {
       "date": "2026-07-12",
       "ts": "2026-07-12T15:40:00",
