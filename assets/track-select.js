@@ -135,6 +135,14 @@
     renderBar();
   });
 
-  syncAllButtons();
-  renderBar();
+  // Landing on /playlist/ itself with a pending selection and no hash to
+  // follow (i.e. not someone else's shared link) — load it straight away
+  // rather than requiring a second, easy-to-miss click on the floating bar.
+  // "Go to Playlist" should just show what was picked, not stage it.
+  if (location.pathname === '/playlist/' && !location.hash && selected.length) {
+    goToPlaylist();
+  } else {
+    syncAllButtons();
+    renderBar();
+  }
 })();
