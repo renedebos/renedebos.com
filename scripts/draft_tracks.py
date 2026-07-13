@@ -74,6 +74,8 @@ def main():
         raise SystemExit(f"slug {args.slug!r} not in recordings.json")
     cat = catalog(M, args.slug)
 
+    old = {t["num"]: t for t in show.get("tracks") or []}
+
     flags, tracks = [], []
     for f in sorted(x for x in os.listdir(out) if x.endswith(".flac")):
         num, title = int(f[:2]), f[3:-5]
@@ -89,7 +91,7 @@ def main():
              "processed": True, "tags": []}
         prior = cat.get(song_key(title))
         if prior:
-            variants = sorted(set(prior), key=prior.count, reverse=True)
+            variants = sorted(set(prior), key=lambda v: (-prior.count(v), str(v)))
             sw, tags = variants[0]
             if sw:
                 t["songwriter"] = sw
@@ -103,12 +105,14 @@ def main():
         # keep the track dict key order consistent with the rest of the catalog
         order = ["num", "title", "songwriter", "duration", "size_mb", "file",
                  "flac", "flac_size_mb", "processed", "tags"]
-        tracks.append({k: t[k] for k in order if k in t})
+        derived = {k: t[k] for k in order if k in t}
+        tracks.append({**old.get(num, {}), **derived})
 
     now = datetime.datetime.now()
     show["tracks"] = tracks
-    show["added"] = now.date().isoformat()
-    show["added_ts"] = now.isoformat()
+    if not show.get("added"):
+        show["added"] = now.date().isoformat()
+        show["added_ts"] = now.isoformat()
     show["processing_status"] = "done"
 
     print(f"{args.slug}: drafted {len(tracks)} tracks "

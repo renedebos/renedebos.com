@@ -36,3 +36,16 @@ jobs:
         run: npx wrangler@4.110.0 deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      # Neither Worker sets Cache-Control on page routes, so Cloudflare's edge
+      # cache can serve stale HTML after a deploy — not tied to any one route,
+      # immune to client-side cache-busting. Purge everything post-deploy to
+      # close the gap. Requires CLOUDFLARE_API_TOKEN to have Zone > Cache Purge
+      # permission (deploy-only today) and a CLOUDFLARE_ZONE_ID repo secret —
+      # until both are added this step fails with 403/400.
+      - name: Purge Cloudflare cache
+        run: |
+          curl -sS --fail -X POST \
+            "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}'
