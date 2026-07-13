@@ -39,29 +39,16 @@ jobs:
       # Neither Worker sets Cache-Control on page routes, so Cloudflare's edge
       # cache can serve stale HTML after a deploy — not tied to any one route,
       # immune to client-side cache-busting. Purge everything post-deploy to
-      # close the gap. Requires CLOUDFLARE_API_TOKEN to have Zone > Cache Purge
-      # permission (deploy-only today) and a CLOUDFLARE_ZONE_ID repo secret —
-      # until both are added this step fails with 403/400.
+      # close the gap. CLOUDFLARE_API_TOKEN needs Zone > Cache Purge permission
+      # (2026-07-13) alongside the Workers permission used above.
       - name: Purge Cloudflare cache
         env:
           CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
         run: |
-          token=$(printf '%s' "$CF_TOKEN" | tr -d '[:space:]')
-          zone=$(printf '%s' "$CF_ZONE_ID" | tr -d '[:space:]')
-          echo "token length: ${#token} | zone length: ${#zone} | zone value: $zone"
-          echo "--- token verify ---"
-          curl -sS -X GET "https://api.cloudflare.com/client/v4/user/tokens/verify" \
-            -H "Authorization: Bearer $token" -H "Content-Type: application/json"
-          echo
-          echo "--- zone lookup ---"
-          curl -sS -X GET "https://api.cloudflare.com/client/v4/zones/$zone" \
-            -H "Authorization: Bearer $token" -H "Content-Type: application/json"
-          echo
-          echo "--- purge attempt ---"
           resp=$(curl -sS -w '\n%{http_code}' -X POST \
-            "https://api.cloudflare.com/client/v4/zones/$zone/purge_cache" \
-            -H "Authorization: Bearer $token" \
+            "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_cache" \
+            -H "Authorization: Bearer $CF_TOKEN" \
             -H "Content-Type: application/json" \
             --data '{"purge_everything":true}')
           code=$(echo "$resp" | tail -n1)
