@@ -60,8 +60,13 @@
       selected.length + (selected.length === 1 ? ' song selected' : ' songs selected');
   }
 
-  function setButtonState(id, on) {
-    document.querySelectorAll('.track-add[data-id="' + CSS.escape(id) + '"]').forEach(function (b) {
+  // Repaints every "+"/"✓" button currently in the DOM against `selected` —
+  // used instead of touching just the clicked button, since `selected` can
+  // change out from under a page (another tab, or a fresh localStorage read)
+  // in ways a single button's before/after state doesn't capture.
+  function syncAllButtons() {
+    document.querySelectorAll('.track-add[data-id]').forEach(function (b) {
+      var on = selected.indexOf(b.dataset.id) !== -1;
       b.setAttribute('aria-pressed', on);
       b.innerHTML = on ? CHECK_SVG : PLUS_SVG;
       b.setAttribute('aria-label', on ? 'Remove from playlist selection' : 'Add to playlist selection');
@@ -69,22 +74,28 @@
   }
 
   function toggle(id) {
+    // Re-read right before mutating: each page/tab only captures `selected`
+    // once, at load time, so if a *different* tab (or an earlier page in the
+    // same tab, in rare bfcache cases) has since saved a different selection,
+    // this page's stale in-memory copy would otherwise silently clobber it on
+    // the next save. Re-reading here closes that race.
+    selected = loadSelection();
     var i = selected.indexOf(id);
-    var on = i === -1;
-    if (on) selected.push(id); else selected.splice(i, 1);
-    setButtonState(id, on);
+    if (i === -1) selected.push(id); else selected.splice(i, 1);
     saveSelection();
+    syncAllButtons();
     renderBar();
   }
 
   function clearSelection() {
-    selected.slice().forEach(function (id) { setButtonState(id, false); });
     selected = [];
     saveSelection();
+    syncAllButtons();
     renderBar();
   }
 
   function goToPlaylist() {
+    selected = loadSelection();  // same race guard as toggle()
     if (!selected.length) return;
     var hash = '#p=' + selected.join(',');
     if (location.pathname === '/playlist/') {
@@ -104,24 +115,26 @@
     if (btn) { e.preventDefault(); toggle(btn.dataset.id); return; }
     var all = e.target.closest('.select-all');
     if (all) {
+      selected = loadSelection();
       var root = (all.dataset.target && document.querySelector(all.dataset.target)) || document;
-      root.querySelectorAll('.track-add[aria-pressed="false"]').forEach(function (b) {
-        toggle(b.dataset.id);
+      var changed = false;
+      root.querySelectorAll('.track-add[data-id]').forEach(function (b) {
+        if (selected.indexOf(b.dataset.id) === -1) { selected.push(b.dataset.id); changed = true; }
       });
+      if (changed) { saveSelection(); syncAllButtons(); renderBar(); }
     }
   });
 
-  // Server-rendered rows (show pages, the individual song page) always paint
-  // the unselected state at build time — sync them against a selection
-  // carried over from a previous page now that it persists. Client-rendered
-  // rows (songs matrix, playlist queue) don't need this: trackAddButtonHtml()
-  // already reads `selected` at the moment they're built.
-  document.querySelectorAll('.track-add[data-id]').forEach(function (b) {
-    if (selected.indexOf(b.dataset.id) !== -1) {
-      b.setAttribute('aria-pressed', 'true');
-      b.innerHTML = CHECK_SVG;
-      b.setAttribute('aria-label', 'Remove from playlist selection');
-    }
+  // Keep this tab's buttons/bar in sync if the selection changes in another
+  // tab while this page stays open — `storage` only fires in other same-
+  // origin tabs, never the one that made the change.
+  window.addEventListener('storage', function (e) {
+    if (e.key !== STORE_KEY) return;
+    selected = loadSelection();
+    syncAllButtons();
+    renderBar();
   });
+
+  syncAllButtons();
   renderBar();
 })();
