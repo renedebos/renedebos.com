@@ -3406,8 +3406,8 @@
       "venue": "Cafe Java, Larkspur",
       "venue_short": "Cafe Java",
       "date": "1999-03-25",
-      "date_display": "March 25 & April 8, 1999",
-      "subtitle": "Two nights on one tape",
+      "date_display": "March 25, 1999",
+      "subtitle": null,
       "source": "AUD",
       "recordings": [
         {
@@ -3431,17 +3431,6 @@
           "file": "WAV_Files/JerryHannan_CafeJava_1999-03-25 DIGITAL.wav",
           "free": false,
           "stream": "MP3/Full/WAV_Files/JerryHannan_CafeJava_1999-03-25 DIGITAL.mp3"
-        },
-        {
-          "label": "April 8 (digital transfer)",
-          "alt_label": null,
-          "alternate": false,
-          "source": "AUD",
-          "format": "WAV",
-          "size": "1.1 GB",
-          "file": "WAV_Files/JerryHannan_CafeJava_1999-04-08 DIGITAL.wav",
-          "free": false,
-          "stream": "MP3/Full/WAV_Files/JerryHannan_CafeJava_1999-04-08 DIGITAL.mp3"
         }
       ],
       "tracks": [
@@ -3770,6 +3759,46 @@
       "processing_status": "done",
       "added": "2026-07-12",
       "added_ts": "2026-07-12T20:08:55.062983"
+    },
+    {
+      "slug": "jerry-cafe-java-1999-04-08",
+      "artist": "jerry",
+      "venue": "Cafe Java, Larkspur",
+      "venue_short": "Cafe Java",
+      "date": "1999-04-08",
+      "date_display": "April 8, 1999",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [
+        {
+          "label": "Complete tape (both nights)",
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.48 GB",
+          "file": "WAV_Files/JerryHannan - Cafe Java 1999-03-25 1999-04-08.wav",
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan - Cafe Java 1999-03-25 1999-04-08.mp3"
+        },
+        {
+          "label": "April 8 (digital transfer)",
+          "alt_label": null,
+          "alternate": false,
+          "source": "AUD",
+          "format": "WAV",
+          "size": "1.1 GB",
+          "file": "WAV_Files/JerryHannan_CafeJava_1999-04-08 DIGITAL.wav",
+          "free": false,
+          "stream": "MP3/Full/WAV_Files/JerryHannan_CafeJava_1999-04-08 DIGITAL.mp3"
+        }
+      ],
+      "tracks": null,
+      "description": null,
+      "page": null,
+      "processing_status": "needs-processing",
+      "added": "2026-07-13",
+      "added_ts": "2026-07-13T00:00:00.000000"
     },
     {
       "slug": "jerry-cafe-java-1999-04-29",

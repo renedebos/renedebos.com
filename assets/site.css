@@ -451,9 +451,15 @@ main {
 }
 
 .show-venue {
+  display: flex;
+  align-items: center;
   font-size: 13px;
   color: var(--muted);
   font-weight: 300;
+  min-width: 0;
+}
+
+.show-venue-text {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -461,6 +467,15 @@ main {
 }
 
 .show-venue em { font-style: italic; color: var(--text); }
+
+.show-badges {
+  margin-left: auto;
+  padding-left: 0.6rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
 
 .show-tracks {
   justify-self: end;
@@ -527,7 +542,8 @@ main {
     padding: 0.85rem 1.1rem;
   }
   .show-date { grid-area: date; }
-  .show-venue { grid-area: venue; white-space: normal; }
+  .show-venue { grid-area: venue; }
+  .show-venue-text { white-space: normal; overflow: visible; text-overflow: clip; }
   .show-tracks { grid-area: tracks; }
   .show-src { grid-area: src; }
   .show-arrow { display: none; }
@@ -1071,7 +1087,7 @@ main {
   cursor: help;
 }
 .h-badge svg { flex-shrink: 0; display: block; }
-.show-venue .h-badge { margin-left: 0.5rem; vertical-align: 1px; }
+.show-venue .h-badge { vertical-align: 1px; }
 .highlight-line {
   display: flex;
   align-items: center;
@@ -1752,4 +1768,4 @@ a.artist-chip:hover { filter: brightness(1.08); }
 
 /* NR pill on archive listing rows (mirrors the tech-table badge); lives
    inside the venue cell so the fixed row grid is untouched */
-.show-nr { margin-left: 0.45rem; vertical-align: 1px; }
+.show-nr { vertical-align: 1px; }

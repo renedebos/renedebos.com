@@ -347,9 +347,10 @@ def show_row(show, with_artist=False):
     # In the cross-artist date view each row carries the artist, since the
     # grouping header that would otherwise name it is gone.
     artist_prefix = f'<span class="show-artist">{esc(artist["name"])}</span> &middot; ' if with_artist else ""
+    badges_html = f'<span class="show-badges">{nr_html}{hl_html}</span>' if (nr_html or hl_html) else ""
     return f'''      <a class="show-row" href="{show_url(show)}" data-info="{info}">
         <span class="show-date">{esc(show["date"] or "Unknown date")}</span>
-        <span class="show-venue">{artist_prefix}{esc(show["venue"] or "")}{subtitle}{extra_html}{nr_html}{hl_html}</span>
+        <span class="show-venue"><span class="show-venue-text">{artist_prefix}{esc(show["venue"] or "")}{subtitle}{extra_html}</span>{badges_html}</span>
         {marker}
         <span class="show-src src-{show["source"].lower()}">{esc(show["source"])}</span>
         <span class="show-arrow">&rarr;</span>
