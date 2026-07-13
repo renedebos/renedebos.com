@@ -126,13 +126,12 @@
           "size_mb": 6,
           "file": "MP3/JerryHannan - 19 Broadway 1999-02-01/03 Daddy.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-02-01/03 Daddy.flac",
-          "flac_size_mb": 21,
+          "flac_size_mb": 20,
           "processed": true,
           "artist": "Kelly Peterson",
           "songwriter": "Kelly Peterson",
           "tags": [
             "cover",
-            "rarity",
             "guest"
           ]
         },
@@ -144,7 +143,7 @@
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 1999-02-01/04 Hello in There.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-02-01/04 Hello in There.flac",
-          "flac_size_mb": 29,
+          "flac_size_mb": 27,
           "processed": true,
           "tags": [
             "cover",
@@ -255,7 +254,8 @@
           "flac_size_mb": 23,
           "processed": true,
           "tags": [
-            "original"
+            "original",
+            "rarity"
           ],
           "artist": "Jerry Hannan"
         },
@@ -293,7 +293,7 @@
         },
         {
           "num": 14,
-          "title": "Long Black Veil",
+          "title": "Long Black Veil (w_Sean)",
           "duration": "2:49",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-02-01/14 Long Black Veil (w_Sean).mp3",
@@ -308,7 +308,7 @@
         },
         {
           "num": 15,
-          "title": "The Grey Funnel Line",
+          "title": "The Grey Funnel Line (w_Sean)",
           "duration": "4:00",
           "size_mb": 10,
           "file": "MP3/JerryHannan - 19 Broadway 1999-02-01/15 The Grey Funnel Line (w_Sean).mp3",
@@ -338,7 +338,7 @@
         },
         {
           "num": 17,
-          "title": "Drift Away",
+          "title": "Drift Away w_Demuir",
           "duration": "3:35",
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 1999-02-01/17 Drift Away w_Demuir.mp3",
@@ -390,7 +390,7 @@
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 1999-02-01/20 Learn About Love.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-02-01/20 Learn About Love.flac",
-          "flac_size_mb": 26,
+          "flac_size_mb": 25,
           "processed": true,
           "tags": [
             "original"
@@ -4210,7 +4210,7 @@
           "size_mb": 7,
           "file": "MP3/JerryHannan - Cafe Java 1999-04-29/02 Illegal Smile.mp3",
           "flac": "FLAC/JerryHannan - Cafe Java 1999-04-29/02 Illegal Smile.flac",
-          "flac_size_mb": 35,
+          "flac_size_mb": 34,
           "processed": true,
           "tags": [
             "cover",
@@ -4389,7 +4389,7 @@
           "size_mb": 6,
           "file": "MP3/JerryHannan - Cafe Java 1999-04-29/14 Open Door.mp3",
           "flac": "FLAC/JerryHannan - Cafe Java 1999-04-29/14 Open Door.flac",
-          "flac_size_mb": 26,
+          "flac_size_mb": 25,
           "processed": true,
           "tags": [
             "original"
@@ -4419,7 +4419,7 @@
           "size_mb": 7,
           "file": "MP3/JerryHannan - Cafe Java 1999-04-29/16 Plastic Lemons.mp3",
           "flac": "FLAC/JerryHannan - Cafe Java 1999-04-29/16 Plastic Lemons.flac",
-          "flac_size_mb": 33,
+          "flac_size_mb": 32,
           "processed": true,
           "tags": [
             "original"
@@ -4491,7 +4491,7 @@
           "size_mb": 12,
           "file": "MP3/JerryHannan - Cafe Java 1999-04-29/21 Leprechaun.mp3",
           "flac": "FLAC/JerryHannan - Cafe Java 1999-04-29/21 Leprechaun.flac",
-          "flac_size_mb": 59,
+          "flac_size_mb": 58,
           "processed": true,
           "tags": [
             "original",
@@ -7842,7 +7842,7 @@
           "size_mb": 6,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/01 Smoke in Heaven.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/01 Smoke in Heaven.flac",
-          "flac_size_mb": 32,
+          "flac_size_mb": 30,
           "processed": true,
           "tags": [
             "original",
@@ -7857,7 +7857,7 @@
           "size_mb": 9,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/02 Truck.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/02 Truck.flac",
-          "flac_size_mb": 47,
+          "flac_size_mb": 46,
           "processed": true,
           "tags": [
             "original",
@@ -7872,7 +7872,7 @@
           "size_mb": 8,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/03 Blind Man.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/03 Blind Man.flac",
-          "flac_size_mb": 42,
+          "flac_size_mb": 40,
           "processed": true,
           "tags": [
             "original"
@@ -7886,7 +7886,7 @@
           "size_mb": 11,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/04 Clear Headed.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/04 Clear Headed.flac",
-          "flac_size_mb": 57,
+          "flac_size_mb": 56,
           "processed": true,
           "tags": [
             "original"
@@ -7900,7 +7900,7 @@
           "size_mb": 9,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/05 Hard Drinkin'.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/05 Hard Drinkin'.flac",
-          "flac_size_mb": 48,
+          "flac_size_mb": 46,
           "processed": true,
           "tags": [
             "original",
@@ -7915,7 +7915,7 @@
           "size_mb": 7,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/06 Luxury of Murder.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/06 Luxury of Murder.flac",
-          "flac_size_mb": 36,
+          "flac_size_mb": 35,
           "processed": true,
           "tags": [
             "original",
@@ -7930,7 +7930,7 @@
           "size_mb": 13,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/07 Recycle.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/07 Recycle.flac",
-          "flac_size_mb": 67,
+          "flac_size_mb": 64,
           "processed": true,
           "tags": [
             "original",
@@ -7945,7 +7945,7 @@
           "size_mb": 10,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/08 Blahana.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/08 Blahana.flac",
-          "flac_size_mb": 53,
+          "flac_size_mb": 50,
           "processed": true,
           "tags": [
             "original"
@@ -7981,7 +7981,7 @@
         },
         {
           "num": 11,
-          "title": "The Rodeo Song",
+          "title": "Rodeo Song",
           "duration": "3:17",
           "size_mb": 8,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/11 Rodeo Song.mp3",
@@ -8002,7 +8002,7 @@
           "size_mb": 11,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/12 ABC - Sesame Street.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/12 ABC - Sesame Street.flac",
-          "flac_size_mb": 60,
+          "flac_size_mb": 59,
           "processed": true,
           "tags": [
             "original",
@@ -8017,7 +8017,7 @@
           "size_mb": 6,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/13 Long Black Veil.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/13 Long Black Veil.flac",
-          "flac_size_mb": 31,
+          "flac_size_mb": 30,
           "processed": true,
           "tags": [
             "cover",
@@ -8034,7 +8034,7 @@
           "size_mb": 6,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/14 Rocky Road to Dublin.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/14 Rocky Road to Dublin.flac",
-          "flac_size_mb": 29,
+          "flac_size_mb": 28,
           "processed": true,
           "tags": [
             "traditional",
@@ -8051,7 +8051,7 @@
           "size_mb": 11,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/15 Dysfunctional Guy.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/15 Dysfunctional Guy.flac",
-          "flac_size_mb": 58,
+          "flac_size_mb": 57,
           "processed": true,
           "tags": [
             "original",
@@ -8110,7 +8110,7 @@
           "size_mb": 6,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/19 Everything Reminds Me of You.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/19 Everything Reminds Me of You.flac",
-          "flac_size_mb": 31,
+          "flac_size_mb": 30,
           "processed": true,
           "tags": [
             "original"
@@ -8138,7 +8138,7 @@
           "size_mb": 9,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/21 Good Life.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/21 Good Life.flac",
-          "flac_size_mb": 44,
+          "flac_size_mb": 43,
           "processed": true,
           "tags": [
             "original",
@@ -8153,7 +8153,7 @@
           "size_mb": 15,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/22 The Kiss - Da Da Da (Slave to an Angel).mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/22 The Kiss - Da Da Da (Slave to an Angel).flac",
-          "flac_size_mb": 75,
+          "flac_size_mb": 73,
           "processed": true,
           "tags": [
             "original",
@@ -9589,6 +9589,27 @@
       "slug": "jerry-19-broadway-1999-03-29",
       "text": "Added the March 29, 1999 solo show at 19 Broadway as 34 individual tracks — the first show treated with noise reduction across the whole tape before splitting, then normalized to −20 LUFS",
       "report": true
+    },
+    {
+      "date": "2026-07-13",
+      "ts": "2026-07-13T15:00:00",
+      "slug": "jerry-19-broadway-1999-02-01",
+      "report": true,
+      "text": "Re-normalized all 21 tracks: a bug in the loudness pipeline had silently switched several tracks into dynamic (compressor-like) processing instead of true linear gain, flattening hand-drawn fades and room dynamics. Tracks where audience applause — not the music — was the loudest thing on the tape now get linear gain sized to the music itself, with only the applause gently limited, using the automated audio engineering workflow with ffmpeg"
+    },
+    {
+      "date": "2026-07-13",
+      "ts": "2026-07-13T15:05:00",
+      "slug": "jerry-cafe-java-1999-04-29",
+      "report": true,
+      "text": "Re-normalized all 21 tracks: a bug in the loudness pipeline had silently switched several tracks into dynamic (compressor-like) processing instead of true linear gain, flattening hand-drawn fades and room dynamics. Tracks where audience applause — not the music — was the loudest thing on the tape now get linear gain sized to the music itself, with only the applause gently limited, using the automated audio engineering workflow with ffmpeg"
+    },
+    {
+      "date": "2026-07-13",
+      "ts": "2026-07-13T15:10:00",
+      "slug": "mad-sweetwater-1999-05-18",
+      "report": true,
+      "text": "Re-normalized all 22 tracks: a bug in the loudness pipeline had silently switched several tracks into dynamic (compressor-like) processing instead of true linear gain, flattening hand-drawn fades and room dynamics. Tracks where audience applause — not the music — was the loudest thing on the tape now get linear gain sized to the music itself, with only the applause gently limited, using the automated audio engineering workflow with ffmpeg"
     }
   ],
   "playlists": []

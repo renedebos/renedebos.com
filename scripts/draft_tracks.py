@@ -88,7 +88,7 @@ def main():
              "file": f"MP3/{r2dir}/{mp3}",
              "flac": f"FLAC/{r2dir}/{f}",
              "flac_size_mb": max(1, round(os.path.getsize(os.path.join(out, f)) / 1e6)),
-             "processed": True, "tags": []}
+             "processed": True}
         prior = cat.get(song_key(title))
         if prior:
             variants = sorted(set(prior), key=lambda v: (-prior.count(v), str(v)))
@@ -106,7 +106,9 @@ def main():
         order = ["num", "title", "songwriter", "duration", "size_mb", "file",
                  "flac", "flac_size_mb", "processed", "tags"]
         derived = {k: t[k] for k in order if k in t}
-        tracks.append({**old.get(num, {}), **derived})
+        merged = {**old.get(num, {}), **derived}
+        merged.setdefault("tags", [])
+        tracks.append(merged)
 
     now = datetime.datetime.now()
     show["tracks"] = tracks

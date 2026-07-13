@@ -273,6 +273,7 @@ SONG_MANUAL_MERGE = {
     "I Need a Dream": "I Need a Lover",
     "My Dear": "Ride On",
     "My Dear (Ride On)": "Ride On",
+    "Drift Away w_Demuir": "Drift Away",
 }
 
 SONG_CANONICAL_OVERRIDE = {"german clockwinder": "The German Clockwinder",

@@ -8,6 +8,27 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Re-normalized all 22 tracks: a bug in the loudness pipeline had silently switched several…</title>
+    <link>https://renedebos.com/shows/mad-sweetwater-1999-05-18/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-13-mad-sweetwater-1999-05-18</guid>
+    <pubDate>Mon, 13 Jul 2026 15:10:00 +0000</pubDate>
+    <description>Re-normalized all 22 tracks: a bug in the loudness pipeline had silently switched several tracks into dynamic (compressor-like) processing instead of true linear gain, flattening hand-drawn fades and room dynamics. Tracks where audience applause — not the music — was the loudest thing on the tape now get linear gain sized to the music itself, with only the applause gently limited, using the automated audio engineering workflow with ffmpeg</description>
+  </item>
+  <item>
+    <title>Re-normalized all 21 tracks: a bug in the loudness pipeline had silently switched several…</title>
+    <link>https://renedebos.com/shows/jerry-cafe-java-1999-04-29/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-13-jerry-cafe-java-1999-04-29</guid>
+    <pubDate>Mon, 13 Jul 2026 15:05:00 +0000</pubDate>
+    <description>Re-normalized all 21 tracks: a bug in the loudness pipeline had silently switched several tracks into dynamic (compressor-like) processing instead of true linear gain, flattening hand-drawn fades and room dynamics. Tracks where audience applause — not the music — was the loudest thing on the tape now get linear gain sized to the music itself, with only the applause gently limited, using the automated audio engineering workflow with ffmpeg</description>
+  </item>
+  <item>
+    <title>Re-normalized all 21 tracks: a bug in the loudness pipeline had silently switched several…</title>
+    <link>https://renedebos.com/shows/jerry-19-broadway-1999-02-01/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-13-jerry-19-broadway-1999-02-01</guid>
+    <pubDate>Mon, 13 Jul 2026 15:00:00 +0000</pubDate>
+    <description>Re-normalized all 21 tracks: a bug in the loudness pipeline had silently switched several tracks into dynamic (compressor-like) processing instead of true linear gain, flattening hand-drawn fades and room dynamics. Tracks where audience applause — not the music — was the loudest thing on the tape now get linear gain sized to the music itself, with only the applause gently limited, using the automated audio engineering workflow with ffmpeg</description>
+  </item>
+  <item>
     <title>Re-normalized all 21 tracks: a bug in the loudness pipeline had silently switched several…</title>
     <link>https://renedebos.com/shows/jerry-cafe-java-1999-03-25/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-13-jerry-cafe-java-1999-03-25</guid>
