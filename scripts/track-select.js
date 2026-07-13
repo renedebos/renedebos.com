@@ -45,7 +45,7 @@
     bar.hidden = true;
     bar.innerHTML = '<span class="tsb-count"></span>'
       + '<button type="button" class="tsb-clear">Clear</button>'
-      + '<button type="button" class="tsb-add pl-generate">Add to playlist &rarr;</button>';
+      + '<button type="button" class="tsb-add pl-generate">Build playlist &rarr;</button>';
     document.body.appendChild(bar);
     bar.querySelector('.tsb-clear').addEventListener('click', clearSelection);
     bar.querySelector('.tsb-add').addEventListener('click', goToPlaylist);

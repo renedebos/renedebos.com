@@ -184,12 +184,16 @@ shape — shows here are 20–35 track concerts, not shuffled singles, so a
   ids against the DOM; client-rendered rows (`trackAddButtonHtml()`) read the
   restored selection directly since they're built after it loads.
 - `scripts/track-select.js` (new, loaded on all four page types) owns
-  selection state, the floating "N selected · Add to playlist →" bar, and
-  navigation: clicking "Add to playlist" builds `#p=id,id,…` — the exact
-  mechanism Phase 3 already built — and either navigates to `/playlist/#p=…`
-  (from a browsing page) or updates `location.hash` in place (already on
-  `/playlist/`, picked up by a `hashchange` listener that re-runs
-  `hydrateFromHash()`). No new playlist-loading logic was needed.
+  selection state, the floating "N selected · Build playlist →" bar, and
+  navigation: clicking it builds `#p=id,id,…` — the exact mechanism Phase 3
+  already built — and either navigates to `/playlist/#p=…` (from a browsing
+  page) or updates `location.hash` in place (already on `/playlist/`, picked
+  up by a `hashchange` listener that re-runs `hydrateFromHash()`). No new
+  playlist-loading logic was needed. **Labeled "Build," not "Add"
+  (2026-07-13):** real usage showed "Add to playlist" reads as "append to
+  something ongoing" — it actually generates a fresh playlist from the whole
+  pending selection, clearing it after. Matches the homepage's existing
+  "Build a playlist" button wording rather than inventing new vocabulary.
 - Server-rendered rows (show pages via `build_show()`, the individual song
   page via `_song_occ_html()`) get the button from a new
   `track_add_button()` helper in `scripts/sitegen/fragments.py`;
