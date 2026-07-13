@@ -1,16 +1,31 @@
 // Cross-page-type playlist selection: the +/checkmark "add" button that
 // appears on every track row (show pages, the individual song page, the
 // /songs/ matrix expand rows, and the /playlist/ queue itself — see
-// PLAYLIST FEATURE.md Phase 5). Selection is a single in-memory array for
-// this page load only — no storage, resets on navigation by design (see the
-// spec doc for why cross-page persistence is deliberately out of scope).
+// PLAYLIST FEATURE.md Phase 5). Selection persists in localStorage across
+// page navigations (Phase 5b) — browse a show, pick a few songs, browse to
+// a different show or the songs matrix, pick more, then commit the whole
+// running selection to a playlist from wherever you are.
 //
 // trackAddButtonHtml() is exposed as a global so songs.js and playlist.js
 // (separate IIFEs, both loaded after this file) can build the same button
 // markup client-side; scripts/sitegen/fragments.py's track_add_button() is
 // the server-side twin — keep the two visually identical by convention.
 (function () {
-  var selected = [];  // track ids, in the order they were added
+  var STORE_KEY = 'trackSelection';
+
+  function loadSelection() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      var parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) { return []; }
+  }
+
+  function saveSelection() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(selected)); } catch (e) {}
+  }
+
+  var selected = loadSelection();  // track ids, in the order they were added
 
   var PLUS_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg>';
   var CHECK_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3.2L13 4.8"/></svg>';
@@ -58,12 +73,14 @@
     var on = i === -1;
     if (on) selected.push(id); else selected.splice(i, 1);
     setButtonState(id, on);
+    saveSelection();
     renderBar();
   }
 
   function clearSelection() {
     selected.slice().forEach(function (id) { setButtonState(id, false); });
     selected = [];
+    saveSelection();
     renderBar();
   }
 
@@ -93,4 +110,18 @@
       });
     }
   });
+
+  // Server-rendered rows (show pages, the individual song page) always paint
+  // the unselected state at build time — sync them against a selection
+  // carried over from a previous page now that it persists. Client-rendered
+  // rows (songs matrix, playlist queue) don't need this: trackAddButtonHtml()
+  // already reads `selected` at the moment they're built.
+  document.querySelectorAll('.track-add[data-id]').forEach(function (b) {
+    if (selected.indexOf(b.dataset.id) !== -1) {
+      b.setAttribute('aria-pressed', 'true');
+      b.innerHTML = CHECK_SVG;
+      b.setAttribute('aria-label', 'Remove from playlist selection');
+    }
+  });
+  renderBar();
 })();

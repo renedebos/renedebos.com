@@ -669,21 +669,21 @@ def build_show(show):
                       "\n        </div>") if dl_btns else ""
                 rows.append(f'''      <div class="track-row ws-track" id="track-{t["num"]}" data-trackid="{t["num"]}" data-src="{esc(stream)}">
         <button class="play-btn" aria-label="Play {play_label}" data-play-label="{play_label}">{PLAY_SVG}</button>
-        {add_btn}
         <span class="track-num">{t["num"]:02d}</span>
         {title_html}
         <div class="ws-wave"></div>
         <span class="time-label current" data-duration="{esc(t["duration"])}">{esc(t["duration"])}</span>{dl}
+        {add_btn}
       </div>''')
             else:
                 dl = "".join("\n        " + b for b in dl_btns)
                 rows.append(f'''      <div class="track-row custom-player" id="track-{t["num"]}" data-src="{esc(stream)}">
         <button class="play-btn" aria-label="Play {play_label}" data-play-label="{play_label}">{PLAY_SVG}</button>
-        {add_btn}
         <span class="track-num">{t["num"]:02d}</span>
         {title_html}
         <span class="time-label current" data-duration="{esc(t["duration"])}">{esc(t["duration"])}</span>{dl}
         <input type="range" class="progress-range" min="0" max="1000" value="0" step="1" aria-label="Seek {play_label}" aria-valuetext="0:00">
+        {add_btn}
       </div>''')
         hint = ("Every song streams in full &middot; lossless FLAC downloads are password protected"
                 if has_flac else "Every song streams in full")

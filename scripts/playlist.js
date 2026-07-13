@@ -454,13 +454,13 @@
         // separate interactive children): the "+" selection toggle and the
         // actual play button. See track-select.js for the "+" behavior.
         return '<div class="pl-row" data-i="' + i + '">'
-          + trackAddButtonHtml(t.id)
           + '<button type="button" class="sr pl-row-play" data-i="' + i + '">'
           + '<span class="sr-icon">&#9834;</span>'
           + '<span class="sr-main"><span class="sr-title">' + esc(t.title) + "</span>"
           + '<span class="sr-sub">' + esc(trackMeta(t)) + "</span></span>"
           + '<span class="sr-src src-' + esc(t.sourceType) + '">' + esc(t.sourceType.toUpperCase()) + "</span>"
           + '<span class="sr-meta">' + formatTime(t.durationSec) + "</span></button>"
+          + trackAddButtonHtml(t.id)
           + "</div>";
       }).join("") + "</div>";
   }

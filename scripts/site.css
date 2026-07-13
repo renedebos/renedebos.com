@@ -992,15 +992,21 @@ main {
    .download-btn, filled solid once selected (aria-pressed="true"). */
 .track-add {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+  width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
   border: 1.5px solid var(--accent); background: transparent; color: var(--accent);
   cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 .track-add:hover { background: var(--accent); color: white; }
-.track-add svg { width: 12px; height: 12px; flex-shrink: 0; }
+.track-add svg { width: 11px; height: 11px; flex-shrink: 0; }
 .track-add[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: white; }
-.track-row .track-add { width: 22px; height: 22px; margin-right: 0.4rem; }
-.song-occ-head .track-add { width: 20px; height: 20px; margin-left: auto; }
+/* Right-aligned on every surface: show-page rows put it last in the flex row
+   (after the download button — .track-main/.ws-wave grow to absorb the
+   space, so trailing items sit flush right); .song-occ-head pushes it with
+   margin-left: auto; .pl-row-play carries flex: 1, leaving .track-add as the
+   fixed-size sibling that lands at the row's right edge. */
+.track-row .track-add { width: 19px; height: 19px; }
+.track-row .track-add svg { width: 9px; height: 9px; }
+.song-occ-head .track-add { width: 18px; height: 18px; margin-left: auto; }
 
 /* Header row above a tracklist: the existing count/duration caption plus the
    new "Select all" bulk action, side by side. */
@@ -1742,7 +1748,7 @@ a.artist-chip:hover { filter: brightness(1.08); }
 .pl-row:first-child { border-top: none; }
 .pl-row.pl-playing { background: var(--accent-light); }
 .pl-row.pl-playing .sr-title { color: var(--accent); }
-.pl-row .track-add { margin-left: 0.9rem; }
+.pl-row .track-add { width: 20px; height: 20px; margin: 0 1.1rem 0 0.6rem; }
 .pl-row-play {
   flex: 1; min-width: 0; background: none; font: inherit; text-align: left;
   border: none; border-top: none; cursor: pointer;

@@ -167,11 +167,22 @@ shape — shows here are 20–35 track concerts, not shuffled singles, so a
 - A "+"/"✓" toggle button appears on every track row across four surfaces:
   show pages, the individual song page, the `/songs/` matrix expand rows, and
   the `/playlist/` queue itself (selecting a sub-set of an already-generated
-  queue seeds a *new* playlist — recursive by design).
-- Selection is a single in-memory array, scoped to the current page load only
-  — no localStorage, no cross-page persistence. Deliberately deferred, not
-  forgotten: revisit only if it turns out people want to build a selection
-  while browsing multiple pages before committing it.
+  queue seeds a *new* playlist — recursive by design). Right-aligned on every
+  row — show pages put it last in the flex row (the title/waveform area
+  grows to absorb space, so trailing items sit flush right), `.song-occ-head`
+  pushes it with `margin-left: auto`, and the playlist row's play button
+  carries `flex: 1` so the fixed-size "+"/"✓" lands at the row's right edge.
+- **Phase 5b (2026-07-13): cross-page persistence.** Selection now lives in
+  `localStorage` (`trackSelection` key), not just an in-memory array — browse
+  a show, pick a few songs, navigate to a different show or the songs matrix,
+  pick more, then commit the whole running selection from wherever you end
+  up. Originally shipped page-scoped-only and deliberately deferred this;
+  revisited immediately once real use hit the gap (picking songs from two
+  different shows for one playlist). Server-rendered rows always paint the
+  unselected state at build time (nothing to know client-side at that point),
+  so `track-select.js` does one sync pass on load, checking already-selected
+  ids against the DOM; client-rendered rows (`trackAddButtonHtml()`) read the
+  restored selection directly since they're built after it loads.
 - `scripts/track-select.js` (new, loaded on all four page types) owns
   selection state, the floating "N selected · Add to playlist →" bar, and
   navigation: clicking "Add to playlist" builds `#p=id,id,…` — the exact
