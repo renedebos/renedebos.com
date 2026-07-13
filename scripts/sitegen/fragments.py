@@ -479,6 +479,21 @@ def tech_data_section(show, proc):
                    if d.get("chain") else f'v{esc(d["ver"])}')
         else:
             ver = "&mdash;"
+        # treatment audit trail (workflow v5+): which normalization mode the
+        # track got, with the recorded decision note on hover. Pre-v5 tracks
+        # show a dash — their sidecars predate the mode record, so claiming
+        # "linear" for them would be dishonest (some were silently dynamic).
+        mode = d.get("mode")
+        label = {"linear": "linear", "linear-reduced": "linear&nbsp;&darr;",
+                 "applause-limiter": "applause&#8209;limited"}.get(mode)
+        if label:
+            note = d.get("note", "")
+            flagged = " treat-review" if "[review:" in note else ""
+            treat = (f'<span class="treat treat-{esc(mode)}{flagged}" '
+                     f'title="{esc(note)}">{label}</span>' if note
+                     else f'<span class="treat treat-{esc(mode)}">{label}</span>')
+        else:
+            treat = "&mdash;"
         mp3 = f'{t["size_mb"]} MB' if t.get("size_mb") else "&mdash;"
         flac = f'{t["flac_size_mb"]} MB' if t.get("flac_size_mb") else "&mdash;"
         rows.append(
@@ -487,7 +502,7 @@ def tech_data_section(show, proc):
             f'<td class="tnum">{flac}</td><td class="tnum">{inl}</td>'
             f'<td class="tnum">{out}</td><td class="tnum">{gain}</td>'
             f'<td class="tnum">{tp}</td><td class="tnum">{lra}</td>'
-            f'<td class="tver">{ver}</td></tr>')
+            f'<td class="ttreat">{treat}</td><td class="tver">{ver}</td></tr>')
     return f'''
   <section>
     <details class="tech-details" id="technical-data">
@@ -497,7 +512,7 @@ def tech_data_section(show, proc):
       <table class="tech-table">
         <thead><tr><th>#</th><th>Song</th><th>Time</th><th>MP3</th><th>FLAC</th>
           <th>In&nbsp;LUFS</th><th>Out&nbsp;LUFS</th><th>Gain</th>
-          <th>True&nbsp;Pk</th><th>LRA</th><th>Ver</th></tr></thead>
+          <th>True&nbsp;Pk</th><th>LRA</th><th>Treatment</th><th>Ver</th></tr></thead>
         <tbody>
 {chr(10).join(rows)}
         </tbody>

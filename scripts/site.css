@@ -1105,6 +1105,15 @@ main {
 .tech-table td.tnum { font-family: var(--mono); text-align: right; color: var(--muted); }
 .tech-table tbody tr:hover { background: rgba(255, 255, 255, 0.03); }
 
+/* per-track treatment audit trail (workflow v5+): what normalization the track
+   got; the recorded decision note shows on hover */
+.tech-table td.ttreat { font-family: var(--mono); font-size: 11px; }
+.treat { cursor: help; color: var(--muted); }
+.treat-linear { color: #5cc98a; }
+.treat-linear-reduced { color: #6ea3d8; }
+.treat-applause-limiter { color: #9d85c9; }
+.treat-review { text-decoration: underline dotted; }
+
 /* processing status badge (in the technical-data summary) */
 .proc-status {
   display: inline-block;

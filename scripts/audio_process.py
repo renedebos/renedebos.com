@@ -45,6 +45,23 @@ TP_CEILING = -1.0
 TP_TOL = 0.1      # warn if achieved TP exceeds the ceiling by more than this
 LUFS_TOL = 0.5    # warn if achieved LUFS drifts from target by more than this
 
+# ── applause-aware headroom recovery (workflow v5) ────────────────────────────
+# Calibrated on Butter (jerry-cafe-java-1999-03-25 trk 4), 2026-07-13: music
+# windows crest 19-22 dB very consistently; the applause tail measured 31.7 dB
+# and peaked 6 dB above ANY music window. Spectral classification was tried and
+# discarded — flatness/entropy barely separate applause from music on these
+# noisy audience tapes; crest + position do.
+APPLAUSE_MIN_SHORTFALL = 2.0  # dB of predicted-TP overshoot below which the v4 reduced target is fine as-is
+APPLAUSE_CREST_MIN = 27.0     # window peak-over-RMS (dB) to call it applause; music measures 19-22
+APPLAUSE_BODY_EXCESS = 2.0    # edge peak this far above the loudest BODY window is applause even
+                              # below the crest bar (final-chord-under-applause windows dilute crest;
+                              # the margin protects a finale strum that outrings the body)
+APPLAUSE_EDGE_S = 30.0        # applause is only trusted this close to the track's head/tail
+APPLAUSE_WIN_S = 5.0          # window size for the peak/RMS scan
+APPLAUSE_LIMIT_DB = -1.2      # sample-peak limiter threshold (margin under the -1 dBTP ceiling)
+APPLAUSE_MIN_BENEFIT = 1.0    # dB of loudness recovered below which a limiter isn't worth it
+APPLAUSE_LRA_TOL = 0.5        # QA gate: output LRA must match source LRA within this
+
 # ── workflow versioning ───────────────────────────────────────────────────────
 # Bump WORKFLOW_VERSION whenever the processing *functionality* changes (a new
 # filter option, a limiter, different target logic, …) and add a registry entry
@@ -54,7 +71,7 @@ LUFS_TOL = 0.5    # warn if achieved LUFS drifts from target by more than this
 # re-run later with a newer version). The registry is the human-readable decode
 # of a version number; the per-track `chain` is the self-contained ground truth;
 # the `md5` proves the live audio is that exact output.
-WORKFLOW_VERSION = 4
+WORKFLOW_VERSION = 5
 WORKFLOW_VERSIONS = {
     1: {
         "desc": "Two-pass ffmpeg loudnorm to the per-artist target "
@@ -104,6 +121,35 @@ WORKFLOW_VERSIONS = {
                 "`target_lufs` in the provenance sidecar whenever it differs from the "
                 "show's nominal target.",
         "loudnorm": "I=<target or per-track max-linear target>:LRA=11:TP=-1:linear=true",
+        "targets": dict(ARTIST_TARGET),
+        "optional_filters": ["--eq <literal ffmpeg filter chain>", "highpass=f=80",
+                             "lowpass=f=18000", "60Hz notch"],
+    },
+    5: {
+        "desc": "As v4, plus applause-aware headroom recovery. On audience tapes the "
+                "mic often sat near people: a clap can peak 6+ dB above anything in the "
+                "music and alone force the v4 'max linear target' several dB quieter "
+                "than the show nominal. When predicted TP overshoots the ceiling by "
+                "more than 2 dB, the peaks are located and classified by BEHAVIOR, not "
+                "sound: only windows within min(30 s, dur/6) of the track's head/tail "
+                "(tracks are split from continuous tape — applause lives at the "
+                "boundaries) can be applause, and only when the peak towers >= 27 dB "
+                "over the window's own RMS (claps are millisecond spikes; sustained "
+                "loud music measures 19-22 dB) or beats the loudest mid-song window "
+                "by >= 2 dB (a final chord ringing under the applause dilutes the "
+                "crest; nothing 2 dB louder than the whole body of the song lives at "
+                "a split boundary except applause). If applause is eating the headroom, the track "
+                "gets one constant linear gain sized to the MUSIC peaks (so the "
+                "limiter mathematically cannot touch music) plus a lookahead limiter "
+                "at -1.2 dB that only applause transients can reach. Music remains "
+                "strictly linear-only; ambiguous cases (mid-song high-crest peaks, "
+                "music-set ceilings, < 1 dB benefit) fall back to the v4 reduced "
+                "target and are flagged for ears. QA gates: output LRA must match "
+                "source LRA within 0.5 LU; limited regions recorded in provenance. "
+                "The `plan` command dry-runs all decisions without writing audio.",
+        "loudnorm": "linear modes as v4; applause-limiter mode uses no loudnorm: "
+                    "volume=<gain>dB,alimiter=limit=<-1.2 dB>:attack=5:release=100:"
+                    "level=false:latency=1",
         "targets": dict(ARTIST_TARGET),
         "optional_filters": ["--eq <literal ffmpeg filter chain>", "highpass=f=80",
                              "lowpass=f=18000", "60Hz notch"],
@@ -533,6 +579,210 @@ def build_filters(args):
     return ",".join(chain)
 
 
+# ── normalization planning (workflow v5) ─────────────────────────────────────
+
+def window_stats(path, pre="", win_s=APPLAUSE_WIN_S):
+    """Per-window sample peak and RMS (dB), one decode pass. The raw material
+    for telling applause from loud music: a clap is a millisecond spike
+    towering over its window's RMS; genuinely loud music is sustained, so its
+    peaks sit close to the local average."""
+    sr = int(probe(path)["sr"])
+    af = ((pre + ",") if pre else "") + (
+        f"asetnsamples=n={int(win_s * sr)},"
+        "astats=metadata=1:reset=1:measure_perchannel=none,"
+        "ametadata=mode=print:file=-")
+    r = subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error",
+                        "-i", path, "-af", af, "-f", "null", "-"],
+                       capture_output=True, text=True)
+    wins, t, peak, rms = [], None, None, None
+    for line in r.stdout.splitlines():
+        m = re.search(r"pts_time:([\d.]+)", line)
+        if m:
+            if t is not None and peak is not None and rms is not None:
+                wins.append((t, peak, rms))
+            t, peak, rms = float(m.group(1)), None, None
+            continue
+        m = re.search(r"Overall\.Peak_level=(-?[\d.]+)", line)
+        if m:
+            peak = float(m.group(1))
+        m = re.search(r"Overall\.RMS_level=(-?[\d.]+)", line)
+        if m:
+            rms = float(m.group(1))
+    if t is not None and peak is not None and rms is not None:
+        wins.append((t, peak, rms))
+    return wins
+
+
+def plan_track(path, target, pre=""):
+    """Decide how one track gets normalized (workflow v5). Returns a dict:
+    mode ('linear' | 'linear-reduced' | 'applause-limiter'), target (projected
+    output LUFS), gain_db/limit_db/regions for limiter mode, the loudnorm
+    measurement (reusable by process), in_lra, and human-review flags.
+
+    Conservative by construction: only EDGE windows (within min(30 s, dur/6)
+    of the head/tail — applause lives at split boundaries) can be applause,
+    and only when the pure crest signature fires (peak >= 27 dB over the
+    window RMS) or the window's peak beats the loudest BODY window by >= 2 dB
+    (mixed final-chord+applause windows dilute crest). High-crest windows
+    mid-song count as music — they cap the gain rather than get limited — and
+    are flagged for ears. The gain is sized to the music peaks
+    (gain <= limit - music_peak), so the limiter cannot engage on any window
+    classified as music."""
+    j = measure(path, target, pre=pre)
+    in_I, in_TP, in_LRA = float(j["input_i"]), float(j["input_tp"]), float(j["input_lra"])
+    pred = in_TP + (target - in_I)
+    maxlin = round(in_I - in_TP + TP_CEILING, 2)
+    plan = {"measure": j, "in_lra": in_LRA, "flags": [],
+            "pred": round(pred, 2), "maxlin": maxlin}
+    if pred <= TP_CEILING:
+        plan.update(mode="linear", target=target,
+                    note=f"one constant gain to the show target; predicted TP "
+                         f"{pred:+.1f} dBTP fits under the {TP_CEILING:g} ceiling")
+        return plan
+    if pred - TP_CEILING <= APPLAUSE_MIN_SHORTFALL:
+        plan.update(mode="linear-reduced", target=maxlin,
+                    note=f"gain to {target:g} LUFS would overshoot the TP ceiling by "
+                         f"{pred - TP_CEILING:.1f} dB — small enough to simply take the "
+                         f"track's own max linear target; dynamics untouched")
+        return plan
+
+    wins = window_stats(path, pre=pre)
+    if not wins:
+        plan.update(mode="linear-reduced", target=maxlin,
+                    note="window scan produced no data — fell back to the max linear target")
+        plan["flags"].append("window scan produced no data — fell back to reduced target")
+        return plan
+    dur = wins[-1][0] + APPLAUSE_WIN_S
+    # short songs: don't let the edge zones swallow the body of the piece
+    edge_s = min(APPLAUSE_EDGE_S, dur / 6)
+    body_peak = max((p for t0, p, _ in wins
+                     if t0 >= edge_s and (t0 + APPLAUSE_WIN_S) <= dur - edge_s),
+                    default=None)
+    applause, music, mid_suspects = [], [], []
+    for t0, peak, rms in wins:
+        edge = t0 < edge_s or (t0 + APPLAUSE_WIN_S) > dur - edge_s
+        # Two ways an EDGE window is applause: the pure signature (a spike
+        # towering over near-silence), or a peak that beats everything in the
+        # song's body by APPLAUSE_BODY_EXCESS — the final chord ringing under
+        # the applause raises the window RMS and hides the crest, but a split
+        # live tape whose loudest transient sits in the first/last seconds and
+        # ISN'T applause is not a credible claim.
+        is_applause = edge and (
+            peak - rms >= APPLAUSE_CREST_MIN
+            or (body_peak is not None and peak >= body_peak + APPLAUSE_BODY_EXCESS))
+        if is_applause:
+            applause.append((t0, peak))
+        else:
+            music.append((t0, peak))
+            if not edge and peak - rms >= APPLAUSE_CREST_MIN:
+                mid_suspects.append(t0)
+    if mid_suspects:
+        plan["flags"].append(
+            "mid-song high-crest window(s) at "
+            + ", ".join(fmt_ts(t) for t in mid_suspects[:4])
+            + (f" +{len(mid_suspects) - 4} more" if len(mid_suspects) > 4 else "")
+            + " — treated as music (caps the gain), listen to confirm")
+    if not applause or not music:
+        plan.update(mode="linear-reduced", target=maxlin,
+                    note=f"gain to {target:g} LUFS would overshoot the TP ceiling by "
+                         f"{pred - TP_CEILING:.1f} dB, and no applause was found at the "
+                         f"head/tail — the music itself sets the ceiling, so the track "
+                         f"takes its honest quieter max linear target")
+        if not applause:
+            plan["flags"].append("no applause found at head/tail — the music itself "
+                                 "sets the ceiling; honest quieter target")
+        return plan
+    music_peak = max(p for _, p in music)
+    gain = round(min(target - in_I, APPLAUSE_LIMIT_DB - music_peak), 2)
+    benefit = gain - (TP_CEILING - in_TP)  # dB recovered vs the v4 reduced target
+    if benefit < APPLAUSE_MIN_BENEFIT:
+        plan.update(mode="linear-reduced", target=maxlin,
+                    note=f"gain to {target:g} LUFS would overshoot the TP ceiling by "
+                         f"{pred - TP_CEILING:.1f} dB; the loudest peaks are in (or "
+                         f"within 2 dB of) the music itself, so limiting would only "
+                         f"recover {max(benefit, 0):.1f} dB — the track takes its "
+                         f"honest quieter max linear target instead")
+        plan["flags"].append(f"applause limiting would only recover "
+                             f"{max(benefit, 0):.1f} dB — not worth a limiter")
+        return plan
+    regions = [(round(t0, 1), round(min(t0 + APPLAUSE_WIN_S, dur), 1),
+                round(p + gain - APPLAUSE_LIMIT_DB, 1))
+               for t0, p in applause if p + gain > APPLAUSE_LIMIT_DB]
+    max_red = max((r for _, _, r in regions), default=0.0)
+    reg_txt = ", ".join(f"{fmt_dur(a)}–{fmt_dur(b)}" for a, b, _ in regions)
+    plan.update(mode="applause-limiter", target=round(in_I + gain, 2),
+                gain_db=gain, limit_db=APPLAUSE_LIMIT_DB, regions=regions,
+                max_reduction_db=max_red, music_peak_db=music_peak,
+                note=f"applause (not music) set the ceiling: one constant "
+                     f"{gain:+.1f} dB gain sized to the music peaks ({music_peak:.1f} dB), "
+                     f"with only the applause transients at {reg_txt} limited "
+                     f"(up to {max_red:.1f} dB); the music is untouched linear")
+    if plan["max_reduction_db"] > 10:
+        plan["flags"].append(f"limiter would cut applause peaks by "
+                             f"{plan['max_reduction_db']:.1f} dB — heavy; listen to the applause")
+    return plan
+
+
+def limiter_chain(plan, pre=""):
+    """The literal ffmpeg filter chain for an applause-limiter track. Also the
+    provenance `chain` ground truth. No loudnorm: loudnorm's linear mode would
+    refuse this gain (its TP measurement includes the applause) — the plain
+    volume gain IS the linear normalization, sized to the music peaks."""
+    amp = 10 ** (plan["limit_db"] / 20)
+    return ((pre + ",") if pre else "") + (
+        f"volume={plan['gain_db']}dB,alimiter=limit={amp:.6f}:"
+        f"attack=5:release=100:level=false:latency=1")
+
+
+def cmd_plan(args):
+    """Dry run: the exact per-track decisions `process` would make, no audio
+    written. Table + normalization_plan.txt in the input folder."""
+    folder = args.input
+    target = target_for(args.artist, args.target)
+    files = lossless_files(folder)
+    if not files:
+        raise SystemExit(f"no .flac/.wav files in {folder}")
+    pre = getattr(args, "eq", None) or ""
+
+    rows, counts = [], {"linear": 0, "linear-reduced": 0, "applause-limiter": 0}
+    for f in files:
+        p = plan_track(os.path.join(folder, f), target, pre=pre)
+        counts[p["mode"]] += 1
+        j = p["measure"]
+        rows.append((f, float(j["input_i"]), float(j["input_tp"]), p))
+        reg = ""
+        if p["mode"] == "applause-limiter":
+            reg = ("; limit " + ", ".join(f"{fmt_ts(a)}-{fmt_ts(b)} (-{r} dB)"
+                                          for a, b, r in p["regions"])
+                   + f"; music peak {p['music_peak_db']:.1f} dB")
+        print(f"  {f}: in {float(j['input_i']):.1f} LUFS, pred {p['pred']:+.1f} dBTP "
+              f"-> {p['mode']} @ {p['target']:+.1f} LUFS{reg}", flush=True)
+        for fl in p["flags"]:
+            print(f"    ⚠ {fl}", flush=True)
+
+    out = os.path.join(folder, "normalization_plan.txt")
+    L = ["NORMALIZATION PLAN (dry run, workflow v5)",
+         f"Generated: {datetime.datetime.now().isoformat(timespec='seconds')}",
+         f"Nominal target: {target} LUFS / {TP_CEILING} dBTP; "
+         f"applause limiter at {APPLAUSE_LIMIT_DB} dB (crest >= {APPLAUSE_CREST_MIN}, "
+         f"edge {APPLAUSE_EDGE_S:.0f} s)",
+         "=" * 43, "",
+         f"{'File':40s}|{'In LUFS':8s}|{'Pred TP':8s}|{'Mode':17s}|{'Out LUFS':9s}|"
+         f"{'vs -20':7s}|Limited regions / flags",
+         "-" * 120]
+    for f, in_I, in_TP, p in rows:
+        extra = "; ".join(
+            ([", ".join(f"{fmt_ts(a)}-{fmt_ts(b)} (-{r} dB)" for a, b, r in p["regions"])]
+             if p["mode"] == "applause-limiter" else []) + p["flags"])
+        L.append(f"{f[:40]:40s}|{in_I:8.1f}|{p['pred']:+8.1f}|{p['mode']:17s}|"
+                 f"{p['target']:9.2f}|{p['target'] - target:+7.2f}|{extra}")
+    L += ["", f"Modes: {counts['linear']} linear, {counts['linear-reduced']} "
+              f"linear-reduced, {counts['applause-limiter']} applause-limiter"]
+    open(out, "w").write("\n".join(L) + "\n")
+    print(f"\n[plan -> {out}]  {counts['linear']} linear / "
+          f"{counts['linear-reduced']} reduced / {counts['applause-limiter']} limiter")
+
+
 def cmd_process(args):
     infolder, outfolder = args.input, args.output
     target = args.target
@@ -561,41 +811,52 @@ def cmd_process(args):
         out_mp3 = os.path.join(outfolder, os.path.splitext(f)[0] + ".mp3")
         num = lead_num(f)
 
-        # Decide the effective per-track target up front (source-only, cheap —
-        # needed whether we process fresh or resume-skip). linear=true is only
-        # a request: if the gain needed to hit `target` would push true peak past
-        # the TP ceiling, ffmpeg silently falls back to dynamic (frame-adaptive)
-        # normalization, which rides the gain up on quiet passages and can flatten
-        # a hand-drawn fade. Reduce to the same "max linear target" diagnose
-        # already reports (I - TP - 1) so the file stays in true linear mode.
-        j_chk = measure(src, target, pre=filt)
-        in_I_chk, in_TP_chk = float(j_chk["input_i"]), float(j_chk["input_tp"])
-        pred_chk = in_TP_chk + (target - in_I_chk)
-        used_target = target
-        if pred_chk > TP_CEILING:
-            used_target = round(in_I_chk - in_TP_chk + TP_CEILING, 2)
+        # Decide the effective per-track handling up front (source-only, cheap —
+        # needed whether we process fresh or resume-skip). See plan_track: plain
+        # linear when the nominal target fits under the TP ceiling; the v4
+        # reduced "max linear target" for small overshoots (linear=true is only
+        # a request — exceeding the ceiling silently switches loudnorm to
+        # dynamic mode, which flattens fades); applause-aware limiting (v5)
+        # when non-music transients are what's eating the headroom.
+        plan = plan_track(src, target, pre=filt)
+        used_target = plan["target"]
+        limiter = plan["mode"] == "applause-limiter"
+        in_I_chk = float(plan["measure"]["input_i"])
+        for fl in plan["flags"]:
+            print(f"  ⚠ {f}: {fl}", flush=True)
 
         if os.path.exists(out_audio) and os.path.exists(out_mp3):
-            note = f" [target {used_target:+.1f} LUFS, linear-preserving]" if used_target != target else ""
+            note = {"linear-reduced": f" [target {used_target:+.1f} LUFS, linear-preserving]",
+                    "applause-limiter": f" [target {used_target:+.1f} LUFS, applause-limited]",
+                    }.get(plan["mode"], "")
             print(f"[{i:02d}/{len(files)}] {f} — exists, skipping (resume){note}", flush=True)
             # still record provenance from the existing output
             j2 = measure(out_audio, used_target)
             in_I = in_I_chk if os.path.exists(src) else None
         else:
-            if used_target != target:
-                print(f"  {f}: linear gain to {target} LUFS would hit {pred_chk:+.2f} dBTP "
+            if limiter:
+                print(f"  {f}: applause transients set the ceiling (music peaks at "
+                      f"{plan['music_peak_db']:.1f} dB) — linear {plan['gain_db']:+.1f} dB to "
+                      f"{used_target:+.1f} LUFS with applause-only limiting "
+                      f"({len(plan['regions'])} region(s), max {plan['max_reduction_db']:.1f} dB)",
+                      flush=True)
+            elif used_target != target:
+                print(f"  {f}: linear gain to {target} LUFS would hit {plan['pred']:+.2f} dBTP "
                       f"(> {TP_CEILING}) — using {used_target:+.1f} LUFS instead to keep "
                       f"true linear normalization (preserves fades/dynamics)", flush=True)
             info = probe(src)
-            # loudnorm values measured on the post-EQ signal (so the gain is right);
-            # in_I is the RAW input loudness, kept for provenance/display.
-            j = measure(src, used_target, pre=filt)
             in_I = in_I_chk
             pre = (filt + ",") if filt else ""
-            af = (f"{pre}loudnorm=I={used_target}:LRA=11:TP={TP_CEILING}:"
-                  f"measured_I={j['input_i']}:measured_LRA={j['input_lra']}:"
-                  f"measured_tp={j['input_tp']}:measured_thresh={j['input_thresh']}:"
-                  f"offset={j['target_offset']}:linear=true:print_format=summary")
+            if limiter:
+                af = limiter_chain(plan, pre=filt)
+            else:
+                # loudnorm values measured on the post-EQ signal (so the gain is
+                # right); in_I is the RAW input loudness, kept for provenance.
+                j = measure(src, used_target, pre=filt)
+                af = (f"{pre}loudnorm=I={used_target}:LRA=11:TP={TP_CEILING}:"
+                      f"measured_I={j['input_i']}:measured_LRA={j['input_lra']}:"
+                      f"measured_tp={j['input_tp']}:measured_thresh={j['input_thresh']}:"
+                      f"offset={j['target_offset']}:linear=true:print_format=summary")
             codec = output_codec(info["bits"], info["sample_fmt"], container)
             tags = tag_args(tag_ctx, f, num, len(files), used_target)
             r = subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
@@ -620,18 +881,29 @@ def cmd_process(args):
         mp3_tp = float(measure(out_mp3, used_target)["input_tp"])
         # verification (#7)
         status = f"target {used_target:+.1f}" if used_target != target else "OK"
+        if limiter:
+            status = f"limiter {used_target:+.1f}"
         if out_TP > TP_CEILING + TP_TOL:
             status = "TP>ceiling"
             warnings.append(f"{f}: achieved TP {out_TP:+.2f} dBTP exceeds {TP_CEILING} ceiling")
         if abs(out_I - used_target) > LUFS_TOL:
             status = "LUFS drift"
             warnings.append(f"{f}: achieved {out_I:.2f} LUFS drifts > {LUFS_TOL} from {used_target}")
+        if limiter and abs(out_LRA - plan["in_lra"]) > APPLAUSE_LRA_TOL:
+            # the whole point of the limiter mode is that music dynamics survive
+            # untouched — a shifted LRA means it bit more than applause
+            status = "LRA shifted"
+            warnings.append(f"{f}: output LRA {out_LRA:.1f} vs source {plan['in_lra']:.1f} — "
+                            "limiter touched more than applause transients; review")
         if mp3_tp > 0.0:
             status = "MP3 clips"
             warnings.append(f"{f}: MP3 true peak {mp3_tp:+.2f} dBTP — lossy overshoot "
                             "clips on decode (FLAC is fine; consider re-encode headroom)")
-        track_chain = chain_str if used_target == target else \
-            chain_str.replace(f"I={_w(target)}", f"I={_w(used_target)}")
+        if limiter:
+            track_chain = limiter_chain(plan, pre=filt)
+        else:
+            track_chain = chain_str if used_target == target else \
+                chain_str.replace(f"I={_w(target)}", f"I={_w(used_target)}")
         if num is not None:
             entry = {"ver": WORKFLOW_VERSION, "chain": track_chain,
                      "lufs": round(out_I, 2), "tp": round(out_TP, 2),
@@ -645,6 +917,20 @@ def cmd_process(args):
                          "lra": round(out_LRA, 2), "md5": md5}
             if used_target != target:
                 entry["target_lufs"] = used_target
+            if limiter:
+                entry["applause_limiter"] = {"gain_db": plan["gain_db"],
+                                             "limit_db": plan["limit_db"],
+                                             "regions": plan["regions"]}
+            # audit trail: what treatment this track got and WHY — the chain says
+            # what ran; mode+note record the decision so Butter ("applause set the
+            # ceiling, tail limited") reads differently from a track whose music
+            # sets its own ceiling. Review flags travel with the note.
+            entry["mode"] = plan["mode"]
+            note = plan.get("note", "")
+            if plan["flags"]:
+                note += " [review: " + "; ".join(plan["flags"]) + "]"
+            if note:
+                entry["note"] = note
             prov_tracks[str(num)] = entry
         report.append((f, in_I, out_I, out_TP, status))
         print(f"[{i:02d}/{len(files)}] {f} -> {out_I:.2f} LUFS, TP {out_TP:.2f} "
@@ -927,6 +1213,16 @@ def main():
                    help="also write a spectrogram PNG per track (visual QA for "
                         "suspect tapes: dropouts show as vertical stripes)")
     d.set_defaults(func=cmd_diagnose)
+
+    pl = sub.add_parser("plan", help="dry run: per-track normalization decisions "
+                                     "(linear / reduced target / applause limiter) "
+                                     "without writing any audio")
+    pl.add_argument("input")
+    pl.add_argument("--artist", choices=list(ARTIST_TARGET))
+    pl.add_argument("--target", type=float)
+    pl.add_argument("--eq", help="literal corrective-EQ chain that process would use "
+                                 "(plan measures the post-EQ signal, like process does)")
+    pl.set_defaults(func=cmd_plan)
 
     p = sub.add_parser("process")
     p.add_argument("input")
