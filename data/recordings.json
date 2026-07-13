@@ -147,8 +147,7 @@
           "processed": true,
           "tags": [
             "cover",
-            "ballad",
-            "rarity"
+            "ballad"
           ]
         },
         {
@@ -178,8 +177,7 @@
           "processed": true,
           "tags": [
             "cover",
-            "ballad",
-            "rarity"
+            "ballad"
           ]
         },
         {
@@ -254,8 +252,7 @@
           "flac_size_mb": 23,
           "processed": true,
           "tags": [
-            "original",
-            "rarity"
+            "original"
           ],
           "artist": "Jerry Hannan"
         },
@@ -293,7 +290,7 @@
         },
         {
           "num": 14,
-          "title": "Long Black Veil (w_Sean)",
+          "title": "Long Black Veil",
           "duration": "2:49",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-02-01/14 Long Black Veil (w_Sean).mp3",
@@ -308,7 +305,7 @@
         },
         {
           "num": 15,
-          "title": "The Grey Funnel Line (w_Sean)",
+          "title": "The Grey Funnel Line",
           "duration": "4:00",
           "size_mb": 10,
           "file": "MP3/JerryHannan - 19 Broadway 1999-02-01/15 The Grey Funnel Line (w_Sean).mp3",
@@ -364,8 +361,7 @@
           "tags": [
             "cover",
             "ballad",
-            "country",
-            "rarity"
+            "country"
           ]
         },
         {
@@ -558,8 +554,7 @@
           "flac_size_mb": 15,
           "processed": true,
           "tags": [
-            "cover",
-            "rarity"
+            "cover"
           ]
         },
         {
@@ -631,8 +626,7 @@
           "tags": [
             "traditional",
             "irish",
-            "ballad",
-            "rarity"
+            "ballad"
           ]
         },
         {
@@ -704,8 +698,7 @@
           "processed": true,
           "tags": [
             "cover",
-            "ballad",
-            "rarity"
+            "ballad"
           ]
         },
         {
@@ -720,8 +713,7 @@
           "processed": true,
           "tags": [
             "cover",
-            "ballad",
-            "rarity"
+            "ballad"
           ]
         },
         {
@@ -735,8 +727,7 @@
           "flac_size_mb": 22,
           "processed": true,
           "tags": [
-            "cover",
-            "rarity"
+            "cover"
           ]
         },
         {
@@ -883,8 +874,7 @@
           "flac_size_mb": 10,
           "processed": true,
           "tags": [
-            "traditional",
-            "rarity"
+            "traditional"
           ]
         },
         {
@@ -918,7 +908,7 @@
         },
         {
           "num": 30,
-          "title": "Limerick Medley",
+          "title": "Some Get Married for Love",
           "songwriter": "Traditional",
           "duration": "2:46",
           "size_mb": 7,
@@ -928,8 +918,7 @@
           "processed": true,
           "tags": [
             "traditional",
-            "medley",
-            "rarity"
+            "medley"
           ]
         },
         {
@@ -944,8 +933,7 @@
           "processed": true,
           "tags": [
             "cover",
-            "ballad",
-            "rarity"
+            "ballad"
           ]
         },
         {
@@ -959,8 +947,7 @@
           "flac_size_mb": 37,
           "processed": true,
           "tags": [
-            "original",
-            "rarity"
+            "original"
           ]
         },
         {
@@ -975,8 +962,7 @@
           "processed": true,
           "tags": [
             "traditional",
-            "irish",
-            "rarity"
+            "irish"
           ]
         },
         {
@@ -1146,8 +1132,7 @@
           "processed": true,
           "tags": [
             "cover",
-            "ballad",
-            "rarity"
+            "ballad"
           ]
         },
         {
@@ -1179,8 +1164,7 @@
           "processed": true,
           "tags": [
             "original",
-            "story",
-            "rarity"
+            "story"
           ]
         },
         {
@@ -1269,8 +1253,7 @@
           "flac_size_mb": 51,
           "processed": true,
           "tags": [
-            "cover",
-            "rarity"
+            "cover"
           ]
         },
         {
@@ -1298,8 +1281,7 @@
           "flac_size_mb": 39,
           "processed": true,
           "tags": [
-            "original",
-            "rarity"
+            "original"
           ]
         },
         {
@@ -1683,8 +1665,7 @@
           "tags": [
             "traditional",
             "irish",
-            "ballad",
-            "rarity"
+            "ballad"
           ]
         },
         {
@@ -1744,8 +1725,7 @@
           "processed": true,
           "tags": [
             "cover",
-            "upbeat",
-            "rarity"
+            "upbeat"
           ]
         },
         {
@@ -1859,8 +1839,7 @@
           "tags": [
             "cover",
             "ballad",
-            "story",
-            "rarity"
+            "story"
           ]
         },
         {
@@ -2053,8 +2032,7 @@
           "processed": true,
           "tags": [
             "cover",
-            "upbeat",
-            "rarity"
+            "upbeat"
           ]
         },
         {
@@ -2100,8 +2078,7 @@
           "tags": [
             "cover",
             "ballad",
-            "country",
-            "rarity"
+            "country"
           ]
         },
         {
@@ -2145,8 +2122,7 @@
           "flac_size_mb": 53,
           "processed": true,
           "tags": [
-            "original",
-            "rarity"
+            "original"
           ]
         },
         {
@@ -2161,8 +2137,7 @@
           "processed": true,
           "tags": [
             "original",
-            "irish",
-            "rarity"
+            "irish"
           ]
         },
         {
@@ -2499,8 +2474,7 @@
           "flac_size_mb": 24,
           "processed": true,
           "tags": [
-            "cover",
-            "rarity"
+            "cover"
           ]
         },
         {
@@ -2528,8 +2502,7 @@
           "flac_size_mb": 34,
           "processed": true,
           "tags": [
-            "original",
-            "rarity"
+            "original"
           ]
         },
         {
@@ -2559,8 +2532,7 @@
           "processed": true,
           "tags": [
             "original",
-            "upbeat",
-            "rarity"
+            "upbeat"
           ]
         },
         {
@@ -2591,8 +2563,7 @@
           "tags": [
             "traditional",
             "irish",
-            "ballad",
-            "rarity"
+            "ballad"
           ]
         },
         {
@@ -2696,8 +2667,7 @@
           "tags": [
             "cover",
             "folk",
-            "upbeat",
-            "rarity"
+            "upbeat"
           ]
         },
         {
@@ -2740,8 +2710,7 @@
           "flac_size_mb": 33,
           "processed": true,
           "tags": [
-            "cover",
-            "rarity"
+            "cover"
           ]
         },
         {
@@ -3136,8 +3105,7 @@
           "processed": true,
           "tags": [
             "cover",
-            "upbeat",
-            "rarity"
+            "upbeat"
           ]
         },
         {
@@ -3186,8 +3154,7 @@
             "irish",
             "ballad",
             "singalong",
-            "story",
-            "rarity"
+            "story"
           ]
         },
         {
@@ -3203,8 +3170,7 @@
           "tags": [
             "traditional",
             "irish",
-            "upbeat",
-            "rarity"
+            "upbeat"
           ]
         },
         {
@@ -3219,8 +3185,7 @@
           "processed": true,
           "tags": [
             "traditional",
-            "irish",
-            "rarity"
+            "irish"
           ]
         },
         {
@@ -3262,8 +3227,7 @@
           "flac_size_mb": 12,
           "processed": true,
           "tags": [
-            "original",
-            "rarity"
+            "original"
           ]
         },
         {
@@ -3277,8 +3241,7 @@
           "flac_size_mb": 9,
           "processed": true,
           "tags": [
-            "original",
-            "rarity"
+            "original"
           ]
         },
         {
@@ -3293,8 +3256,7 @@
           "processed": true,
           "tags": [
             "original",
-            "upbeat",
-            "rarity"
+            "upbeat"
           ]
         },
         {
@@ -3308,8 +3270,7 @@
           "flac_size_mb": 12,
           "processed": true,
           "tags": [
-            "original",
-            "rarity"
+            "original"
           ]
         },
         {
@@ -3352,8 +3313,7 @@
           "flac_size_mb": 16,
           "processed": true,
           "tags": [
-            "original",
-            "rarity"
+            "original"
           ]
         },
         {
@@ -3367,8 +3327,7 @@
           "flac_size_mb": 43,
           "processed": true,
           "tags": [
-            "original",
-            "rarity"
+            "original"
           ]
         },
         {
@@ -3384,8 +3343,7 @@
           "tags": [
             "traditional",
             "irish",
-            "singalong",
-            "rarity"
+            "singalong"
           ]
         }
       ],
@@ -3967,8 +3925,7 @@
           "flac_size_mb": 37,
           "processed": true,
           "tags": [
-            "cover",
-            "rarity"
+            "cover"
           ]
         },
         {
@@ -4016,8 +3973,7 @@
           "tags": [
             "cover",
             "ballad",
-            "country",
-            "rarity"
+            "country"
           ]
         },
         {
@@ -4031,8 +3987,7 @@
           "flac_size_mb": 35,
           "processed": true,
           "tags": [
-            "cover",
-            "rarity"
+            "cover"
           ]
         },
         {
@@ -4495,8 +4450,7 @@
           "processed": true,
           "tags": [
             "original",
-            "irish",
-            "rarity"
+            "irish"
           ]
         }
       ],
@@ -4759,8 +4713,7 @@
           "processed": true,
           "tags": [
             "cover",
-            "story",
-            "rarity"
+            "story"
           ],
           "songwriter": "Lennon-McCartney"
         },
@@ -4776,8 +4729,7 @@
           "processed": true,
           "tags": [
             "cover",
-            "rock",
-            "rarity"
+            "rock"
           ]
         },
         {
@@ -4883,8 +4835,7 @@
           "processed": true,
           "tags": [
             "cover",
-            "folk",
-            "rarity"
+            "folk"
           ]
         },
         {
@@ -5099,8 +5050,7 @@
           "processed": true,
           "tags": [
             "cover",
-            "rock",
-            "rarity"
+            "rock"
           ]
         },
         {
@@ -5129,8 +5079,7 @@
           "flac_size_mb": 3,
           "processed": true,
           "tags": [
-            "original",
-            "rarity"
+            "original"
           ]
         },
         {
@@ -5145,8 +5094,7 @@
           "processed": true,
           "tags": [
             "cover",
-            "rock",
-            "rarity"
+            "rock"
           ]
         },
         {
@@ -5178,8 +5126,7 @@
           "tags": [
             "cover",
             "folk",
-            "ballad",
-            "rarity"
+            "ballad"
           ]
         },
         {
@@ -5194,8 +5141,7 @@
           "processed": true,
           "tags": [
             "cover",
-            "rock",
-            "rarity"
+            "rock"
           ]
         },
         {
@@ -5243,8 +5189,7 @@
           "processed": true,
           "tags": [
             "cover",
-            "folk",
-            "rarity"
+            "folk"
           ]
         },
         {
@@ -5287,8 +5232,7 @@
           "flac_size_mb": 38,
           "processed": true,
           "tags": [
-            "original",
-            "rarity"
+            "original"
           ]
         },
         {
@@ -5319,8 +5263,7 @@
           "tags": [
             "traditional",
             "irish",
-            "upbeat",
-            "rarity"
+            "upbeat"
           ]
         },
         {
@@ -5383,8 +5326,7 @@
           "tags": [
             "cover",
             "rock",
-            "upbeat",
-            "rarity"
+            "upbeat"
           ]
         },
         {
@@ -5399,8 +5341,7 @@
           "processed": true,
           "tags": [
             "traditional",
-            "irish",
-            "rarity"
+            "irish"
           ]
         },
         {
@@ -5412,9 +5353,7 @@
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/28 Did You Ever See.flac",
           "flac_size_mb": 21,
           "processed": true,
-          "tags": [
-            "rarity"
-          ]
+          "tags": []
         },
         {
           "num": 29,
@@ -5444,8 +5383,7 @@
           "tags": [
             "cover",
             "ballad",
-            "singalong",
-            "rarity"
+            "singalong"
           ]
         },
         {
@@ -5600,8 +5538,7 @@
           "flac_size_mb": 6,
           "processed": true,
           "tags": [
-            "original",
-            "rarity"
+            "original"
           ]
         },
         {
@@ -5831,8 +5768,7 @@
           "processed": true,
           "tags": [
             "cover",
-            "upbeat",
-            "rarity"
+            "upbeat"
           ]
         },
         {
@@ -5853,7 +5789,7 @@
         },
         {
           "num": 10,
-          "title": "The Grey Funnel Line (with Jerry)",
+          "title": "The Grey Funnel Line",
           "songwriter": "Traditional",
           "duration": "4:26",
           "size_mb": 10,
@@ -5865,13 +5801,13 @@
             "traditional",
             "folk",
             "ballad",
-            "rarity",
             "guest"
-          ]
+          ],
+          "artist": "Jerry Hannan & Sean Hannan"
         },
         {
           "num": 11,
-          "title": "Rugburns (with Jerry)",
+          "title": "Rugburns",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "5:11",
           "size_mb": 12,
@@ -5886,7 +5822,7 @@
         },
         {
           "num": 12,
-          "title": "Elephant Shoes (with Jerry)",
+          "title": "Elephant Shoes",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:38",
           "size_mb": 8,
@@ -5901,7 +5837,7 @@
         },
         {
           "num": 13,
-          "title": "Daddy (Kelly Peterson)",
+          "title": "Daddy",
           "songwriter": "Kelly Peterson",
           "artist": "Kelly Peterson",
           "duration": "2:55",
@@ -5912,13 +5848,12 @@
           "processed": true,
           "tags": [
             "cover",
-            "rarity",
             "guest"
           ]
         },
         {
           "num": 14,
-          "title": "Angel from Montgomery (Kelly Peterson)",
+          "title": "Angel from Montgomery",
           "songwriter": "John Prine",
           "artist": "Kelly Peterson",
           "duration": "4:27",
@@ -8461,8 +8396,7 @@
           "processed": true,
           "tags": [
             "cover",
-            "country",
-            "rarity"
+            "country"
           ]
         },
         {
@@ -8479,8 +8413,7 @@
             "traditional",
             "irish",
             "upbeat",
-            "singalong",
-            "rarity"
+            "singalong"
           ]
         },
         {
@@ -8511,8 +8444,7 @@
           "flac_size_mb": 39,
           "processed": true,
           "tags": [
-            "original",
-            "rarity"
+            "original"
           ]
         },
         {
@@ -8642,8 +8574,7 @@
           "flac_size_mb": 24,
           "processed": true,
           "tags": [
-            "original",
-            "rarity"
+            "original"
           ]
         },
         {
@@ -8908,8 +8839,7 @@
           "processed": true,
           "tags": [
             "traditional",
-            "irish",
-            "rarity"
+            "irish"
           ]
         },
         {
@@ -8924,8 +8854,7 @@
           "processed": true,
           "tags": [
             "cover",
-            "rock",
-            "rarity"
+            "rock"
           ]
         },
         {
@@ -8998,8 +8927,7 @@
           "processed": true,
           "tags": [
             "cover",
-            "rock",
-            "rarity"
+            "rock"
           ]
         },
         {
