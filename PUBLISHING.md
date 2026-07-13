@@ -264,15 +264,19 @@ per-show step; it matters when something breaks or gets upgraded.
 
 > **Important: a green Action is not proof the site works.** After a deploy,
 > always spot-check a URL only the new deploy can serve, on renedebos.com itself.
-> Also: edge caching means header/page changes can take a while to appear on
-> already-cached pages — Cloudflare dashboard → Purge Cache makes it instant.
-> **`/shows/<slug>/` pages specifically ignore `?cache-bust` query strings**
-> (confirmed 2026-07-13: `/updates/` and `/songs/*/` fetch fresh every time,
-> but a `/shows/*/` URL kept serving `cf-cache-status: HIT` on the old page
-> through several cache-busted requests). After reprocessing a show, check
-> `/updates/` or a song page first to confirm the deploy itself landed, then
-> purge that show's URL by hand: dashboard → **Caching → Configuration →
-> Purge Cache → Custom Purge**, paste the exact show URL. The deploy Action's
+> **`?cache-bust` query strings and client `Cache-Control: no-cache` headers
+> don't reliably bypass Cloudflare's edge cache on this site** (confirmed
+> 2026-07-13, twice: a `/shows/*/` page and, in a later deploy, `/history/`
+> both kept serving `cf-cache-status: HIT` with pre-deploy content through
+> several cache-busted requests, while other pages in the same deploys came
+> back fresh). It isn't tied to one route pattern — any page that already had
+> a cached copy sitting at the edge can keep serving it past a deploy. So:
+> after any deploy, spot-check the pages you actually changed, not a
+> different page in the same deploy — freshness elsewhere doesn't prove
+> anything about the page you care about. If a checked page still shows old
+> content, purge it by hand: dashboard → **Caching → Configuration → Purge
+> Cache → Custom Purge**, paste the exact URL (or **Purge Everything** if
+> multiple pages from the same deploy are affected). The deploy Action's
 > `CLOUDFLARE_API_TOKEN` is scoped to Workers deploy only — it can't purge
 > cache, so this step has to be manual.
 
