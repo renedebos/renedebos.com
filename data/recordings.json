@@ -3799,11 +3799,11 @@
           "num": 1,
           "title": "Plastic Lemons",
           "songwriter": "Jerry Hannan & Sean Hannan",
-          "duration": "3:51",
-          "size_mb": 9,
+          "duration": "2:56",
+          "size_mb": 7,
           "file": "MP3/Jerry Hannan - Cafe Java 1999-04-08/01 Plastic Lemons.mp3",
           "flac": "FLAC/Jerry Hannan - Cafe Java 1999-04-08/01 Plastic Lemons.flac",
-          "flac_size_mb": 31,
+          "flac_size_mb": 24,
           "processed": true,
           "tags": [
             "original"
@@ -3817,7 +3817,7 @@
           "size_mb": 9,
           "file": "MP3/Jerry Hannan - Cafe Java 1999-04-08/02 Truck.mp3",
           "flac": "FLAC/Jerry Hannan - Cafe Java 1999-04-08/02 Truck.flac",
-          "flac_size_mb": 33,
+          "flac_size_mb": 32,
           "processed": true,
           "tags": [
             "original",
@@ -3828,11 +3828,11 @@
           "num": 3,
           "title": "Baby",
           "songwriter": "Jerry Hannan & Sean Hannan",
-          "duration": "3:12",
+          "duration": "3:08",
           "size_mb": 8,
           "file": "MP3/Jerry Hannan - Cafe Java 1999-04-08/03 Baby.mp3",
           "flac": "FLAC/Jerry Hannan - Cafe Java 1999-04-08/03 Baby.flac",
-          "flac_size_mb": 27,
+          "flac_size_mb": 26,
           "processed": true,
           "tags": [
             "original"
@@ -3846,7 +3846,7 @@
           "size_mb": 6,
           "file": "MP3/Jerry Hannan - Cafe Java 1999-04-08/04 Smoke in Heaven.mp3",
           "flac": "FLAC/Jerry Hannan - Cafe Java 1999-04-08/04 Smoke in Heaven.flac",
-          "flac_size_mb": 22,
+          "flac_size_mb": 21,
           "processed": true,
           "tags": [
             "original",
@@ -3875,7 +3875,7 @@
           "size_mb": 9,
           "file": "MP3/Jerry Hannan - Cafe Java 1999-04-08/06 Father and Son.mp3",
           "flac": "FLAC/Jerry Hannan - Cafe Java 1999-04-08/06 Father and Son.flac",
-          "flac_size_mb": 31,
+          "flac_size_mb": 30,
           "processed": true,
           "tags": [
             "cover",
@@ -3979,7 +3979,7 @@
           "size_mb": 10,
           "file": "MP3/Jerry Hannan - Cafe Java 1999-04-08/13 Tougher Than the Rest.mp3",
           "flac": "FLAC/Jerry Hannan - Cafe Java 1999-04-08/13 Tougher Than the Rest.flac",
-          "flac_size_mb": 34,
+          "flac_size_mb": 33,
           "processed": true,
           "tags": [
             "cover",
@@ -4023,6 +4023,7 @@
         {
           "num": 16,
           "title": "Peaceful Easy Feeling",
+          "songwriter": "Eagles",
           "duration": "4:11",
           "size_mb": 10,
           "file": "MP3/Jerry Hannan - Cafe Java 1999-04-08/16 Peaceful Easy Feeling.mp3",
@@ -4032,8 +4033,7 @@
           "tags": [
             "cover",
             "rarity"
-          ],
-          "songwriter": "Eagles"
+          ]
         },
         {
           "num": 17,
@@ -4073,7 +4073,7 @@
           "size_mb": 12,
           "file": "MP3/Jerry Hannan - Cafe Java 1999-04-08/19 Into the Mystic.mp3",
           "flac": "FLAC/Jerry Hannan - Cafe Java 1999-04-08/19 Into the Mystic.flac",
-          "flac_size_mb": 43,
+          "flac_size_mb": 42,
           "processed": true,
           "tags": [
             "cover",
@@ -4117,7 +4117,7 @@
           "size_mb": 10,
           "file": "MP3/Jerry Hannan - Cafe Java 1999-04-08/22 Getaway Blues.mp3",
           "flac": "FLAC/Jerry Hannan - Cafe Java 1999-04-08/22 Getaway Blues.flac",
-          "flac_size_mb": 36,
+          "flac_size_mb": 35,
           "processed": true,
           "tags": [
             "original",
@@ -4132,7 +4132,7 @@
           "size_mb": 10,
           "file": "MP3/Jerry Hannan - Cafe Java 1999-04-08/23 The Parting Glass.mp3",
           "flac": "FLAC/Jerry Hannan - Cafe Java 1999-04-08/23 The Parting Glass.flac",
-          "flac_size_mb": 32,
+          "flac_size_mb": 31,
           "processed": true,
           "tags": [
             "traditional",
@@ -4150,7 +4150,7 @@
       "page": null,
       "processing_status": "done",
       "added": "2026-07-12",
-      "added_ts": "2026-07-12T21:02:47.779529",
+      "added_ts": "2026-07-12T22:39:57.389122",
       "highlight": true
     },
     {

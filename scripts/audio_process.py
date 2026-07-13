@@ -54,7 +54,7 @@ LUFS_TOL = 0.5    # warn if achieved LUFS drifts from target by more than this
 # re-run later with a newer version). The registry is the human-readable decode
 # of a version number; the per-track `chain` is the self-contained ground truth;
 # the `md5` proves the live audio is that exact output.
-WORKFLOW_VERSION = 3
+WORKFLOW_VERSION = 4
 WORKFLOW_VERSIONS = {
     1: {
         "desc": "Two-pass ffmpeg loudnorm to the per-artist target "
@@ -88,6 +88,22 @@ WORKFLOW_VERSIONS = {
                 "already-published shows via a container rewrite (-c copy) that "
                 "leaves the audio stream — and therefore the provenance MD5 — intact.",
         "loudnorm": "I=<target>:LRA=11:TP=-1:linear=true",
+        "targets": dict(ARTIST_TARGET),
+        "optional_filters": ["--eq <literal ffmpeg filter chain>", "highpass=f=80",
+                             "lowpass=f=18000", "60Hz notch"],
+    },
+    4: {
+        "desc": "As v3, plus: fixed a silent loudnorm fallback. Requesting linear=true "
+                "doesn't guarantee linear gain — if reaching the show target would push "
+                "true peak past the TP ceiling, ffmpeg quietly switches to dynamic "
+                "(frame-adaptive) normalization instead, which rides the gain up on quiet "
+                "passages and can flatten hand-drawn fades. A track whose predicted TP "
+                "exceeds the ceiling (the diagnose PRED_TP flag) is now processed at its "
+                "own safe lower 'max linear target' (I - TP - 1, same number diagnose "
+                "already reports) so it stays in true linear mode. Recorded per-track as "
+                "`target_lufs` in the provenance sidecar whenever it differs from the "
+                "show's nominal target.",
+        "loudnorm": "I=<target or per-track max-linear target>:LRA=11:TP=-1:linear=true",
         "targets": dict(ARTIST_TARGET),
         "optional_filters": ["--eq <literal ffmpeg filter chain>", "highpass=f=80",
                              "lowpass=f=18000", "60Hz notch"],
@@ -545,24 +561,43 @@ def cmd_process(args):
         out_mp3 = os.path.join(outfolder, os.path.splitext(f)[0] + ".mp3")
         num = lead_num(f)
 
+        # Decide the effective per-track target up front (source-only, cheap —
+        # needed whether we process fresh or resume-skip). linear=true is only
+        # a request: if the gain needed to hit `target` would push true peak past
+        # the TP ceiling, ffmpeg silently falls back to dynamic (frame-adaptive)
+        # normalization, which rides the gain up on quiet passages and can flatten
+        # a hand-drawn fade. Reduce to the same "max linear target" diagnose
+        # already reports (I - TP - 1) so the file stays in true linear mode.
+        j_chk = measure(src, target, pre=filt)
+        in_I_chk, in_TP_chk = float(j_chk["input_i"]), float(j_chk["input_tp"])
+        pred_chk = in_TP_chk + (target - in_I_chk)
+        used_target = target
+        if pred_chk > TP_CEILING:
+            used_target = round(in_I_chk - in_TP_chk + TP_CEILING, 2)
+
         if os.path.exists(out_audio) and os.path.exists(out_mp3):
-            print(f"[{i:02d}/{len(files)}] {f} — exists, skipping (resume)", flush=True)
+            note = f" [target {used_target:+.1f} LUFS, linear-preserving]" if used_target != target else ""
+            print(f"[{i:02d}/{len(files)}] {f} — exists, skipping (resume){note}", flush=True)
             # still record provenance from the existing output
-            j2 = measure(out_audio, target)
-            in_I = float(measure(src, target)["input_i"]) if os.path.exists(src) else None
+            j2 = measure(out_audio, used_target)
+            in_I = in_I_chk if os.path.exists(src) else None
         else:
+            if used_target != target:
+                print(f"  {f}: linear gain to {target} LUFS would hit {pred_chk:+.2f} dBTP "
+                      f"(> {TP_CEILING}) — using {used_target:+.1f} LUFS instead to keep "
+                      f"true linear normalization (preserves fades/dynamics)", flush=True)
             info = probe(src)
             # loudnorm values measured on the post-EQ signal (so the gain is right);
             # in_I is the RAW input loudness, kept for provenance/display.
-            j = measure(src, target, pre=filt)
-            in_I = float(measure(src, target)["input_i"]) if filt else float(j["input_i"])
+            j = measure(src, used_target, pre=filt)
+            in_I = in_I_chk
             pre = (filt + ",") if filt else ""
-            af = (f"{pre}loudnorm=I={target}:LRA=11:TP={TP_CEILING}:"
+            af = (f"{pre}loudnorm=I={used_target}:LRA=11:TP={TP_CEILING}:"
                   f"measured_I={j['input_i']}:measured_LRA={j['input_lra']}:"
                   f"measured_tp={j['input_tp']}:measured_thresh={j['input_thresh']}:"
                   f"offset={j['target_offset']}:linear=true:print_format=summary")
             codec = output_codec(info["bits"], info["sample_fmt"], container)
-            tags = tag_args(tag_ctx, f, num, len(files), target)
+            tags = tag_args(tag_ctx, f, num, len(files), used_target)
             r = subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
                                 "-i", src, "-af", af, "-ar", str(info["sr"])] + codec
                                + tags + [out_audio], capture_output=True, text=True)
@@ -576,36 +611,40 @@ def cmd_process(args):
             if r2.returncode != 0:
                 print(f"  MP3 FAIL {f}: {r2.stderr[-200:]}", flush=True)
                 continue
-            j2 = measure(out_audio, target)
+            j2 = measure(out_audio, used_target)
 
         out_I, out_TP, out_LRA = float(j2["input_i"]), float(j2["input_tp"]), float(j2["input_lra"])
         md5 = audio_md5(out_audio)
         # the lossy encode can overshoot the FLAC's peaks — measure the MP3's
         # true peak too and warn if it would clip on decode
-        mp3_tp = float(measure(out_mp3, target)["input_tp"])
+        mp3_tp = float(measure(out_mp3, used_target)["input_tp"])
         # verification (#7)
-        status = "OK"
+        status = f"target {used_target:+.1f}" if used_target != target else "OK"
         if out_TP > TP_CEILING + TP_TOL:
             status = "TP>ceiling"
             warnings.append(f"{f}: achieved TP {out_TP:+.2f} dBTP exceeds {TP_CEILING} ceiling")
-        if abs(out_I - target) > LUFS_TOL:
+        if abs(out_I - used_target) > LUFS_TOL:
             status = "LUFS drift"
-            warnings.append(f"{f}: achieved {out_I:.2f} LUFS drifts > {LUFS_TOL} from {target}")
+            warnings.append(f"{f}: achieved {out_I:.2f} LUFS drifts > {LUFS_TOL} from {used_target}")
         if mp3_tp > 0.0:
             status = "MP3 clips"
             warnings.append(f"{f}: MP3 true peak {mp3_tp:+.2f} dBTP — lossy overshoot "
                             "clips on decode (FLAC is fine; consider re-encode headroom)")
+        track_chain = chain_str if used_target == target else \
+            chain_str.replace(f"I={_w(target)}", f"I={_w(used_target)}")
         if num is not None:
-            entry = {"ver": WORKFLOW_VERSION, "chain": chain_str,
+            entry = {"ver": WORKFLOW_VERSION, "chain": track_chain,
                      "lufs": round(out_I, 2), "tp": round(out_TP, 2),
                      "mp3_tp": round(mp3_tp, 2),
                      "lra": round(out_LRA, 2), "md5": md5}
             if in_I is not None:
-                entry = {"ver": WORKFLOW_VERSION, "chain": chain_str,
+                entry = {"ver": WORKFLOW_VERSION, "chain": track_chain,
                          "in_lufs": round(in_I, 1),
                          "lufs": round(out_I, 2), "tp": round(out_TP, 2),
                          "mp3_tp": round(mp3_tp, 2),
                          "lra": round(out_LRA, 2), "md5": md5}
+            if used_target != target:
+                entry["target_lufs"] = used_target
             prov_tracks[str(num)] = entry
         report.append((f, in_I, out_I, out_TP, status))
         print(f"[{i:02d}/{len(files)}] {f} -> {out_I:.2f} LUFS, TP {out_TP:.2f} "
