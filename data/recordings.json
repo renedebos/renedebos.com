@@ -3444,10 +3444,332 @@
           "stream": "MP3/Full/WAV_Files/JerryHannan_CafeJava_1999-04-08 DIGITAL.mp3"
         }
       ],
-      "tracks": null,
-      "description": null,
+      "tracks": [
+        {
+          "num": 1,
+          "title": "Smoke in Heaven",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:31",
+          "size_mb": 6,
+          "file": "MP3/JerryHannan - Cafe Java 1999-03-25/01 Smoke in Heaven.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/01 Smoke in Heaven.flac",
+          "flac_size_mb": 21,
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
+        },
+        {
+          "num": 2,
+          "title": "Illegal Smile",
+          "songwriter": "John Prine",
+          "duration": "2:54",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - Cafe Java 1999-03-25/02 Illegal Smile.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/02 Illegal Smile.flac",
+          "flac_size_mb": 24,
+          "processed": true,
+          "tags": [
+            "cover",
+            "folk",
+            "upbeat",
+            "singalong"
+          ]
+        },
+        {
+          "num": 3,
+          "title": "Truck",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:52",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - Cafe Java 1999-03-25/03 Truck.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/03 Truck.flac",
+          "flac_size_mb": 32,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 4,
+          "title": "Butter",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:38",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - Cafe Java 1999-03-25/04 Butter.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/04 Butter.flac",
+          "flac_size_mb": 30,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 5,
+          "title": "Anna May",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:59",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - Cafe Java 1999-03-25/05 Anna May.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/05 Anna May.flac",
+          "flac_size_mb": 24,
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
+        },
+        {
+          "num": 6,
+          "title": "ABC",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "1:30",
+          "size_mb": 4,
+          "file": "MP3/JerryHannan - Cafe Java 1999-03-25/06 ABC.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/06 ABC.flac",
+          "flac_size_mb": 12,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 7,
+          "title": "Good Life",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:39",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - Cafe Java 1999-03-25/07 Good Life.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/07 Good Life.flac",
+          "flac_size_mb": 32,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 8,
+          "title": "Blind Man",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:10",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - Cafe Java 1999-03-25/08 Blind Man.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/08 Blind Man.flac",
+          "flac_size_mb": 28,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 9,
+          "title": "Luxury of Murder",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:57",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - Cafe Java 1999-03-25/09 Luxury of Murder.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/09 Luxury of Murder.flac",
+          "flac_size_mb": 25,
+          "processed": true,
+          "tags": [
+            "original",
+            "story"
+          ]
+        },
+        {
+          "num": 10,
+          "title": "Clear Headed",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:27",
+          "size_mb": 11,
+          "file": "MP3/JerryHannan - Cafe Java 1999-03-25/10 Clear Headed.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/10 Clear Headed.flac",
+          "flac_size_mb": 39,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 11,
+          "title": "Recycle",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:05",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - Cafe Java 1999-03-25/11 Recycle.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/11 Recycle.flac",
+          "flac_size_mb": 35,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 12,
+          "title": "Angel of Montgomery",
+          "songwriter": "John Prine",
+          "duration": "4:16",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - Cafe Java 1999-03-25/12 Angel of Montgomery.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/12 Angel of Montgomery.flac",
+          "flac_size_mb": 35,
+          "processed": true,
+          "tags": [
+            "cover",
+            "ballad",
+            "country",
+            "rarity"
+          ]
+        },
+        {
+          "num": 13,
+          "title": "Daddy",
+          "songwriter": "Kelly Peterson",
+          "duration": "2:45",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - Cafe Java 1999-03-25/13 Daddy.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/13 Daddy.flac",
+          "flac_size_mb": 22,
+          "processed": true,
+          "tags": [
+            "cover",
+            "rarity",
+            "guest"
+          ]
+        },
+        {
+          "num": 14,
+          "title": "I Thought I Was You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:55",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - Cafe Java 1999-03-25/14 I Thought I Was You.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/14 I Thought I Was You.flac",
+          "flac_size_mb": 32,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 15,
+          "title": "Plastic Lemons",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:01",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - Cafe Java 1999-03-25/15 Plastic Lemons.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/15 Plastic Lemons.flac",
+          "flac_size_mb": 24,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 16,
+          "title": "Blahana",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:33",
+          "size_mb": 11,
+          "file": "MP3/JerryHannan - Cafe Java 1999-03-25/16 Blahana.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/16 Blahana.flac",
+          "flac_size_mb": 38,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 17,
+          "title": "Black is the Color",
+          "songwriter": "Traditional",
+          "duration": "3:20",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - Cafe Java 1999-03-25/17 Black is the Color.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/17 Black is the Color.flac",
+          "flac_size_mb": 27,
+          "processed": true,
+          "tags": [
+            "traditional",
+            "irish",
+            "ballad"
+          ]
+        },
+        {
+          "num": 18,
+          "title": "Model Family Man",
+          "songwriter": "Paddy Nash",
+          "duration": "3:45",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - Cafe Java 1999-03-25/18 Model Family Man.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/18 Model Family Man.flac",
+          "flac_size_mb": 32,
+          "processed": true,
+          "tags": [
+            "cover"
+          ]
+        },
+        {
+          "num": 19,
+          "title": "Nicolai",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:48",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - Cafe Java 1999-03-25/19 Nicolai.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/19 Nicolai.flac",
+          "flac_size_mb": 23,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 20,
+          "title": "Open Door",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:20",
+          "size_mb": 6,
+          "file": "MP3/JerryHannan - Cafe Java 1999-03-25/20 Open Door.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/20 Open Door.flac",
+          "flac_size_mb": 19,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 21,
+          "title": "The Parting Glass",
+          "songwriter": "Traditional",
+          "duration": "3:01",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - Cafe Java 1999-03-25/21 The Parting Glass.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/21 The Parting Glass.flac",
+          "flac_size_mb": 24,
+          "processed": true,
+          "tags": [
+            "traditional",
+            "irish",
+            "ballad"
+          ]
+        }
+      ],
+      "description": [
+        "Recorded from the audience on DAT at Cafe Java in Larkspur on March 25, 1999 — a 21-song solo set of Hannan originals with covers of John Prine (including a rare “Angel of Montgomery”) and Paddy Nash, plus a pair of Irish traditionals. Kelly Peterson joins Jerry for “Daddy.”",
+        "This tape also holds a second date (April 8, 1999), split out as its own show.",
+        "Broadband noise reduction (noise reduction = 8dB, sensitivity = 5) was applied to the full recording in Audacity before the tracks were split, then the usual −20 LUFS normalization."
+      ],
       "page": null,
-      "processing_status": "needs-processing"
+      "processing_status": "done",
+      "added": "2026-07-12",
+      "added_ts": "2026-07-12T20:08:55.062983"
     },
     {
       "slug": "jerry-cafe-java-1999-04-29",
@@ -9018,6 +9340,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-07-12",
+      "ts": "2026-07-12T20:08:55",
+      "slug": "jerry-cafe-java-1999-03-25",
+      "report": true,
+      "text": "Added the March 25, 1999 solo show at Cafe Java as 21 individual tracks, treated with broadband noise reduction (8dB, sensitivity 5) across the whole tape before splitting, then normalized to −20 LUFS."
+    },
     {
       "date": "2026-07-12",
       "ts": "2026-07-12T17:24:43",

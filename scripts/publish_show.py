@@ -210,16 +210,16 @@ def cmd_publish(args):
     tracks = os.path.join(WORK_ROOT, args.slug, "tracks")
     out = os.path.join(WORK_ROOT, args.slug, "out")
 
-    print(f"[1/6] loudness-normalize {n} tracks to {TARGET_LUFS} LUFS")
+    print(f"[1/7] loudness-normalize {n} tracks to {TARGET_LUFS} LUFS")
     cmd = [sys.executable, os.path.join(ROOT, "scripts", "audio_process.py"),
            "process", tracks, out, "--target", str(TARGET_LUFS), "--slug", args.slug]
     if st.get("pre_edits"):
         cmd += ["--pre-edits", st["pre_edits"]]
     r = run(cmd)
-    if r.returncode != 0:
+    if r.returncode not in (0, 2):  # 2 = processed with non-fatal warnings, see report
         raise SystemExit("processing failed")
 
-    print(f"[2/6] upload FLAC+MP3 to R2 ({folder})")
+    print(f"[2/7] upload FLAC+MP3 to R2 ({folder})")
     for ext, top in (("*.flac", "FLAC"), ("*.mp3", "MP3")):
         run(["rclone", "copy", out, f"{R2}/{top}/{folder}",
              "--include", ext, "--s3-no-check-bucket", "--transfers", "8"])
@@ -227,27 +227,33 @@ def cmd_publish(args):
         if have != n:
             raise SystemExit(f"R2 {top} incomplete: {have}/{n}")
 
-    print("[3/6] waveform peaks")
+    print("[3/7] draft tracks[] into recordings.json (needed before peaks/verify can map "
+          "track num -> R2 key)")
+    r = run([sys.executable, os.path.join(ROOT, "scripts", "draft_tracks.py"), args.slug])
+    if not DRY and r.returncode != 0:
+        raise SystemExit("draft_tracks failed")
+
+    print("[4/7] waveform peaks")
     run([sys.executable, os.path.join(ROOT, "scripts", "gen_peaks.py"),
          "--slug", args.slug])
 
-    print("[4/6] verify R2 MD5s against provenance")
+    print("[5/7] verify R2 MD5s against provenance")
     r = run([sys.executable, os.path.join(ROOT, "scripts", "audio_process.py"),
              "verify", args.slug], capture_output=True)
     print(r.stdout[-400:] if r.stdout else "")
     if not DRY and "0 mismatch(es)" not in (r.stdout or ""):
         raise SystemExit("MD5 verify FAILED — do not ship")
 
-    print("[5/6] Drive backup of processed files")
+    print("[6/7] Drive backup of processed files")
     drive_backup(folder, out, 2 * n, manual_first=args.manual_drive_backup)
 
-    print("[6/6] cleanup local tracks copy (out/ kept until the show is shipped)")
+    print("[7/7] cleanup local tracks copy (out/ kept until the show is shipped)")
     if not DRY:
         shutil.rmtree(tracks, ignore_errors=True)
 
     print(f"""
 done — still human:
-  python3 scripts/draft_tracks.py {args.slug}     # metadata draft into recordings.json
+  review any FLAGs draft_tracks printed above (new/ambiguous titles), write
   description + updates note, history.html
   python3 scripts/build.py && commit + push, then spot-check the live page""")
     # re-check at publish time — the nag repeats until the file exists
