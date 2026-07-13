@@ -262,12 +262,14 @@
   // browser has confirmed the short link actually resolves for it.
 
   var shareBtn = document.getElementById("pl-share");
+  var saveBtn = document.getElementById("pl-save");
 
   function syncHash() {
     history.replaceState(null, "", queue.length
       ? "#p=" + queue.map(function (t) { return t.id; }).join(",")
       : location.pathname);
     shareBtn.hidden = !queue.length;
+    if (saveBtn) saveBtn.hidden = !queue.length;
   }
 
   shareBtn.addEventListener("click", function () {
@@ -309,6 +311,102 @@
       window.prompt("Copy this link:", url);
     }
   }
+
+  // ── personal saved playlists (localStorage only) ─────────────────────────
+  // Saving stores {name, ids, created} locally; nothing goes to the server.
+  // The ids load via the same #p= hash as everything else, and sharing a
+  // saved playlist is just: load it, then use the existing Share button.
+
+  var savedEl = document.getElementById("pl-saved");
+  var SAVED_KEY = "savedPlaylists";
+
+  function loadSaved() {
+    try {
+      var v = JSON.parse(localStorage.getItem(SAVED_KEY) || "[]");
+      return Array.isArray(v) ? v : [];
+    } catch (e) { return []; }
+  }
+
+  function storeSaved(list) {
+    try { localStorage.setItem(SAVED_KEY, JSON.stringify(list)); } catch (e) {}
+    renderSaved();
+  }
+
+  function renderSaved() {
+    if (!savedEl) return;
+    var list = loadSaved();
+    if (!list.length) { savedEl.innerHTML = ""; return; }
+    savedEl.innerHTML = '<p class="pl-filter-label">Your saved playlists</p>'
+      + '<div class="search-results">' + list.map(function (p, i) {
+        return '<div class="pl-saved-row" data-i="' + i + '">'
+          + '<button type="button" class="sr pl-saved-load" data-i="' + i + '">'
+          + '<span class="sr-icon">&#9834;</span>'
+          + '<span class="sr-main"><span class="sr-title">' + esc(p.name) + "</span>"
+          + '<span class="sr-sub">' + p.ids.length + (p.ids.length === 1 ? " song" : " songs") + "</span></span>"
+          + "</button>"
+          + '<button type="button" class="pl-saved-act" data-act="rename" data-i="' + i + '">Rename</button>'
+          + '<button type="button" class="pl-saved-act" data-act="delete" data-i="' + i + '">Delete</button>'
+          + "</div>";
+      }).join("") + "</div>";
+  }
+
+  if (saveBtn) {
+    saveBtn.addEventListener("click", function () {
+      if (!queue.length) return;
+      var name = (window.prompt("Name this playlist:") || "").trim();
+      if (!name) return;
+      var list = loadSaved();
+      var existing = list.findIndex(function (p) { return p.name === name; });
+      if (existing !== -1) {
+        if (!window.confirm('Replace the existing playlist "' + name + '"?')) return;
+        list.splice(existing, 1);
+      }
+      list.push({ name: name, ids: queue.map(function (t) { return t.id; }),
+                  created: new Date().toISOString() });
+      storeSaved(list);
+      saveBtn.textContent = "Saved!";
+      setTimeout(function () { saveBtn.textContent = "Save playlist"; }, 1600);
+    });
+  }
+
+  if (savedEl) {
+    savedEl.addEventListener("click", function (e) {
+      var act = e.target.closest(".pl-saved-act");
+      var load = e.target.closest(".pl-saved-load");
+      var list = loadSaved();
+      if (act) {
+        var p = list[+act.dataset.i];
+        if (!p) return;
+        if (act.dataset.act === "delete") {
+          if (!window.confirm('Delete the playlist "' + p.name + '"?')) return;
+          list.splice(+act.dataset.i, 1);
+          storeSaved(list);
+        } else if (act.dataset.act === "rename") {
+          var name = (window.prompt("Rename playlist:", p.name) || "").trim();
+          if (!name || name === p.name) return;
+          if (list.some(function (q) { return q.name === name; })) {
+            if (!window.confirm('Replace the existing playlist "' + name + '"?')) return;
+            list = list.filter(function (q) { return q.name !== name; });
+          }
+          p.name = name;
+          storeSaved(list);
+        }
+        return;
+      }
+      if (load) {
+        var pl = list[+load.dataset.i];
+        if (!pl) return;
+        var hash = "#p=" + pl.ids.join(",");
+        if (location.hash === hash) hydrateFromHash();   // same hash: no hashchange fires
+        else location.hash = hash;                        // hashchange listener hydrates
+      }
+    });
+  }
+
+  // Another tab saved/renamed/deleted a playlist — mirror it here.
+  window.addEventListener("storage", function (e) {
+    if (e.key === SAVED_KEY) renderSaved();
+  });
 
   function hydrateFromHash() {
     var m = location.hash.match(/^#p=([\w.,-]+)/);
@@ -444,15 +542,17 @@
 
   // ── queue list ────────────────────────────────────────────────────────────
 
+  var X_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
+
   function renderQueue() {
     queueEl.innerHTML = '<p class="search-status">' + queue.length
       + (queue.length === 1 ? " song · " : " songs · ") + totalStr(queue)
       + (mode === "endless" ? " · reshuffles when it runs out" : "") + "</p>"
       + (queue.length ? '<button type="button" class="select-all" data-target="#pl-queue">Select all</button>' : "")
       + '<div class="search-results">' + queue.map(function (t, i) {
-        // .pl-row is a plain container (not a button — it now holds two
-        // separate interactive children): the "+" selection toggle and the
-        // actual play button. See track-select.js for the "+" behavior.
+        // .pl-row is a plain container (not a button — it holds three
+        // separate interactive children): the play button, the "+" selection
+        // toggle (see track-select.js), and the × remove button.
         return '<div class="pl-row" data-i="' + i + '">'
           + '<button type="button" class="sr pl-row-play" data-i="' + i + '">'
           + '<span class="sr-icon">&#9834;</span>'
@@ -461,8 +561,35 @@
           + '<span class="sr-src src-' + esc(t.sourceType) + '">' + esc(t.sourceType.toUpperCase()) + "</span>"
           + '<span class="sr-meta">' + formatTime(t.durationSec) + "</span></button>"
           + trackAddButtonHtml(t.id)
+          + '<button type="button" class="pl-remove" data-i="' + i
+          + '" aria-label="Remove ' + esc(t.title) + ' from this playlist">' + X_SVG + "</button>"
           + "</div>";
       }).join("") + "</div>";
+  }
+
+  // Drop one track from the queue in place. The queue is the single source of
+  // truth — the hash, share button, and playing-index all resync from it.
+  function removeAt(i) {
+    if (i < 0 || i >= queue.length) return;
+    var wasPlaying = idx !== -1 && !audio.paused;
+    queue.splice(i, 1);
+    if (!queue.length) {
+      stop();
+    } else if (i < idx) {
+      idx--;                       // playing track shifted down one slot
+    } else if (i === idx) {
+      // the next track slid into this slot; cue it (keep playing only if we were)
+      if (idx >= queue.length) {
+        stop();
+      } else {
+        audio.src = streamUrl(queue[idx]);
+        if (wasPlaying) attemptPlay();
+        renderNow();
+      }
+    }
+    renderQueue();
+    syncHash();
+    highlight();
   }
 
   function highlight() {
@@ -473,6 +600,8 @@
 
   queueEl.addEventListener("click", function (e) {
     if (e.target.closest(".track-add") || e.target.closest(".select-all")) return;
+    var rm = e.target.closest(".pl-remove");
+    if (rm) { removeAt(+rm.dataset.i); return; }
     var b = e.target.closest(".pl-row-play");
     if (b) playAt(+b.dataset.i);
   });
@@ -480,9 +609,11 @@
   // ── boot ──────────────────────────────────────────────────────────────────
 
   // Selecting tracks via the "+" buttons on this same queue (track-select.js)
-  // and clicking "Add to playlist" sets a new #p=... hash without a page
+  // and clicking "Build playlist" sets a new #p=... hash without a page
   // reload — re-hydrate the queue from it, same as a fresh page load would.
   window.addEventListener("hashchange", hydrateFromHash);
+
+  renderSaved();  // needs no catalog — names/counts come straight from storage
 
   fetch("/assets/tracks.json")
     .then(function (r) { return r.json(); })

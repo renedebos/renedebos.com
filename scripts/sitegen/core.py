@@ -181,6 +181,37 @@ def validate():
                     stray = [n for n in json.load(open(proc_path)).get("tracks", {}) if int(n) not in nums]
                     if stray:
                         errors.append(f"{where}: processing sidecar has track number(s) {stray} not present in tracks[]")
+    # Curated playlists (top-level "playlists"): every referenced track id
+    # must exist, since a typo'd id would silently vanish from the queue
+    # (hydrateFromHash drops unknown ids without complaint).
+    valid_ids = {f'{s["slug"]}-{t["num"]:02d}'
+                 for s in M["shows"] for t in (s.get("tracks") or [])
+                 if isinstance(t.get("num"), int)}
+    pl_slugs = set()
+    playlists = M.get("playlists", [])
+    if not isinstance(playlists, list):
+        errors.append("playlists: must be a list")
+        playlists = []
+    for i, pl in enumerate(playlists):
+        pw = f"playlists[{i}] ({pl.get('slug') or pl.get('name') or '?'})"
+        if not (isinstance(pl.get("name"), str) and pl["name"].strip()):
+            errors.append(f"{pw}: missing name")
+        slug = pl.get("slug")
+        if not (isinstance(slug, str) and re.fullmatch(r"[a-z0-9-]+", slug or "")):
+            errors.append(f"{pw}: slug must be lowercase [a-z0-9-]")
+        elif slug in pl_slugs:
+            errors.append(f"{pw}: duplicate slug")
+        else:
+            pl_slugs.add(slug)
+        ids = pl.get("ids")
+        if not (isinstance(ids, list) and ids):
+            errors.append(f"{pw}: ids must be a non-empty list of track ids")
+        else:
+            if len(ids) != len(set(ids)):
+                errors.append(f"{pw}: duplicate track id(s) in ids")
+            for tid in ids:
+                if tid not in valid_ids:
+                    errors.append(f"{pw}: unknown track id {tid!r}")
     # One songwriter per canonical song — the editor edits per-track, so a
     # per-song decision can silently miss variant titles or other shows.
     writers = {}

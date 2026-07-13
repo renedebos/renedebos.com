@@ -1748,7 +1748,43 @@ a.artist-chip:hover { filter: brightness(1.08); }
 .pl-row:first-child { border-top: none; }
 .pl-row.pl-playing { background: var(--accent-light); }
 .pl-row.pl-playing .sr-title { color: var(--accent); }
-.pl-row .track-add { width: 20px; height: 20px; margin: 0 1.1rem 0 0.6rem; }
+.pl-row .track-add { width: 20px; height: 20px; margin: 0 0.6rem; }
+
+/* × remove — quieter than the +: no ring, muted until hovered. */
+.pl-remove {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+  border: none; background: transparent; color: var(--muted);
+  cursor: pointer; margin-right: 0.9rem;
+  transition: background 0.15s, color 0.15s;
+}
+.pl-remove:hover { background: var(--accent-light); color: var(--accent); }
+.pl-remove svg { width: 11px; height: 11px; }
+
+/* Curated playlists (from recordings.json) — rendered at build time,
+   section absent while the list is empty. */
+.pl-curated { margin: 1.4rem 0; }
+.pl-curated .pl-filter-label { margin-bottom: 0.5rem; }
+.pl-curated-row { cursor: pointer; }
+
+/* Your saved playlists (localStorage) — rows mirror the curated look, with
+   small muted Rename/Delete actions on the right. */
+#pl-saved { margin: 1.4rem 0; }
+#pl-saved .pl-filter-label { margin-bottom: 0.5rem; }
+.pl-saved-row { display: flex; align-items: center; border-top: 1px solid var(--border); }
+.pl-saved-row:first-child { border-top: none; }
+.pl-saved-load {
+  flex: 1; min-width: 0; background: none; font: inherit; text-align: left;
+  border: none; border-top: none; cursor: pointer;
+}
+.pl-saved-act {
+  font-family: var(--sans); font-size: 11px; font-weight: 500;
+  letter-spacing: 0.04em; color: var(--muted); background: none;
+  border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.25rem 0.75rem; cursor: pointer; flex-shrink: 0;
+  margin-right: 0.6rem; transition: color 0.15s, border-color 0.15s;
+}
+.pl-saved-act:hover { color: var(--accent); border-color: var(--accent); }
 .pl-row-play {
   flex: 1; min-width: 0; background: none; font: inherit; text-align: left;
   border: none; border-top: none; cursor: pointer;

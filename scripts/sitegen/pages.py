@@ -280,6 +280,35 @@ def build_search():
         extra_scripts='\n<script src="/assets/search.js"></script>',
     )
 
+def _curated_playlists_html():
+    """The archive's own named playlists (top-level "playlists" in
+    recordings.json, validated at build). Omitted entirely while empty."""
+    pls = M.get("playlists") or []
+    if not pls:
+        return ""
+    by_id = {f'{s["slug"]}-{t["num"]:02d}': t
+             for s in M["shows"] for t in (s.get("tracks") or [])
+             if isinstance(t.get("num"), int)}
+    rows = []
+    for pl in pls:
+        tracks = [by_id[i] for i in pl["ids"]]
+        n = len(tracks)
+        href = "/playlist/#p=" + ",".join(pl["ids"])
+        desc = (f'<span class="sr-sub">{esc(pl["description"])}</span>'
+                if pl.get("description") else "")
+        rows.append(f'''      <a class="sr pl-curated-row" href="{esc(href)}">
+        <span class="sr-icon">&#9834;</span>
+        <span class="sr-main"><span class="sr-title">{esc(pl["name"])}</span>{desc}</span>
+        <span class="sr-meta">{n} song{"s" if n != 1 else ""} &middot; {track_total(tracks)}</span>
+      </a>''')
+    return f'''
+    <div class="pl-curated">
+      <p class="pl-filter-label">Playlists</p>
+      <div class="search-results">
+{chr(10).join(rows)}
+      </div>
+    </div>'''
+
 def build_playlist():
     return page_shell(
         title="Playlist — The Hannan Tapes",
@@ -290,14 +319,14 @@ def build_playlist():
         tagline="Roll your own set list from the archive",
         nav=site_nav("Playlist"),
         extra_scripts='\n<script src="/assets/track-select.js"></script>\n<script src="/assets/playlist.js"></script>',
-        main='''
+        main=f'''
   <section class="playlist">
     <p class="pl-intro">Filter the archive by artist, venue, source, or mood, then build a set — a fixed number of songs, a target length, or endless shuffle. Each playlist uses one randomly chosen performance of a song, so one played a dozen times over the years never repeats within a single set.</p>
     <div class="pl-presets">
       <button type="button" class="pl-preset" data-preset="mixed45">45-minute mixed set</button>
       <button type="button" class="pl-preset" data-preset="traditional">Traditional &amp; Irish</button>
       <button type="button" class="pl-preset" data-preset="soundboard">Soundboard recordings</button>
-    </div>
+    </div>{_curated_playlists_html()}
     <div class="pl-panel">
       <div class="pl-panel-head"><span class="pl-filter-label">Filters</span><button type="button" id="pl-clear" class="pl-clear" hidden>Clear filters</button></div>
       <div id="pl-filters" class="pl-filter-groups"></div>
@@ -306,8 +335,10 @@ def build_playlist():
       <div id="pl-length" class="pl-filter-groups"></div>
       <p id="pl-status" class="search-status">Loading the track catalog…</p>
       <p class="pl-actions"><button id="pl-generate" class="pl-generate" type="button" disabled>Generate playlist</button>
+      <button id="pl-save" class="pl-generate pl-share" type="button" hidden>Save playlist</button>
       <button id="pl-share" class="pl-generate pl-share" type="button" hidden>Copy share link</button></p>
     </div>
+    <div id="pl-saved"></div>
     <div id="pl-now" class="pl-now" hidden></div>
     <div id="pl-queue" class="pl-queue"></div>
   </section>''',

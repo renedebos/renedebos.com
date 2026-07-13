@@ -216,6 +216,46 @@ shape — shows here are 20–35 track concerts, not shuffled singles, so a
   div, but the class isn't unique per song on that page (100+ of them), so a
   generic selector would select across every open song's rows, not just one.
 
+## Phase 6: queue editing, curated playlists, saved playlists
+
+**Status (2026-07-13): DONE (curated list ships empty — content is Rene's).**
+Three related pieces, all reusing the `#p=` hash as the single queue
+representation:
+
+- **6a — × remove on queue rows.** Rene expected to "uncheck" a song from a
+  generated playlist. The +/✓ toggle can't mean that — it tracks the pending
+  *selection*, not queue membership, and overloading it would recreate the
+  Add-vs-Build semantic confusion. Each `.pl-row` now carries a muted ×
+  button; `removeAt()` splices the queue, fixes the playing index (removing
+  the playing track advances to the next, preserving play/pause state;
+  removing the last stops), and re-syncs hash/share/save buttons.
+- **6b — curated playlists.** Top-level `"playlists"` key in
+  `data/recordings.json`: `{slug, name, description?, ids: [track ids]}`.
+  Validated at build (`validate()` in `sitegen/core.py`): slug format +
+  uniqueness, non-empty deduped ids, **every id must exist** — because
+  `hydrateFromHash()` silently drops unknown ids, a typo would otherwise
+  just vanish from the queue. Rendered server-side on `/playlist/` between
+  the presets and the filters (section omitted entirely while the list is
+  empty) as links to `/playlist/#p=…`. Confirmed safe: every
+  recordings.json writer in the toolchain (metadata editor, draft_tracks,
+  audio_process status --write, update_tracks, make_stream_mp3,
+  stamp_added_dates) round-trips unknown top-level keys losslessly.
+  Authoring: by hand in recordings.json for now (validator guards it);
+  metadata-editor support deferred. Decision: `/playlist/` only, no
+  homepage strip, ships with `"playlists": []`.
+- **6c — personal saved playlists.** "Save playlist" button next to Share:
+  prompts for a name, stores `{name, ids, created}` in localStorage
+  (`savedPlaylists`) — **no server involvement at save time.** The Phase 4
+  KV short link is deliberately NOT created on save: ids load locally via
+  the existing hash, and sharing a saved playlist is just load-then-Share.
+  This costs no create-rate-limit budget and works offline. "Your saved
+  playlists" section lists them with Load (sets the hash; falls back to a
+  direct `hydrateFromHash()` call when the hash is unchanged, since
+  `hashchange` won't fire), Rename, and Delete; a `storage` listener
+  mirrors changes made in other tabs. The intended curation pipeline:
+  build with +/Build → save → listen/refine → promote to a curated
+  playlist in recordings.json.
+
 ## Open decisions (need Rene’s input)
 
 1. ~~**Tag vocabulary**~~ — RESOLVED 2026-07-07: full 20-tag controlled
