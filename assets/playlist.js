@@ -448,13 +448,20 @@
     queueEl.innerHTML = '<p class="search-status">' + queue.length
       + (queue.length === 1 ? " song · " : " songs · ") + totalStr(queue)
       + (mode === "endless" ? " · reshuffles when it runs out" : "") + "</p>"
+      + (queue.length ? '<button type="button" class="select-all" data-target="#pl-queue">Select all</button>' : "")
       + '<div class="search-results">' + queue.map(function (t, i) {
-        return '<button type="button" class="sr pl-row" data-i="' + i + '">'
+        // .pl-row is a plain container (not a button — it now holds two
+        // separate interactive children): the "+" selection toggle and the
+        // actual play button. See track-select.js for the "+" behavior.
+        return '<div class="pl-row" data-i="' + i + '">'
+          + trackAddButtonHtml(t.id)
+          + '<button type="button" class="sr pl-row-play" data-i="' + i + '">'
           + '<span class="sr-icon">&#9834;</span>'
           + '<span class="sr-main"><span class="sr-title">' + esc(t.title) + "</span>"
           + '<span class="sr-sub">' + esc(trackMeta(t)) + "</span></span>"
           + '<span class="sr-src src-' + esc(t.sourceType) + '">' + esc(t.sourceType.toUpperCase()) + "</span>"
-          + '<span class="sr-meta">' + formatTime(t.durationSec) + "</span></button>";
+          + '<span class="sr-meta">' + formatTime(t.durationSec) + "</span></button>"
+          + "</div>";
       }).join("") + "</div>";
   }
 
@@ -465,11 +472,17 @@
   }
 
   queueEl.addEventListener("click", function (e) {
-    var r = e.target.closest(".pl-row");
-    if (r) playAt(+r.dataset.i);
+    if (e.target.closest(".track-add") || e.target.closest(".select-all")) return;
+    var b = e.target.closest(".pl-row-play");
+    if (b) playAt(+b.dataset.i);
   });
 
   // ── boot ──────────────────────────────────────────────────────────────────
+
+  // Selecting tracks via the "+" buttons on this same queue (track-select.js)
+  // and clicking "Add to playlist" sets a new #p=... hash without a page
+  // reload — re-hydrate the queue from it, same as a fresh page load would.
+  window.addEventListener("hashchange", hydrateFromHash);
 
   fetch("/assets/tracks.json")
     .then(function (r) { return r.json(); })

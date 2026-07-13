@@ -47,7 +47,10 @@
 
   <p class="song-back"><a href="/songs/">&larr; All songs</a></p>
   <section id="tracks">
-    <div class="group-label-bare">Played 2 times &middot; Jerry Hannan</div>
+    <div class="tracks-head">
+      <div class="group-label-bare">Played 2 times &middot; Jerry Hannan</div>
+      <button type="button" class="select-all" data-target=".song-occs">Select all</button>
+    </div>
     <p class="track-hint">Every performance streams in full. &ldquo;Open on show page&rdquo; jumps to the song within its full set.</p>
     <div class="song-occs">
 <div class="song-occ">
@@ -55,6 +58,7 @@
           <a class="artist-chip artist-jerry" href="/shows/jerry-19-broadway-2001-01-08/#track-9">Jerry Hannan</a>
           <span class="song-occ-where">19 Broadway &middot; 2001-01-08</span>
           <a class="song-occ-open" href="/shows/jerry-19-broadway-2001-01-08/#track-9">open on show page &rarr;</a>
+          <button type="button" class="track-add" data-id="jerry-19-broadway-2001-01-08-09" aria-pressed="false" aria-label="Add to playlist selection"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg></button>
         </div>
         <div class="custom-player" data-src="https://wav-download.renedebos.workers.dev/stream?file=MP3/JerryHannan%20-%2019%20Broadway%202001-01-08/JerryHannan%20-%2019%20Broadway%202001-01-08%20-%2009%20Everything.mp3&amp;v=22a117256b41">
           <button class="play-btn" aria-label="Play Everything, Jerry Hannan, 2001-01-08" data-play-label="Everything, Jerry Hannan, 2001-01-08"><svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg></button>
@@ -70,6 +74,7 @@
           <a class="artist-chip artist-jerry" href="/shows/jerry-19-broadway-2001-01-15/#track-4">Jerry Hannan</a>
           <span class="song-occ-where">19 Broadway &middot; 2001-01-15</span>
           <a class="song-occ-open" href="/shows/jerry-19-broadway-2001-01-15/#track-4">open on show page &rarr;</a>
+          <button type="button" class="track-add" data-id="jerry-19-broadway-2001-01-15-04" aria-pressed="false" aria-label="Add to playlist selection"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg></button>
         </div>
         <div class="custom-player" data-src="https://wav-download.renedebos.workers.dev/stream?file=MP3/JerryHannan%20-%2019%20Broadway%202001-01-15/04%20Everything.mp3&amp;v=d3ef2a6e1f75">
           <button class="play-btn" aria-label="Play Everything, Jerry Hannan, 2001-01-15" data-play-label="Everything, Jerry Hannan, 2001-01-15"><svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg></button>
@@ -95,5 +100,6 @@
 </footer>
 
 <script src="/assets/player.js"></script>
+<script src="/assets/track-select.js"></script>
 </body>
 </html>

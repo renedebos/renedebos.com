@@ -289,6 +289,7 @@ def build_playlist():
         heading="Playlist",
         tagline="Roll your own set list from the archive",
         nav=site_nav("Playlist"),
+        extra_scripts='\n<script src="/assets/track-select.js"></script>\n<script src="/assets/playlist.js"></script>',
         main='''
   <section class="playlist">
     <p class="pl-intro">Filter the archive by artist, venue, source, or mood, then build a set — a fixed number of songs, a target length, or endless shuffle. Each playlist uses one randomly chosen performance of a song, so one played a dozen times over the years never repeats within a single set.</p>
@@ -310,7 +311,6 @@ def build_playlist():
     <div id="pl-now" class="pl-now" hidden></div>
     <div id="pl-queue" class="pl-queue"></div>
   </section>''',
-        extra_scripts='\n<script src="/assets/playlist.js"></script>',
     )
 
 def build_updates():
@@ -659,6 +659,8 @@ def build_show(show):
             if t.get("flac"):
                 flac_title = "Download FLAC (password protected)" + (f" · {t['flac_size_mb']} MB" if t.get("flac_size_mb") else "")
                 dl_btns.append(dl_button(t["flac"], title=flac_title))
+            # Playlist-selection id: {show-slug}-{tracknum:02d}, matching assets/tracks.json.
+            add_btn = track_add_button(f'{show["slug"]}-{t["num"]:02d}')
             if has_waves:
                 # waveform replaces the progress bar; the download (if any) keeps the
                 # .ws-dl wrapper so the mobile grouping styles apply (matches the lab page).
@@ -667,6 +669,7 @@ def build_show(show):
                       "\n        </div>") if dl_btns else ""
                 rows.append(f'''      <div class="track-row ws-track" id="track-{t["num"]}" data-trackid="{t["num"]}" data-src="{esc(stream)}">
         <button class="play-btn" aria-label="Play {play_label}" data-play-label="{play_label}">{PLAY_SVG}</button>
+        {add_btn}
         <span class="track-num">{t["num"]:02d}</span>
         {title_html}
         <div class="ws-wave"></div>
@@ -676,6 +679,7 @@ def build_show(show):
                 dl = "".join("\n        " + b for b in dl_btns)
                 rows.append(f'''      <div class="track-row custom-player" id="track-{t["num"]}" data-src="{esc(stream)}">
         <button class="play-btn" aria-label="Play {play_label}" data-play-label="{play_label}">{PLAY_SVG}</button>
+        {add_btn}
         <span class="track-num">{t["num"]:02d}</span>
         {title_html}
         <span class="time-label current" data-duration="{esc(t["duration"])}">{esc(t["duration"])}</span>{dl}
@@ -685,7 +689,10 @@ def build_show(show):
                 if has_flac else "Every song streams in full")
         parts.append(f'''
   <section id="tracks">
-    <div class="group-label-bare">Tracks &middot; {len(show["tracks"])} songs &middot; {track_total(show["tracks"])}</div>
+    <div class="tracks-head">
+      <div class="group-label-bare">Tracks &middot; {len(show["tracks"])} songs &middot; {track_total(show["tracks"])}</div>
+      <button type="button" class="select-all" data-target=".track-list">Select all</button>
+    </div>
     <p class="track-hint">{hint}</p>
     <div class="track-list" data-autoplay-next>
 {chr(10).join(rows)}
@@ -743,13 +750,13 @@ def build_show(show):
         SOURCE_LABEL.get(show["source"], show["source"]),
     ] if b]
 
-    extra_scripts = ""
+    extra_scripts = '\n<script src="/assets/track-select.js"></script>'
     if has_waves:
         # Emit the peaks to a served, cacheable path (data/ is .assetsignore'd) and
         # point wavesurfer.js at it, rather than inlining ~58 KB into every page.
         write(f"assets/peaks/{show['slug']}.json", open(peaks_path).read())
-        extra_scripts = (f'\n<script>window.WS_PEAKS_URL = "/assets/peaks/{show["slug"]}.json";</script>\n'
-                         f'<script type="module" src="/assets/wavesurfer.js"></script>')
+        extra_scripts += (f'\n<script>window.WS_PEAKS_URL = "/assets/peaks/{show["slug"]}.json";</script>\n'
+                          f'<script type="module" src="/assets/wavesurfer.js"></script>')
 
     if proc:
         # Open the collapsed technical-data table when linked to via #technical-data
@@ -920,7 +927,7 @@ def build_songs_index():
         url="https://renedebos.com/songs/", eyebrow="The Hannan Tapes",
         heading="Songs", tagline="Every song, and every time it was played",
         nav=site_nav("Songs"), main=main,
-        extra_scripts='\n<script src="/assets/songs.js"></script>')
+        extra_scripts='\n<script src="/assets/track-select.js"></script>\n<script src="/assets/songs.js"></script>')
 
 def build_song_page(s):
     plural = "s" if s["plays"] != 1 else ""
@@ -934,7 +941,10 @@ def build_song_page(s):
     occs = "\n".join(_song_occ_html(o, s["canonical"]) for o in s["occ"])
     parts.append(f'''
   <section id="tracks">
-    <div class="group-label-bare">Played {s['plays']} time{plural} &middot; {esc(arts)}</div>
+    <div class="tracks-head">
+      <div class="group-label-bare">Played {s['plays']} time{plural} &middot; {esc(arts)}</div>
+      <button type="button" class="select-all" data-target=".song-occs">Select all</button>
+    </div>
     <p class="track-hint">Every performance streams in full. &ldquo;Open on show page&rdquo; jumps to the song within its full set.</p>
     <div class="song-occs">
 {occs}
@@ -945,7 +955,8 @@ def build_song_page(s):
         description=f"{s['canonical']} — {s['plays']} live performance{plural} by {arts} in the Hannan archive.",
         url=f"https://renedebos.com/songs/{s['slug']}/", eyebrow="The Hannan Tapes &middot; Song",
         heading=esc(s["canonical"]), tagline=f"Played {s['plays']} time{plural} across the archive",
-        nav=site_nav("Songs"), main="".join(parts), extra_head=song_jsonld(s))
+        nav=site_nav("Songs"), main="".join(parts), extra_head=song_jsonld(s),
+        extra_scripts='\n<script src="/assets/track-select.js"></script>')
 
 def build_404():
     main = '''

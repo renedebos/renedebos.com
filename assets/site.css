@@ -988,6 +988,50 @@ main {
 .download-btn:hover { background: var(--accent); color: white; }
 .download-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
 
+/* "+" / checkmark playlist-selection toggle — same circular-icon language as
+   .download-btn, filled solid once selected (aria-pressed="true"). */
+.track-add {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+  border: 1.5px solid var(--accent); background: transparent; color: var(--accent);
+  cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.track-add:hover { background: var(--accent); color: white; }
+.track-add svg { width: 12px; height: 12px; flex-shrink: 0; }
+.track-add[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: white; }
+.track-row .track-add { width: 22px; height: 22px; margin-right: 0.4rem; }
+.song-occ-head .track-add { width: 20px; height: 20px; margin-left: auto; }
+
+/* Header row above a tracklist: the existing count/duration caption plus the
+   new "Select all" bulk action, side by side. */
+.tracks-head { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; }
+.tracks-head .group-label-bare { margin: 0; }
+.select-all {
+  font-family: var(--sans); font-size: 11px; font-weight: 500;
+  letter-spacing: 0.04em; color: var(--muted); background: none;
+  border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.25rem 0.75rem; cursor: pointer; transition: color 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+.select-all:hover { color: var(--accent); border-color: var(--accent); }
+
+/* Floating summary bar — appears once at least one track is selected via a
+   "+" button anywhere on the page, offers Clear or committing the selection
+   to /playlist/#p=... (see track-select.js). */
+.track-select-bar {
+  position: fixed; left: 50%; bottom: 1.1rem; transform: translateX(-50%);
+  z-index: 40; display: flex; align-items: center; gap: 0.8rem;
+  background: var(--player-bg); border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.5rem 0.6rem 0.5rem 1.1rem; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+}
+.tsb-count { font-size: 13px; color: var(--muted); white-space: nowrap; }
+.tsb-clear {
+  font-family: var(--sans); font-size: 12px; color: var(--muted);
+  background: none; border: none; cursor: pointer; text-decoration: underline;
+}
+.tsb-clear:hover { color: var(--accent); }
+.tsb-add { padding: 0.4rem 1rem; font-size: 12px; white-space: nowrap; }
+
 /* ── alternates disclosure ───────────────────────────────────────────────── */
 
 .alt-details summary {
@@ -1688,14 +1732,21 @@ a.artist-chip:hover { filter: brightness(1.08); }
 }
 .pl-progress .progress-range { flex: 1; }
 
-/* Queue rows are buttons but dress like search results. */
+/* Queue rows: a plain container (border + the playing-state background) that
+   holds two separate interactive children — the "+" selection toggle and the
+   play button (.pl-row-play, which dresses like a search result via .sr). */
 .pl-row {
-  width: 100%; background: none; font: inherit; text-align: left;
-  border: none; border-top: 1px solid var(--border); cursor: pointer;
+  display: flex; align-items: center;
+  border-top: 1px solid var(--border);
 }
 .pl-row:first-child { border-top: none; }
 .pl-row.pl-playing { background: var(--accent-light); }
 .pl-row.pl-playing .sr-title { color: var(--accent); }
+.pl-row .track-add { margin-left: 0.9rem; }
+.pl-row-play {
+  flex: 1; min-width: 0; background: none; font: inherit; text-align: left;
+  border: none; border-top: none; cursor: pointer;
+}
 
 .pl-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .pl-share { color: var(--accent); background: transparent; border-color: var(--accent); }

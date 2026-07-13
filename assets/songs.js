@@ -29,11 +29,13 @@
     var anchor = o.url + "#track-" + o.num;
     var stream = WORKER + "/stream?file=" + encodeURIComponent(o.file) + (o.ver ? "&v=" + o.ver : "");
     var dur = o.duration ? '<span class="time-label">' + escOcc(o.duration) + "</span>" : "";
+    var trackId = o.slug + "-" + (o.num < 10 ? "0" + o.num : o.num);
     return '<div class="song-occ">'
       + '<div class="song-occ-head">'
       + '<a class="artist-chip artist-' + o.artist + '" href="' + escOcc(anchor) + '">' + escOcc(o.artist_name) + "</a>"
       + '<span class="song-occ-where">' + escOcc(o.venue) + " &middot; " + escOcc(o.date) + "</span>"
       + '<a class="song-occ-open" href="' + escOcc(anchor) + '">open on show page &rarr;</a>'
+      + trackAddButtonHtml(trackId)
       + "</div>"
       + '<div class="custom-player" data-src="' + escOcc(stream) + '">'
       + '<button class="play-btn" aria-label="Play ' + escOcc(label) + '" data-play-label="' + escOcc(label) + '">' + playIcon + "</button>"

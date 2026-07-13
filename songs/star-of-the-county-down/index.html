@@ -47,7 +47,10 @@
 
   <p class="song-back"><a href="/songs/">&larr; All songs</a></p>
   <section id="tracks">
-    <div class="group-label-bare">Played 1 time &middot; Sean Hannan</div>
+    <div class="tracks-head">
+      <div class="group-label-bare">Played 1 time &middot; Sean Hannan</div>
+      <button type="button" class="select-all" data-target=".song-occs">Select all</button>
+    </div>
     <p class="track-hint">Every performance streams in full. &ldquo;Open on show page&rdquo; jumps to the song within its full set.</p>
     <div class="song-occs">
 <div class="song-occ">
@@ -55,6 +58,7 @@
           <a class="artist-chip artist-sean" href="/shows/sean-19-broadway-1999-11-29/#track-6">Sean Hannan</a>
           <span class="song-occ-where">19 Broadway &middot; 1999-11-29</span>
           <a class="song-occ-open" href="/shows/sean-19-broadway-1999-11-29/#track-6">open on show page &rarr;</a>
+          <button type="button" class="track-add" data-id="sean-19-broadway-1999-11-29-06" aria-pressed="false" aria-label="Add to playlist selection"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg></button>
         </div>
         <div class="custom-player" data-src="https://wav-download.renedebos.workers.dev/stream?file=MP3/SeanHannan%20-%2019%20Broadway%201999-11-29/06%20Star%20of%20the%20County%20Down.mp3&amp;v=49b3f19c492e">
           <button class="play-btn" aria-label="Play Star of the County Down, Sean Hannan, 1999-11-29" data-play-label="Star of the County Down, Sean Hannan, 1999-11-29"><svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg></button>
@@ -80,5 +84,6 @@
 </footer>
 
 <script src="/assets/player.js"></script>
+<script src="/assets/track-select.js"></script>
 </body>
 </html>

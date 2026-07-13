@@ -48,7 +48,10 @@
   <p class="song-back"><a href="/songs/">&larr; All songs</a></p>
   <section class="about"><p class="song-variants">Also listed as: That&#x27;s The Way The World Goes &#x27;Round</p></section>
   <section id="tracks">
-    <div class="group-label-bare">Played 2 times &middot; Jerry Hannan</div>
+    <div class="tracks-head">
+      <div class="group-label-bare">Played 2 times &middot; Jerry Hannan</div>
+      <button type="button" class="select-all" data-target=".song-occs">Select all</button>
+    </div>
     <p class="track-hint">Every performance streams in full. &ldquo;Open on show page&rdquo; jumps to the song within its full set.</p>
     <div class="song-occs">
 <div class="song-occ">
@@ -56,6 +59,7 @@
           <a class="artist-chip artist-jerry" href="/shows/jerry-19-broadway-1999-03-29/#track-17">Jerry Hannan</a>
           <span class="song-occ-where">19 Broadway &middot; 1999-03-29</span>
           <a class="song-occ-open" href="/shows/jerry-19-broadway-1999-03-29/#track-17">open on show page &rarr;</a>
+          <button type="button" class="track-add" data-id="jerry-19-broadway-1999-03-29-17" aria-pressed="false" aria-label="Add to playlist selection"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg></button>
         </div>
         <div class="custom-player" data-src="https://wav-download.renedebos.workers.dev/stream?file=MP3/JerryHannan%20-%2019%20Broadway%201999-03-29/17%20That%27s%20the%20Way%20the%20World%20goes%20Round.mp3&amp;v=5f32767dde18">
           <button class="play-btn" aria-label="Play That&#x27;s the Way the World goes Round, Jerry Hannan, 1999-03-29" data-play-label="That&#x27;s the Way the World goes Round, Jerry Hannan, 1999-03-29"><svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg></button>
@@ -71,6 +75,7 @@
           <a class="artist-chip artist-jerry" href="/shows/jerry-19-broadway-2001-01-08/#track-21">Jerry Hannan</a>
           <span class="song-occ-where">19 Broadway &middot; 2001-01-08</span>
           <a class="song-occ-open" href="/shows/jerry-19-broadway-2001-01-08/#track-21">open on show page &rarr;</a>
+          <button type="button" class="track-add" data-id="jerry-19-broadway-2001-01-08-21" aria-pressed="false" aria-label="Add to playlist selection"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg></button>
         </div>
         <div class="custom-player" data-src="https://wav-download.renedebos.workers.dev/stream?file=MP3/JerryHannan%20-%2019%20Broadway%202001-01-08/JerryHannan%20-%2019%20Broadway%202001-01-08%20-%2021%20That%27s%20The%20Way%20The%20World%20Goes%20%27Round.mp3&amp;v=5d19409d52a1">
           <button class="play-btn" aria-label="Play That&#x27;s the Way the World goes Round, Jerry Hannan, 2001-01-08" data-play-label="That&#x27;s the Way the World goes Round, Jerry Hannan, 2001-01-08"><svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg></button>
@@ -96,5 +101,6 @@
 </footer>
 
 <script src="/assets/player.js"></script>
+<script src="/assets/track-select.js"></script>
 </body>
 </html>

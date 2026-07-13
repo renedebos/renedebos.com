@@ -153,6 +153,54 @@ work computer the same day) where Pages Functions don't run. Consolidated:
   <outside-the-repo>` — persisting state inside the repo retriggers the
   file watcher in an endless reload loop.
 
+## Phase 5: Per-track "+" selection (browse → build)
+
+**Status (2026-07-13): DONE.** Complements Phase 2's filter-based generator
+rather than replacing it — filters answer "build me something interesting,"
+this answers "I know exactly which songs I want." Decided after review that
+checkboxes-as-primary-UI don't fit the mental model (Spotify/Apple-Music-style
+"+" → "✓" is more of a "collecting favorites" action than "filling out a
+form"), but pure per-track "+" alone underestimates this archive's content
+shape — shows here are 20–35 track concerts, not shuffled singles, so a
+"select all" bulk action matters more here than in a typical streaming app.
+
+- A "+"/"✓" toggle button appears on every track row across four surfaces:
+  show pages, the individual song page, the `/songs/` matrix expand rows, and
+  the `/playlist/` queue itself (selecting a sub-set of an already-generated
+  queue seeds a *new* playlist — recursive by design).
+- Selection is a single in-memory array, scoped to the current page load only
+  — no localStorage, no cross-page persistence. Deliberately deferred, not
+  forgotten: revisit only if it turns out people want to build a selection
+  while browsing multiple pages before committing it.
+- `scripts/track-select.js` (new, loaded on all four page types) owns
+  selection state, the floating "N selected · Add to playlist →" bar, and
+  navigation: clicking "Add to playlist" builds `#p=id,id,…` — the exact
+  mechanism Phase 3 already built — and either navigates to `/playlist/#p=…`
+  (from a browsing page) or updates `location.hash` in place (already on
+  `/playlist/`, picked up by a `hashchange` listener that re-runs
+  `hydrateFromHash()`). No new playlist-loading logic was needed.
+- Server-rendered rows (show pages via `build_show()`, the individual song
+  page via `_song_occ_html()`) get the button from a new
+  `track_add_button()` helper in `scripts/sitegen/fragments.py`;
+  client-rendered rows (`songs.js`'s `occRowHtml()`, `playlist.js`'s
+  `renderQueue()`) call the JS twin, `trackAddButtonHtml()` (global, exposed
+  by `track-select.js`). The two are kept visually identical by convention,
+  not by sharing code across the Python/JS boundary — a full merge of the
+  four existing track-row renderers was considered and rejected (two are
+  build-time-static, two are runtime-dynamic for real reasons: lazy
+  expand-on-click, and a queue that doesn't exist until generated).
+- `/playlist/`'s queue row (`.pl-row`) changed from a single `<button>` to a
+  `<div>` container holding two separate interactive children (the "+" toggle
+  and a `.pl-row-play` button) — nesting a button inside a button isn't valid
+  HTML and produces unreliable click handling. This was the one surface
+  needing more than a purely additive change.
+- "Select all" targets a specific tracklist via `data-target="<selector>"`
+  (`.track-list` on show pages, `.song-occs` on the individual song page,
+  `#pl-queue` on `/playlist/`). Deliberately **not** added to the `/songs/`
+  matrix expand rows — every song's occurrences render into a `.song-occs`
+  div, but the class isn't unique per song on that page (100+ of them), so a
+  generic selector would select across every open song's rows, not just one.
+
 ## Open decisions (need Rene’s input)
 
 1. ~~**Tag vocabulary**~~ — RESOLVED 2026-07-07: full 20-tag controlled

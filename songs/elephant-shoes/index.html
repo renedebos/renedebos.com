@@ -48,7 +48,10 @@
   <p class="song-back"><a href="/songs/">&larr; All songs</a></p>
   <section class="about"><p class="song-variants">Also listed as: Elephant Shoes (with Jerry)</p></section>
   <section id="tracks">
-    <div class="group-label-bare">Played 3 times &middot; Jerry Hannan, Mad Hannans, Sean Hannan</div>
+    <div class="tracks-head">
+      <div class="group-label-bare">Played 3 times &middot; Jerry Hannan, Mad Hannans, Sean Hannan</div>
+      <button type="button" class="select-all" data-target=".song-occs">Select all</button>
+    </div>
     <p class="track-hint">Every performance streams in full. &ldquo;Open on show page&rdquo; jumps to the song within its full set.</p>
     <div class="song-occs">
 <div class="song-occ">
@@ -56,6 +59,7 @@
           <a class="artist-chip artist-mad" href="/shows/mad-sweetwater-2000-02-17/#track-11">Mad Hannans</a>
           <span class="song-occ-where">Sweetwater &middot; 2000-02-17</span>
           <a class="song-occ-open" href="/shows/mad-sweetwater-2000-02-17/#track-11">open on show page &rarr;</a>
+          <button type="button" class="track-add" data-id="mad-sweetwater-2000-02-17-11" aria-pressed="false" aria-label="Add to playlist selection"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg></button>
         </div>
         <div class="custom-player" data-src="https://wav-download.renedebos.workers.dev/stream?file=MP3/MadHannans%20-%20Sweetwater%202000-02-17/11%20Elephant%20Shoes.mp3&amp;v=07fb7d4551d3">
           <button class="play-btn" aria-label="Play Elephant Shoes, Mad Hannans, 2000-02-17" data-play-label="Elephant Shoes, Mad Hannans, 2000-02-17"><svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg></button>
@@ -71,6 +75,7 @@
           <a class="artist-chip artist-jerry" href="/shows/jerry-19-broadway-2001-01-08/#track-17">Jerry Hannan</a>
           <span class="song-occ-where">19 Broadway &middot; 2001-01-08</span>
           <a class="song-occ-open" href="/shows/jerry-19-broadway-2001-01-08/#track-17">open on show page &rarr;</a>
+          <button type="button" class="track-add" data-id="jerry-19-broadway-2001-01-08-17" aria-pressed="false" aria-label="Add to playlist selection"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg></button>
         </div>
         <div class="custom-player" data-src="https://wav-download.renedebos.workers.dev/stream?file=MP3/JerryHannan%20-%2019%20Broadway%202001-01-08/JerryHannan%20-%2019%20Broadway%202001-01-08%20-%2017%20Elephant%20Shoes.mp3&amp;v=38014a56b12d">
           <button class="play-btn" aria-label="Play Elephant Shoes, Jerry Hannan, 2001-01-08" data-play-label="Elephant Shoes, Jerry Hannan, 2001-01-08"><svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg></button>
@@ -86,6 +91,7 @@
           <a class="artist-chip artist-sean" href="/shows/sean-19-broadway-unknown/#track-12">Sean Hannan</a>
           <span class="song-occ-where">19 Broadway &middot; Unknown date</span>
           <a class="song-occ-open" href="/shows/sean-19-broadway-unknown/#track-12">open on show page &rarr;</a>
+          <button type="button" class="track-add" data-id="sean-19-broadway-unknown-12" aria-pressed="false" aria-label="Add to playlist selection"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg></button>
         </div>
         <div class="custom-player" data-src="https://wav-download.renedebos.workers.dev/stream?file=MP3/SeanHannan%20-%2019%20Broadway%20unknown%20date/12%20Elephant%20Shoes.mp3&amp;v=22ecdf761cc2">
           <button class="play-btn" aria-label="Play Elephant Shoes, Sean Hannan, Unknown date" data-play-label="Elephant Shoes, Sean Hannan, Unknown date"><svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg></button>
@@ -111,5 +117,6 @@
 </footer>
 
 <script src="/assets/player.js"></script>
+<script src="/assets/track-select.js"></script>
 </body>
 </html>

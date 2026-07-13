@@ -48,7 +48,10 @@
   <p class="song-back"><a href="/songs/">&larr; All songs</a></p>
   <section class="about"><p class="song-variants">Also listed as: Soundcheck (Football Tonight)</p></section>
   <section id="tracks">
-    <div class="group-label-bare">Played 2 times &middot; Mad Hannans, Sean &amp; Jerry Hannan</div>
+    <div class="tracks-head">
+      <div class="group-label-bare">Played 2 times &middot; Mad Hannans, Sean &amp; Jerry Hannan</div>
+      <button type="button" class="select-all" data-target=".song-occs">Select all</button>
+    </div>
     <p class="track-hint">Every performance streams in full. &ldquo;Open on show page&rdquo; jumps to the song within its full set.</p>
     <div class="song-occs">
 <div class="song-occ">
@@ -56,6 +59,7 @@
           <a class="artist-chip artist-mad" href="/shows/mad-4th-street-tavern-1999-05-01/#track-1">Mad Hannans</a>
           <span class="song-occ-where">4th Street Tavern &middot; 1999-05-01</span>
           <a class="song-occ-open" href="/shows/mad-4th-street-tavern-1999-05-01/#track-1">open on show page &rarr;</a>
+          <button type="button" class="track-add" data-id="mad-4th-street-tavern-1999-05-01-01" aria-pressed="false" aria-label="Add to playlist selection"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg></button>
         </div>
         <div class="custom-player" data-src="https://wav-download.renedebos.workers.dev/stream?file=MP3/MadHannans%20-%204th%20Street%20Tavern%201999-05-01/01%20Soundcheck%20%28Football%20Tonight.mp3&amp;v=d84b914016cd">
           <button class="play-btn" aria-label="Play Soundcheck, Mad Hannans, 1999-05-01" data-play-label="Soundcheck, Mad Hannans, 1999-05-01"><svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg></button>
@@ -71,6 +75,7 @@
           <a class="artist-chip artist-seanjerry" href="/shows/seanjerry-19-broadway-1999-12/#track-1">Sean &amp; Jerry Hannan</a>
           <span class="song-occ-where">19 Broadway &middot; 1999-12</span>
           <a class="song-occ-open" href="/shows/seanjerry-19-broadway-1999-12/#track-1">open on show page &rarr;</a>
+          <button type="button" class="track-add" data-id="seanjerry-19-broadway-1999-12-01" aria-pressed="false" aria-label="Add to playlist selection"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg></button>
         </div>
         <div class="custom-player" data-src="https://wav-download.renedebos.workers.dev/stream?file=MP3/JerrySeanHannan%20-%2019%20Broadway%201999-12/01%20Soundcheck.mp3&amp;v=e5c19acc4913">
           <button class="play-btn" aria-label="Play Soundcheck, Sean &amp; Jerry Hannan, 1999-12" data-play-label="Soundcheck, Sean &amp; Jerry Hannan, 1999-12"><svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg></button>
@@ -96,5 +101,6 @@
 </footer>
 
 <script src="/assets/player.js"></script>
+<script src="/assets/track-select.js"></script>
 </body>
 </html>

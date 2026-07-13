@@ -47,7 +47,10 @@
 
   <p class="song-back"><a href="/songs/">&larr; All songs</a></p>
   <section id="tracks">
-    <div class="group-label-bare">Played 3 times &middot; Sean Hannan</div>
+    <div class="tracks-head">
+      <div class="group-label-bare">Played 3 times &middot; Sean Hannan</div>
+      <button type="button" class="select-all" data-target=".song-occs">Select all</button>
+    </div>
     <p class="track-hint">Every performance streams in full. &ldquo;Open on show page&rdquo; jumps to the song within its full set.</p>
     <div class="song-occs">
 <div class="song-occ">
@@ -55,6 +58,7 @@
           <a class="artist-chip artist-sean" href="/shows/sean-19-broadway-2000-01-24/#track-19">Sean Hannan</a>
           <span class="song-occ-where">19 Broadway &middot; 2000-01-24</span>
           <a class="song-occ-open" href="/shows/sean-19-broadway-2000-01-24/#track-19">open on show page &rarr;</a>
+          <button type="button" class="track-add" data-id="sean-19-broadway-2000-01-24-19" aria-pressed="false" aria-label="Add to playlist selection"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg></button>
         </div>
         <div class="custom-player" data-src="https://wav-download.renedebos.workers.dev/stream?file=MP3/SeanHannan%20-%2019%20Broadway%202000-01-24/19%20Gold%27s%20Gym%20Guy.mp3&amp;v=4cf956396938">
           <button class="play-btn" aria-label="Play Gold&#x27;s Gym Guy, Sean Hannan, 2000-01-24" data-play-label="Gold&#x27;s Gym Guy, Sean Hannan, 2000-01-24"><svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg></button>
@@ -70,6 +74,7 @@
           <a class="artist-chip artist-sean" href="/shows/sean-19-broadway-2000-02-21/#track-10">Sean Hannan</a>
           <span class="song-occ-where">19 Broadway &middot; 2000-02-21</span>
           <a class="song-occ-open" href="/shows/sean-19-broadway-2000-02-21/#track-10">open on show page &rarr;</a>
+          <button type="button" class="track-add" data-id="sean-19-broadway-2000-02-21-10" aria-pressed="false" aria-label="Add to playlist selection"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg></button>
         </div>
         <div class="custom-player" data-src="https://wav-download.renedebos.workers.dev/stream?file=MP3/SeanHannan%20-%2019%20Broadway%202000-02-21/10%20Gold%27s%20Gym%20Guy.mp3&amp;v=aae09dfd0126">
           <button class="play-btn" aria-label="Play Gold&#x27;s Gym Guy, Sean Hannan, 2000-02-21" data-play-label="Gold&#x27;s Gym Guy, Sean Hannan, 2000-02-21"><svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg></button>
@@ -85,6 +90,7 @@
           <a class="artist-chip artist-sean" href="/shows/sean-19-broadway-unknown/#track-5">Sean Hannan</a>
           <span class="song-occ-where">19 Broadway &middot; Unknown date</span>
           <a class="song-occ-open" href="/shows/sean-19-broadway-unknown/#track-5">open on show page &rarr;</a>
+          <button type="button" class="track-add" data-id="sean-19-broadway-unknown-05" aria-pressed="false" aria-label="Add to playlist selection"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg></button>
         </div>
         <div class="custom-player" data-src="https://wav-download.renedebos.workers.dev/stream?file=MP3/SeanHannan%20-%2019%20Broadway%20unknown%20date/05%20Gold%27s%20Gym%20Guy.mp3&amp;v=85de4d3a4b21">
           <button class="play-btn" aria-label="Play Gold&#x27;s Gym Guy, Sean Hannan, Unknown date" data-play-label="Gold&#x27;s Gym Guy, Sean Hannan, Unknown date"><svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg></button>
@@ -110,5 +116,6 @@
 </footer>
 
 <script src="/assets/player.js"></script>
+<script src="/assets/track-select.js"></script>
 </body>
 </html>

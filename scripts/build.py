@@ -41,6 +41,7 @@ def main():
     write("assets/search.js", open(os.path.join(here, "search.js")).read())
     write("assets/playlist.js", open(os.path.join(here, "playlist.js")).read())
     write("assets/songs.js", open(os.path.join(here, "songs.js")).read())
+    write("assets/track-select.js", open(os.path.join(here, "track-select.js")).read())
     write("assets/feed.xsl", open(os.path.join(here, "feed.xsl")).read())
     write("assets/home.css", open(os.path.join(here, "home.css")).read())
     write("assets/fonts.css", open(os.path.join(here, "fonts.css")).read())

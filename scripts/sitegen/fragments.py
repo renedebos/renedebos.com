@@ -18,6 +18,19 @@ DL_SVG = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wid
 
 PLAY_SVG = '<svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg>'
 
+PLUS_SVG = ('<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" '
+            'stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg>')
+
+def track_add_button(track_id):
+    """The +/checkmark control that adds one track to the in-progress playlist
+    selection (see scripts/track-select.js, PLAYLIST FEATURE.md Phase 5). Server
+    always renders the unselected (+) state — selection is a client-only,
+    per-page-load concept, so there's nothing to know at build time. JS toggles
+    the class/aria-pressed/icon in place on click; keep this markup shape in
+    sync with trackAddButtonHtml() in track-select.js."""
+    return (f'<button type="button" class="track-add" data-id="{esc(track_id)}" '
+            f'aria-pressed="false" aria-label="Add to playlist selection">{PLUS_SVG}</button>')
+
 def dl_button(file, *, title="Download"):
     # Icon-only (no text label): with only the password-protected lossless
     # download left, the format doesn't need spelling out in the button —
@@ -596,11 +609,14 @@ def _song_occ_html(o, song_title):
     label = f'{song_title}, {o["artist_name"]}, {o["date"]}'
     p = player(o["file"], duration=o.get("duration"), version=o["ver"], label=label)
     anchor = f'{esc(o["url"])}#track-{o["num"]}'
+    track_id = f'{o["slug"]}-{o["num"]:02d}'
+    add_btn = track_add_button(track_id)
     return f'''<div class="song-occ">
         <div class="song-occ-head">
           <a class="artist-chip artist-{o['artist']}" href="{anchor}">{esc(o['artist_name'])}</a>
           <span class="song-occ-where">{esc(o['venue'])} &middot; {esc(o['date'])}</span>
           <a class="song-occ-open" href="{anchor}">open on show page &rarr;</a>
+          {add_btn}
         </div>
         {p}
       </div>'''
@@ -673,4 +689,4 @@ def song_jsonld(s):
     })
 
 
-__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'PLAY_SVG', 'SITE_PAGES', 'STATUS_BLURB', '_show_label', '_song_occ_html', '_src_tag', 'artist_sections', 'contact_block', 'content', 'date_sorted_list', 'dl_button', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'player', 'recording_card', 'show_jsonld', 'show_row', 'site_nav', 'song_jsonld', 'status_line', 'tech_data_section', 'updates_list']
+__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', 'STATUS_BLURB', '_show_label', '_song_occ_html', '_src_tag', 'artist_sections', 'contact_block', 'content', 'date_sorted_list', 'dl_button', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'player', 'recording_card', 'show_jsonld', 'show_row', 'site_nav', 'song_jsonld', 'status_line', 'tech_data_section', 'track_add_button', 'updates_list']
