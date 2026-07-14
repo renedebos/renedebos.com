@@ -68,6 +68,13 @@ Normal deploys happen automatically via the GitHub Action's `npx wrangler
 deploy` on every push to `main`. You only need `wrangler login` locally if you
 want to manage the Worker or trigger a deploy by hand.
 
+**Use the same wrangler version as CI** (`npx wrangler@4.110.0 ...`, matching
+the pin in `.github/workflows/deploy.yml`) for both manual deploys and local
+`wrangler dev` testing — a bare `npx wrangler` floats to whatever's cached
+locally, which can be older and silently misparse newer `wrangler.jsonc`
+fields (e.g. `run_worker_first`), making local testing not actually reflect
+how production routes requests.
+
 ## Everyday workflow
 
 ```bash
