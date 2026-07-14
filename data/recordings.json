@@ -2324,10 +2324,219 @@
           "stream": "MP3/Full/WAV_Files/JerryHannan - 19 Broadway 1999-11-15 MT2.mp3"
         }
       ],
-      "tracks": null,
-      "description": null,
+      "tracks": [
+        {
+          "num": 1,
+          "title": "Smoke in Heaven",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:53",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-11-15/01 Smoke in Heaven.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-11-15/01 Smoke in Heaven.flac",
+          "flac_size_mb": 34,
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
+        },
+        {
+          "num": 2,
+          "title": "My Father's House",
+          "songwriter": "Bruce Springsteen",
+          "duration": "4:32",
+          "size_mb": 11,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-11-15/02 My Fathers House.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-11-15/02 My Fathers House.flac",
+          "flac_size_mb": 52,
+          "processed": true,
+          "tags": [
+            "cover",
+            "folk",
+            "ballad"
+          ]
+        },
+        {
+          "num": 3,
+          "title": "Everything Reminds Me of You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:43",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-11-15/03 Everything Reminds Me of You.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-11-15/03 Everything Reminds Me of You.flac",
+          "flac_size_mb": 32,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 4,
+          "title": "That's the Way the World Goes Round",
+          "songwriter": "John Prine",
+          "duration": "5:53",
+          "size_mb": 14,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-11-15/04 That's the Way the World Goes Round.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-11-15/04 That's the Way the World Goes Round.flac",
+          "flac_size_mb": 68,
+          "processed": true,
+          "tags": [
+            "cover"
+          ]
+        },
+        {
+          "num": 5,
+          "title": "Hollywood",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:30",
+          "size_mb": 11,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-11-15/05 Hollywood.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-11-15/05 Hollywood.flac",
+          "flac_size_mb": 52,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 6,
+          "title": "Scallywag",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:40",
+          "size_mb": 6,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-11-15/06 Scallywag.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-11-15/06 Scallywag.flac",
+          "flac_size_mb": 30,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 7,
+          "title": "The Barney Stone Blues",
+          "songwriter": "Steve Poltz",
+          "duration": "4:52",
+          "size_mb": 12,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-11-15/07 The Barney Stone Blues.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-11-15/07 The Barney Stone Blues.flac",
+          "flac_size_mb": 55,
+          "processed": true,
+          "tags": [
+            "cover",
+            "blues"
+          ]
+        },
+        {
+          "num": 8,
+          "title": "Hollywood (alt verse)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "1:07",
+          "size_mb": 3,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-11-15/08 Hollywood (alt verse).mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-11-15/08 Hollywood (alt verse).flac",
+          "flac_size_mb": 13,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 9,
+          "title": "Burning Man (early version)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "1:22",
+          "size_mb": 3,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-11-15/09 Burning Man (early version).mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-11-15/09 Burning Man (early version).flac",
+          "flac_size_mb": 16,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 10,
+          "title": "Slave Woman",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "1:52",
+          "size_mb": 4,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-11-15/10 Slave Woman.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-11-15/10 Slave Woman.flac",
+          "flac_size_mb": 21,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 11,
+          "title": "Crystal Rose",
+          "songwriter": "Traditional",
+          "duration": "3:52",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-11-15/11 Crystal Rose.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-11-15/11 Crystal Rose.flac",
+          "flac_size_mb": 45,
+          "processed": true,
+          "tags": [
+            "traditional",
+            "irish"
+          ]
+        },
+        {
+          "num": 12,
+          "title": "Plastic Lemons",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:23",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-11-15/12 Plastic Lemons.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-11-15/12 Plastic Lemons.flac",
+          "flac_size_mb": 39,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 13,
+          "title": "Elephant Shoes",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "5:19",
+          "size_mb": 13,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-11-15/13 Elephant Shoes.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-11-15/13 Elephant Shoes.flac",
+          "flac_size_mb": 62,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 14,
+          "title": "I Thought I Was you",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:20",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-11-15/14 I Thought I Was you.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-11-15/14 I Thought I Was you.flac",
+          "flac_size_mb": 50,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        }
+      ],
+      "description": [
+        "Recorded from the audience on DAT at 19 Broadway in Fairfax on November 15, 1999 &mdash; a shorter, fourteen-song solo set.",
+        "Notable for an early version of \"Burning Man,\" long before the song found its familiar shape, and a short alternate-verse take of \"Hollywood\" played right after the full version.",
+        "The show has been split into individual songs and loudness-normalized to an even listening level, with standard fades and minor clip repairs done by hand; no noise reduction was applied."
+      ],
       "page": null,
-      "processing_status": "needs-processing"
+      "processing_status": "done",
+      "added": "2026-07-14",
+      "added_ts": "2026-07-14T12:10:15.296841"
     },
     {
       "slug": "jerry-19-broadway-2001-01-08",
@@ -10012,6 +10221,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-07-14",
+      "ts": "2026-07-14T12:10:15",
+      "slug": "jerry-19-broadway-1999-11-15",
+      "report": true,
+      "text": "Added the November 15, 1999 solo show at 19 Broadway as 14 individual tracks, normalized to −20 LUFS, including an early version of \"Burning Man\" and an alternate-verse take of \"Hollywood.\""
+    },
     {
       "date": "2026-07-13",
       "ts": "2026-07-13T09:58:17",
