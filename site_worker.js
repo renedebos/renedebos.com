@@ -31,8 +31,12 @@ const ID_RE = /^[a-z0-9-]{1,80}$/;
 const SLUG_RE = /^\/play\/([a-f0-9]{6,64})\/?$/i;
 const MAX_TRACKS = 500;
 
-// Applied to every response. CSP: the site is dependency-free, so everything
-// is same-origin except the wav-download Worker (audio streams + gated
+// Applied to every dynamic response (redirects, /api/*, the branded 404) via
+// secure() below. Cached static responses (homepage, /playlist/, etc.) don't
+// reliably go through this script on a cache hit, so the same header set is
+// ALSO baked in statically via the root `_headers` file — keep both in sync
+// if this changes. CSP: the site is dependency-free, so everything is
+// same-origin except the wav-download Worker (audio streams + gated
 // downloads). Show pages carry small inline bootstrap <script>s and the
 // manual an inline <style>, hence 'unsafe-inline' — external injection is
 // still blocked, which is the attack that matters on a static site.

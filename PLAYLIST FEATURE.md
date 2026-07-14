@@ -268,11 +268,15 @@ representation:
 
 ## Infrastructure (existing, for context)
 
-- Static site: Cloudflare Pages project `renedebos-site`, auto-deploys from
-  GitHub repo `renedebos/renedebos.com`
-- Audio: R2 bucket `hannan-audio`, public URL base
-  `https://pub-3f0641163fd24b2a8ad61c5f6599227a.r2.dev/WAV_Files/`
-- Workers precedent: `wav-download` (download proxy), `contact-form` (Resend)
+- Static site: the `renedebos-site` Cloudflare Worker (static assets +
+  playlist endpoints, `site_worker.js`/`wrangler.jsonc`), deployed by the
+  GitHub Action on every push to `main`. Not Cloudflare Pages — see Phase 4's
+  history above for the migration.
+- Audio: R2 bucket `hannan-audio`, private — streamed only via the
+  `wav-download` Worker's `/stream?file=` endpoint (no public r2.dev base).
+- Workers: `renedebos-site` (this doc) and `wav-download` (download proxy) are
+  both in this repo, deployed separately — see CLAUDE.md. `contact-form`
+  (Resend, for `/contact/`) is a third Worker, deployed outside this repo.
 - Show folder naming convention: `jerry-19-broadway-2001-01-08`
 
 ## Build order & session guidance

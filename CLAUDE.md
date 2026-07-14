@@ -17,6 +17,12 @@ The two large WAV files in `~/` are local staging copies for direct rclone uploa
   - Bucket: `r2:hannan-audio`
   - Requires `--s3-no-check-bucket` flag for all operations
 
+## Known Gotchas
+
+- **`rclone` uploads to `gdrive:` can stall mid-file** — `--timeout` won't catch it; prefer local→Drive (the gdrive-mount copy) over a direct rclone push when possible, and use a `--max-duration` retry loop if you must push large files directly.
+- **Audacity's MCP tools are unreliable** — spaces in paths choke import, `success:false` is sometimes ambiguous, and it has lost a track before. Treat it as surgical hand-editing territory for Rene, not for unattended automation; ffmpeg is the dependable path for deterministic DSP.
+- **`pgrep -f '<script>.py'` can self-match the watcher process** if the watcher's own command line contains the same script name — match on the full file path instead, or rely on the background-task completion notification rather than process-name polling.
+
 ## Common Commands
 
 All common operations are in the `Makefile`:

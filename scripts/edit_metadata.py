@@ -34,6 +34,15 @@ ROOT = os.path.dirname(HERE)
 DATA = os.path.join(ROOT, "data", "recordings.json")
 EDITOR_HTML = os.path.join(HERE, "metadata_editor.html")
 BACKUP_DIR = os.path.join(HERE, ".metadata-backups")
+KEEP_BACKUPS = 20  # git history is the real archive; these are just an undo net
+
+
+def _prune_backups():
+    backups = sorted(
+        (f for f in os.listdir(BACKUP_DIR) if f.startswith("recordings-")),
+    )
+    for stale in backups[:-KEEP_BACKUPS]:
+        os.remove(os.path.join(BACKUP_DIR, stale))
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
@@ -74,6 +83,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         backup = f"recordings-{ts}.json"
         shutil.copy2(DATA, os.path.join(BACKUP_DIR, backup))
+        _prune_backups()
         with open(DATA, "w", encoding="utf-8") as f:
             json.dump(obj, f, indent=2, ensure_ascii=False)
             f.write("\n")

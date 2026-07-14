@@ -2,8 +2,9 @@
 
 How to rebuild the local working environment for renedebos.com on a fresh
 machine (e.g. a new Chromebook Linux container). **None of this is needed for
-the live site to keep running** — the site is hosted on Cloudflare Pages
-(auto-deploys from GitHub on push) and audio streams from Cloudflare R2. This
+the live site to keep running** — the site is served by the `renedebos-site`
+Cloudflare Worker (static assets + playlist endpoints), deployed via a GitHub
+Action on every push to `main`, and audio streams from Cloudflare R2. This
 is only the tooling you need to *edit* the site and *upload* new audio.
 
 ## Where everything lives (source of truth)
@@ -63,9 +64,9 @@ make status                        # Drive vs R2 file counts
 
 ## 4. Cloudflare auth (only if deploying manually)
 
-Normal deploys happen automatically when you `git push` to `main` (Cloudflare
-Pages watches the repo). You only need `wrangler login` if you want to manage
-the Worker or trigger a deploy by hand.
+Normal deploys happen automatically via the GitHub Action's `npx wrangler
+deploy` on every push to `main`. You only need `wrangler login` locally if you
+want to manage the Worker or trigger a deploy by hand.
 
 ## Everyday workflow
 

@@ -2,3 +2,5 @@
 scripts/.metadata-backups/
 __pycache__/
 .claude/settings.local.json
+data/*.backup*.json
+data/*.draft.json

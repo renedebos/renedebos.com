@@ -79,12 +79,14 @@ python3 scripts/audio_process.py process  <input-folder> <output-folder> \
         --target <LUFS> [--hpf] [--lpf] [--notch] --slug <slug>            # Phase 2
 python3 scripts/audio_process.py verify   <slug> [--drive <path>]          # Phase 3 integrity
 ```
-The engine handles the lossless-only rule, per-artist target default
-(jerry/sean/seanjerry → −20, mad → −16), two-pass loudnorm, the derived 320k MP3,
-the audio MD5, output verification (flags TP over ceiling / LUFS drift), and the
-provenance sidecar — and is **resumable** (skips tracks whose outputs exist). The
-sections below document the *why* and the underlying ffmpeg commands the engine
-runs; reach for them when debugging or doing something off the beaten path.
+The engine handles the lossless-only rule, the single −20 LUFS target shared by
+every artist (`jerry`/`sean`/`seanjerry`/`mad` — Mad Hannans moved from −16 after
+A/B testing showed no audible gain and it was forcing non-linear processing on
+band masters), two-pass loudnorm, the derived 320k MP3, the audio MD5, output
+verification (flags TP over ceiling / LUFS drift), and the provenance sidecar —
+and is **resumable** (skips tracks whose outputs exist). The sections below
+document the *why* and the underlying ffmpeg commands the engine runs; reach for
+them when debugging or doing something off the beaten path.
 
 ---
 
@@ -210,63 +212,47 @@ ffmpeg -i input.wav -af "highpass=f=16000,volumedetect" -f null - 2>&1
 Report mean volume of low-end (<80Hz) and high-end (>16kHz) energy per file
 
 ### Choosing the loudness target (per show)
-These recordings vary in dynamics by performer, so the integrated target is **not
-fixed**. Pick a default by artist, then let the measurements override it.
+**Permanent policy (decided 2026-07-13): every artist targets −20 LUFS.** Mad
+Hannans previously defaulted to −16 for their denser full-band sound, but A/B
+testing found no audible benefit and it was routinely forcing band masters into
+dynamic (non-linear) processing to hit the ceiling — see the linear-only rule
+below. There is no more per-artist table; `jerry`/`sean`/`seanjerry`/`mad` all
+process at −20 LUFS, −1 dBTP ceiling.
 
-**Default by artist.** Solo acoustic sets are very dynamic and sound best left
-that way; a full band is denser and wants to read louder:
-
-| Artist (`recordings.json` id) | Performer            | Default target |
-|-------------------------------|----------------------|----------------|
-| `jerry`                       | Jerry Hannan (solo)  | **−20 LUFS**   |
-| `sean`                        | Sean Hannan (solo)   | **−20 LUFS**   |
-| `seanjerry`                   | Sean & Jerry (duo)   | **−20 LUFS**   |
-| `mad`                         | Mad Hannans (band)   | **−16 LUFS**   |
-
-The output true-peak ceiling is always **−1 dBTP**. For a show already in
-`recordings.json`, read its `artist` id. For a new show, infer from the source
-folder/filename prefix (`JerryHannan`→jerry, `SeanHannan`→sean, `MadHannans`→mad,
-`Sean & Jerry`/`SeanJerry`→seanjerry); if ambiguous, ask the user.
-
-**Override from the measurements (predicted true peak).** Linear normalization
-just applies a constant gain, so it raises true peak by exactly the gain applied.
-For each file predict the peak at the chosen target:
+**Linear normalization is permanent policy, not a preference.** These are live
+recordings with wide, intentional dynamics (fingerpicked verses next to
+strummed choruses, hand-drawn fade-outs) — never insert a limiter or compressor
+to buy headroom for a hotter target. ffmpeg's `loudnorm` only applies true
+linear gain (a single constant multiplier) when the gain needed to hit −20 LUFS
+keeps true peak under −1 dBTP; otherwise it silently falls back to dynamic
+(frame-adaptive) normalization, which flattens hand-drawn fades and natural
+dynamics with no warning in the logs. For each file, predict the peak at −20:
 ```
-predicted_TP = input_tp + (target_LUFS − input_i)
+predicted_TP = input_tp + (−20 − input_i)
 ```
-- `predicted_TP ≤ −1 dBTP` → the target is reachable transparently (linear). Good.
-- `predicted_TP > −1 dBTP` → the target is **not reachable without taming peaks**.
-  loudnorm would silently switch to dynamic mode and compress the performance.
-  The most transparent fix is to lower the target to the highest value that still
-  fits under the ceiling:
+- `predicted_TP ≤ −1 dBTP` → −20 is reachable transparently (linear). Good.
+- `predicted_TP > −1 dBTP` → −20 is **not reachable without taming peaks**. The
+  engine (workflow v4+) automatically computes the highest target that still
+  fits under the ceiling and processes that track at its own reduced level
+  instead — never a limiter or compressor:
   ```
   max_linear_target = input_i − input_tp − 1
   ```
-  Report this. If most files in a solo show fall here, the −20 default is already
-  doing its job; if a band show repeatedly overshoots −16, recommend backing it
-  down toward −18. Conversely, if a "−20" solo show is tame (low LRA, predicted_TP
-  well under −1 across the board), note that −18 would be safe if more level is
-  wanted.
+  A track landing a few dB quieter than −20 is inaudible as a defect; a
+  flattened fade or squeezed dynamic range is not. See `WORKFLOW_VERSIONS[4]`
+  in `scripts/audio_process.py` and CLAUDE.md for the full record.
 
-### Suggested processflow for problem files (recommend-only)
-**For now the workflow only recommends — it does not auto-apply** limiter or
-compressor steps. Phase 2 applies only the filters + normalization the user
-approves. For each flagged file, print the matching recommendation so the user
-can see how many files actually need hands-on work before deciding whether to
-automate later.
+### Other flagged conditions (recommend-only)
+Phase 1 also flags conditions the engine does not auto-remediate — Phase 2
+applies only the filters the user explicitly approves:
 
 | Symptom (from the checks above)                | Recommended remediation (manual)                                                                                                                                              |
 |------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Sustained `CLIPPING` (>500 full-scale samples) | The source is already clipped — normalization cannot restore lost peaks, and lowering gain won't help. Review in Audacity; only mild cases benefit from Audacity's Clip Fix.   |
-| `predicted_TP > −1 dBTP` at target             | Either (a) drop the target to `max_linear_target` (fully transparent), or (b) insert a brickwall limiter *before* loudnorm to shave the few transient peaks and keep the louder target: `alimiter=limit=0.9:attack=5:release=50` (≈ −0.9 dBFS). Use (b) when only a handful of rogue transients are the obstacle. |
-| `LRA > 15` (very dynamic / uneven set)         | Gentle compression before normalizing to even out the set, e.g. `acompressor=threshold=0.1:ratio=2:attack=20:release=250` (threshold ≈ −20 dBFS), or just accept it and use the lower (−20) target. Audacity equivalent: Compressor effect, ~2:1. |
+| `LRA > 15` (very dynamic / uneven set)         | This is the recording's own dynamics, not a defect — accept it. Do not compress to "even out" a set; see the linear-normalization policy above. |
 | DC offset flagged                              | Handled in Phase 2 (high-pass 20 Hz or `dcshift`).                                                                                                                            |
 | High <80 Hz energy                             | Handled in Phase 2 (high-pass 80 Hz).                                                                                                                                         |
 | Audible 60 Hz hum                              | Handled in Phase 2 (notch filter).                                                                                                                                            |
-
-If the user later wants auto-apply, the limiter/compressor snippets above slot
-into the Phase 2 filter chain *before* `loudnorm` (limiter last, just ahead of
-loudnorm). Until then, treat them as advisory only.
 
 ### Diagnostic Report Format
 Write `./diagnostic_report.txt` with the following:
@@ -275,7 +261,7 @@ Write `./diagnostic_report.txt` with the following:
 DIAGNOSTIC REPORT
 Generated: [timestamp]
 Files analyzed: [n]
-Loudness target: [−20 or −16] LUFS / −1 dBTP  ([artist] default)
+Loudness target: −20 LUFS / −1 dBTP
 ===========================================
 
 SUMMARY
@@ -295,7 +281,7 @@ RECOMMENDATIONS
 ---------------
 [List specific filter, target, and remediation recommendations based on findings]
 e.g. "High-pass filter at 80Hz recommended — significant low-end energy detected"
-e.g. "Target −16 LUFS (Mad Hannans); tracks 04 and 12 predict TP > -1 — limiter or back off to −18 for those."
+e.g. "Target −20 LUFS; tracks 04 and 12 predict TP > -1 — will process at their own reduced max linear target instead."
 e.g. "3 files have clipping — review tracks 04, 11, 22 in Audacity before processing"
 e.g. "All files confirmed TRUE STEREO — process as stereo"
 
@@ -311,8 +297,8 @@ FLAGS
 -----
 [List any files that need attention, e.g.:]
 ⚠ 04 ….flac — CLIPPING DETECTED. Review in Audacity before processing.
-⚠ 02 ….flac — predicted TP -0.2 dBTP > -1 at -16 target. Limiter, or use -17.3 max linear target.
-⚠ 11 ….flac — LRA > 15 (very dynamic). Consider gentle compression or the -20 target.
+⚠ 02 ….flac — predicted TP -0.2 dBTP > -1 at -20 target. Will use -20.7 max linear target instead.
+⚠ 11 ….flac — LRA > 15 (very dynamic). This is the recording's own dynamics — no remediation.
 ⚠ 22 ….flac — DUAL MONO detected. Consider converting to mono.
 ```
 
@@ -329,10 +315,11 @@ After writing the report, tell the user:
 ### Only run after user confirms they have reviewed the diagnostic report.
 
 ### Goal
-Apply a high-pass filter (if recommended) and loudness normalize all files to the
-**Phase 1 target** (−20 or −16 LUFS integrated) with a **-1 dBTP true peak
-ceiling**. Write processed files to `~/work/<slug>/processed/` without modifying
-originals. `{target_lufs}` below is the value chosen in Phase 1.
+Apply a high-pass filter (if recommended) and loudness normalize all files to
+**−20 LUFS integrated** (or a track's own reduced `max_linear_target` where
+Phase 1 flagged `predicted_TP > -1`) with a **-1 dBTP true peak ceiling**. Write
+processed files to `~/work/<slug>/processed/` without modifying originals.
+`{target_lufs}` below is −20, or the per-track override.
 
 ### Ask the user before processing:
 1. "Confirm the loudness target: {target_lufs} LUFS? (yes / change)"
@@ -340,9 +327,9 @@ originals. `{target_lufs}` below is the value chosen in Phase 1.
 3. "Apply a low-pass filter at 18kHz? (yes/no — optional, mild benefit)"
 4. "Apply 60Hz hum notch filter? (yes/no — only if hum was audible)"
 
-(Limiter/compressor are **recommend-only** — do not apply them automatically. If
-the user explicitly asks to apply one from the Phase 1 recommendations, insert it
-into the chain just before `loudnorm`.)
+(**Never add a limiter or compressor to buy headroom for a hotter target** — see
+the linear-normalization policy above. A track that can't hit −20 transparently
+processes at its own reduced `max_linear_target` instead.)
 
 ### Processing chain per file (two-pass loudness normalization):
 
@@ -356,9 +343,7 @@ Build the ffmpeg audio filter chain based on user answers:
   `dcshift={-mean}` using the DC offset from the Phase 1 `astats` check. If an 80 Hz
   high-pass is already in the chain, DC (0 Hz) is already removed — skip a
   separate DC step.
-- (Optional, only if user opted in) limiter/compressor from Phase 1, placed last
-  before loudnorm.
-- Always end with loudnorm
+- Always end with loudnorm — no limiter or compressor stage, ever (see policy above)
 
 **Pass 1** — measure loudness (apply filters in measurement too):
 ```
@@ -595,7 +580,8 @@ Field notes:
    python3 scripts/build.py
    git add -A && git commit -m "Re-normalize <slug> tracks to {target} LUFS" && git push
    ```
-   Pushing `main` deploys via Cloudflare Pages.
+   Pushing `main` deploys via the GitHub Action (`npx wrangler deploy` of the
+   `renedebos-site` Worker).
 
 ---
 
