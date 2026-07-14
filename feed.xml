@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Added the full show as 27 individual tracks, split from the audience DAT and normalized t…</title>
+    <link>https://renedebos.com/shows/jerry-cafe-java-1999-06-17/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-13-jerry-cafe-java-1999-06-17</guid>
+    <pubDate>Mon, 13 Jul 2026 22:45:00 +0000</pubDate>
+    <description>Added the full show as 27 individual tracks, split from the audience DAT and normalized to −20 LUFS for an even, comfortable listening level, using the automated audio engineering workflow with ffmpeg</description>
+  </item>
+  <item>
     <title>Added the full show as 20 individual tracks, split from the audience DAT and normalized t…</title>
     <link>https://renedebos.com/shows/jerry-cafe-java-1999-05-27/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-13-jerry-cafe-java-1999-05-27</guid>

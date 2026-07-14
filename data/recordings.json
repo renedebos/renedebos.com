@@ -4818,10 +4818,416 @@
           "stream": "MP3/Full/WAV_Files/JerryHannan - Cafe Java 1999-06-17.mp3"
         }
       ],
-      "tracks": null,
+      "tracks": [
+        {
+          "num": 1,
+          "title": "Illegal Smile",
+          "songwriter": "John Prine",
+          "duration": "2:57",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/01 Illegal Smile.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/01 Illegal Smile.flac",
+          "flac_size_mb": 34,
+          "processed": true,
+          "tags": [
+            "cover",
+            "folk",
+            "upbeat",
+            "singalong"
+          ]
+        },
+        {
+          "num": 2,
+          "title": "I Thought I Was You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:45",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/02 I Thought I Was You.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/02 I Thought I Was You.flac",
+          "flac_size_mb": 43,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 3,
+          "title": "Nicolai",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:40",
+          "size_mb": 6,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/03 Nicolai.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/03 Nicolai.flac",
+          "flac_size_mb": 31,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 4,
+          "title": "Butter",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:24",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/04 Butter.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/04 Butter.flac",
+          "flac_size_mb": 40,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 5,
+          "title": "Everything Reminds Me of You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:31",
+          "size_mb": 6,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/05 Everything Reminds Me of You.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/05 Everything Reminds Me of You.flac",
+          "flac_size_mb": 29,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 6,
+          "title": "I Need a Lover",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:09",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/06 I Need a Lover.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/06 I Need a Lover.flac",
+          "flac_size_mb": 37,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 7,
+          "title": "Truck",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:35",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/07 Truck.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/07 Truck.flac",
+          "flac_size_mb": 42,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 8,
+          "title": "Black Is the Color",
+          "songwriter": "Traditional",
+          "duration": "3:08",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/08 Black Is the Color.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/08 Black Is the Color.flac",
+          "flac_size_mb": 35,
+          "processed": true,
+          "tags": [
+            "traditional",
+            "irish",
+            "ballad"
+          ]
+        },
+        {
+          "num": 9,
+          "title": "Father and Son",
+          "songwriter": "Cat Stevens",
+          "duration": "3:42",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/09 Father and Son.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/09 Father and Son.flac",
+          "flac_size_mb": 43,
+          "processed": true,
+          "tags": [
+            "cover",
+            "folk",
+            "ballad"
+          ]
+        },
+        {
+          "num": 10,
+          "title": "Plastic Lemons",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:52",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/10 Plastic Lemons.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/10 Plastic Lemons.flac",
+          "flac_size_mb": 32,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 11,
+          "title": "Anna May",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:54",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/11 Anna May.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/11 Anna May.flac",
+          "flac_size_mb": 33,
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
+        },
+        {
+          "num": 12,
+          "title": "Learn About Love",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:58",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/12 I Want to Lean About Love .mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/12 I Want to Lean About Love .flac",
+          "flac_size_mb": 34,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 13,
+          "title": "Smoke in Heaven",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:25",
+          "size_mb": 6,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/13 Smoke in Heaven.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/13 Smoke in Heaven.flac",
+          "flac_size_mb": 29,
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
+        },
+        {
+          "num": 14,
+          "title": "Luxury of Murder",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:59",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/14 Luxury of Murder.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/14 Luxury of Murder.flac",
+          "flac_size_mb": 45,
+          "processed": true,
+          "tags": [
+            "original",
+            "story"
+          ]
+        },
+        {
+          "num": 15,
+          "title": "ABC",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "1:53",
+          "size_mb": 5,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/15 ABC.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/15 ABC.flac",
+          "flac_size_mb": 22,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 16,
+          "title": "Blind Man",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:12",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/16 Blind Man.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/16 Blind Man.flac",
+          "flac_size_mb": 38,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 17,
+          "title": "The Good Life",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:38",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/17 The Good Life.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/17 The Good Life.flac",
+          "flac_size_mb": 43,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 18,
+          "title": "Open Door",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:16",
+          "size_mb": 5,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/18 Open Door.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/18 Open Door.flac",
+          "flac_size_mb": 25,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 19,
+          "title": "Model Family Man",
+          "songwriter": "Paddy Nash",
+          "duration": "3:32",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/19 Model Family Man.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/19 Model Family Man.flac",
+          "flac_size_mb": 40,
+          "processed": true,
+          "tags": [
+            "cover"
+          ]
+        },
+        {
+          "num": 20,
+          "title": "Ride On",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:25",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/20 Ride On.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/20 Ride On.flac",
+          "flac_size_mb": 40,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 21,
+          "title": "The Kiss - Da Da Da (Slave to an Angel)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "5:02",
+          "size_mb": 12,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/21 The Kiss - Da Da Da (Slave to an Angel).mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/21 The Kiss - Da Da Da (Slave to an Angel).flac",
+          "flac_size_mb": 59,
+          "processed": true,
+          "tags": [
+            "original",
+            "medley"
+          ]
+        },
+        {
+          "num": 22,
+          "title": "Angel from Montgomery",
+          "songwriter": "John Prine",
+          "duration": "3:47",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/22 Angel from Montgomery.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/22 Angel from Montgomery.flac",
+          "flac_size_mb": 42,
+          "processed": true,
+          "tags": [
+            "cover",
+            "ballad",
+            "country"
+          ]
+        },
+        {
+          "num": 23,
+          "title": "Peaceful Easy Feeling",
+          "songwriter": "Eagles",
+          "duration": "3:07",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/23 Peaceful Easy Feeling.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/23 Peaceful Easy Feeling.flac",
+          "flac_size_mb": 35,
+          "processed": true,
+          "tags": [
+            "cover"
+          ]
+        },
+        {
+          "num": 24,
+          "title": "Tougher Than the Rest",
+          "songwriter": "Bruce Springsteen",
+          "duration": "3:11",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/24 Tougher Than the Rest.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/24 Tougher Than the Rest.flac",
+          "flac_size_mb": 37,
+          "processed": true,
+          "tags": [
+            "cover",
+            "ballad"
+          ]
+        },
+        {
+          "num": 25,
+          "title": "The Parting Glass",
+          "songwriter": "Traditional",
+          "duration": "2:46",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/25 The Parting Glass.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/25 The Parting Glass.flac",
+          "flac_size_mb": 31,
+          "processed": true,
+          "tags": [
+            "traditional",
+            "irish",
+            "ballad"
+          ]
+        },
+        {
+          "num": 26,
+          "title": "Kilkelly Ireland",
+          "songwriter": "Peter Jones",
+          "duration": "5:05",
+          "size_mb": 12,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/26 Kilkelly Ireland.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/26 Kilkelly Ireland.flac",
+          "flac_size_mb": 58,
+          "processed": true,
+          "tags": [
+            "cover",
+            "irish",
+            "ballad",
+            "story"
+          ]
+        },
+        {
+          "num": 27,
+          "title": "The Blarney Stone Blues",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:52",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/27 The Barney Stone Blues.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/27 The Barney Stone Blues.flac",
+          "flac_size_mb": 44,
+          "processed": true,
+          "tags": [
+            "original",
+            "irish"
+          ]
+        }
+      ],
       "description": null,
       "page": null,
-      "processing_status": "needs-processing"
+      "processing_status": "done",
+      "added": "2026-07-13",
+      "added_ts": "2026-07-13T22:56:49.591623"
     },
     {
       "slug": "jerry-western-saloon-2025-07-03",
@@ -9850,6 +10256,13 @@
       "slug": "jerry-cafe-java-1999-05-27",
       "report": true,
       "text": "Added the full show as 20 individual tracks, split from the audience DAT and normalized to −20 LUFS for an even, comfortable listening level, using the automated audio engineering workflow with ffmpeg"
+    },
+    {
+      "date": "2026-07-13",
+      "ts": "2026-07-13T22:45:00",
+      "slug": "jerry-cafe-java-1999-06-17",
+      "report": true,
+      "text": "Added the full show as 27 individual tracks, split from the audience DAT and normalized to −20 LUFS for an even, comfortable listening level, using the automated audio engineering workflow with ffmpeg"
     }
   ],
   "playlists": []
