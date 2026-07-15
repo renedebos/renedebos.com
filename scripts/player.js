@@ -172,6 +172,13 @@ document.body.appendChild(modal);
 // ZIP client-side after a single password entry. See tryBatchDownload below.
 let pendingTarget = null;
 
+// Set for the duration of a batch fetch/zip so accidental dismissal (an
+// overlay click, Escape) can't silently strand the download running in the
+// background with no visible progress — an in-progress batch can only be
+// stopped through the Cancel button, which now actually aborts it instead of
+// just hiding the dialog on top of still-running work.
+let batchAbort = null;
+
 function openPasswordModal(target) {
   pendingTarget = target;
   document.getElementById('pwInput').value = '';
@@ -181,6 +188,7 @@ function openPasswordModal(target) {
 }
 
 function closeModal() {
+  if (batchAbort) batchAbort.abort();
   modal.classList.remove('open');
   pendingTarget = null;
 }
@@ -198,11 +206,12 @@ function triggerDownload(url, filename) {
 // flow, reused per file in a batch. authFailed is set on a wrong password so
 // callers can show the same "Incorrect password" message a single download
 // would.
-async function fetchWithToken(password, key) {
+async function fetchWithToken(password, key, signal) {
   const authRes = await fetch(WORKER + '/auth', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ password, filename: key }),
+    signal,
   });
   if (!authRes.ok) {
     const err = new Error('auth failed');
@@ -211,7 +220,7 @@ async function fetchWithToken(password, key) {
   }
   const { token, expires } = await authRes.json();
   const dlRes = await fetch(WORKER + '/download?file=' + encodeURIComponent(key)
-    + '&token=' + encodeURIComponent(token) + '&expires=' + expires);
+    + '&token=' + encodeURIComponent(token) + '&expires=' + expires, { signal });
   if (!dlRes.ok) throw new Error('download failed: ' + key);
   return dlRes;
 }
@@ -227,51 +236,61 @@ async function fetchWithToken(password, key) {
 // takes (client-zip still has to stream every byte through to compute each
 // entry's CRC32), which reads as a hang on a large show.
 async function tryBatchDownload(password, manifest, submitBtn) {
-  const files = manifest.files;
-  const results = new Array(files.length);
-  let doneCount = 0;
-  let nextIdx = 0;
-  let totalBytes = 0;
-  const CONCURRENCY = 4;
-  async function worker() {
-    while (nextIdx < files.length) {
-      const i = nextIdx++;
-      const res = await fetchWithToken(password, files[i].key);
-      const len = parseInt(res.headers.get('content-length') || '0', 10);
-      totalBytes += len;
-      results[i] = { input: res, name: files[i].name };
-      doneCount++;
-      submitBtn.textContent = `Fetching ${doneCount} / ${files.length} tracks…`;
+  const abort = new AbortController();
+  batchAbort = abort;
+  try {
+    const files = manifest.files;
+    const results = new Array(files.length);
+    let doneCount = 0;
+    let nextIdx = 0;
+    let totalBytes = 0;
+    const CONCURRENCY = 4;
+    async function worker() {
+      while (nextIdx < files.length) {
+        const i = nextIdx++;
+        const res = await fetchWithToken(password, files[i].key, abort.signal);
+        const len = parseInt(res.headers.get('content-length') || '0', 10);
+        totalBytes += len;
+        results[i] = { input: res, name: files[i].name };
+        doneCount++;
+        submitBtn.textContent = `Fetching ${doneCount} / ${files.length} tracks…`;
+      }
     }
-  }
-  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, files.length) }, worker));
-  if (manifest.infoName && manifest.infoText) {
-    results.push({ input: manifest.infoText, name: manifest.infoName });
-    totalBytes += new Blob([manifest.infoText]).size;
-  }
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, files.length) }, worker));
+    if (manifest.infoName && manifest.infoText) {
+      results.push({ input: manifest.infoText, name: manifest.infoName });
+      totalBytes += new Blob([manifest.infoText]).size;
+    }
 
-  const { downloadZip } = await import('/assets/client-zip.js');
-  const zipRes = downloadZip(results);
-  const reader = zipRes.body.getReader();
-  const chunks = [];
-  let assembled = 0;
-  submitBtn.textContent = 'Assembling ZIP…';
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-    assembled += value.length;
-    submitBtn.textContent = totalBytes
-      ? `Assembling ZIP… ${Math.min(99, Math.round(assembled / totalBytes * 100))}%`
-      : 'Assembling ZIP…';
-  }
-  const blob = new Blob(chunks, { type: 'application/zip' });
+    const { downloadZip } = await import('/assets/client-zip.js');
+    const zipRes = downloadZip(results);
+    const reader = zipRes.body.getReader();
+    const chunks = [];
+    let assembled = 0;
+    submitBtn.textContent = 'Assembling ZIP…';
+    for (;;) {
+      if (abort.signal.aborted) {
+        reader.cancel();
+        throw new DOMException('Cancelled', 'AbortError');
+      }
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      assembled += value.length;
+      submitBtn.textContent = totalBytes
+        ? `Assembling ZIP… ${Math.min(99, Math.round(assembled / totalBytes * 100))}%`
+        : 'Assembling ZIP…';
+    }
+    const blob = new Blob(chunks, { type: 'application/zip' });
 
-  submitBtn.textContent = 'Starting download…';
-  const url = URL.createObjectURL(blob);
-  closeModal();
-  triggerDownload(url, manifest.zipName);
-  setTimeout(() => URL.revokeObjectURL(url), 60000);
+    submitBtn.textContent = 'Starting download…';
+    const url = URL.createObjectURL(blob);
+    closeModal();
+    triggerDownload(url, manifest.zipName);
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } finally {
+    batchAbort = null;
+  }
 }
 
 async function tryDownload() {
@@ -286,12 +305,15 @@ async function tryDownload() {
       try {
         await tryBatchDownload(password, target.manifest, submitBtn);
       } catch (e) {
-        document.getElementById('pwError').textContent = e && e.authFailed
-          ? 'Incorrect password. Please try again.'
-          : 'Download failed — please try again.';
-        if (e && e.authFailed) {
+        if (e && e.name === 'AbortError') {
+          // Deliberately cancelled via the Cancel button — closeModal()
+          // already handled dismissal, nothing to report.
+        } else if (e && e.authFailed) {
+          document.getElementById('pwError').textContent = 'Incorrect password. Please try again.';
           document.getElementById('pwInput').value = '';
           document.getElementById('pwInput').focus();
+        } else {
+          document.getElementById('pwError').textContent = 'Download failed — please try again.';
         }
       }
       return;
@@ -326,10 +348,12 @@ document.getElementById('pwSubmit').addEventListener('click', tryDownload);
 document.getElementById('pwCancel').addEventListener('click', closeModal);
 document.getElementById('pwInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') tryDownload();
-  if (e.key === 'Escape') closeModal();
+  // Escape is disabled mid-batch — Cancel is the one deliberate way to stop
+  // an in-progress ZIP; a stray keypress shouldn't lose visibility into it.
+  if (e.key === 'Escape' && !batchAbort) closeModal();
 });
 modal.addEventListener('click', e => {
-  if (e.target === modal) closeModal();
+  if (e.target === modal && !batchAbort) closeModal();
 });
 
 document.querySelectorAll('a.download-btn').forEach(btn => {
