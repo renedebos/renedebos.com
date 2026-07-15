@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Added the Mad Hannans' return to Marin Brewing Co. in Larkspur, April 1, 1999 — the venue…</title>
+    <link>https://renedebos.com/shows/mad-marin-brewing-co-1999-04-01/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-15-mad-marin-brewing-co-1999-04-01</guid>
+    <pubDate>Wed, 15 Jul 2026 14:12:52 +0000</pubDate>
+    <description>Added the Mad Hannans' return to Marin Brewing Co. in Larkspur, April 1, 1999 — the venue's 10th anniversary, one year to the day after their first show there — as 15 individual tracks normalized to −20 LUFS. "Da Da Da (Slave to an Angel)" now opens with its "The Kiss" intro, missing from the 1998 show. Two audience transfers of the tape survive; the tracks come from the cleaner one, with the other kept as an alternate full-show download.</description>
+  </item>
+  <item>
     <title>Added the earliest Mad Hannans show in the archive, April 1, 1998 at Marin Brewing Co. in…</title>
     <link>https://renedebos.com/shows/mad-marin-brewing-co-1998-04-01/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-15-mad-marin-brewing-co-1998-04-01</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-26-mad-sweetwater-2001-01-06</guid>
     <pubDate>Fri, 26 Jun 2026 21:00:00 +0000</pubDate>
     <description>These very muddled tracks have been processed with EQ filtering and loudness normalization to −16 LUFS to make them sound a little better</description>
-  </item>
-  <item>
-    <title>Added a search engine — find any song or show by title, artist, venue, date, or tag</title>
-    <link>https://renedebos.com/updates/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-24-site</guid>
-    <pubDate>Wed, 24 Jun 2026 21:00:00 +0000</pubDate>
-    <description>Added a search engine — find any song or show by title, artist, venue, date, or tag</description>
   </item>
 </channel>
 </rss>

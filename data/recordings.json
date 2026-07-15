@@ -9557,10 +9557,236 @@
           "stream": "MP3/Full/WAV_Files/MadHannans_MarinBrewCo_1999-04-01.mp3"
         }
       ],
-      "tracks": null,
-      "description": null,
+      "tracks": [
+        {
+          "num": 1,
+          "title": "Recycle",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:19",
+          "size_mb": 10,
+          "file": "MP3/MadHannnans - Marin Brewing Co 1999-04-01/01 Recycle .mp3",
+          "flac": "FLAC/MadHannnans - Marin Brewing Co 1999-04-01/01 Recycle .flac",
+          "flac_size_mb": 38,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 2,
+          "title": "Truck",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:34",
+          "size_mb": 9,
+          "file": "MP3/MadHannnans - Marin Brewing Co 1999-04-01/02 Truck.mp3",
+          "flac": "FLAC/MadHannnans - Marin Brewing Co 1999-04-01/02 Truck.flac",
+          "flac_size_mb": 33,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 3,
+          "title": "Blind Man",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:16",
+          "size_mb": 8,
+          "file": "MP3/MadHannnans - Marin Brewing Co 1999-04-01/03 Blind Man.mp3",
+          "flac": "FLAC/MadHannnans - Marin Brewing Co 1999-04-01/03 Blind Man.flac",
+          "flac_size_mb": 30,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 4,
+          "title": "Clear Headed",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "5:20",
+          "size_mb": 13,
+          "file": "MP3/MadHannnans - Marin Brewing Co 1999-04-01/04 Clear Headed.mp3",
+          "flac": "FLAC/MadHannnans - Marin Brewing Co 1999-04-01/04 Clear Headed.flac",
+          "flac_size_mb": 48,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 5,
+          "title": "The Rodeo Song",
+          "songwriter": "Gary Lee and the Showdown",
+          "duration": "3:48",
+          "size_mb": 9,
+          "file": "MP3/MadHannnans - Marin Brewing Co 1999-04-01/05 The Rodeo Song.mp3",
+          "flac": "FLAC/MadHannnans - Marin Brewing Co 1999-04-01/05 The Rodeo Song.flac",
+          "flac_size_mb": 35,
+          "processed": true,
+          "tags": [
+            "cover",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 6,
+          "title": "Hard Drinkin'",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:57",
+          "size_mb": 9,
+          "file": "MP3/MadHannnans - Marin Brewing Co 1999-04-01/06 Hard Drinkin'.mp3",
+          "flac": "FLAC/MadHannnans - Marin Brewing Co 1999-04-01/06 Hard Drinkin'.flac",
+          "flac_size_mb": 36,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 7,
+          "title": "Luxury of Murder",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:56",
+          "size_mb": 7,
+          "file": "MP3/MadHannnans - Marin Brewing Co 1999-04-01/07 Luxury of Murder.mp3",
+          "flac": "FLAC/MadHannnans - Marin Brewing Co 1999-04-01/07 Luxury of Murder.flac",
+          "flac_size_mb": 26,
+          "processed": true,
+          "tags": [
+            "original",
+            "story"
+          ]
+        },
+        {
+          "num": 8,
+          "title": "ABC",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "5:30",
+          "size_mb": 13,
+          "file": "MP3/MadHannnans - Marin Brewing Co 1999-04-01/08 ABC.mp3",
+          "flac": "FLAC/MadHannnans - Marin Brewing Co 1999-04-01/08 ABC.flac",
+          "flac_size_mb": 50,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 9,
+          "title": "Butter",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:24",
+          "size_mb": 11,
+          "file": "MP3/MadHannnans - Marin Brewing Co 1999-04-01/09 Butter.mp3",
+          "flac": "FLAC/MadHannnans - Marin Brewing Co 1999-04-01/09 Butter.flac",
+          "flac_size_mb": 38,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 10,
+          "title": "Baby",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:22",
+          "size_mb": 8,
+          "file": "MP3/MadHannnans - Marin Brewing Co 1999-04-01/10 Baby.mp3",
+          "flac": "FLAC/MadHannnans - Marin Brewing Co 1999-04-01/10 Baby.flac",
+          "flac_size_mb": 30,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 11,
+          "title": "Getaway Blues",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:08",
+          "size_mb": 8,
+          "file": "MP3/MadHannnans - Marin Brewing Co 1999-04-01/11 Getaway Blues.mp3",
+          "flac": "FLAC/MadHannnans - Marin Brewing Co 1999-04-01/11 Getaway Blues.flac",
+          "flac_size_mb": 27,
+          "processed": true,
+          "tags": [
+            "original",
+            "blues"
+          ]
+        },
+        {
+          "num": 12,
+          "title": "The Kiss - Da Da Da (Slave to an Angel)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "7:35",
+          "size_mb": 18,
+          "file": "MP3/MadHannnans - Marin Brewing Co 1999-04-01/12 The Kiss - Da Da Da (Slave to an Angel).mp3",
+          "flac": "FLAC/MadHannnans - Marin Brewing Co 1999-04-01/12 The Kiss - Da Da Da (Slave to an Angel).flac",
+          "flac_size_mb": 69,
+          "processed": true,
+          "tags": [
+            "original",
+            "medley"
+          ]
+        },
+        {
+          "num": 13,
+          "title": "Dysfunctional Guy",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "5:35",
+          "size_mb": 13,
+          "file": "MP3/MadHannnans - Marin Brewing Co 1999-04-01/13 Dysfunctional Guy.mp3",
+          "flac": "FLAC/MadHannnans - Marin Brewing Co 1999-04-01/13 Dysfunctional Guy.flac",
+          "flac_size_mb": 51,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 14,
+          "title": "Friend",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:48",
+          "size_mb": 9,
+          "file": "MP3/MadHannnans - Marin Brewing Co 1999-04-01/14 Friend.mp3",
+          "flac": "FLAC/MadHannnans - Marin Brewing Co 1999-04-01/14 Friend.flac",
+          "flac_size_mb": 35,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 15,
+          "title": "Madeline",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:50",
+          "size_mb": 9,
+          "file": "MP3/MadHannnans - Marin Brewing Co 1999-04-01/15 Madeline.mp3",
+          "flac": "FLAC/MadHannnans - Marin Brewing Co 1999-04-01/15 Madeline.flac",
+          "flac_size_mb": 35,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        }
+      ],
+      "description": [
+        "The Mad Hannans back at Marin Brewing Co. in Larkspur exactly one year after their first show there, on the venue's 10th anniversary. Two audience transfers of the tape survive; the tracks here are split from the cleaner of the two, with the other kept below as an alternate full-show download. “Da Da Da (Slave to an Angel)” now opens with its “The Kiss” intro, missing a year earlier.",
+        "Individual tracks were loudness-normalized to −20 LUFS; fades and clip fixes were done by hand as usual."
+      ],
       "page": null,
-      "processing_status": "needs-processing"
+      "processing_status": "done",
+      "added": "2026-07-15",
+      "added_ts": "2026-07-15T14:12:52.673553"
     },
     {
       "slug": "mad-new-georges-1999-10-13",
@@ -11622,6 +11848,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-07-15",
+      "ts": "2026-07-15T14:12:52.673553",
+      "slug": "mad-marin-brewing-co-1999-04-01",
+      "report": true,
+      "text": "Added the Mad Hannans' return to Marin Brewing Co. in Larkspur, April 1, 1999 — the venue's 10th anniversary, one year to the day after their first show there — as 15 individual tracks normalized to −20 LUFS. \"Da Da Da (Slave to an Angel)\" now opens with its \"The Kiss\" intro, missing from the 1998 show. Two audience transfers of the tape survive; the tracks come from the cleaner one, with the other kept as an alternate full-show download."
+    },
     {
       "date": "2026-07-15",
       "ts": "2026-07-15T12:51:28.134754",
