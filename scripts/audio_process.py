@@ -241,6 +241,26 @@ def lead_num(name):
     return int(m.group(1)) if m else None
 
 
+def preflight_track_files(files):
+    """Reject a batch before any rendering happens rather than let it corrupt
+    output silently: a missing leading track number, or two files sharing one
+    (e.g. a stray WAV export left alongside its FLAC), both collide on the
+    same out_mp3 filename and the same provenance key (str(num)) — the second
+    file processed would silently overwrite the first's audio and provenance
+    entry."""
+    missing = [f for f in files if lead_num(f) is None]
+    if missing:
+        raise SystemExit("no leading track number in: " + ", ".join(missing))
+
+    by_num = {}
+    for f in files:
+        by_num.setdefault(lead_num(f), []).append(f)
+    dupe_nums = {n: fs for n, fs in by_num.items() if len(fs) > 1}
+    if dupe_nums:
+        detail = "; ".join(f"{n}: {', '.join(fs)}" for n, fs in sorted(dupe_nums.items()))
+        raise SystemExit(f"duplicate track number(s) — {detail}")
+
+
 def probe(path):
     r = subprocess.run(
         ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams",
@@ -822,6 +842,7 @@ def cmd_process(args):
     files = lossless_files(infolder)
     if not files:
         raise SystemExit(f"no .flac/.wav files in {infolder}")
+    preflight_track_files(files)
     filt = build_filters(args)
 
     # literal process chain applied to every track in THIS run (filters + the
@@ -834,6 +855,19 @@ def cmd_process(args):
     tag_ctx = show_tags(args.slug) if args.slug else None
     if args.slug and tag_ctx is None:
         print(f"note: {args.slug} not in recordings.json — no tags embedded")
+
+    # Loaded up front (not just at the final merge) so a resume decision can
+    # check what actually produced the existing per-track entry, and so a
+    # resumed track's `ver` reports what really rendered it rather than
+    # whatever WORKFLOW_VERSION this run happens to be.
+    prev_tracks = {}
+    if args.slug:
+        prev_path = os.path.join(ROOT, "data", "processing", f"{args.slug}.json")
+        if os.path.exists(prev_path):
+            try:
+                prev_tracks = json.load(open(prev_path)).get("tracks", {})
+            except Exception:
+                prev_tracks = {}
 
     prov_tracks, report, warnings = {}, [], []
     for i, f in enumerate(files, 1):
@@ -857,7 +891,18 @@ def cmd_process(args):
         for fl in plan["flags"]:
             print(f"  ⚠ {f}: {fl}", flush=True)
 
-        if os.path.exists(out_audio) and os.path.exists(out_mp3):
+        # Resume-skip only if the existing output isn't stale: if the source was
+        # re-exported (e.g. Rene fixed a click in Audacity) after this render, its
+        # mtime moves past the output's and the old render must not be trusted
+        # just because a same-named file happens to exist.
+        stale = (os.path.exists(out_audio) and os.path.exists(out_mp3)
+                 and os.path.getmtime(out_audio) < os.path.getmtime(src))
+        if stale:
+            print(f"  {f}: source is newer than the existing output — "
+                  "ignoring it and reprocessing", flush=True)
+        resumable = (os.path.exists(out_audio) and os.path.exists(out_mp3) and not stale)
+
+        if resumable:
             # still record provenance from the existing output. For a limiter
             # track this is a re-run after a prior interruption (e.g. a killed
             # job) — plan_track's fresh guess doesn't know the true-peak safety
@@ -912,6 +957,15 @@ def cmd_process(args):
                     if tp_now <= TP_CEILING + TP_TOL:
                         break
                     overshoot = tp_now - TP_CEILING
+                    if attempt == APPLAUSE_TP_MAX_ATTEMPTS:
+                        # Out of retries — out_audio on disk is attempt N's render, at
+                        # plan's CURRENT gain. Don't adjust plan any further: doing so
+                        # without a matching re-render would make the provenance chain
+                        # and applause_limiter.gain_db describe a gain that was never
+                        # actually applied, even though lufs/tp below are measured
+                        # honestly straight off the file. The TP>ceiling warning below
+                        # already flags the shortfall from the real measurement.
+                        break
                     print(f"  {f}: attempt {attempt} measured {tp_now:+.2f} dBTP "
                           f"(> {TP_CEILING}) — backing gain off {overshoot + 0.15:.2f} dB "
                           "and re-rendering", flush=True)
@@ -973,12 +1027,17 @@ def cmd_process(args):
             track_chain = chain_str if used_target == target else \
                 chain_str.replace(f"I={_w(target)}", f"I={_w(used_target)}")
         if num is not None:
-            entry = {"ver": WORKFLOW_VERSION, "chain": track_chain,
+            # A resumed track's bytes were rendered by whatever version last
+            # actually processed it, not necessarily this run's WORKFLOW_VERSION —
+            # report that honestly instead of overwriting it on every resume.
+            entry_ver = (prev_tracks.get(str(num), {}).get("ver", WORKFLOW_VERSION)
+                         if resumable else WORKFLOW_VERSION)
+            entry = {"ver": entry_ver, "chain": track_chain,
                      "lufs": round(out_I, 2), "tp": round(out_TP, 2),
                      "mp3_tp": round(mp3_tp, 2),
                      "lra": round(out_LRA, 2), "md5": md5}
             if in_I is not None:
-                entry = {"ver": WORKFLOW_VERSION, "chain": track_chain,
+                entry = {"ver": entry_ver, "chain": track_chain,
                          "in_lufs": round(in_I, 1),
                          "lufs": round(out_I, 2), "tp": round(out_TP, 2),
                          "mp3_tp": round(mp3_tp, 2),

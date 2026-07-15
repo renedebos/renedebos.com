@@ -37,10 +37,12 @@ const MAX_TRACKS = 500;
 // ALSO baked in statically via the root `_headers` file — keep both in sync
 // if this changes. CSP: the site is dependency-free, so everything is
 // same-origin except the wav-download Worker (audio streams + gated
-// downloads). Show pages carry small inline bootstrap <script>s and the
+// downloads) and the contact-form Worker (the /contact/ page's fetch
+// target). Show pages carry small inline bootstrap <script>s and the
 // manual an inline <style>, hence 'unsafe-inline' — external injection is
 // still blocked, which is the attack that matters on a static site.
 const WAV_WORKER = "https://wav-download.renedebos.workers.dev";
+const CONTACT_WORKER = "https://contact-form.renedebos.workers.dev";
 const SECURITY_HEADERS = {
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
   "X-Content-Type-Options": "nosniff",
@@ -50,7 +52,7 @@ const SECURITY_HEADERS = {
   "Content-Security-Policy":
     "default-src 'self'; script-src 'self' 'unsafe-inline'; " +
     "style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
-    `connect-src 'self' ${WAV_WORKER}; media-src 'self' ${WAV_WORKER}; ` +
+    `connect-src 'self' ${WAV_WORKER} ${CONTACT_WORKER}; media-src 'self' ${WAV_WORKER}; ` +
     "object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'",
 };
 

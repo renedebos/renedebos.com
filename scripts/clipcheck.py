@@ -17,7 +17,8 @@ Usage:
   python3 scripts/clipcheck.py FILE [FILE ...]      # check specific files
   python3 scripts/clipcheck.py FOLDER               # all *.flac/*.wav in folder
 
-Exit status is non-zero if any file is classified CLIPPING (likely audible).
+Exit status is non-zero if any file is classified CLIPPING (likely audible) or
+fails to decode at all (ERROR — never silently read as clean).
 """
 import argparse
 import array
@@ -42,11 +43,18 @@ def probe(path):
 
 
 def decode_f32(path):
-    raw = subprocess.run(
+    r = subprocess.run(
         ["ffmpeg", "-v", "error", "-i", path, "-f", "f32le", "pipe:1"],
-        capture_output=True).stdout
+        capture_output=True)
+    # A failed decode (corrupt/truncated file, unsupported codec, etc.) must not
+    # fall through as empty samples: analyse_channel would then see nothing to
+    # loop over and classify() would read that as longest_run == 0 — i.e. "NONE",
+    # indistinguishable from an actually clean track. Fail loudly instead.
+    if r.returncode != 0 or not r.stdout:
+        raise RuntimeError(f"ffmpeg decode failed for {path}: "
+                           f"{r.stderr.decode(errors='replace').strip()[-300:]}")
     a = array.array("f")
-    a.frombytes(raw)
+    a.frombytes(r.stdout)
     return a
 
 
@@ -78,7 +86,13 @@ def classify(longest_run, sr, events):
 
 def check_file(path):
     ch, sr = probe(path)
-    a = decode_f32(path)
+    try:
+        a = decode_f32(path)
+    except RuntimeError as e:
+        name = os.path.basename(path)
+        print(f"{'ERROR':8s} | {name}")
+        print(f"           {e}")
+        return "ERROR"
     worst_run = worst_cnt = total_events = 0
     per_ch = []
     for c in range(ch):
@@ -110,11 +124,11 @@ def main():
     ap = argparse.ArgumentParser(description="Run-length clipping check (FLAC/WAV).")
     ap.add_argument("paths", nargs="+", help="files or a folder")
     args = ap.parse_args()
-    clipped = False
+    failed = False
     for f in gather(args.paths):
-        if check_file(f) == "CLIPPING":
-            clipped = True
-    sys.exit(1 if clipped else 0)
+        if check_file(f) in ("CLIPPING", "ERROR"):
+            failed = True
+    sys.exit(1 if failed else 0)
 
 
 if __name__ == "__main__":
