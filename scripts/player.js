@@ -69,7 +69,12 @@ function initCustomPlayers(root) {
       activePlayer = player;
     });
 
-    audio.addEventListener('play', () => player.classList.add('playing'));
+    audio.addEventListener('play', () => {
+      player.classList.add('playing');
+      // A deep-linked track (see focusHashTrack) stays highlighted until some
+      // other track actually starts playing.
+      document.querySelectorAll('.track-row.target').forEach(r => { if (r !== player) r.classList.remove('target'); });
+    });
     audio.addEventListener('pause', () => player.classList.remove('playing'));
 
     audio.addEventListener('ended', () => {
@@ -347,9 +352,18 @@ function focusHashTrack() {
   let el;
   try { el = document.querySelector(location.hash); } catch { return; }
   if (el && el.classList.contains('track-row')) {
+    // Persists until a different track starts playing (see the 'play' listener
+    // above) rather than fading on a timer — a deep link should stay obvious.
+    document.querySelectorAll('.track-row.target').forEach(r => { if (r !== el) r.classList.remove('target'); });
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     el.classList.add('target');
-    setTimeout(() => el.classList.remove('target'), 2000);
+    // Waveform rows (.ws-track) are wired up asynchronously by wavesurfer.js,
+    // which handles its own hash-autoplay once its rows are actually ready —
+    // clicking here before then would silently do nothing.
+    if (el.classList.contains('custom-player') && new URLSearchParams(location.search).get('autoplay') === '1') {
+      const btn = el.querySelector('.play-btn');
+      if (btn) btn.click();
+    }
   }
 }
 window.addEventListener('load', focusHashTrack);

@@ -72,7 +72,12 @@ RANDOM_TAPE_SCRIPT = '''
     e.preventDefault();
     fetch('/assets/tracks.json').then(function (r) { return r.json(); }).then(function (rows) {
       if (!rows.length) { location.href = '/archive/'; return; }
-      location.href = rows[Math.floor(Math.random() * rows.length)].url;
+      var url = rows[Math.floor(Math.random() * rows.length)].url;
+      var i = url.indexOf('#');
+      // Autoplay marker for the destination page's focusHashTrack (player.js /
+      // wavesurfer.js) — kept out of tracks.json's shared `url` field since other
+      // consumers (song-page occurrence links) should only deep-link, not autoplay.
+      location.href = i === -1 ? url : url.slice(0, i) + '?autoplay=1' + url.slice(i);
     }).catch(function () { location.href = '/archive/'; });
   });
 })();

@@ -32,6 +32,16 @@ function build(PEAKS) {
   const rows = Array.from(document.querySelectorAll('.ws-row, .ws-track'));
   const instances = [];
 
+  // Deep-link to a track (e.g. the homepage's "Play random tape" or a song
+  // page's "open on show page"). Resolved up front so the matching row's
+  // WaveSurfer instance can gate autoplay on its own 'ready' event below —
+  // calling play() right after creation is too early (media hasn't loaded),
+  // so it silently no-ops despite the returned promise resolving.
+  let hashEl;
+  try { hashEl = location.hash && document.querySelector(location.hash); } catch { hashEl = null; }
+  const hashIdx = hashEl ? rows.indexOf(hashEl) : -1;
+  const autoplayHash = hashIdx !== -1 && new URLSearchParams(location.search).get('autoplay') === '1';
+
   rows.forEach((row, idx) => {
     const meta = PEAKS[row.dataset.trackid] || {};
     const btn = row.querySelector('.play-btn');
@@ -55,6 +65,12 @@ function build(PEAKS) {
       dragToSeek: true,
     });
 
+    if (idx === hashIdx) {
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      row.classList.add('target');
+      if (autoplayHash) ws.once('ready', () => ws.play().catch(() => {}));
+    }
+
     btn.addEventListener('click', () => ws.playPause());
 
     // Seek-on-tap, iOS-safe. With pre-computed peaks the audio is loaded lazily,
@@ -75,6 +91,9 @@ function build(PEAKS) {
       instances.forEach((w, i) => { if (i !== idx) w.pause(); });
       row.classList.add('playing');
       setPlayState(btn, true, PAUSE);
+      // A deep-linked track (see the hash handling above) stays highlighted
+      // until some other track actually starts playing.
+      rows.forEach(r => { if (r !== row) r.classList.remove('target'); });
     });
     ws.on('pause', () => {
       row.classList.remove('playing');

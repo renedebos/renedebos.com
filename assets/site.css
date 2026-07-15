@@ -1486,11 +1486,13 @@ footer a:hover { text-decoration: underline; }
 
 /* ── deep-linked track flash ─────────────────────────────────────────────── */
 
-@keyframes track-flash {
-  0%, 100% { background: var(--player-bg); }
-  25%, 65% { background: var(--accent-light); }
+@keyframes track-flash-in {
+  from { background: var(--player-bg); box-shadow: inset 3px 0 0 transparent; }
+  to { background: var(--accent-light); box-shadow: inset 3px 0 0 var(--accent); }
 }
-.track-row.target { animation: track-flash 1.9s ease 1; }
+/* Flashes in, then holds — matches .track-row.playing's look, and stays until
+   JS clears it (a different track starting playback, or a new deep link). */
+.track-row.target { animation: track-flash-in 0.6s ease 1 forwards; }
 
 @media (max-width: 600px) {
   header { padding: 3rem 1.5rem 2.5rem; }
