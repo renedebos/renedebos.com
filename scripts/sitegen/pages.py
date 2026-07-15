@@ -921,8 +921,10 @@ def build_songs_index():
     </details>''')
 
     col_head = "".join(
-        f'<th class="artist-{c["artist"]}" data-artist="{c["artist"]}"><span class="g-venue">{esc(c.get("venue_short") or c.get("venue") or "—")}</span>'
-        f'<span class="g-date">{esc((c.get("date") or "??")[:10])}</span></th>' for c in cols)
+        f'<th class="artist-{c["artist"]}" data-artist="{c["artist"]}">'
+        f'<a href="{esc(show_url(c))}" title="Open {esc(c.get("venue_short") or c.get("venue") or "this show")} &middot; {esc(c.get("date") or "")}">'
+        f'<span class="g-venue">{esc(c.get("venue_short") or c.get("venue") or "—")}</span>'
+        f'<span class="g-date">{esc((c.get("date") or "??")[:10])}</span></a></th>' for c in cols)
     rows = []
     for s in songs:
         by_show = {}
