@@ -166,12 +166,14 @@ modal.innerHTML = `
   </div>`;
 document.body.appendChild(modal);
 
-let pendingFile = null;
-let pendingFilename = null;
+// pendingTarget is either { type: 'single', file, filename } (today's one-file
+// flow) or { type: 'batch', manifest: {zipName, files:[{key,name}], infoName,
+// infoText} } — a whole show or every performance of a song, assembled into a
+// ZIP client-side after a single password entry. See tryBatchDownload below.
+let pendingTarget = null;
 
-function openPasswordModal(file, filename) {
-  pendingFile = file;
-  pendingFilename = filename;
+function openPasswordModal(target) {
+  pendingTarget = target;
   document.getElementById('pwInput').value = '';
   document.getElementById('pwError').textContent = '';
   modal.classList.add('open');
@@ -180,8 +182,7 @@ function openPasswordModal(file, filename) {
 
 function closeModal() {
   modal.classList.remove('open');
-  pendingFile = null;
-  pendingFilename = null;
+  pendingTarget = null;
 }
 
 function triggerDownload(url, filename) {
@@ -193,17 +194,87 @@ function triggerDownload(url, filename) {
   document.body.removeChild(a);
 }
 
+// Mints a token for one R2 key and fetches it — exactly today's single-file
+// flow, reused per file in a batch. authFailed is set on a wrong password so
+// callers can show the same "Incorrect password" message a single download
+// would.
+async function fetchWithToken(password, key) {
+  const authRes = await fetch(WORKER + '/auth', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password, filename: key }),
+  });
+  if (!authRes.ok) {
+    const err = new Error('auth failed');
+    err.authFailed = true;
+    throw err;
+  }
+  const { token, expires } = await authRes.json();
+  const dlRes = await fetch(WORKER + '/download?file=' + encodeURIComponent(key)
+    + '&token=' + encodeURIComponent(token) + '&expires=' + expires);
+  if (!dlRes.ok) throw new Error('download failed: ' + key);
+  return dlRes;
+}
+
+// Fetches every file in the manifest (small concurrency cap — this is a
+// courtesy to the Worker/R2, not a requirement) and assembles a ZIP entirely
+// in the browser via the vendored client-zip. No server-side ZIP generation,
+// no new Worker route — each file goes through the exact /auth + /download
+// pair a single download already uses.
+async function tryBatchDownload(password, manifest, submitBtn) {
+  const files = manifest.files;
+  const results = new Array(files.length);
+  let doneCount = 0;
+  let nextIdx = 0;
+  const CONCURRENCY = 4;
+  async function worker() {
+    while (nextIdx < files.length) {
+      const i = nextIdx++;
+      const res = await fetchWithToken(password, files[i].key);
+      results[i] = { input: res, name: files[i].name };
+      doneCount++;
+      submitBtn.textContent = `Zipping ${doneCount} / ${files.length}…`;
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, files.length) }, worker));
+  if (manifest.infoName && manifest.infoText) {
+    results.push({ input: manifest.infoText, name: manifest.infoName });
+  }
+  const { downloadZip } = await import('/assets/client-zip.js');
+  const blob = await downloadZip(results).blob();
+  const url = URL.createObjectURL(blob);
+  closeModal();
+  triggerDownload(url, manifest.zipName);
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
 async function tryDownload() {
   const password = document.getElementById('pwInput').value;
   const submitBtn = document.getElementById('pwSubmit');
+  const target = pendingTarget;
   submitBtn.disabled = true;
   submitBtn.textContent = '…';
 
   try {
+    if (target.type === 'batch') {
+      try {
+        await tryBatchDownload(password, target.manifest, submitBtn);
+      } catch (e) {
+        document.getElementById('pwError').textContent = e && e.authFailed
+          ? 'Incorrect password. Please try again.'
+          : 'Download failed — please try again.';
+        if (e && e.authFailed) {
+          document.getElementById('pwInput').value = '';
+          document.getElementById('pwInput').focus();
+        }
+      }
+      return;
+    }
+
     const res = await fetch(WORKER + '/auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password, filename: pendingFile }),
+      body: JSON.stringify({ password, filename: target.file }),
     });
 
     if (!res.ok) {
@@ -214,13 +285,11 @@ async function tryDownload() {
     }
 
     const { token, expires } = await res.json();
-    const file = pendingFile;
-    const filename = pendingFilename;
     closeModal();
     triggerDownload(
-      WORKER + '/download?file=' + encodeURIComponent(file)
+      WORKER + '/download?file=' + encodeURIComponent(target.file)
         + '&token=' + encodeURIComponent(token) + '&expires=' + expires,
-      filename);
+      target.filename);
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = 'Download';
@@ -242,7 +311,15 @@ document.querySelectorAll('a.download-btn').forEach(btn => {
     e.preventDefault();
     const fileParam = new URL(btn.href).searchParams.get('file');
     const displayName = btn.getAttribute('download') || decodeURIComponent(fileParam.split('/').pop());
-    openPasswordModal(fileParam, displayName);
+    openPasswordModal({ type: 'single', file: fileParam, filename: displayName });
+  });
+});
+
+document.querySelectorAll('.zip-download-btn').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.preventDefault();
+    if (!window.ZIP_MANIFEST) return;
+    openPasswordModal({ type: 'batch', manifest: window.ZIP_MANIFEST });
   });
 });
 

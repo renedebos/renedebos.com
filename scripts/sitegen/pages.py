@@ -196,6 +196,20 @@ def build_archive():
     # same pattern the by-artist/by-date switch always used, so section counts
     # stay honest and no artist header lingers over a filtered-empty list.
     n_split = sum(1 for s in M["shows"] if s.get("tracks"))
+    archive_zip_html = ""
+    archive_zip_path = os.path.join(ROOT, "data", "archive_zip_meta.json")
+    if os.path.exists(archive_zip_path):
+        meta = json.load(open(archive_zip_path))
+        size_gb = round(meta["size_mb"] / 1000, 1)
+        updated = meta["generated"][:10]
+        btn = dl_button(meta["r2_key"],
+                         title=f'Download the complete archive (password protected) · '
+                               f'{meta["n_tracks"]} tracks · {size_gb} GB FLAC')
+        archive_zip_html = f'''
+  <p class="archive-zip-line">
+    {btn}
+    <span>Download the complete archive &middot; {meta["n_tracks"]} tracks &middot; {size_gb} GB FLAC &middot; updated {esc(updated)}</span>
+  </p>'''
     toggle = f'''
   <div class="archive-controls">
     <div class="view-toggle" role="group" aria-label="Sort shows">
@@ -213,7 +227,7 @@ def build_archive():
     <span class="proc-status pre-edit pre-edit-pe">PE</span> Pre-edited (EQ, etc.) &middot;
     <span class="h-badge">{HIGHLIGHT_STAR_SVG}</span> Highlight show &middot;
     <span class="show-tracks">&#9834; N</span> Individual tracks available
-  </p>'''
+  </p>{archive_zip_html}'''
     views = f'''
   <div class="archive-view" data-view="artist" data-split="all">{artist_sections(only_tracks=False)}
   </div>
@@ -661,6 +675,9 @@ def build_show(show):
 
     if show.get("tracks"):
         has_flac = any(t.get("flac") for t in show["tracks"])
+        zip_html = ""
+        if has_flac:
+            zip_html = show_zip_button_html(show)
         rows = []
         prev_group = None
         for t in show["tracks"]:
@@ -741,7 +758,10 @@ def build_show(show):
   <section id="tracks">
     <div class="tracks-head">
       <div class="group-label-bare">Tracks &middot; {len(show["tracks"])} songs &middot; {track_total(show["tracks"])}</div>
-      <button type="button" class="select-all" data-target=".track-list">Select all</button>
+      <div class="tracks-actions">
+        <button type="button" class="select-all" data-target=".track-list">Select all</button>
+        {zip_html}
+      </div>
     </div>
     <p class="track-hint">{hint}</p>
     <div class="track-list" data-autoplay-next>
@@ -991,11 +1011,15 @@ def build_song_page(s):
             parts.append(f'''
   <section class="about"><p class="song-variants">Also listed as: {alt}</p></section>''')
     occs = "\n".join(_song_occ_html(o, s["canonical"]) for o in s["occ"])
+    zip_html = song_zip_button_html(s)
     parts.append(f'''
   <section id="tracks">
     <div class="tracks-head">
       <div class="group-label-bare">Played {s['plays']} time{plural} &middot; {esc(arts)}</div>
-      <button type="button" class="select-all" data-target=".song-occs">Select all</button>
+      <div class="tracks-actions">
+        <button type="button" class="select-all" data-target=".song-occs">Select all</button>
+        {zip_html}
+      </div>
     </div>
     <p class="track-hint">Every performance streams in full. &ldquo;Open on show page&rdquo; jumps to the song within its full set.</p>
     <div class="song-occs">

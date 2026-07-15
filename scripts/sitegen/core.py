@@ -54,6 +54,29 @@ def track_total(tracks):
                for t in tracks)
     return f"{secs // 3600}h {secs % 3600 // 60}m" if secs >= 3600 else f"{secs // 60}m"
 
+def sanitize_filename(s):
+    """Strip characters illegal in Windows/macOS/Linux filenames so ZIP
+    folder/entry names stay portable once extracted. Windows also rejects a
+    trailing dot/space (e.g. venue names like "Marin Brewing Co." would
+    otherwise collide with an appended ".zip" into "Co..zip")."""
+    s = re.sub(r'[<>:"/\\|?*]', "", s)
+    s = re.sub(r"\s+", " ", s).strip()
+    return s.rstrip(". ")
+
+def show_zip_folder(show):
+    venue = show.get("venue_short") or show.get("venue") or "Unknown Venue"
+    return sanitize_filename(f'{artist_name(show["artist"])} - {show["date"] or "Unknown Date"} - {venue}')
+
+def show_zip_entries(show):
+    """(folder, entries) for a show's curated FLAC tracks — {key, name} pairs
+    mapping each R2 object to its path inside the ZIP. Shared by the live
+    per-show download button (build_show) and the offline complete-archive
+    snapshot script (build_archive_zip.py) so the two can never drift apart."""
+    folder = show_zip_folder(show)
+    entries = [{"key": t["flac"], "name": f'{folder}/{t["num"]:02d} - {sanitize_filename(t["title"])}.flac'}
+               for t in (show.get("tracks") or []) if t.get("flac")]
+    return folder, entries
+
 def singles_for_show(show):
     return [s for s in M["singles"]
             if s["artist"] == show["artist"] and s["venue"] == show["venue"]
@@ -315,6 +338,7 @@ def collect_songs():
                 "date": s["date"] or "Unknown date", "slug": s["slug"],
                 "url": show_url(s), "num": t["num"], "duration": t.get("duration"),
                 "file": t["file"], "ver": ver, "title": t["title"],
+                "flac": t.get("flac"), "flac_size_mb": t.get("flac_size_mb"),
             })
     songs, used = [], set()
     for key, g in groups.items():
@@ -349,4 +373,4 @@ def write(path, content):
         f.write(content)
 
 
-__all__ = ['write', 'ARTIST_SHORT', 'DURATION_RE', 'LEGACY_KEY_NAMING', 'M', 'ROOT', 'SONG_CANONICAL_OVERRIDE', 'SONG_MANUAL_MERGE', 'SOURCE_LABEL', 'TAG_VOCAB', 'WORKER', '_ARTIST_ORDER', '_duration_sec', 'added_sort_key', 'artist_name', 'check_orphan_song_dirs', 'check_rarity_drift', 'collect_songs', 'date_with_subtitle', 'esc', 'iso_duration', 'load_processing', 'show_city', 'show_title', 'show_url', 'singles_for_show', 'song_norm', 'song_slug', 'sort_key', 'stamp_added_dates', 'stream_url', 'track_total', 'validate']
+__all__ = ['write', 'ARTIST_SHORT', 'DURATION_RE', 'LEGACY_KEY_NAMING', 'M', 'ROOT', 'SONG_CANONICAL_OVERRIDE', 'SONG_MANUAL_MERGE', 'SOURCE_LABEL', 'TAG_VOCAB', 'WORKER', '_ARTIST_ORDER', '_duration_sec', 'added_sort_key', 'artist_name', 'check_orphan_song_dirs', 'check_rarity_drift', 'collect_songs', 'date_with_subtitle', 'esc', 'iso_duration', 'load_processing', 'sanitize_filename', 'show_city', 'show_title', 'show_url', 'show_zip_entries', 'show_zip_folder', 'singles_for_show', 'song_norm', 'song_slug', 'sort_key', 'stamp_added_dates', 'stream_url', 'track_total', 'validate']

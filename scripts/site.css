@@ -1017,8 +1017,9 @@ main {
 
 /* Header row above a tracklist: the existing count/duration caption plus the
    new "Select all" bulk action, side by side. */
-.tracks-head { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; }
+.tracks-head { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; flex-wrap: wrap; }
 .tracks-head .group-label-bare { margin: 0; }
+.tracks-actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .select-all {
   font-family: var(--sans); font-size: 11px; font-weight: 500;
   letter-spacing: 0.04em; color: var(--muted); background: none;
@@ -1027,6 +1028,20 @@ main {
   flex-shrink: 0;
 }
 .select-all:hover { color: var(--accent); border-color: var(--accent); }
+
+/* "Download all as ZIP" — a text-labeled sibling of the icon-only
+   .download-btn (that one covers a single track; this covers a whole
+   show/song's worth, assembled client-side, see player.js tryBatchDownload). */
+.zip-download-btn {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  font-family: var(--sans); font-size: 11px; font-weight: 500;
+  letter-spacing: 0.02em; color: var(--accent); background: var(--accent-light);
+  border: none; border-radius: 999px; padding: 0.35rem 0.85rem;
+  cursor: pointer; transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.zip-download-btn:hover { background: var(--accent); color: white; }
+.zip-download-btn svg { width: 12px; height: 12px; flex-shrink: 0; }
 
 /* Floating summary bar — appears once at least one track is selected via a
    "+" button anywhere on the page, offers Clear or committing the selection
@@ -1405,6 +1420,16 @@ footer a:hover { text-decoration: underline; }
 .archive-legend .src-tag,
 .archive-legend .proc-status,
 .archive-legend .show-tracks { flex-shrink: 0; }
+
+/* "Download the complete archive" snapshot link — reuses the same icon-only
+   .download-btn every per-track download already uses (rendered via
+   dl_button()), just with its own caption line since it's a single,
+   occasional whole-archive action rather than a per-row affordance. */
+.archive-zip-line {
+  display: flex; align-items: center; gap: 0.6rem;
+  font-size: 12px; color: var(--muted); font-weight: 300;
+  margin: -1rem 0 2.2rem;
+}
 
 /* Tablet pass: give the two wide scroll containers a little more room */
 @media (max-width: 900px) {

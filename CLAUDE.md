@@ -61,6 +61,8 @@ When asked to "process/upload show X to the website," the show usually **already
 
 Raw archive: whole-show WAV (untouched) + `labels.txt` = the raw per-song recipe; `python3 scripts/split_raw.py "<work folder>"` materializes raw unedited splits on demand — **never store them** (rule: store what hands made; derive what machines can remake). Pre-NR exports (hand edits minus NR) ARE stored: Drive-only, folder named `Tracks (pre-NR archive)/`.
 
+Optional, after a batch of new shows: `python3 scripts/build_archive_zip.py` regenerates the site's "download the complete archive" snapshot (every curated FLAC, ~25 GB, into one R2 object) and rebuild afterward so `/archive/` picks up the new counts/date. Manual and occasional — not part of CI or the publish runbook above; needs ~50 GB free local disk and can take a long time on a slow connection.
+
 Background jobs: pass a single command to `run_in_background: true` with **no** trailing `&`/`nohup` (double-backgrounding fires a false "completed"); poll for an explicit end-marker.
 
 ## MCP Tools Available

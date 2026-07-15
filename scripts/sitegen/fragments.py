@@ -41,6 +41,33 @@ def dl_button(file, *, title="Download"):
     return (f'<a class="download-btn" href="{esc(url)}" aria-label="{esc(title)}" '
             f'download="{esc(name)}" title="{esc(title)}">{DL_SVG}</a>')
 
+def show_zip_button_html(show):
+    """Manifest + 'Download all tracks (.zip)' button for a show page. The ZIP
+    itself is assembled client-side (player.js tryBatchDownload) from the same
+    per-file /auth + /download flow a single download already uses — no new
+    Worker route. show_zip_entries (core.py) is shared with the offline
+    complete-archive snapshot script so the two naming schemes can't drift."""
+    folder, entries = show_zip_entries(show)
+    if not entries:
+        return ""
+    n = len(entries)
+    total_mb = round(sum(t.get("flac_size_mb") or 0 for t in show["tracks"] if t.get("flac")))
+    venue = show.get("venue") or show.get("venue_short") or "Unknown venue"
+    setlist = "\n".join(f'{t["num"]:2d}. {t["title"]}' for t in show["tracks"])
+    info = (f'{artist_name(show["artist"])}\n{venue}\n'
+            f'{show.get("date_display") or show.get("date") or "Unknown date"}\n'
+            f'{SOURCE_LABEL.get(show.get("source"), show.get("source") or "")}\n\n'
+            f'Set list:\n{setlist}\n\nhttps://renedebos.com{show_url(show)}\n')
+    manifest = {
+        "zipName": f"{folder}.zip",
+        "files": [{"key": e["key"], "name": e["name"]} for e in entries],
+        "infoName": f"{folder}/show-info.txt",
+        "infoText": info,
+    }
+    label = f"Download all {n} tracks (.zip) · {total_mb} MB"
+    return (f'<script>window.ZIP_MANIFEST = {json.dumps(manifest, ensure_ascii=False)};</script>'
+            f'<button type="button" class="zip-download-btn" title="{esc(label)}">{DL_SVG} {label}</button>')
+
 def player(file, duration=None, download_file=None, version=None, label=None):
     """A custom-player row: play button, progress bar, and (optionally) a
     password-protected download button.
@@ -636,6 +663,35 @@ def _song_occ_html(o, song_title):
         {p}
       </div>'''
 
+def song_zip_button_html(s):
+    """Manifest + 'Download all performances (.zip)' button for a song page —
+    every recorded take of one song across the whole archive, assembled
+    client-side the same way show_zip_button_html does (see player.js
+    tryBatchDownload)."""
+    zip_occ = [o for o in s["occ"] if o.get("flac")]
+    if not zip_occ:
+        return ""
+    n = len(zip_occ)
+    total_mb = round(sum(o.get("flac_size_mb") or 0 for o in zip_occ))
+    folder = sanitize_filename(f'{s["canonical"]} - Live Performances')
+    files = [{"key": o["flac"],
+              "name": f'{folder}/{sanitize_filename(o["date"])} - {sanitize_filename(o["artist_name"])} '
+                      f'- {sanitize_filename(o["venue"])} - {o["num"]:02d}.flac'}
+             for o in zip_occ]
+    lines = "\n".join(f'{o["date"]} - {o["artist_name"]} - {o["venue"]}' for o in zip_occ)
+    plural = "s" if n != 1 else ""
+    info = (f'{s["canonical"]}\n{n} live performance{plural}\n\n{lines}\n\n'
+            f'https://renedebos.com/songs/{s["slug"]}/\n')
+    manifest = {
+        "zipName": f"{folder}.zip",
+        "files": files,
+        "infoName": f"{folder}/collection-info.txt",
+        "infoText": info,
+    }
+    label = f"Download all {n} performance{plural} (.zip) · {total_mb} MB"
+    return (f'<script>window.ZIP_MANIFEST = {json.dumps(manifest, ensure_ascii=False)};</script>'
+            f'<button type="button" class="zip-download-btn" title="{esc(label)}">{DL_SVG} {label}</button>')
+
 def jsonld(*objs):
     """Wrap schema.org object(s) in a JSON-LD <script> for the page <head>."""
     objs = [o for o in objs if o]
@@ -704,4 +760,4 @@ def song_jsonld(s):
     })
 
 
-__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', 'STATUS_BLURB', '_show_label', '_song_occ_html', '_src_tag', 'artist_sections', 'contact_block', 'content', 'date_sorted_list', 'dl_button', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'player', 'recording_card', 'show_jsonld', 'show_row', 'site_nav', 'song_jsonld', 'status_line', 'tech_data_section', 'track_add_button', 'updates_list']
+__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', 'STATUS_BLURB', '_show_label', '_song_occ_html', '_src_tag', 'artist_sections', 'contact_block', 'content', 'date_sorted_list', 'dl_button', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'player', 'recording_card', 'show_jsonld', 'show_row', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'track_add_button', 'updates_list']

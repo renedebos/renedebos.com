@@ -38,6 +38,9 @@ def main():
     write("assets/player.js", open(os.path.join(here, "player.js")).read())
     write("assets/wavesurfer.esm.js", open(os.path.join(here, "vendor", "wavesurfer.esm.js")).read())
     write("assets/wavesurfer.js", open(os.path.join(here, "wavesurfer.js")).read())
+    # client-zip@2.4.5 (MIT) — assembles multiple fetch() Responses into a
+    # streamed ZIP Response in the browser, no server-side buffering.
+    write("assets/client-zip.js", open(os.path.join(here, "vendor", "client-zip.js")).read())
     write("assets/search.js", open(os.path.join(here, "search.js")).read())
     write("assets/playlist.js", open(os.path.join(here, "playlist.js")).read())
     write("assets/songs.js", open(os.path.join(here, "songs.js")).read())
