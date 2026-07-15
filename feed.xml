@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Added the August 23, 1999 solo show at 19 Broadway as 14 individual tracks, normalized to…</title>
+    <link>https://renedebos.com/shows/jerry-19-broadway-1999-08-23/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-14-jerry-19-broadway-1999-08-23</guid>
+    <pubDate>Tue, 14 Jul 2026 21:49:28 +0000</pubDate>
+    <description>Added the August 23, 1999 solo show at 19 Broadway as 14 individual tracks, normalized to −20 LUFS. Part 1 of the tape is too distorted to use, so the show is drawn from Part 2 alone. Includes an early version of "Rugburns" and a Steve Poltz cover, "Single Life."</description>
+  </item>
+  <item>
     <title>Added the June 7, 1999 solo show at 19 Broadway as 29 individual tracks, treated with bro…</title>
     <link>https://renedebos.com/shows/jerry-19-broadway-1999-06-07/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-14-jerry-19-broadway-1999-06-07</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-24-site</guid>
     <pubDate>Wed, 24 Jun 2026 17:30:00 +0000</pubDate>
     <description>Enabled wavesurfer.js waveform graphics on the audio player as an experiment — to be determined whether it stays</description>
-  </item>
-  <item>
-    <title>Added a lossless full-show FLAC download</title>
-    <link>https://renedebos.com/shows/mad-sweetwater-2000-10-17/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-15-mad-sweetwater-2000-10-17</guid>
-    <pubDate>Mon, 15 Jun 2026 23:35:00 +0000</pubDate>
-    <description>Added a lossless full-show FLAC download</description>
   </item>
 </channel>
 </rss>

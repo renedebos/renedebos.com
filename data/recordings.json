@@ -350,12 +350,12 @@
         },
         {
           "num": 18,
-          "title": "Angel of Montgomery",
+          "title": "Angel from Montgomery",
           "songwriter": "John Prine",
           "duration": "4:15",
           "size_mb": 10,
-          "file": "MP3/JerryHannan - 19 Broadway 1999-02-01/18 Angel of Montgomery.mp3",
-          "flac": "FLAC/JerryHannan - 19 Broadway 1999-02-01/18 Angel of Montgomery.flac",
+          "file": "MP3/JerryHannan - 19 Broadway 1999-02-01/18 Angel from Montgomery.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-02-01/18 Angel from Montgomery.flac",
           "flac_size_mb": 35,
           "processed": true,
           "tags": [
@@ -588,12 +588,12 @@
         },
         {
           "num": 8,
-          "title": "I Need a Lover",
+          "title": "Hear Me",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:03",
           "size_mb": 7,
-          "file": "MP3/JerryHannan - 19 Broadway 1999-03-29/08 I Need a Lover.mp3",
-          "flac": "FLAC/JerryHannan - 19 Broadway 1999-03-29/08 I Need a Lover.flac",
+          "file": "MP3/JerryHannan - 19 Broadway 1999-03-29/08 Hear Me.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-03-29/08 Hear Me.flac",
           "flac_size_mb": 26,
           "processed": true,
           "tags": [
@@ -1260,12 +1260,12 @@
         },
         {
           "num": 17,
-          "title": "I Need a Lover",
+          "title": "Hear Me",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:57",
           "size_mb": 7,
-          "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/17 I Need a Lover.mp3",
-          "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/17 I Need a Lover.flac",
+          "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/17 Hear Me.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/17 Hear Me.flac",
           "flac_size_mb": 35,
           "processed": true,
           "tags": [
@@ -2507,12 +2507,12 @@
         },
         {
           "num": 18,
-          "title": "Angel of Montgomery",
+          "title": "Angel from Montgomery",
           "songwriter": "John Prine",
           "duration": "4:10",
           "size_mb": 10,
-          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/18 Angel of Montgomery.mp3",
-          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/18 Angel of Montgomery.flac",
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/18 Angel from Montgomery.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/18 Angel from Montgomery.flac",
           "flac_size_mb": 47,
           "processed": true,
           "tags": [
@@ -2696,10 +2696,223 @@
           "stream": "MP3/Full/WAV_Files/JerryHannnan - 19 Broadway 1999-08-23 Pt2 distortion.mp3"
         }
       ],
-      "tracks": null,
-      "description": null,
+      "tracks": [
+        {
+          "num": 1,
+          "title": "ABC",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:51",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-08-23/01 ABC.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-08-23/01 ABC.flac",
+          "flac_size_mb": 35,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 2,
+          "title": "Dysfunctional Guy",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:33",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-08-23/02 Dysfunctional Guy.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-08-23/02 Dysfunctional Guy.flac",
+          "flac_size_mb": 41,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 3,
+          "title": "Single Life",
+          "songwriter": "Steve Poltz",
+          "duration": "2:55",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-08-23/03 Single Life.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-08-23/03 Single Life.flac",
+          "flac_size_mb": 34,
+          "processed": true,
+          "tags": [
+            "cover"
+          ]
+        },
+        {
+          "num": 4,
+          "title": "Smoke in Heaven",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:45",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-08-23/04 Smoke in Heaven.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-08-23/04 Smoke in Heaven.flac",
+          "flac_size_mb": 33,
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
+        },
+        {
+          "num": 5,
+          "title": "Truck",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:21",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-08-23/05 Truck.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-08-23/05 Truck.flac",
+          "flac_size_mb": 40,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 6,
+          "title": "Baby ",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:09",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-08-23/06 Baby .mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-08-23/06 Baby .flac",
+          "flac_size_mb": 48,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 7,
+          "title": "Highway Patrolman",
+          "songwriter": "Bruce Springsteen",
+          "duration": "5:36",
+          "size_mb": 13,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-08-23/07 Highway Patrolman.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-08-23/07 Highway Patrolman.flac",
+          "flac_size_mb": 64,
+          "processed": true,
+          "tags": [
+            "cover"
+          ]
+        },
+        {
+          "num": 8,
+          "title": "I Thought I Was You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:50",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-08-23/08 I Thought I Was You.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-08-23/08 I Thought I Was You.flac",
+          "flac_size_mb": 45,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 9,
+          "title": "Butter",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:18",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-08-23/09 Butter.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-08-23/09 Butter.flac",
+          "flac_size_mb": 39,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 10,
+          "title": "The Good Life",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:33",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-08-23/10 The Good Life.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-08-23/10 The Good Life.flac",
+          "flac_size_mb": 42,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 11,
+          "title": "Rugburns (early version)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:54",
+          "size_mb": 12,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-08-23/11 Rugburns (early version).mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-08-23/11 Rugburns (early version).flac",
+          "flac_size_mb": 59,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 12,
+          "title": "Elephant Shoes",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:36",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-08-23/12 Elephant Shoes.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-08-23/12 Elephant Shoes.flac",
+          "flac_size_mb": 42,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 13,
+          "title": "Long Black Veil",
+          "songwriter": "Lefty Frizzell",
+          "duration": "3:21",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-08-23/13 Long Black Veil.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-08-23/13 Long Black Veil.flac",
+          "flac_size_mb": 38,
+          "processed": true,
+          "tags": [
+            "cover",
+            "country",
+            "ballad",
+            "story"
+          ]
+        },
+        {
+          "num": 14,
+          "title": "Model Family Man",
+          "songwriter": "Paddy Nash",
+          "duration": "3:47",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-08-23/14 Model Family Man.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-08-23/14 Model Family Man.flac",
+          "flac_size_mb": 43,
+          "processed": true,
+          "tags": [
+            "cover"
+          ]
+        }
+      ],
+      "description": [
+        "Recorded from the audience on DAT at 19 Broadway in Fairfax on August 23, 1999 &mdash; a 14-song solo set. Part 1 of the tape exists but is too heavily distorted to use, so the show is drawn entirely from the surviving Part 2 reel.",
+        "Mostly originals, including an early version of &ldquo;Rugburns&rdquo; before it found its familiar shape, alongside covers of Steve Poltz&rsquo;s &ldquo;Single Life,&rdquo; Bruce Springsteen&rsquo;s &ldquo;Highway Patrolman,&rdquo; Lefty Frizzell&rsquo;s &ldquo;Long Black Veil,&rdquo; and Paddy Nash&rsquo;s &ldquo;Model Family Man.&rdquo;",
+        "Straightforward hand-edits &mdash; split, faded, and clip-repaired &mdash; then normalized to the archive&rsquo;s &minus;20 LUFS standard. No noise reduction or EQ needed on this tape."
+      ],
       "page": null,
-      "processing_status": "needs-processing"
+      "processing_status": "done",
+      "added": "2026-07-14",
+      "added_ts": "2026-07-14T21:49:28.571532"
     },
     {
       "slug": "jerry-19-broadway-1999-10-25",
@@ -2980,13 +3193,13 @@
         },
         {
           "num": 18,
-          "title": "Angel of Montgomery",
+          "title": "Angel from Montgomery",
           "songwriter": "John Prine",
           "performer": "Kelly Peterson",
           "duration": "4:40",
           "size_mb": 11,
-          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/18 Angel of Montgomery.mp3",
-          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/18 Angel of Montgomery.flac",
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/18 Angel from Montgomery.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/18 Angel from Montgomery.flac",
           "flac_size_mb": 52,
           "processed": true,
           "tags": [
@@ -4606,12 +4819,12 @@
         },
         {
           "num": 12,
-          "title": "Angel of Montgomery",
+          "title": "Angel from Montgomery",
           "songwriter": "John Prine",
           "duration": "4:16",
           "size_mb": 10,
-          "file": "MP3/JerryHannan - Cafe Java 1999-03-25/12 Angel of Montgomery.mp3",
-          "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/12 Angel of Montgomery.flac",
+          "file": "MP3/JerryHannan - Cafe Java 1999-03-25/12 Angel from Montgomery.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/12 Angel from Montgomery.flac",
           "flac_size_mb": 35,
           "processed": true,
           "tags": [
@@ -5009,12 +5222,12 @@
         },
         {
           "num": 15,
-          "title": "Angel of Montgomery",
+          "title": "Angel from Montgomery",
           "songwriter": "John Prine",
           "duration": "4:38",
           "size_mb": 11,
-          "file": "MP3/Jerry Hannan - Cafe Java 1999-04-08/15 Angel of Montgomery.mp3",
-          "flac": "FLAC/Jerry Hannan - Cafe Java 1999-04-08/15 Angel of Montgomery.flac",
+          "file": "MP3/Jerry Hannan - Cafe Java 1999-04-08/15 Angel from Montgomery.mp3",
+          "flac": "FLAC/Jerry Hannan - Cafe Java 1999-04-08/15 Angel from Montgomery.flac",
           "flac_size_mb": 38,
           "processed": true,
           "tags": [
@@ -5943,12 +6156,12 @@
         },
         {
           "num": 6,
-          "title": "I Need a Lover",
+          "title": "Hear Me",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:09",
           "size_mb": 8,
-          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/06 I Need a Lover.mp3",
-          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/06 I Need a Lover.flac",
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/06 Hear Me.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/06 Hear Me.flac",
           "flac_size_mb": 37,
           "processed": true,
           "tags": [
@@ -8619,10 +8832,10 @@
         },
         {
           "num": 10,
-          "title": "I Need a Lover",
+          "title": "Hear Me",
           "songwriter": "Jerry Hannan & Sean Hannan",
-          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/10 I Need a Lover.mp3",
-          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/10 I Need a Lover.flac",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/10 Hear Me.mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/10 Hear Me.flac",
           "processed": true,
           "size_mb": 7,
           "duration": "3:07",
@@ -9425,10 +9638,10 @@
         },
         {
           "num": 10,
-          "title": "I Need a Lover",
+          "title": "Hear Me",
           "songwriter": "Jerry Hannan & Sean Hannan",
-          "file": "MP3/MadHannans - New George's 1999-10-13/10 I Need a Lover.mp3",
-          "flac": "FLAC/MadHannans - New George's 1999-10-13/10 I Need a Lover.flac",
+          "file": "MP3/MadHannans - New George's 1999-10-13/10 Hear Me.mp3",
+          "flac": "FLAC/MadHannans - New George's 1999-10-13/10 Hear Me.flac",
           "processed": true,
           "size_mb": 7,
           "duration": "3:04",
@@ -9814,12 +10027,12 @@
         },
         {
           "num": 20,
-          "title": "I Need a Lover",
+          "title": "Hear Me",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:04",
           "size_mb": 7,
-          "file": "MP3/MadHannans - Sweetwater 1999-05-18/20 I Need a Lover.mp3",
-          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/20 I Need a Lover.flac",
+          "file": "MP3/MadHannans - Sweetwater 1999-05-18/20 Hear Me.mp3",
+          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/20 Hear Me.flac",
           "flac_size_mb": 38,
           "processed": true,
           "tags": [
@@ -10105,12 +10318,12 @@
         },
         {
           "num": 15,
-          "title": "I Need a Lover",
+          "title": "Hear Me",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:44",
-          "file": "MP3/MadHannans - Sweetwater 2001-01-06/15 I Need a Lover.mp3",
+          "file": "MP3/MadHannans - Sweetwater 2001-01-06/15 Hear Me.mp3",
           "size_mb": 6,
-          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/15 I Need a Lover.flac",
+          "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/15 Hear Me.flac",
           "flac_size_mb": 29,
           "processed": true,
           "tags": [
@@ -11056,6 +11269,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-07-14",
+      "ts": "2026-07-14T21:49:28",
+      "slug": "jerry-19-broadway-1999-08-23",
+      "report": true,
+      "text": "Added the August 23, 1999 solo show at 19 Broadway as 14 individual tracks, normalized to −20 LUFS. Part 1 of the tape is too distorted to use, so the show is drawn from Part 2 alone. Includes an early version of \"Rugburns\" and a Steve Poltz cover, \"Single Life.\""
+    },
     {
       "date": "2026-07-14",
       "ts": "2026-07-14T20:12:33",
