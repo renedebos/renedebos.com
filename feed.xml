@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Added the earliest Mad Hannans show in the archive, April 1, 1998 at Marin Brewing Co. in…</title>
+    <link>https://renedebos.com/shows/mad-marin-brewing-co-1998-04-01/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-15-mad-marin-brewing-co-1998-04-01</guid>
+    <pubDate>Wed, 15 Jul 2026 12:51:28 +0000</pubDate>
+    <description>Added the earliest Mad Hannans show in the archive, April 1, 1998 at Marin Brewing Co. in Larkspur, as 17 individual tracks normalized to −20 LUFS. It's a rough audience recording left without EQ or noise reduction, and "Da Da Da (Slave to an Angel)" still lacks the "The Kiss" intro it later picked up. Includes a Steve Miller cover, "Space Cowboy."</description>
+  </item>
+  <item>
     <title>Recovered 7 more songs from the rougher of the two August 23, 1999 19 Broadway reels and …</title>
     <link>https://renedebos.com/shows/jerry-19-broadway-1999-08-23/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-14-jerry-19-broadway-1999-08-23</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-24-site</guid>
     <pubDate>Wed, 24 Jun 2026 21:00:00 +0000</pubDate>
     <description>Added a search engine — find any song or show by title, artist, venue, date, or tag</description>
-  </item>
-  <item>
-    <title>Added a sort toggle to the Archive — browse every show by date or by artist</title>
-    <link>https://renedebos.com/updates/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-24-site</guid>
-    <pubDate>Wed, 24 Jun 2026 20:00:00 +0000</pubDate>
-    <description>Added a sort toggle to the Archive — browse every show by date or by artist</description>
   </item>
 </channel>
 </rss>

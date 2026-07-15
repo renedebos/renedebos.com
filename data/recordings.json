@@ -11097,10 +11097,262 @@
           "stream": "MP3/Full/WAV_Files/MadHannans - Marin Brewing Co 1998-04-01.mp3"
         }
       ],
-      "tracks": null,
-      "description": null,
+      "tracks": [
+        {
+          "num": 1,
+          "title": "Blind Man",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:10",
+          "size_mb": 8,
+          "file": "MP3/MadHannans - Marin Brewing Co 1998-04-01/01 Blind Man.mp3",
+          "flac": "FLAC/MadHannans - Marin Brewing Co 1998-04-01/01 Blind Man.flac",
+          "flac_size_mb": 38,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 2,
+          "title": "Truck",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:34",
+          "size_mb": 9,
+          "file": "MP3/MadHannans - Marin Brewing Co 1998-04-01/02 Truck.mp3",
+          "flac": "FLAC/MadHannans - Marin Brewing Co 1998-04-01/02 Truck.flac",
+          "flac_size_mb": 42,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 3,
+          "title": "Clear Headed",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "8:30",
+          "size_mb": 20,
+          "file": "MP3/MadHannans - Marin Brewing Co 1998-04-01/03 Clear Headed.mp3",
+          "flac": "FLAC/MadHannans - Marin Brewing Co 1998-04-01/03 Clear Headed.flac",
+          "flac_size_mb": 98,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 4,
+          "title": "Dysfunctional Guy",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "5:54",
+          "size_mb": 14,
+          "file": "MP3/MadHannans - Marin Brewing Co 1998-04-01/04 Dysfunctional Guy.mp3",
+          "flac": "FLAC/MadHannans - Marin Brewing Co 1998-04-01/04 Dysfunctional Guy.flac",
+          "flac_size_mb": 70,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 5,
+          "title": "Baby",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:14",
+          "size_mb": 8,
+          "file": "MP3/MadHannans - Marin Brewing Co 1998-04-01/05 Baby.mp3",
+          "flac": "FLAC/MadHannans - Marin Brewing Co 1998-04-01/05 Baby.flac",
+          "flac_size_mb": 38,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 6,
+          "title": "The Rodeo Song",
+          "songwriter": "Gary Lee and the Showdown",
+          "duration": "3:46",
+          "size_mb": 9,
+          "file": "MP3/MadHannans - Marin Brewing Co 1998-04-01/06 The Rodeo Song.mp3",
+          "flac": "FLAC/MadHannans - Marin Brewing Co 1998-04-01/06 The Rodeo Song.flac",
+          "flac_size_mb": 45,
+          "processed": true,
+          "tags": [
+            "cover",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 7,
+          "title": "ABC - Sesame Street",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "5:24",
+          "size_mb": 13,
+          "file": "MP3/MadHannans - Marin Brewing Co 1998-04-01/07 ABC - Sesame Street.mp3",
+          "flac": "FLAC/MadHannans - Marin Brewing Co 1998-04-01/07 ABC - Sesame Street.flac",
+          "flac_size_mb": 64,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 8,
+          "title": "Space Cowboy",
+          "songwriter": "Steve Miller",
+          "duration": "5:12",
+          "size_mb": 12,
+          "file": "MP3/MadHannans - Marin Brewing Co 1998-04-01/08 Space Cowboy.mp3",
+          "flac": "FLAC/MadHannans - Marin Brewing Co 1998-04-01/08 Space Cowboy.flac",
+          "flac_size_mb": 61,
+          "processed": true,
+          "tags": [
+            "cover",
+            "rock"
+          ]
+        },
+        {
+          "num": 9,
+          "title": "Hard Drinkin'",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:22",
+          "size_mb": 10,
+          "file": "MP3/MadHannans - Marin Brewing Co 1998-04-01/09 Hard Drinkin'.mp3",
+          "flac": "FLAC/MadHannans - Marin Brewing Co 1998-04-01/09 Hard Drinkin'.flac",
+          "flac_size_mb": 52,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 10,
+          "title": "Blahana",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:37",
+          "size_mb": 11,
+          "file": "MP3/MadHannans - Marin Brewing Co 1998-04-01/10 Blahana.mp3",
+          "flac": "FLAC/MadHannans - Marin Brewing Co 1998-04-01/10 Blahana.flac",
+          "flac_size_mb": 54,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 11,
+          "title": "Da Da Da (Slave to an Angel)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:36",
+          "size_mb": 11,
+          "file": "MP3/MadHannans - Marin Brewing Co 1998-04-01/11 Da Da Da (Slave to an Angel).mp3",
+          "flac": "FLAC/MadHannans - Marin Brewing Co 1998-04-01/11 Da Da Da (Slave to an Angel).flac",
+          "flac_size_mb": 55,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 12,
+          "title": "Luxury of Murder",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "6:16",
+          "size_mb": 15,
+          "file": "MP3/MadHannans - Marin Brewing Co 1998-04-01/12 Luxury of Murder.mp3",
+          "flac": "FLAC/MadHannans - Marin Brewing Co 1998-04-01/12 Luxury of Murder.flac",
+          "flac_size_mb": 73,
+          "processed": true,
+          "tags": [
+            "original",
+            "story"
+          ]
+        },
+        {
+          "num": 13,
+          "title": "Butter",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:36",
+          "size_mb": 11,
+          "file": "MP3/MadHannans - Marin Brewing Co 1998-04-01/13 Butter.mp3",
+          "flac": "FLAC/MadHannans - Marin Brewing Co 1998-04-01/13 Butter.flac",
+          "flac_size_mb": 52,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 14,
+          "title": "Anna May",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:39",
+          "size_mb": 9,
+          "file": "MP3/MadHannans - Marin Brewing Co 1998-04-01/14 Anna May.mp3",
+          "flac": "FLAC/MadHannans - Marin Brewing Co 1998-04-01/14 Anna May.flac",
+          "flac_size_mb": 42,
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
+        },
+        {
+          "num": 15,
+          "title": "Shirt - ABC",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:32",
+          "size_mb": 8,
+          "file": "MP3/MadHannans - Marin Brewing Co 1998-04-01/15 Shirt - ABC.mp3",
+          "flac": "FLAC/MadHannans - Marin Brewing Co 1998-04-01/15 Shirt - ABC.flac",
+          "flac_size_mb": 41,
+          "processed": true,
+          "tags": []
+        },
+        {
+          "num": 16,
+          "title": "Plastic Lemons",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:27",
+          "size_mb": 11,
+          "file": "MP3/MadHannans - Marin Brewing Co 1998-04-01/16 Plastic Lemons.mp3",
+          "flac": "FLAC/MadHannans - Marin Brewing Co 1998-04-01/16 Plastic Lemons.flac",
+          "flac_size_mb": 52,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 17,
+          "title": "Far Away Eyes",
+          "songwriter": "Rolling Stones",
+          "duration": "4:14",
+          "size_mb": 10,
+          "file": "MP3/MadHannans - Marin Brewing Co 1998-04-01/17 Far Away Eyes.mp3",
+          "flac": "FLAC/MadHannans - Marin Brewing Co 1998-04-01/17 Far Away Eyes.flac",
+          "flac_size_mb": 48,
+          "processed": true,
+          "tags": [
+            "cover",
+            "country"
+          ]
+        }
+      ],
+      "description": [
+        "The earliest Mad Hannans show in the archive, recorded April 1, 1998 at Marin Brewing Co. in Larkspur, with Troy on bass. It's an audience recording and the sound is rough; no EQ or noise reduction was applied, so the room sound is left as captured. “Da Da Da (Slave to an Angel)” appears here without the “The Kiss” intro that it later picked up.",
+        "The set includes covers of Steve Miller's “Space Cowboy,” a staple during these early Mad Hannans years, the Rolling Stones' “Far Away Eyes,” and the novelty “The Rodeo Song.” Individual tracks were loudness-normalized to −20 LUFS; fades and clip fixes were done by hand as usual."
+      ],
       "page": null,
-      "processing_status": "needs-processing"
+      "processing_status": "done",
+      "added": "2026-07-15",
+      "added_ts": "2026-07-15T12:51:28.134754"
     }
   ],
   "singles": [
@@ -11370,6 +11622,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-07-15",
+      "ts": "2026-07-15T12:51:28.134754",
+      "slug": "mad-marin-brewing-co-1998-04-01",
+      "report": true,
+      "text": "Added the earliest Mad Hannans show in the archive, April 1, 1998 at Marin Brewing Co. in Larkspur, as 17 individual tracks normalized to −20 LUFS. It's a rough audience recording left without EQ or noise reduction, and \"Da Da Da (Slave to an Angel)\" still lacks the \"The Kiss\" intro it later picked up. Includes a Steve Miller cover, \"Space Cowboy.\""
+    },
     {
       "date": "2026-07-14",
       "ts": "2026-07-14T23:05:00",
