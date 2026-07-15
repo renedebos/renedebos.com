@@ -221,27 +221,53 @@ async function fetchWithToken(password, key) {
 // in the browser via the vendored client-zip. No server-side ZIP generation,
 // no new Worker route — each file goes through the exact /auth + /download
 // pair a single download already uses.
+//
+// Two distinct slow phases, each with its own progress label — without this
+// split the button freezes on "N / N" for however long the ZIP assembly
+// takes (client-zip still has to stream every byte through to compute each
+// entry's CRC32), which reads as a hang on a large show.
 async function tryBatchDownload(password, manifest, submitBtn) {
   const files = manifest.files;
   const results = new Array(files.length);
   let doneCount = 0;
   let nextIdx = 0;
+  let totalBytes = 0;
   const CONCURRENCY = 4;
   async function worker() {
     while (nextIdx < files.length) {
       const i = nextIdx++;
       const res = await fetchWithToken(password, files[i].key);
+      const len = parseInt(res.headers.get('content-length') || '0', 10);
+      totalBytes += len;
       results[i] = { input: res, name: files[i].name };
       doneCount++;
-      submitBtn.textContent = `Zipping ${doneCount} / ${files.length}…`;
+      submitBtn.textContent = `Fetching ${doneCount} / ${files.length} tracks…`;
     }
   }
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, files.length) }, worker));
   if (manifest.infoName && manifest.infoText) {
     results.push({ input: manifest.infoText, name: manifest.infoName });
+    totalBytes += new Blob([manifest.infoText]).size;
   }
+
   const { downloadZip } = await import('/assets/client-zip.js');
-  const blob = await downloadZip(results).blob();
+  const zipRes = downloadZip(results);
+  const reader = zipRes.body.getReader();
+  const chunks = [];
+  let assembled = 0;
+  submitBtn.textContent = 'Assembling ZIP…';
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    assembled += value.length;
+    submitBtn.textContent = totalBytes
+      ? `Assembling ZIP… ${Math.min(99, Math.round(assembled / totalBytes * 100))}%`
+      : 'Assembling ZIP…';
+  }
+  const blob = new Blob(chunks, { type: 'application/zip' });
+
+  submitBtn.textContent = 'Starting download…';
   const url = URL.createObjectURL(blob);
   closeModal();
   triggerDownload(url, manifest.zipName);
