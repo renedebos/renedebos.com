@@ -89,6 +89,8 @@ def build_home():
     rest of the site doesn't share, per the 2026-07-10 redesign."""
     tracked = [s for s in M["shows"] if s.get("tracks")]
     n_tracks = sum(len(s["tracks"]) for s in tracked)
+    songs, _cols = collect_songs()
+    n_songs = len(songs)
     grid_shows = sorted(tracked, key=added_sort_key, reverse=True)[:6]
     cards = "\n".join(_home_show_card(s) for s in grid_shows)
 
@@ -102,6 +104,7 @@ def build_home():
         n_shows=len(M["shows"]),
         n_indexed=len(tracked),
         n_tracks=n_tracks,
+        n_songs=n_songs,
         cards=cards,
         why_card=_home_info_card("why.html", "Read the full story"),
         what_card=_home_info_card("about.html", "Read more"),
@@ -161,7 +164,7 @@ HOME_SHELL = '''<!DOCTYPE html>
 
   <div class="grid-head">
     <h2>Recently Added</h2>
-    <span>{n_shows} SHOWS &middot; {n_indexed} INDEXED &middot; {n_tracks} TRACKS</span>
+    <span>{n_shows} SHOWS &middot; {n_indexed} INDEXED &middot; {n_songs} SONGS &middot; {n_tracks} TRACKS</span>
   </div>
 
   <div class="grid">
