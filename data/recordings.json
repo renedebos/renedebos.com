@@ -2286,10 +2286,408 @@
           "stream": "MP3/Full/JerryHannan - 19 Broadway 1999-10-25.mp3"
         }
       ],
-      "tracks": null,
-      "description": null,
+      "tracks": [
+        {
+          "num": 1,
+          "title": "I Thought I Was You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:52",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/01 I Thought I Was You.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/01 I Thought I Was You.flac",
+          "flac_size_mb": 43,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 2,
+          "title": "My Father's House",
+          "songwriter": "Bruce Springsteen",
+          "duration": "5:04",
+          "size_mb": 12,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/02 My Father's House.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/02 My Father's House.flac",
+          "flac_size_mb": 55,
+          "processed": true,
+          "tags": [
+            "cover",
+            "folk",
+            "ballad"
+          ]
+        },
+        {
+          "num": 3,
+          "title": "The Blarney Stone Blues",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:37",
+          "size_mb": 11,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/03 The Blarney Stone Blues.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/03 The Blarney Stone Blues.flac",
+          "flac_size_mb": 52,
+          "processed": true,
+          "tags": [
+            "original",
+            "irish"
+          ]
+        },
+        {
+          "num": 4,
+          "title": "Black is the Color",
+          "songwriter": "Traditional",
+          "duration": "3:43",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/04 Black is the Color.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/04 Black is the Color.flac",
+          "flac_size_mb": 40,
+          "processed": true,
+          "tags": [
+            "traditional",
+            "irish",
+            "ballad"
+          ]
+        },
+        {
+          "num": 5,
+          "title": "Smoke in Heaven",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:48",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/05 Smoke in Heaven.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/05 Smoke in Heaven.flac",
+          "flac_size_mb": 33,
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
+        },
+        {
+          "num": 6,
+          "title": "Truck",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:58",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/06 Truck.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/06 Truck.flac",
+          "flac_size_mb": 45,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 7,
+          "title": "ABC",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "1:31",
+          "size_mb": 4,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/07 ABC.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/07 ABC.flac",
+          "flac_size_mb": 18,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 8,
+          "title": "ABC (alt version)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:43",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/08 ABC (alt version).mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/08 ABC (alt version).flac",
+          "flac_size_mb": 33,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 9,
+          "title": "Butter",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:23",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/09 Butter.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/09 Butter.flac",
+          "flac_size_mb": 38,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 10,
+          "title": "Anna May",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:16",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/10 Anna May.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/10 Anna May.flac",
+          "flac_size_mb": 35,
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
+        },
+        {
+          "num": 11,
+          "title": "Baby",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:26",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/11 Baby.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/11 Baby.flac",
+          "flac_size_mb": 38,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 12,
+          "title": "Recycle",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:32",
+          "size_mb": 11,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/12 Recycle.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/12 Recycle.flac",
+          "flac_size_mb": 51,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 13,
+          "title": "Luxury of Murder",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:10",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/13 Luxury of Murder.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/13 Luxury of Murder.flac",
+          "flac_size_mb": 36,
+          "processed": true,
+          "tags": [
+            "original",
+            "story"
+          ]
+        },
+        {
+          "num": 14,
+          "title": "Johnny McEldoo",
+          "songwriter": "Traditional",
+          "duration": "1:49",
+          "size_mb": 4,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/14 Johnny McEldoo.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/14 Johnny McEldoo.flac",
+          "flac_size_mb": 21,
+          "processed": true,
+          "tags": [
+            "traditional",
+            "irish",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 15,
+          "title": "Scallywag",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:31",
+          "size_mb": 6,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/15 Scallywag.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/15 Scallywag.flac",
+          "flac_size_mb": 28,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 16,
+          "title": "Learn About Love",
+          "songwriter": "Steve Poltz",
+          "duration": "3:06",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/16 Learn About Love.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/16 Learn About Love.flac",
+          "flac_size_mb": 34,
+          "processed": true,
+          "tags": [
+            "cover"
+          ]
+        },
+        {
+          "num": 17,
+          "title": "Ride On",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:07",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/17 Ride On.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/17 Ride On.flac",
+          "flac_size_mb": 36,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 18,
+          "title": "Angel of Montgomery",
+          "songwriter": "John Prine",
+          "performer": "Kelly Peterson",
+          "duration": "4:40",
+          "size_mb": 11,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/18 Angel of Montgomery.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/18 Angel of Montgomery.flac",
+          "flac_size_mb": 52,
+          "processed": true,
+          "tags": [
+            "cover",
+            "ballad",
+            "country",
+            "guest"
+          ]
+        },
+        {
+          "num": 19,
+          "title": "Peaceful Easy Feeling",
+          "songwriter": "Eagles",
+          "performer": "Kelly Peterson",
+          "duration": "3:35",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/19 Peacful Easy Feeling.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/19 Peacful Easy Feeling.flac",
+          "flac_size_mb": 40,
+          "processed": true,
+          "tags": [
+            "cover",
+            "guest"
+          ]
+        },
+        {
+          "num": 20,
+          "title": "Frosty Weather",
+          "songwriter": "Traditional",
+          "duration": "1:31",
+          "size_mb": 4,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/20 Frosty Weather.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/20 Frosty Weather.flac",
+          "flac_size_mb": 17,
+          "processed": true,
+          "tags": [
+            "traditional",
+            "irish"
+          ]
+        },
+        {
+          "num": 21,
+          "title": "I Thought I Was You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:13",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/21 I Thought I Was You.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/21 I Thought I Was You.flac",
+          "flac_size_mb": 46,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 22,
+          "title": "Model Family Man",
+          "songwriter": "Paddy Nash",
+          "duration": "3:47",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/22 Model Family Man.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/22 Model Family Man.flac",
+          "flac_size_mb": 39,
+          "processed": true,
+          "tags": [
+            "cover"
+          ]
+        },
+        {
+          "num": 23,
+          "title": "El Paso",
+          "songwriter": "Marty Robbins",
+          "duration": "6:06",
+          "size_mb": 15,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/23 El Paso.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/23 El Paso.flac",
+          "flac_size_mb": 65,
+          "processed": true,
+          "tags": [
+            "cover",
+            "country",
+            "story"
+          ]
+        },
+        {
+          "num": 24,
+          "title": "Okie from Muskogee",
+          "songwriter": "Merle Haggard",
+          "duration": "3:47",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/24 Okie from Muskogee.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/24 Okie from Muskogee.flac",
+          "flac_size_mb": 41,
+          "processed": true,
+          "tags": [
+            "cover",
+            "country"
+          ]
+        },
+        {
+          "num": 25,
+          "title": "Hollywood (early version)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "6:31",
+          "size_mb": 16,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/25 Hollywood (early version).mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/25 Hollywood (early version).flac",
+          "flac_size_mb": 72,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 26,
+          "title": "Everything Reminds Me of You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:17",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/26 Everything Reminds Me of You.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/26 Everything Reminds Me of You.flac",
+          "flac_size_mb": 36,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        }
+      ],
+      "description": [
+        "Recorded from the audience on DAT at 19 Broadway in Fairfax on October 25, 1999 &mdash; a long, twenty-six-song solo set.",
+        "Kelly Peterson joins as a guest vocalist on two covers, John Prine&rsquo;s &ldquo;Angel of Montgomery&rdquo; and the Eagles&rsquo; &ldquo;Peaceful Easy Feeling&rdquo;; the set also includes an alternate take of &ldquo;ABC&rdquo; and an early version of &ldquo;Hollywood.&rdquo;",
+        "The whole tape got a pass of broadband noise reduction (6dB, sensitivity 5) in Audacity before the tracks were split, then the usual &minus;20 LUFS normalization."
+      ],
       "page": null,
-      "processing_status": "needs-processing"
+      "processing_status": "done",
+      "added": "2026-07-14",
+      "added_ts": "2026-07-14T16:33:14.881725"
     },
     {
       "slug": "jerry-19-broadway-1999-11-15",
@@ -3387,8 +3785,8 @@
         },
         {
           "num": 20,
-          "title": "Four Leaf Clover Inn",
-          "songwriter": "Traditional",
+          "title": "The Barney Stone Blues",
+          "songwriter": "Steve Poltz",
           "duration": "5:11",
           "size_mb": 12,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15/20 Four Leaf Clover Inn.mp3",
@@ -3396,8 +3794,8 @@
           "flac_size_mb": 55,
           "processed": true,
           "tags": [
-            "traditional",
-            "irish"
+            "cover",
+            "blues"
           ]
         },
         {
@@ -10221,6 +10619,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-07-14",
+      "ts": "2026-07-14T16:33:14",
+      "slug": "jerry-19-broadway-1999-10-25",
+      "report": true,
+      "text": "Added the October 25, 1999 solo show at 19 Broadway as 26 individual tracks, treated with broadband noise reduction (6dB, sensitivity 5) across the whole tape before splitting, then normalized to −20 LUFS. Kelly Peterson guests on \"Angel of Montgomery\" and \"Peaceful Easy Feeling.\""
+    },
     {
       "date": "2026-07-14",
       "ts": "2026-07-14T12:10:15",
