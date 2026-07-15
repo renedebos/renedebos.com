@@ -194,6 +194,90 @@
       "target_lufs": -20.24,
       "mode": "linear-reduced",
       "note": "gain to -20 LUFS would overshoot the TP ceiling by 0.2 dB — small enough to simply take the track's own max linear target; dynamics untouched"
+    },
+    "15": {
+      "ver": 5,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -16.0,
+      "lufs": -20.01,
+      "tp": -6.82,
+      "mp3_tp": -6.78,
+      "lra": 10.9,
+      "md5": "4f20edffce1eac167cc4b42050b084e9",
+      "mode": "linear",
+      "note": "one constant gain to the show target; predicted TP -7.4 dBTP fits under the -1 ceiling"
+    },
+    "16": {
+      "ver": 5,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -18.9,
+      "lufs": -20.01,
+      "tp": -4.55,
+      "mp3_tp": -4.56,
+      "lra": 10.1,
+      "md5": "d0f0a28a110bf7e7df8be7439569f67d",
+      "mode": "linear",
+      "note": "one constant gain to the show target; predicted TP -4.7 dBTP fits under the -1 ceiling"
+    },
+    "17": {
+      "ver": 5,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -15.5,
+      "lufs": -20.0,
+      "tp": -6.39,
+      "mp3_tp": -6.36,
+      "lra": 10.9,
+      "md5": "ef2c127969502934fda7fdcdb64cc9aa",
+      "mode": "linear",
+      "note": "one constant gain to the show target; predicted TP -7.8 dBTP fits under the -1 ceiling"
+    },
+    "18": {
+      "ver": 5,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -15.3,
+      "lufs": -20.13,
+      "tp": -6.54,
+      "mp3_tp": -6.53,
+      "lra": 9.5,
+      "md5": "d54f20aca5571228db0ee6d368047ef6",
+      "mode": "linear",
+      "note": "one constant gain to the show target; predicted TP -8.2 dBTP fits under the -1 ceiling"
+    },
+    "19": {
+      "ver": 5,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -17.1,
+      "lufs": -20.13,
+      "tp": -5.16,
+      "mp3_tp": -4.95,
+      "lra": 10.8,
+      "md5": "2f4a547c957158fd61fe133590057127",
+      "mode": "linear",
+      "note": "one constant gain to the show target; predicted TP -6.6 dBTP fits under the -1 ceiling"
+    },
+    "20": {
+      "ver": 5,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -20.0,
+      "lufs": -20.08,
+      "tp": -5.64,
+      "mp3_tp": -5.45,
+      "lra": 10.3,
+      "md5": "93b018905f0ed0945f736719fbe7e0d1",
+      "mode": "linear",
+      "note": "one constant gain to the show target; predicted TP -5.5 dBTP fits under the -1 ceiling"
+    },
+    "21": {
+      "ver": 5,
+      "chain": "loudnorm=I=-20:LRA=11:TP=-1:linear=true",
+      "in_lufs": -12.5,
+      "lufs": -20.0,
+      "tp": -9.81,
+      "mp3_tp": -10.27,
+      "lra": 5.7,
+      "md5": "1d9c5619031bc62513ac3eb6b77feaf2",
+      "mode": "linear",
+      "note": "one constant gain to the show target; predicted TP -9.8 dBTP fits under the -1 ceiling"
     }
   }
 }

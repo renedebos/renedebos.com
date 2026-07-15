@@ -2686,7 +2686,7 @@
         },
         {
           "label": null,
-          "alt_label": "Part 2 (Distortion)",
+          "alt_label": "Part 1 (Distortion)",
           "alternate": true,
           "source": "AUD",
           "format": "WAV",
@@ -2902,12 +2902,113 @@
           "tags": [
             "cover"
           ]
+        },
+        {
+          "num": 15,
+          "title": "Nicolai",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:37",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-08-23/15 Nicolai.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-08-23/15 Nicolai.flac",
+          "flac_size_mb": 41,
+          "processed": true,
+          "group": "Part 1 (Distorted)",
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 16,
+          "title": "ABC (alt version)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:44",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-08-23/16 ABC (alt version).mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-08-23/16 ABC (alt version).flac",
+          "flac_size_mb": 32,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 17,
+          "title": "Everything Reminds Me of You ",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:12",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-08-23/17 Everything Reminds Me of You .mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-08-23/17 Everything Reminds Me of You .flac",
+          "flac_size_mb": 37,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 18,
+          "title": "Troy ",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "1:03",
+          "size_mb": 3,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-08-23/18 Troy .mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-08-23/18 Troy .flac",
+          "flac_size_mb": 12,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 19,
+          "title": "Rugburns (early version)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "5:42",
+          "size_mb": 14,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-08-23/19 Rugburns (early version).mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-08-23/19 Rugburns (early version).flac",
+          "flac_size_mb": 66,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 20,
+          "title": "The Kiss",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "1:22",
+          "size_mb": 3,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-08-23/20 The Kiss.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-08-23/20 The Kiss.flac",
+          "flac_size_mb": 15,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 21,
+          "title": "Da Da Da (Slave to an Angel)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:47",
+          "size_mb": 12,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-08-23/21 Da Da Da (Slave to an Angel).mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-08-23/21 Da Da Da (Slave to an Angel).flac",
+          "flac_size_mb": 58,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
         }
       ],
       "description": [
-        "Recorded from the audience on DAT at 19 Broadway in Fairfax on August 23, 1999 &mdash; a 14-song solo set. Part 1 of the tape exists but is too heavily distorted to use, so the show is drawn entirely from the surviving Part 2 reel.",
-        "Mostly originals, including an early version of &ldquo;Rugburns&rdquo; before it found its familiar shape, alongside covers of Steve Poltz&rsquo;s &ldquo;Single Life,&rdquo; Bruce Springsteen&rsquo;s &ldquo;Highway Patrolman,&rdquo; Lefty Frizzell&rsquo;s &ldquo;Long Black Veil,&rdquo; and Paddy Nash&rsquo;s &ldquo;Model Family Man.&rdquo;",
-        "Straightforward hand-edits &mdash; split, faded, and clip-repaired &mdash; then normalized to the archive&rsquo;s &minus;20 LUFS standard. No noise reduction or EQ needed on this tape."
+        "Recorded from the audience on DAT at 19 Broadway in Fairfax on August 23, 1999. The two reels are mislabeled, so it isn&rsquo;t certain which is truly Part&nbsp;1 and which is Part&nbsp;2 &mdash; but one is clean and the other heavily distorted, and the archive keeps them separate here rather than guess.",
+        "The main 14-song set comes from the clean tape. Mostly originals, including an early version of &ldquo;Rugburns&rdquo; before it found its familiar shape, alongside covers of Steve Poltz&rsquo;s &ldquo;Single Life,&rdquo; Bruce Springsteen&rsquo;s &ldquo;Highway Patrolman,&rdquo; Lefty Frizzell&rsquo;s &ldquo;Long Black Veil,&rdquo; and Paddy Nash&rsquo;s &ldquo;Model Family Man.&rdquo;",
+        "A second batch of 7 songs was later recovered from the distorted reel and is kept separate below, labeled &ldquo;Part 1 (Distorted)&rdquo; &mdash; rough listening in places, but archived rather than lost. It includes an alternate version of &ldquo;ABC,&rdquo; another early take of &ldquo;Rugburns,&rdquo; and three songs that don&rsquo;t appear anywhere else in the archive: &ldquo;Troy,&rdquo; &ldquo;The Kiss,&rdquo; and &ldquo;Da Da Da (Slave to an Angel).&rdquo;",
+        "Straightforward hand-edits and the usual &minus;20 LUFS normalization throughout; no noise reduction or EQ needed on either tape."
       ],
       "page": null,
       "processing_status": "done",
@@ -11271,10 +11372,17 @@
   "updates": [
     {
       "date": "2026-07-14",
+      "ts": "2026-07-14T23:05:00",
+      "slug": "jerry-19-broadway-1999-08-23",
+      "report": true,
+      "text": "Recovered 7 more songs from the rougher of the two August 23, 1999 19 Broadway reels and added them to the show page as a separate \"Part 1 (Distorted)\" batch — rough listening in places, but archived rather than lost. Includes an alternate \"ABC,\" another early \"Rugburns,\" and three songs new to the archive: \"Troy,\" \"The Kiss,\" and \"Da Da Da (Slave to an Angel).\""
+    },
+    {
+      "date": "2026-07-14",
       "ts": "2026-07-14T21:49:28",
       "slug": "jerry-19-broadway-1999-08-23",
       "report": true,
-      "text": "Added the August 23, 1999 solo show at 19 Broadway as 14 individual tracks, normalized to −20 LUFS. Part 1 of the tape is too distorted to use, so the show is drawn from Part 2 alone. Includes an early version of \"Rugburns\" and a Steve Poltz cover, \"Single Life.\""
+      "text": "Added the August 23, 1999 solo show at 19 Broadway as 14 individual tracks, normalized to −20 LUFS. The two source reels are mislabeled, so this main set comes from the cleaner of the two. Includes an early version of \"Rugburns\" and a Steve Poltz cover, \"Single Life.\""
     },
     {
       "date": "2026-07-14",

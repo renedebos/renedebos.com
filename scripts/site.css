@@ -576,6 +576,13 @@ main {
 }
 
 .track-row:first-child { border-top: none; }
+
+.track-group-head {
+  padding: 0.7rem 1.1rem 0.2rem;
+  border-top: 1px solid var(--border);
+}
+.track-group-head:first-child { border-top: none; }
+.track-group-head .group-label-bare { margin: 0; }
 .track-row:hover { background: var(--accent-light); }
 .track-row:hover .track-title { color: var(--accent); }
 .track-row.playing { background: var(--accent-light); box-shadow: inset 3px 0 0 var(--accent); }

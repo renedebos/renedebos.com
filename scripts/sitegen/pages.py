@@ -654,7 +654,18 @@ def build_show(show):
     if show.get("tracks"):
         has_flac = any(t.get("flac") for t in show["tracks"])
         rows = []
+        prev_group = None
         for t in show["tracks"]:
+            # Some shows splice in a second batch of tracks from a separate source
+            # tape (e.g. a mislabeled/distorted reel found later); "group" labels
+            # that batch with its own divider inside the same track list.
+            grp = t.get("group")
+            if grp != prev_group:
+                if grp:
+                    rows.append(f'''      <div class="track-group-head">
+        <div class="group-label-bare">{esc(grp)}</div>
+      </div>''')
+                prev_group = grp
             # Version the stream URL with the track's MD5 (when known) so the edge
             # caches hard yet a re-normalized upload goes live instantly.
             ver = (proc_tracks.get(str(t["num"]), {}).get("md5") or "")[:12] or None
