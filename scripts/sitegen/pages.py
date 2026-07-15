@@ -358,7 +358,8 @@ def build_playlist():
       <p id="pl-status" class="search-status">Loading the track catalog…</p>
       <p class="pl-actions"><button id="pl-generate" class="pl-generate" type="button" disabled>Generate playlist</button>
       <button id="pl-save" class="pl-generate pl-share" type="button" hidden>Save playlist</button>
-      <button id="pl-share" class="pl-generate pl-share" type="button" hidden>Copy share link</button></p>
+      <button id="pl-share" class="pl-generate pl-share" type="button" hidden>Copy share link</button>
+      <button id="pl-download" class="pl-generate pl-share" type="button" hidden>Download playlist (.zip)</button></p>
     </div>
     <div id="pl-saved"></div>
     <div id="pl-now" class="pl-now" hidden></div>

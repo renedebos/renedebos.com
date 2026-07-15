@@ -79,6 +79,8 @@ def build_track_catalog():
                 "tags": t.get("tags") or [],
                 "durationSec": _duration_sec(t["duration"]),
                 "file": t["file"],
+                "flac": t.get("flac"),
+                "flac_size_mb": t.get("flac_size_mb"),
                 "ver": (ptracks.get(str(t["num"]), {}).get("md5") or "")[:12] or None,
                 "url": f'{show_url(show)}#track-{t["num"]}',
             })

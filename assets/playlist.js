@@ -263,6 +263,7 @@
 
   var shareBtn = document.getElementById("pl-share");
   var saveBtn = document.getElementById("pl-save");
+  var downloadBtn = document.getElementById("pl-download");
 
   function syncHash() {
     history.replaceState(null, "", queue.length
@@ -270,6 +271,10 @@
       : location.pathname);
     shareBtn.hidden = !queue.length;
     if (saveBtn) saveBtn.hidden = !queue.length;
+    if (downloadBtn) {
+      downloadBtn.hidden = !queue.length;
+      if (queue.length) downloadBtn.textContent = zipLabel(queue);
+    }
   }
 
   shareBtn.addEventListener("click", function () {
@@ -312,6 +317,54 @@
     }
   }
 
+  // ── ZIP download (whole playlist, lossless) ──────────────────────────────
+  // Reuses the batch password modal + toast + client-zip pipeline in
+  // player.js (openPasswordModal({type:'batch', manifest}) — already global
+  // on this page the same way WORKER/formatTime are) — nothing new there,
+  // just building the {zipName, files, infoName, infoText} manifest a
+  // playlist's scattered tracks need.
+
+  // Mirrors core.py's sanitize_filename() — no way to share the Python and
+  // JS implementations directly in this static-site setup.
+  function sanitizeFilename(s) {
+    return String(s).replace(/[<>:"/\\|?*]/g, "").replace(/\s+/g, " ").trim().replace(/\.+$/, "");
+  }
+
+  function zipLabel(tracks) {
+    var withFlac = tracks.filter(function (t) { return t.flac; });
+    var mb = Math.round(withFlac.reduce(function (a, t) { return a + (t.flac_size_mb || 0); }, 0));
+    return "Download " + withFlac.length + (withFlac.length === 1 ? " track" : " tracks") + " (.zip) · " + mb + " MB";
+  }
+
+  function buildPlaylistManifest(name, tracks) {
+    var withFlac = tracks.filter(function (t) { return t.flac; });
+    var folder = sanitizeFilename(name);
+    var label = function (t) {
+      return t.showDate + " - " + (ARTIST_NAMES[t.artist] || t.artist) + " - " + t.venue + " - " + t.title;
+    };
+    var files = withFlac.map(function (t) {
+      return { key: t.flac, name: folder + "/" + sanitizeFilename(label(t)) + ".flac" };
+    });
+    var totalMb = Math.round(withFlac.reduce(function (a, t) { return a + (t.flac_size_mb || 0); }, 0));
+    var lines = withFlac.map(label).join("\n");
+    return {
+      zipName: folder + ".zip",
+      files: files,
+      infoName: folder + "/playlist-info.txt",
+      infoText: name + "\n" + withFlac.length + " tracks · " + totalMb + " MB\n\n" + lines + "\n\n"
+        + "Recreate this playlist: " + location.origin + "/playlist/#p="
+        + withFlac.map(function (t) { return t.id; }).join(",") + "\n",
+    };
+  }
+
+  if (downloadBtn) {
+    downloadBtn.addEventListener("click", function () {
+      if (!queue.length) return;
+      var name = "Playlist - " + new Date().toISOString().slice(0, 10);
+      openPasswordModal({ type: "batch", manifest: buildPlaylistManifest(name, queue) });
+    });
+  }
+
   // ── personal saved playlists (localStorage only) ─────────────────────────
   // Saving stores {name, ids, created} locally; nothing goes to the server.
   // The ids load via the same #p= hash as everything else, and sharing a
@@ -344,6 +397,8 @@
           + '<span class="sr-main"><span class="sr-title">' + esc(p.name) + "</span>"
           + '<span class="sr-sub">' + p.ids.length + (p.ids.length === 1 ? " song" : " songs") + "</span></span>"
           + "</button>"
+          + '<button type="button" class="pl-saved-act" data-act="download" data-i="' + i
+          + '" title="' + esc(zipLabel(resolveIds(p.ids))) + '">Download</button>'
           + '<button type="button" class="pl-saved-act" data-act="rename" data-i="' + i + '">Rename</button>'
           + '<button type="button" class="pl-saved-act" data-act="delete" data-i="' + i + '">Delete</button>'
           + "</div>";
@@ -377,7 +432,9 @@
       if (act) {
         var p = list[+act.dataset.i];
         if (!p) return;
-        if (act.dataset.act === "delete") {
+        if (act.dataset.act === "download") {
+          openPasswordModal({ type: "batch", manifest: buildPlaylistManifest(p.name, resolveIds(p.ids)) });
+        } else if (act.dataset.act === "delete") {
           if (!window.confirm('Delete the playlist "' + p.name + '"?')) return;
           list.splice(+act.dataset.i, 1);
           storeSaved(list);
@@ -408,13 +465,16 @@
     if (e.key === SAVED_KEY) renderSaved();
   });
 
+  function resolveIds(ids) {
+    var byId = {};
+    CATALOG.forEach(function (t) { byId[t.id] = t; });
+    return ids.map(function (id) { return byId[id]; }).filter(function (t) { return t; });
+  }
+
   function hydrateFromHash() {
     var m = location.hash.match(/^#p=([\w.,-]+)/);
     if (!m) return false;
-    var byId = {};
-    CATALOG.forEach(function (t) { byId[t.id] = t; });
-    queue = m[1].split(",").map(function (id) { return byId[id]; })
-      .filter(function (t) { return t; });
+    queue = resolveIds(m[1].split(","));
     if (!queue.length) return false;
     renderQueue();
     syncHash();
