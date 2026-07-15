@@ -1392,6 +1392,44 @@ main {
 }
 .pw-submit:hover { opacity: 0.85; }
 
+/* Non-blocking progress toast — once a batch ZIP's password is confirmed,
+   the blocking modal hands off to this so visitors can keep browsing the
+   page while the rest of the tracks fetch/zip in the background. */
+.dl-toast {
+  display: none;
+  position: fixed;
+  right: 1.2rem;
+  bottom: 1.2rem;
+  z-index: 100;
+  align-items: center;
+  gap: 0.8rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.85rem 1rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.16);
+  max-width: min(320px, calc(100vw - 2.4rem));
+}
+.dl-toast.open { display: flex; }
+.dl-toast.error .dl-toast-text { color: #b94a3a; }
+.dl-toast-text {
+  font-family: var(--sans);
+  font-size: 12.5px;
+  color: var(--text);
+  flex: 1;
+}
+.dl-toast-cancel {
+  font-size: 18px;
+  line-height: 1;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.1rem 0.3rem;
+  flex-shrink: 0;
+}
+.dl-toast-cancel:hover { color: var(--text); }
+
 footer {
   text-align: center;
   padding: 2.5rem;

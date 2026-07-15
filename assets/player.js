@@ -166,17 +166,45 @@ modal.innerHTML = `
   </div>`;
 document.body.appendChild(modal);
 
+// Non-blocking progress toast — once a batch ZIP's password is confirmed,
+// the modal hands off to this so the visitor can keep browsing/playing
+// tracks on the page while the rest fetch/zip in the background. Cancel
+// here works the same as the modal's: aborts the in-flight batch.
+const toast = document.createElement('div');
+toast.className = 'dl-toast';
+toast.innerHTML = `
+  <span class="dl-toast-text"></span>
+  <button type="button" class="dl-toast-cancel" id="toastCancel" aria-label="Cancel download">&times;</button>`;
+document.body.appendChild(toast);
+const toastText = toast.querySelector('.dl-toast-text');
+
+function showToast() {
+  toast.classList.remove('error');
+  toast.classList.add('open');
+}
+function setToastText(text, isError) {
+  toastText.textContent = text;
+  toast.classList.toggle('error', !!isError);
+}
+function hideToast() {
+  toast.classList.remove('open', 'error');
+}
+toast.querySelector('#toastCancel').addEventListener('click', () => {
+  if (batchAbort) batchAbort.abort();
+});
+
 // pendingTarget is either { type: 'single', file, filename } (today's one-file
 // flow) or { type: 'batch', manifest: {zipName, files:[{key,name}], infoName,
 // infoText} } — a whole show or every performance of a song, assembled into a
 // ZIP client-side after a single password entry. See tryBatchDownload below.
 let pendingTarget = null;
 
-// Set for the duration of a batch fetch/zip so accidental dismissal (an
-// overlay click, Escape) can't silently strand the download running in the
-// background with no visible progress — an in-progress batch can only be
-// stopped through the Cancel button, which now actually aborts it instead of
-// just hiding the dialog on top of still-running work.
+// Set for the duration of a batch fetch/zip. While the modal is still up
+// (validating the password against the first file) this blocks accidental
+// dismissal the same way it always has; once that first file succeeds the
+// modal hands off to the toast above and closes, so batchAbort staying set
+// no longer blocks anything — it just means Cancel (on either the modal or
+// the toast) can still stop the in-flight batch.
 let batchAbort = null;
 
 function openPasswordModal(target) {
@@ -189,6 +217,13 @@ function openPasswordModal(target) {
 
 function closeModal() {
   if (batchAbort) batchAbort.abort();
+  modal.classList.remove('open');
+  pendingTarget = null;
+}
+
+// Hides the modal WITHOUT aborting — used only when handing a validated
+// batch off to the background toast, where batchAbort deliberately stays set.
+function hideModalKeepBatch() {
   modal.classList.remove('open');
   pendingTarget = null;
 }
@@ -231,32 +266,46 @@ async function fetchWithToken(password, key, signal) {
 // no new Worker route — each file goes through the exact /auth + /download
 // pair a single download already uses.
 //
-// Two distinct slow phases, each with its own progress label — without this
-// split the button freezes on "N / N" for however long the ZIP assembly
-// takes (client-zip still has to stream every byte through to compute each
-// entry's CRC32), which reads as a hang on a large show.
-async function tryBatchDownload(password, manifest, submitBtn) {
+// The first file is fetched while the modal is still open, so a wrong
+// password still interrupts immediately the way it always has. Once that
+// confirms the password, control hands off to the non-blocking toast for
+// the rest — a whole show can be a lot of tracks, and there's no reason to
+// keep the visitor stuck on a blocking dialog for however long that takes.
+async function tryBatchDownload(password, manifest) {
   const abort = new AbortController();
   batchAbort = abort;
+  const files = manifest.files;
+  const results = new Array(files.length);
+  let totalBytes = 0;
+
   try {
-    const files = manifest.files;
-    const results = new Array(files.length);
-    let doneCount = 0;
-    let nextIdx = 0;
-    let totalBytes = 0;
+    const firstRes = await fetchWithToken(password, files[0].key, abort.signal);
+    totalBytes += parseInt(firstRes.headers.get('content-length') || '0', 10);
+    results[0] = { input: firstRes, name: files[0].name };
+  } catch (e) {
+    batchAbort = null;
+    throw e; // still shown in the modal — see tryDownload's catch
+  }
+
+  hideModalKeepBatch();
+  showToast();
+  let doneCount = 1;
+  setToastText(`Fetching ${doneCount} / ${files.length} tracks…`);
+
+  try {
+    let nextIdx = 1;
     const CONCURRENCY = 4;
     async function worker() {
       while (nextIdx < files.length) {
         const i = nextIdx++;
         const res = await fetchWithToken(password, files[i].key, abort.signal);
-        const len = parseInt(res.headers.get('content-length') || '0', 10);
-        totalBytes += len;
+        totalBytes += parseInt(res.headers.get('content-length') || '0', 10);
         results[i] = { input: res, name: files[i].name };
         doneCount++;
-        submitBtn.textContent = `Fetching ${doneCount} / ${files.length} tracks…`;
+        setToastText(`Fetching ${doneCount} / ${files.length} tracks…`);
       }
     }
-    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, files.length) }, worker));
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, Math.max(0, files.length - 1)) }, worker));
     if (manifest.infoName && manifest.infoText) {
       results.push({ input: manifest.infoText, name: manifest.infoName });
       totalBytes += new Blob([manifest.infoText]).size;
@@ -267,7 +316,7 @@ async function tryBatchDownload(password, manifest, submitBtn) {
     const reader = zipRes.body.getReader();
     const chunks = [];
     let assembled = 0;
-    submitBtn.textContent = 'Assembling ZIP…';
+    setToastText('Assembling ZIP…');
     for (;;) {
       if (abort.signal.aborted) {
         reader.cancel();
@@ -277,17 +326,24 @@ async function tryBatchDownload(password, manifest, submitBtn) {
       if (done) break;
       chunks.push(value);
       assembled += value.length;
-      submitBtn.textContent = totalBytes
+      setToastText(totalBytes
         ? `Assembling ZIP… ${Math.min(99, Math.round(assembled / totalBytes * 100))}%`
-        : 'Assembling ZIP…';
+        : 'Assembling ZIP…');
     }
     const blob = new Blob(chunks, { type: 'application/zip' });
 
-    submitBtn.textContent = 'Starting download…';
+    setToastText('Starting download…');
     const url = URL.createObjectURL(blob);
-    closeModal();
+    hideToast();
     triggerDownload(url, manifest.zipName);
     setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (e) {
+    if (e && e.name === 'AbortError') {
+      hideToast();
+    } else {
+      setToastText('Download failed — please try again.', true);
+      setTimeout(hideToast, 4000);
+    }
   } finally {
     batchAbort = null;
   }
@@ -303,7 +359,7 @@ async function tryDownload() {
   try {
     if (target.type === 'batch') {
       try {
-        await tryBatchDownload(password, target.manifest, submitBtn);
+        await tryBatchDownload(password, target.manifest);
       } catch (e) {
         if (e && e.name === 'AbortError') {
           // Deliberately cancelled via the Cancel button — closeModal()
@@ -369,6 +425,10 @@ document.querySelectorAll('.zip-download-btn').forEach(btn => {
   btn.addEventListener('click', e => {
     e.preventDefault();
     if (!window.ZIP_MANIFEST) return;
+    // Only one batch at a time — a second click while one's already running
+    // (in the modal or backgrounded to the toast) would race the same
+    // batchAbort/toast state.
+    if (batchAbort) return;
     openPasswordModal({ type: 'batch', manifest: window.ZIP_MANIFEST });
   });
 });
