@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Added the June 7, 1999 solo show at 19 Broadway as 29 individual tracks, treated with bro…</title>
+    <link>https://renedebos.com/shows/jerry-19-broadway-1999-06-07/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-14-jerry-19-broadway-1999-06-07</guid>
+    <pubDate>Tue, 14 Jul 2026 20:12:33 +0000</pubDate>
+    <description>Added the June 7, 1999 solo show at 19 Broadway as 29 individual tracks, treated with broadband noise reduction (10dB on the first three tracks, 6dB after, sensitivity 5) across the whole tape before splitting, then normalized to −20 LUFS. Includes the Irish traditional "A Bunch of Thyme" and a birthday singalong for an audience member named Marco.</description>
+  </item>
+  <item>
     <title>Added the October 25, 1999 solo show at 19 Broadway as 26 individual tracks, treated with…</title>
     <link>https://renedebos.com/shows/jerry-19-broadway-1999-10-25/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-14-jerry-19-broadway-1999-10-25</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-15-mad-sweetwater-2000-10-17</guid>
     <pubDate>Mon, 15 Jun 2026 23:35:00 +0000</pubDate>
     <description>Added a lossless full-show FLAC download</description>
-  </item>
-  <item>
-    <title>Added the full 24-track listing (MP3 stream + FLAC download)</title>
-    <link>https://renedebos.com/shows/mad-sweetwater-2000-10-17/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-15-mad-sweetwater-2000-10-17</guid>
-    <pubDate>Mon, 15 Jun 2026 23:30:00 +0000</pubDate>
-    <description>Added the full 24-track listing (MP3 stream + FLAC download)</description>
   </item>
 </channel>
 </rss>

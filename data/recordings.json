@@ -1400,10 +1400,447 @@
           "stream": "MP3/Full/WAV_Files/JerryHannan_19Broadway_1999-06-07 DIGITAL Part2.mp3"
         }
       ],
-      "tracks": null,
-      "description": null,
+      "tracks": [
+        {
+          "num": 1,
+          "title": "I Thought I Was You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:47",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/01 I Thought I Was You.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/01 I Thought I Was You.flac",
+          "flac_size_mb": 42,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 2,
+          "title": "Smoke in Heaven",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:33",
+          "size_mb": 6,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/02 Smoke in Heaven.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/02 Smoke in Heaven.flac",
+          "flac_size_mb": 31,
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
+        },
+        {
+          "num": 3,
+          "title": "Crystal Rose",
+          "songwriter": "Traditional",
+          "duration": "4:15",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/03 Crystal Rose.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/03 Crystal Rose.flac",
+          "flac_size_mb": 49,
+          "processed": true,
+          "tags": [
+            "traditional",
+            "irish"
+          ]
+        },
+        {
+          "num": 4,
+          "title": "Truck",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:35",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/04 Truck.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/04 Truck.flac",
+          "flac_size_mb": 43,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 5,
+          "title": "ABC",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "1:56",
+          "size_mb": 5,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/05 ABC.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/05 ABC.flac",
+          "flac_size_mb": 23,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 6,
+          "title": "Hello in There",
+          "songwriter": "John Prine",
+          "duration": "4:03",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/06 Hello in There.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/06 Hello in There.flac",
+          "flac_size_mb": 45,
+          "processed": true,
+          "tags": [
+            "cover",
+            "ballad"
+          ]
+        },
+        {
+          "num": 7,
+          "title": "Luxury of Murder",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:53",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/07 Luxury of Murder.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/07 Luxury of Murder.flac",
+          "flac_size_mb": 34,
+          "processed": true,
+          "tags": [
+            "original",
+            "story"
+          ]
+        },
+        {
+          "num": 8,
+          "title": "Blind Man",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:11",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/08 Blind Man.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/08 Blind Man.flac",
+          "flac_size_mb": 39,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 9,
+          "title": "Ride On",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:29",
+          "size_mb": 11,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/09 Ride On.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/09 Ride On.flac",
+          "flac_size_mb": 53,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 10,
+          "title": "Some Get Married for Love",
+          "songwriter": "Traditional",
+          "duration": "0:57",
+          "size_mb": 2,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/10 Some Get Married for Love.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/10 Some Get Married for Love.flac",
+          "flac_size_mb": 11,
+          "processed": true,
+          "tags": [
+            "traditional",
+            "irish"
+          ]
+        },
+        {
+          "num": 11,
+          "title": "The Barney Stone Blues",
+          "songwriter": "Steve Poltz",
+          "duration": "4:17",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/11 The Barney Stone Blues.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/11 The Barney Stone Blues.flac",
+          "flac_size_mb": 50,
+          "processed": true,
+          "tags": [
+            "cover",
+            "blues"
+          ]
+        },
+        {
+          "num": 12,
+          "title": "Kilkelly Ireland",
+          "songwriter": "Peter Jones",
+          "duration": "5:51",
+          "size_mb": 14,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/12 Kilkelly Ireland.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/12 Kilkelly Ireland.flac",
+          "flac_size_mb": 66,
+          "processed": true,
+          "tags": [
+            "cover",
+            "irish",
+            "ballad",
+            "story"
+          ]
+        },
+        {
+          "num": 13,
+          "title": "Open Door",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:19",
+          "size_mb": 6,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/13 Open Door.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/13 Open Door.flac",
+          "flac_size_mb": 26,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 14,
+          "title": "Long Black Veil",
+          "songwriter": "Lefty Frizzell",
+          "duration": "2:50",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/14 Long Black Veil.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/14 Long Black Veil.flac",
+          "flac_size_mb": 34,
+          "processed": true,
+          "tags": [
+            "cover",
+            "country",
+            "ballad",
+            "story"
+          ]
+        },
+        {
+          "num": 15,
+          "title": "Hollywood (alt verse)",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "1:17",
+          "size_mb": 3,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/15 Hollywood (alt verse).mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/15 Hollywood (alt verse).flac",
+          "flac_size_mb": 14,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 16,
+          "title": "Anna May",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:01",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/16 Anna May.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/16 Anna May.flac",
+          "flac_size_mb": 35,
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
+        },
+        {
+          "num": 17,
+          "title": "Butter",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:30",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/17 Butter.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/17 Butter.flac",
+          "flac_size_mb": 39,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 18,
+          "title": "The Girlfriend of the Boyfriend of Herself",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:10",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/18 The Girlfriend of the Boyfriend of Herself.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/18 The Girlfriend of the Boyfriend of Herself.flac",
+          "flac_size_mb": 48,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 19,
+          "title": "Recycle",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:45",
+          "size_mb": 11,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/19 Recycle.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/19 Recycle.flac",
+          "flac_size_mb": 57,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 20,
+          "title": "Madeline",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "2:44",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/20 Madeline.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/20 Madeline.flac",
+          "flac_size_mb": 34,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 21,
+          "title": "Luxury of Murder",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:01",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/21 Luxury of Murder.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/21 Luxury of Murder.flac",
+          "flac_size_mb": 36,
+          "processed": true,
+          "tags": [
+            "original",
+            "story"
+          ]
+        },
+        {
+          "num": 22,
+          "title": "Everything Reminds Me of You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "6:14",
+          "size_mb": 15,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/22 Everything Reminds Me of You.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/22 Everything Reminds Me of You.flac",
+          "flac_size_mb": 72,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 23,
+          "title": "Clear Headed",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "5:24",
+          "size_mb": 13,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/23 Clear Headed.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/23 Clear Headed.flac",
+          "flac_size_mb": 66,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 24,
+          "title": "Okie from Muskogee ",
+          "songwriter": "Merle Haggard",
+          "duration": "2:48",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/24 Okie from Muskogee .mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/24 Okie from Muskogee .flac",
+          "flac_size_mb": 34,
+          "processed": true,
+          "tags": [
+            "cover",
+            "country"
+          ]
+        },
+        {
+          "num": 25,
+          "title": "Nicolai",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:05",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/25 Nicolai.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/25 Nicolai.flac",
+          "flac_size_mb": 36,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 26,
+          "title": "Happy Birthday Marco",
+          "songwriter": "Traditional",
+          "duration": "1:22",
+          "size_mb": 3,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/26 Happy Birthday Marco.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/26 Happy Birthday Marco.flac",
+          "flac_size_mb": 16,
+          "processed": true,
+          "tags": [
+            "traditional",
+            "banter"
+          ]
+        },
+        {
+          "num": 27,
+          "title": "Come On All You Young Maidens",
+          "songwriter": "Traditional",
+          "duration": "4:21",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/27 Come On All You Young Maidens.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/27 Come On All You Young Maidens.flac",
+          "flac_size_mb": 48,
+          "processed": true,
+          "tags": [
+            "traditional",
+            "irish",
+            "ballad"
+          ]
+        },
+        {
+          "num": 28,
+          "title": "Everything Reminds Me of You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:48",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/28 Everything Reminds Me of You.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/28 Everything Reminds Me of You.flac",
+          "flac_size_mb": 44,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 29,
+          "title": "Ted Kennedy Song",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "0:18",
+          "size_mb": 1,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/29 Ted Kennedy Song.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/29 Ted Kennedy Song.flac",
+          "flac_size_mb": 3,
+          "processed": true,
+          "tags": [
+            "original",
+            "story"
+          ]
+        }
+      ],
+      "description": [
+        "Recorded from the audience on DAT at 19 Broadway in Fairfax on June 7, 1999 &mdash; a 29-song solo set.",
+        "The set pairs Hannan originals, with repeat outings for &ldquo;Luxury of Murder&rdquo; and &ldquo;Everything Reminds Me of You,&rdquo; alongside covers of John Prine, Steve Poltz, Peter Jones&rsquo;s &ldquo;Kilkelly Ireland,&rdquo; Lefty Frizzell&rsquo;s &ldquo;Long Black Veil,&rdquo; and Merle Haggard&rsquo;s &ldquo;Okie from Muskogee,&rdquo; plus three Irish traditionals &mdash; including &ldquo;A Bunch of Thyme&rdquo; &mdash; and a birthday singalong for an audience member named Marco.",
+        "The whole tape got a pass of broadband noise reduction in Audacity before the tracks were split (10dB on the opening three tracks, 6dB the rest of the way, sensitivity 5 throughout), then the usual &minus;20 LUFS normalization."
+      ],
       "page": null,
-      "processing_status": "needs-processing"
+      "processing_status": "done",
+      "added": "2026-07-14",
+      "added_ts": "2026-07-14T20:12:33.107465"
     },
     {
       "slug": "jerry-19-broadway-1999-06-21",
@@ -10136,7 +10573,7 @@
         },
         {
           "num": 19,
-          "title": "Seven Drunked Nights",
+          "title": "Seven Drunken Nights",
           "songwriter": "Traditional",
           "duration": "6:48",
           "size_mb": 16,
@@ -10619,6 +11056,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-07-14",
+      "ts": "2026-07-14T20:12:33",
+      "slug": "jerry-19-broadway-1999-06-07",
+      "report": true,
+      "text": "Added the June 7, 1999 solo show at 19 Broadway as 29 individual tracks, treated with broadband noise reduction (10dB on the first three tracks, 6dB after, sensitivity 5) across the whole tape before splitting, then normalized to −20 LUFS. Includes the Irish traditional \"A Bunch of Thyme\" and a birthday singalong for an audience member named Marco."
+    },
     {
       "date": "2026-07-14",
       "ts": "2026-07-14T16:33:14",
