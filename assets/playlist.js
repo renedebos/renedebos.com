@@ -38,6 +38,15 @@
     });
   };
 
+  // Monochrome SVGs, same style/weight as player.js's playIcon/pauseIcon —
+  // ⏮/⏭ text glyphs render as full-color emoji on some platforms while ▶/❚❚
+  // stayed plain text, so prev/next looked nothing like play/pause. One icon
+  // set for all four fixes that everywhere at once.
+  var PLAY_ICON = '<svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg>';
+  var PAUSE_ICON = '<svg viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="2" width="4" height="12"/><rect x="9" y="2" width="4" height="12"/></svg>';
+  var PREV_ICON = '<svg viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2" width="2" height="12"/><polygon points="14,2 14,14 4,8"/></svg>';
+  var NEXT_ICON = '<svg viewBox="0 0 16 16" fill="currentColor"><polygon points="2,2 2,14 12,8"/><rect x="12" y="2" width="2" height="12"/></svg>';
+
   function streamUrl(t) {
     return WORKER + "/stream?file=" + encodeURIComponent(t.file)
       + (t.ver ? "&v=" + t.ver : "");
@@ -573,7 +582,7 @@
 
   function syncPlayBtn() {
     var b = nowEl.querySelector('[data-act="play"]');
-    if (b) b.textContent = audio.paused ? "▶" : "❚❚";
+    if (b) b.innerHTML = audio.paused ? PLAY_ICON : PAUSE_ICON;
   }
 
   // ── Media Session — lock-screen/headset controls ─────────────────────────
@@ -633,9 +642,9 @@
         ? ' <span class="sr-tag">' + esc(t.songwriter) + "</span>" : "")
       + "</span></div>"
       + '<div class="pl-controls">'
-      + '<button type="button" class="pl-btn" data-act="prev" aria-label="Previous">⏮</button>'
-      + '<button type="button" class="pl-btn pl-btn-play" data-act="play" aria-label="Play/pause">❚❚</button>'
-      + '<button type="button" class="pl-btn" data-act="next" aria-label="Next">⏭</button>'
+      + '<button type="button" class="pl-btn" data-act="prev" aria-label="Previous">' + PREV_ICON + "</button>"
+      + '<button type="button" class="pl-btn pl-btn-play" data-act="play" aria-label="Play/pause">' + PAUSE_ICON + "</button>"
+      + '<button type="button" class="pl-btn" data-act="next" aria-label="Next">' + NEXT_ICON + "</button>"
       + "</div>"
       + '<div class="pl-progress"><span class="pl-time-current">0:00</span>'
       + '<input type="range" class="progress-range" min="0" max="' + RANGE_MAX + '" value="0" step="1" '

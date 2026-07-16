@@ -1809,11 +1809,13 @@ a.artist-chip:hover { filter: brightness(1.08); }
 }
 .pl-controls { display: flex; gap: 0.5rem; }
 .pl-btn {
-  font-size: 13px; line-height: 1; color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text);
   background: var(--surface); border: 1px solid var(--border);
   border-radius: 999px; width: 2.2rem; height: 2.2rem; cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
+.pl-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
 .pl-btn:hover { color: var(--accent); border-color: var(--accent); }
 .pl-btn-play { color: #fff; background: var(--accent); border-color: var(--accent); }
 .pl-btn-play:hover { color: #fff; opacity: 0.9; }
