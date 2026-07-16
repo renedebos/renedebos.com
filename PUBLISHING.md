@@ -2,9 +2,9 @@
 
 *How a show gets from a whole-show WAV to renedebos.com, what you do
 by hand, what Claude runs, and what every tool in `scripts/` is for.*
-*Last updated: 2026-07-16 (adds Part 5, the audio processing version-history
-appendix — matches workflow v5, applause-aware headroom recovery with a
-true-peak safety loop, per-track treatment audit trail).*
+*Last updated: 2026-07-16 (matches workflow v6 — explicit-gain rendering,
+LRA QA on every track, PLR/max-loudness provenance, MP3 true-peak trim; see
+Part 5 for the full version history).*
 
 ---
 
@@ -97,13 +97,18 @@ track's dynamics to hit it exactly. `process` decides per track, in order:
 1. **Plain linear** — the show's nominal target (−20 LUFS for every artist)
    fits under the −1 dBTP ceiling with a single constant gain. Most tracks.
 2. **Linear, reduced target** — the nominal target would push true peak past
-   the ceiling by a small margin (≤ 2 dB). ffmpeg's `linear=true` is only a
-   *request*: past that margin it silently falls back to dynamic
-   normalization, which rides gain up on quiet passages and can flatten a
-   hand-drawn fade — completely invisible in the logs. So instead the track
-   takes its own honest "max linear target" (the same number `diagnose`
-   reports as `PRED_TP`'s max linear target) — a few dB quieter than its
-   neighbors, always still one constant gain, dynamics untouched.
+   the ceiling by a small margin (≤ 2 dB). Instead the track takes its own
+   honest "max linear target" (the same number `diagnose` reports as
+   `PRED_TP`'s max linear target) — a few dB quieter than its neighbors,
+   always still one constant gain, dynamics untouched. (Workflow v6: the gain
+   for both of these cases is computed once from a measurement pass and
+   applied with ffmpeg's plain `volume` filter, never `loudnorm` at render
+   time — earlier versions asked `loudnorm` for the target and trusted its
+   own linear/dynamic decision, which past this margin would silently fall
+   back to dynamic normalization and flatten a hand-drawn fade with nothing
+   in the logs to show it. v6 removes that decision from the render step
+   entirely, so it can't happen no matter how close to the margin a track
+   sits.)
 3. **Applause-limited** — some audience tapes had the mic close to the
    crowd, and a clap can peak louder than anything in the music itself,
    forcing option 2 several dB quieter than the music needs. When the
@@ -135,6 +140,19 @@ Treatment column (hover for the reasoning) in each show's Technical data
 table. A `python3 scripts/audio_process.py plan <folder> --artist <name>`
 dry run shows every decision for a folder of tracks without writing any
 audio — useful before committing to a reprocess.
+
+**QA gates (workflow v6):** output loudness range (LRA) is compared against
+the source's on *every* track, not just applause-limited ones — a linear
+gain can't change dynamic range at all, so any drift is the one thing that
+would reveal a hidden dynamics change regardless of which mode produced it.
+The provenance sidecar also records `plr` (true peak minus integrated
+loudness) and `max_m`/`max_s` (peak momentary/short-term loudness) per
+track — two tracks can share the same integrated loudness while one has a
+much louder chorus the average smooths over, which is what actually
+predicts a track sounding louder next to its neighbors in a playlist. The
+MP3 derivative gets its own small, independent gain trim (the FLAC master
+is never touched) if lossy encoding would push its true peak past the
+ceiling, iterated the same way the applause safety loop is.
 
 ---
 
@@ -325,6 +343,7 @@ human-readable decode.
 | v3 | 2026-07-09 | Embedded metadata tags (title/artist/album/track/date/comment) into both the FLAC master and MP3; added a true-peak check of the encoded MP3 (lossy encoding overshoots peaks); `retag` retro-fits tags onto already-published shows without touching the audio stream or its provenance MD5. | Linear only |
 | v4 | 2026-07-12 | Fixed a silent ffmpeg fallback: `linear=true` is only a *request* — if the target would push true peak past the ceiling, ffmpeg quietly switches to dynamic (frame-adaptive) normalization instead, which can flatten hand-drawn fades with zero warning in the logs. A track whose predicted true peak exceeds the ceiling is now processed at its own safe "max linear target" instead, staying in true linear mode. | Linear only (per-track reduced target when needed) |
 | v5 | 2026-07-13 | Added applause-aware headroom recovery for audience tapes where a clap peaks louder than the music itself. Peaks are classified by *behavior* (position near a track's head/tail + crest factor), never loudness alone; if applause is what's eating the headroom, the music gets one constant gain sized to the music's own peaks, with a lookahead limiter that only applause transients can reach. A measure-and-correct loop verifies the actual rendered true peak and re-renders (up to 5 attempts) if it overshoots — the limiter's own threshold is never trusted blind. Ambiguous cases fall back to the v4 reduced target. | Linear, or applause-limiter mode (music untouched, only applause capped) |
+| v6 | 2026-07-16 | Linear/linear-reduced tracks now render with an explicit `volume=<gain>dB` gain instead of asking `loudnorm` for the target — the gain is computed once from a measurement pass and applied unconditionally, so a silent dynamic-mode render is no longer possible in principle, not just avoided by construction. The output LRA-preservation QA gate now runs on every track (previously applause-limiter tracks only). Provenance gains `plr` and `max_m`/`max_s` per track. The MP3 derivative gets its own independent gain trim (never touching the FLAC master) if lossy encoding would clip its true peak, iterated like the applause safety loop. | Linear only via `volume`; applause-limiter mode unchanged from v5 |
 
 ### v1 — the linear baseline
 
@@ -400,3 +419,45 @@ This is a narrow, sanctioned exception to the "never limit the music" rule,
 not a reversal of it — it caps only the applause transient, never the
 performance itself. See `CLAUDE.md`'s linear-normalization policy note for
 the full reasoning.
+
+### v6 — explicit-gain rendering and broader QA
+
+Every prior version still handed `loudnorm` a target LUFS at render time and
+trusted its own internal choice between linear and dynamic (frame-adaptive)
+normalization — v4 and v5's whole design is built around *engineering* that
+choice so it always lands on linear (the reduced target, the applause-sized
+gain), but the decision at render time was still ffmpeg's to make. v6
+removes that decision from the render step entirely: `plan_track`'s
+measurement pass computes the exact gain a track needs (the same math v4/v5
+already used), and the render applies it with ffmpeg's `volume` filter — an
+unconditional multiply with no fallback mode to fall into. `loudnorm` and
+`ebur128` remain in the pipeline purely as measurement tools. Re-running the
+two tracks used to validate this (one linear-reduced, one applause-limiter)
+produced byte-identical applause-limiter output to v5 (that code path is
+untouched) and a slightly *more* precise linear-reduced result — the old
+`loudnorm`-based render for "Plastic Lemons" landed 0.42 dB under the
+ceiling it was engineered to just reach; the explicit-gain render lands
+within 0.02 dB of it, using the headroom the plan already calculated was
+safe.
+
+Three QA additions ride along with the same change:
+
+- The **output LRA-preservation check** (source vs. rendered loudness range,
+  0.5 LU tolerance) now runs on every track, not just applause-limiter
+  ones. A linear gain cannot change dynamic range at all — on any other
+  track, a shift would mean something rode the gain during render, which
+  after this change should be structurally impossible, but a QA gate that
+  only watched the one mode capable of nuance was never really guarding the
+  other two.
+- The provenance sidecar gains **`plr`** (true peak minus integrated
+  loudness) and **`max_m`/`max_s`** (the loudest 400ms/3s window in the
+  track) alongside the existing `lufs`/`tp`/`lra`. Two tracks can share the
+  same integrated loudness while one has a much louder chorus the average
+  smooths straight over — that's what actually predicts a track sounding
+  louder than its neighbors in a mixed playlist, which integrated loudness
+  alone can't show.
+- The **MP3 derivative** gets its own small, independent gain trim — the
+  FLAC master's gain is never touched — if the lossy encode's true peak
+  would otherwise clip on decode, iterated up to 3 times the same way the
+  applause true-peak loop already re-renders and re-measures rather than
+  trusting a single pass.

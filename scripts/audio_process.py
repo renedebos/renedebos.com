@@ -44,6 +44,9 @@ ARTIST_TARGET = {"jerry": -20, "sean": -20, "seanjerry": -20, "mad": -20}
 TP_CEILING = -1.0
 TP_TOL = 0.1      # warn if achieved TP exceeds the ceiling by more than this
 LUFS_TOL = 0.5    # warn if achieved LUFS drifts from target by more than this
+MP3_TP_MAX_ATTEMPTS = 3  # v6: lossy encoding can overshoot the FLAC's true peak; retry the
+                         # MP3 encode alone (never the FLAC master) with a small extra trim
+                         # instead of just flagging it, mirroring the applause true-peak loop
 
 # ── applause-aware headroom recovery (workflow v5) ────────────────────────────
 # Calibrated on Butter (jerry-cafe-java-1999-03-25 trk 4), 2026-07-13: music
@@ -76,7 +79,7 @@ APPLAUSE_TP_MAX_ATTEMPTS = 5  # alimiter limits SAMPLE peaks, not oversampled tr
 # re-run later with a newer version). The registry is the human-readable decode
 # of a version number; the per-track `chain` is the self-contained ground truth;
 # the `md5` proves the live audio is that exact output.
-WORKFLOW_VERSION = 5
+WORKFLOW_VERSION = 6
 WORKFLOW_VERSIONS = {
     1: {
         "desc": "Two-pass ffmpeg loudnorm to the per-artist target "
@@ -165,6 +168,33 @@ WORKFLOW_VERSIONS = {
         "loudnorm": "linear modes as v4; applause-limiter mode uses no loudnorm: "
                     "volume=<gain>dB,alimiter=limit=<-1.2 dB>:attack=5:release=100:"
                     "level=false:latency=1",
+        "targets": dict(ARTIST_TARGET),
+        "optional_filters": ["--eq <literal ffmpeg filter chain>", "highpass=f=80",
+                             "lowpass=f=18000", "60Hz notch"],
+    },
+    6: {
+        "desc": "As v5 (sizing/applause-classification logic unchanged), plus: linear and "
+                "linear-reduced tracks now render with an explicit `volume=<gain>dB` gain "
+                "(computed from the same plan_track() measurement v5 already used) instead "
+                "of handing loudnorm a target and trusting its own linear/dynamic decision "
+                "at render time. loudnorm/ebur128 remain the measurement tools; they no "
+                "longer perform the render. This doesn't change what v5 already computed "
+                "correctly by construction — it removes the last remaining reliance on "
+                "ffmpeg's internal fallback behavior, so a hidden dynamic-mode render is "
+                "no longer possible in principle, not just unlikely in practice. The output "
+                "LRA-preservation QA gate (previously applause-limiter tracks only) now "
+                "runs on every track, since any silent dynamics change would be visible "
+                "there regardless of which mode produced it. Provenance also gains `plr` "
+                "(true peak minus integrated loudness) and `max_m`/`max_s` (peak momentary/"
+                "short-term loudness) per track — two tracks can share the same integrated "
+                "loudness while one has a much hotter chorus the average smooths over; this "
+                "is what actually predicts 'sounds louder in a playlist'. The MP3 derivative "
+                "gets its own small, independent gain trim (never touching the FLAC master) "
+                "if its lossy-encode true-peak overshoot would otherwise clip on decode, "
+                "iterated up to 3 times like the existing applause true-peak safety loop.",
+        "loudnorm": "measurement only (plan_track's analysis pass); render uses "
+                    "volume=<gain>dB:precision=double for linear/linear-reduced, "
+                    "unchanged applause-limiter volume+alimiter chain for that mode",
         "targets": dict(ARTIST_TARGET),
         "optional_filters": ["--eq <literal ffmpeg filter chain>", "highpass=f=80",
                              "lowpass=f=18000", "60Hz notch"],
@@ -288,6 +318,19 @@ def measure(path, target, pre=""):
         f"loudnorm=I={target}:LRA=11:TP={TP_CEILING}:print_format=json"
     err = ff_err(["-i", path, "-af", af, "-f", "null", "-"])
     return json.loads(re.search(r"\{[^{}]*\"input_i\"[^{}]*\}", err, re.S).group(0))
+
+
+def max_short_term_momentary(path):
+    """Peak of the 3s short-term (S) and 400ms momentary (M) loudness curves,
+    via one ebur128 analysis pass. Two full-track tracks can share the same
+    integrated loudness (and pass the same QA gates) while one has a much
+    hotter chorus or a long loud passage the integrated average smooths
+    over — this is what actually predicts 'sounds louder in a playlist',
+    which integrated loudness alone can miss (v6)."""
+    err = ff_err(["-i", path, "-af", "ebur128", "-f", "null", "-"])
+    ms = [float(x) for x in re.findall(r"\bM:\s*(-?[\d.]+)", err)]
+    ss = [float(x) for x in re.findall(r"\bS:\s*(-?[\d.]+)", err)]
+    return (round(max(ms), 1) if ms else None, round(max(ss), 1) if ss else None)
 
 
 def astats_field(path, field):
@@ -786,6 +829,18 @@ def limiter_chain(plan, pre=""):
         f"attack=5:release=100:level=false:latency=1")
 
 
+def linear_chain(plan, pre=""):
+    """The literal ffmpeg filter chain for a plain-linear or linear-reduced
+    track (v6+). loudnorm/ebur128 (via plan_track's measurement pass) decide
+    the gain; this single explicit volume multiply performs it — no loudnorm
+    at render time, so there is no possibility of ffmpeg's own linear/dynamic
+    fallback choosing dynamic-mode processing instead. plan['target'] is
+    already the correct target for either mode (the nominal show target for
+    'linear', the track's own max-linear target for 'linear-reduced')."""
+    gain = round(plan["target"] - float(plan["measure"]["input_i"]), 2)
+    return ((pre + ",") if pre else "") + f"volume={gain}dB:precision=double"
+
+
 def cmd_plan(args):
     """Dry run: the exact per-track decisions `process` would make, no audio
     written. Table + normalization_plan.txt in the input folder."""
@@ -813,7 +868,7 @@ def cmd_plan(args):
             print(f"    ⚠ {fl}", flush=True)
 
     out = os.path.join(folder, "normalization_plan.txt")
-    L = ["NORMALIZATION PLAN (dry run, workflow v5)",
+    L = [f"NORMALIZATION PLAN (dry run, workflow v{WORKFLOW_VERSION})",
          f"Generated: {datetime.datetime.now().isoformat(timespec='seconds')}",
          f"Nominal target: {target} LUFS / {TP_CEILING} dBTP; "
          f"applause limiter at {APPLAUSE_LIMIT_DB} dB (crest >= {APPLAUSE_CREST_MIN}, "
@@ -844,13 +899,6 @@ def cmd_process(args):
         raise SystemExit(f"no .flac/.wav files in {infolder}")
     preflight_track_files(files)
     filt = build_filters(args)
-
-    # literal process chain applied to every track in THIS run (filters + the
-    # loudnorm step). Stored per-track so a later, single-track re-run with a new
-    # filter (e.g. a noise-floor pass on just track 4) is individually recoverable.
-    _w = lambda x: int(x) if float(x) == int(x) else x
-    chain_str = ((filt + ",") if filt else "") + \
-        f"loudnorm=I={_w(target)}:LRA=11:TP={_w(TP_CEILING)}:linear=true"
 
     tag_ctx = show_tags(args.slug) if args.slug else None
     if args.slug and tag_ctx is None:
@@ -974,23 +1022,40 @@ def cmd_process(args):
                 used_target = plan["target"]
             else:
                 tags = tag_args(tag_ctx, f, num, len(files), used_target)
-                # loudnorm values measured on the post-EQ signal (so the gain is
-                # right); in_I is the RAW input loudness, kept for provenance.
-                j = measure(src, used_target, pre=filt)
-                af = (f"{pre}loudnorm=I={used_target}:LRA=11:TP={TP_CEILING}:"
-                      f"measured_I={j['input_i']}:measured_LRA={j['input_lra']}:"
-                      f"measured_tp={j['input_tp']}:measured_thresh={j['input_thresh']}:"
-                      f"offset={j['target_offset']}:linear=true:print_format=summary")
+                # v6: an explicit volume gain (the same number plan_track already
+                # computed), not loudnorm at render time — loudnorm/ebur128 remain
+                # the measurement tools (plan_track's own analysis pass), but the
+                # signal change itself is now an unconditional multiply, so there
+                # is no possibility of ffmpeg's linear-mode silently falling back
+                # to dynamic (frame-adaptive) normalization at render time.
+                af = linear_chain(plan, pre=filt)
                 r = subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
                                     "-i", src, "-af", af, "-ar", str(info["sr"])] + codec
                                    + tags + [out_audio], capture_output=True, text=True)
             if r.returncode != 0:
                 print(f"  FAIL {f}: {r.stderr[-200:]}", flush=True)
                 continue
-            r2 = subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
-                                 "-i", out_audio, "-b:a", "320k", "-id3v2_version", "3"]
-                                + tags + [out_mp3],
-                                capture_output=True, text=True)
+            # v6: lossy encoding can overshoot the FLAC's true peak (clips on decode
+            # even though the FLAC is fine). Never touch the FLAC master's gain for
+            # this — it's an MP3-only, listener-convenience-format concern — so trim
+            # a small extra volume cut into the MP3 encode alone and re-measure,
+            # same measure-and-correct pattern as the applause true-peak loop above.
+            mp3_trim_db = 0.0
+            for mp3_attempt in range(1, MP3_TP_MAX_ATTEMPTS + 1):
+                mp3_af = f"volume={mp3_trim_db}dB:precision=double" if mp3_trim_db else None
+                mp3_cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", out_audio]
+                if mp3_af:
+                    mp3_cmd += ["-af", mp3_af]
+                mp3_cmd += ["-b:a", "320k", "-id3v2_version", "3"] + tags + [out_mp3]
+                r2 = subprocess.run(mp3_cmd, capture_output=True, text=True)
+                if r2.returncode != 0:
+                    break
+                mp3_tp_now = float(measure(out_mp3, used_target)["input_tp"])
+                if mp3_tp_now <= TP_CEILING + TP_TOL or mp3_attempt == MP3_TP_MAX_ATTEMPTS:
+                    break
+                mp3_trim_db = round(mp3_trim_db - (mp3_tp_now - TP_CEILING) - 0.1, 2)
+                print(f"  {f}: MP3 true peak {mp3_tp_now:+.2f} dBTP — trimming MP3-only "
+                      f"gain to {mp3_trim_db:.2f} dB total and re-encoding", flush=True)
             if r2.returncode != 0:
                 print(f"  MP3 FAIL {f}: {r2.stderr[-200:]}", flush=True)
                 continue
@@ -998,6 +1063,7 @@ def cmd_process(args):
 
         out_I, out_TP, out_LRA = float(j2["input_i"]), float(j2["input_tp"]), float(j2["input_lra"])
         md5 = audio_md5(out_audio)
+        max_m, max_s = max_short_term_momentary(out_audio)
         # the lossy encode can overshoot the FLAC's peaks — measure the MP3's
         # true peak too and warn if it would clip on decode
         mp3_tp = float(measure(out_mp3, used_target)["input_tp"])
@@ -1011,21 +1077,24 @@ def cmd_process(args):
         if abs(out_I - used_target) > LUFS_TOL:
             status = "LUFS drift"
             warnings.append(f"{f}: achieved {out_I:.2f} LUFS drifts > {LUFS_TOL} from {used_target}")
-        if limiter and abs(out_LRA - plan["in_lra"]) > APPLAUSE_LRA_TOL:
-            # the whole point of the limiter mode is that music dynamics survive
-            # untouched — a shifted LRA means it bit more than applause
+        if abs(out_LRA - plan["in_lra"]) > APPLAUSE_LRA_TOL:
+            # v6: checked on every mode, not just applause-limiter. A purely
+            # linear gain (any mode) cannot change dynamic range at all — a
+            # shifted LRA is exactly the signature of a hidden dynamic-mode
+            # render, which is now structurally impossible (v6 renders with an
+            # explicit volume gain, never loudnorm), or, for a limiter track,
+            # of the limiter touching more than the applause transients.
             status = "LRA shifted"
+            reason = ("limiter touched more than applause transients" if limiter
+                      else "linear gain should never change dynamic range")
             warnings.append(f"{f}: output LRA {out_LRA:.1f} vs source {plan['in_lra']:.1f} — "
-                            "limiter touched more than applause transients; review")
+                            f"{reason}; review")
         if mp3_tp > 0.0:
             status = "MP3 clips"
             warnings.append(f"{f}: MP3 true peak {mp3_tp:+.2f} dBTP — lossy overshoot "
                             "clips on decode (FLAC is fine; consider re-encode headroom)")
-        if limiter:
-            track_chain = limiter_chain(plan, pre=filt)
-        else:
-            track_chain = chain_str if used_target == target else \
-                chain_str.replace(f"I={_w(target)}", f"I={_w(used_target)}")
+        track_chain = limiter_chain(plan, pre=filt) if limiter else linear_chain(plan, pre=filt)
+        plr = round(out_TP - out_I, 2)
         if num is not None:
             # A resumed track's bytes were rendered by whatever version last
             # actually processed it, not necessarily this run's WORKFLOW_VERSION —
@@ -1034,14 +1103,14 @@ def cmd_process(args):
                          if resumable else WORKFLOW_VERSION)
             entry = {"ver": entry_ver, "chain": track_chain,
                      "lufs": round(out_I, 2), "tp": round(out_TP, 2),
-                     "mp3_tp": round(mp3_tp, 2),
-                     "lra": round(out_LRA, 2), "md5": md5}
+                     "mp3_tp": round(mp3_tp, 2), "max_m": max_m, "max_s": max_s,
+                     "lra": round(out_LRA, 2), "plr": plr, "md5": md5}
             if in_I is not None:
                 entry = {"ver": entry_ver, "chain": track_chain,
                          "in_lufs": round(in_I, 1),
                          "lufs": round(out_I, 2), "tp": round(out_TP, 2),
-                         "mp3_tp": round(mp3_tp, 2),
-                         "lra": round(out_LRA, 2), "md5": md5}
+                         "mp3_tp": round(mp3_tp, 2), "max_m": max_m, "max_s": max_s,
+                         "lra": round(out_LRA, 2), "plr": plr, "md5": md5}
             if used_target != target:
                 entry["target_lufs"] = used_target
             if limiter:
