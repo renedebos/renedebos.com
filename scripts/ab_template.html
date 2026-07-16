@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>__TITLE__</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f5f2ed; --surface: #faf8f5; --text: #1a1916; --muted: #52514e;
+    --border: #dedad3; --accent: #2c4a3e; --accent-light: #e8efe8;
+    --series-a: #2a78d6; --series-b: #008300;
+    --sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono: ui-monospace, 'SF Mono', Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --bg: #17150f; --surface: #201d17; --text: #f2efe9; --muted: #c3c2b7;
+      --border: #3a362c; --accent: #7fae9a; --accent-light: #26332c;
+      --series-a: #3987e5; --series-b: #008300;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #17150f; --surface: #201d17; --text: #f2efe9; --muted: #c3c2b7;
+    --border: #3a362c; --accent: #7fae9a; --accent-light: #26332c;
+    --series-a: #3987e5; --series-b: #008300;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: var(--sans); background: var(--bg); color: var(--text);
+    max-width: 760px; margin: 0 auto; padding: 2rem 1.2rem 3rem; line-height: 1.5;
+  }
+  h1 { font-size: 1.3rem; margin: 0 0 0.3rem; }
+  .sub { color: var(--muted); font-size: 13px; margin: 0 0 1.6rem; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 1.1rem 1.2rem; margin-bottom: 1rem;
+  }
+  .card h2 { font-size: 15px; margin: 0 0 0.6rem; }
+  .card p.desc { font-size: 12.5px; color: var(--muted); margin: 0 0 0.9rem; }
+  code { background: var(--accent-light); padding: 0 4px; border-radius: 3px; font-family: var(--mono); font-size: 0.92em; }
+
+  /* ── synced transport ─────────────────────────────────────────────── */
+  .player { display: flex; flex-direction: column; gap: 0.7rem; }
+  .ab-toggle { display: flex; gap: 0.5rem; }
+  .ab-btn {
+    flex: 1; font-family: var(--sans); font-size: 13px; font-weight: 600;
+    padding: 0.6rem; border-radius: 6px; cursor: pointer;
+    border: 1.5px solid var(--border); background: var(--bg); color: var(--text);
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+  }
+  .ab-btn .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 0.4rem; vertical-align: middle; }
+  .ab-btn[data-side="a"] .dot { background: var(--series-a); }
+  .ab-btn[data-side="b"] .dot { background: var(--series-b); }
+  .ab-btn.active[data-side="a"] { border-color: var(--series-a); background: color-mix(in srgb, var(--series-a) 12%, transparent); }
+  .ab-btn.active[data-side="b"] { border-color: var(--series-b); background: color-mix(in srgb, var(--series-b) 12%, transparent); }
+  .transport { display: flex; align-items: center; gap: 0.7rem; }
+  .playbtn {
+    width: 2.4rem; height: 2.4rem; border-radius: 50%; flex-shrink: 0; cursor: pointer;
+    border: 1px solid var(--border); background: var(--accent); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .playbtn svg { width: 13px; height: 13px; }
+  .seek { flex: 1; }
+  .time { font-family: var(--mono); font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+  .sync-note { font-size: 11.5px; color: var(--muted); }
+
+  /* ── chart ─────────────────────────────────────────────────────────── */
+  .chart-legend { display: flex; gap: 1.2rem; font-size: 12px; color: var(--text); margin-bottom: 0.5rem; }
+  .chart-legend .key { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .chart-legend .key svg { width: 18px; height: 2px; }
+  #chartWrap { position: relative; }
+  #tooltip {
+    position: absolute; pointer-events: none; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.65rem;
+    font-size: 11.5px; box-shadow: 0 2px 8px rgba(0,0,0,0.12); display: none; white-space: nowrap;
+  }
+  #tooltip .row { display: flex; align-items: center; gap: 0.4rem; }
+  #tooltip .row + .row { margin-top: 2px; }
+  #tooltip .key { width: 10px; height: 2px; display: inline-block; }
+  #tooltip .val { font-family: var(--mono); font-weight: 600; color: var(--text); }
+  #tooltip .name { color: var(--muted); }
+  #tooltip .t { font-size: 10.5px; color: var(--muted); margin-bottom: 3px; }
+
+  table.params { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.params th, table.params td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border); }
+  table.params th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; }
+
+  details.tbl summary { cursor: pointer; font-size: 12px; color: var(--accent); margin-top: 0.6rem; }
+  table.data { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 0.6rem; font-family: var(--mono); }
+  table.data th, table.data td { padding: 0.2rem 0.4rem; border-bottom: 1px solid var(--border); text-align: right; }
+  table.data th:first-child, table.data td:first-child { text-align: left; }
+
+  .note {
+    font-size: 12px; color: var(--muted); background: var(--accent-light);
+    border: 1px solid var(--border); border-radius: 6px; padding: 0.7rem 0.9rem;
+    margin-top: 1.4rem;
+  }
+</style>
+</head>
+<body>
+  <h1>__TITLE__</h1>
+  <p class="sub">__SUBTITLE__</p>
+
+  <div class="card">
+    <h2>Synced comparison player</h2>
+    <p class="desc">Both versions play in lockstep at all times — switching A/B only changes which one you hear, at the exact same position. Seeking or pausing affects both.</p>
+    <div class="player">
+      <div class="ab-toggle">
+        <button class="ab-btn active" data-side="a" id="btnA"><span class="dot"></span>A — __LABEL_A__</button>
+        <button class="ab-btn" data-side="b" id="btnB"><span class="dot"></span>B — __LABEL_B__</button>
+      </div>
+      <div class="transport">
+        <button class="playbtn" id="playBtn" aria-label="Play/pause">
+          <svg id="playIcon" viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg>
+        </button>
+        <input type="range" class="seek" id="seek" min="0" max="1000" value="0" step="1">
+        <span class="time" id="timeLabel">0:00 / 0:00</span>
+      </div>
+      <p class="sync-note">Both tracks preload fully on first play so switching never re-buffers.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>What actually differs</h2>
+    <p class="desc">__PARAMS_DESC__</p>
+    <div style="overflow-x:auto">
+    <table class="params">
+      <tr><th>Parameter</th><th>A — __LABEL_A__</th><th>B — __LABEL_B__</th></tr>
+__PARAMS_ROWS__
+    </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Loudness over time</h2>
+    <p class="desc">__CHART_DESC__</p>
+    <div class="chart-legend">
+      <span class="key"><svg><line x1="0" y1="1" x2="18" y2="1" stroke="var(--series-a)" stroke-width="2"/></svg> A — __LABEL_A__</span>
+      <span class="key"><svg><line x1="0" y1="1" x2="18" y2="1" stroke="var(--series-b)" stroke-width="2"/></svg> B — __LABEL_B__</span>
+    </div>
+    <div id="chartWrap">
+      <svg id="chart" viewBox="0 0 900 420" style="width:100%;height:auto"></svg>
+      <div id="tooltip"></div>
+    </div>
+    <details class="tbl">
+      <summary>Show data table (every 5s)</summary>
+      <div id="tableHost"></div>
+    </details>
+  </div>
+
+  <p class="note">Local-only comparison, generated by scripts/ab_compare.py — this page isn't part of the site and nothing here has been published.</p>
+
+<script id="loudness-data" type="application/json">__LOUDNESS_DATA__</script>
+<script id="limited-regions" type="application/json">__LIMITED_REGIONS__</script>
+<script>
+(function () {
+  // ── synced A/B transport ────────────────────────────────────────────
+  var audioA = new Audio("__FILE_A__");
+  var audioB = new Audio("__FILE_B__");
+  audioA.preload = "auto"; audioB.preload = "auto";
+  var active = "a";
+  audioA.muted = false; audioB.muted = true;
+
+  var playBtn = document.getElementById("playBtn");
+  var playIcon = document.getElementById("playIcon");
+  var seek = document.getElementById("seek");
+  var timeLabel = document.getElementById("timeLabel");
+  var btnA = document.getElementById("btnA");
+  var btnB = document.getElementById("btnB");
+  var RANGE_MAX = 1000;
+  var seeking = false;
+
+  var PLAY_ICON = '<polygon points="4,2 14,8 4,14"/>';
+  var PAUSE_ICON = '<rect x="3" y="2" width="4" height="12"/><rect x="9" y="2" width="4" height="12"/>';
+
+  function fmt(s) {
+    if (!isFinite(s)) return "0:00";
+    var m = Math.floor(s / 60), sec = Math.floor(s % 60);
+    return m + ":" + (sec < 10 ? "0" : "") + sec;
+  }
+
+  function active_() { return active === "a" ? audioA : audioB; }
+  function inactive_() { return active === "a" ? audioB : audioA; }
+
+  // Continuously pull the muted (inactive) track back onto the audible
+  // one's position — corrects any independent-decode drift silently,
+  // since only the muted side is ever touched.
+  setInterval(function () {
+    var lead = active_(), follow = inactive_();
+    if (Math.abs(follow.currentTime - lead.currentTime) > 0.05) {
+      follow.currentTime = lead.currentTime;
+    }
+  }, 400);
+
+  function setActive(side) {
+    if (side === active) return;
+    var from = active_();
+    active = side;
+    var to = active_();
+    to.currentTime = from.currentTime;   // exact-position guarantee at the switch instant
+    audioA.muted = active !== "a";
+    audioB.muted = active !== "b";
+    btnA.classList.toggle("active", active === "a");
+    btnB.classList.toggle("active", active === "b");
+    moveCrosshairTo(to.currentTime);
+  }
+  btnA.addEventListener("click", function () { setActive("a"); });
+  btnB.addEventListener("click", function () { setActive("b"); });
+
+  function syncPlayIcon() {
+    playIcon.innerHTML = audioA.paused ? PLAY_ICON : PAUSE_ICON;
+  }
+  playBtn.addEventListener("click", function () {
+    if (audioA.paused) {
+      audioA.play().catch(function () {});
+      audioB.play().catch(function () {});
+    } else {
+      audioA.pause();
+      audioB.pause();
+    }
+    syncPlayIcon();
+  });
+  audioA.addEventListener("play", syncPlayIcon);
+  audioA.addEventListener("pause", syncPlayIcon);
+
+  audioA.addEventListener("timeupdate", function () {
+    if (!seeking) {
+      var pct = audioA.duration ? (audioA.currentTime / audioA.duration) * 100 : 0;
+      seek.value = Math.round(pct * RANGE_MAX / 100);
+    }
+    timeLabel.textContent = fmt(audioA.currentTime) + " / " + fmt(audioA.duration);
+    moveCrosshairTo(audioA.currentTime);
+  });
+  audioA.addEventListener("ended", function () { audioB.pause(); syncPlayIcon(); });
+
+  seek.addEventListener("mousedown", function () { seeking = true; });
+  seek.addEventListener("touchstart", function () { seeking = true; });
+  seek.addEventListener("change", function () { seeking = false; });
+  seek.addEventListener("input", function () {
+    if (!audioA.duration) return;
+    var t = (seek.value / RANGE_MAX) * audioA.duration;
+    audioA.currentTime = t;
+    audioB.currentTime = t;
+    moveCrosshairTo(t);
+  });
+
+  audioA.addEventListener("loadedmetadata", function () {
+    timeLabel.textContent = "0:00 / " + fmt(audioA.duration);
+  });
+
+  // ── loudness chart (dataviz skill: single axis, validated categorical pair,
+  // 2px lines, hairline recessive gridlines, crosshair+tooltip, legend) ──
+  var DATA = JSON.parse(document.getElementById("loudness-data").textContent);
+  var LIMITED_REGIONS = JSON.parse(document.getElementById("limited-regions").textContent);
+  var ptsA = DATA.a.points, ptsB = DATA.b.points;
+  var integA = DATA.a.integrated, integB = DATA.b.integrated;
+  var relA = ptsA.map(function (p) { return [p[0], p[1] - integA]; });
+  var relB = ptsB.map(function (p) { return [p[0], p[1] - integB]; });
+
+  var svg = document.getElementById("chart");
+  var W = 900, H = 420, padL = 46, padR = 16, padT = 16, padB = 34;
+  var plotW = W - padL - padR, plotH = H - padT - padB;
+  var dur = Math.max(relA[relA.length - 1][0], relB[relB.length - 1][0]);
+
+  // Robust range: EBU R128 short-term loudness reads down to ~ -100 LU
+  // relative during brief silence (tape start/end), which would otherwise
+  // compress the actual musical dynamics into a sliver of the chart. Use
+  // the 2nd/98th percentile instead of raw min/max, then clamp plotted
+  // values into that band (silence just pins to the floor, as a real meter
+  // would show, rather than distorting the scale).
+  var allY = relA.concat(relB).map(function (p) { return p[1]; }).sort(function (a, b) { return a - b; });
+  function pct(p) { return allY[Math.min(allY.length - 1, Math.floor(allY.length * p))]; }
+  var ymin = Math.floor(pct(0.02) / 2) * 2 - 2;
+  var ymax = Math.ceil(pct(0.98) / 2) * 2 + 2;
+  function clampY(y) { return Math.max(ymin, Math.min(ymax, y)); }
+
+  function X(t) { return padL + (t / dur) * plotW; }
+  function Y(y) { return padT + (ymax - y) / (ymax - ymin) * plotH; }
+
+  function pathFor(rel) {
+    return "M " + rel.map(function (p) { return X(p[0]).toFixed(1) + "," + Y(clampY(p[1])).toFixed(1); }).join(" L ");
+  }
+
+  var css = getComputedStyle(document.documentElement);
+  var seriesA = css.getPropertyValue("--series-a").trim();
+  var seriesB = css.getPropertyValue("--series-b").trim();
+  var borderCol = css.getPropertyValue("--border").trim();
+  var mutedCol = css.getPropertyValue("--muted").trim();
+
+  var svgns = "http://www.w3.org/2000/svg";
+  function el(tag, attrs) {
+    var e = document.createElementNS(svgns, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  // Applause/other limited-region annotations (v5 only; empty if none apply).
+  LIMITED_REGIONS.forEach(function (region) {
+    var start = region[0], end = Math.min(region[1], dur);
+    if (start >= dur) return;
+    svg.appendChild(el("rect", {
+      x: X(start).toFixed(1), y: padT,
+      width: (X(end) - X(start)).toFixed(1), height: plotH,
+      fill: seriesB, opacity: "0.08"
+    }));
+    var bandLabel = el("text", { x: X(start).toFixed(1), y: (padT + 12), "font-size": "10", fill: mutedCol });
+    bandLabel.textContent = region[2] || "limited (B)";
+    svg.appendChild(bandLabel);
+  });
+
+  // gridlines
+  for (var yv = Math.ceil(ymin / 2) * 2; yv <= ymax; yv += 2) {
+    svg.appendChild(el("line", { x1: padL, y1: Y(yv).toFixed(1), x2: W - padR, y2: Y(yv).toFixed(1), stroke: borderCol, "stroke-width": "1" }));
+    var yt = el("text", { x: padL - 8, y: (Y(yv) + 4).toFixed(1), "font-size": "10.5", fill: mutedCol, "text-anchor": "end" });
+    yt.textContent = (yv > 0 ? "+" : "") + yv;
+    svg.appendChild(yt);
+  }
+  for (var t = 0; t <= dur; t += 20) {
+    svg.appendChild(el("line", { x1: X(t).toFixed(1), y1: padT, x2: X(t).toFixed(1), y2: H - padB, stroke: borderCol, "stroke-width": "1" }));
+    var m = Math.floor(t / 60), s = Math.floor(t % 60);
+    var xt = el("text", { x: X(t).toFixed(1), y: H - padB + 16, "font-size": "10.5", fill: mutedCol, "text-anchor": "middle" });
+    xt.textContent = m + ":" + (s < 10 ? "0" : "") + s;
+    svg.appendChild(xt);
+  }
+  svg.appendChild(el("line", { x1: padL, y1: Y(0).toFixed(1), x2: W - padR, y2: Y(0).toFixed(1), stroke: mutedCol, "stroke-width": "1", "stroke-dasharray": "3,3" }));
+
+  svg.appendChild(el("path", { d: pathFor(relA), fill: "none", stroke: seriesA, "stroke-width": "2", "stroke-linejoin": "round", "stroke-linecap": "round" }));
+  svg.appendChild(el("path", { d: pathFor(relB), fill: "none", stroke: seriesB, "stroke-width": "2", "stroke-linejoin": "round", "stroke-linecap": "round" }));
+
+  var crosshair = el("line", { x1: padL, y1: padT, x2: padL, y2: H - padB, stroke: mutedCol, "stroke-width": "1", opacity: "0" });
+  svg.appendChild(crosshair);
+
+  var chartWrap = document.getElementById("chartWrap");
+  var tooltip = document.getElementById("tooltip");
+
+  function nearestIdx(t) {
+    var lo = 0, hi = relA.length - 1;
+    while (lo < hi) {
+      var mid = (lo + hi) >> 1;
+      if (relA[mid][0] < t) lo = mid + 1; else hi = mid;
+    }
+    return lo;
+  }
+
+  function moveCrosshairTo(t) {
+    var idx = nearestIdx(t);
+    var pa = relA[idx], pb = relB[idx];
+    if (!pa || !pb) return;
+    var x = X(pa[0]);
+    crosshair.setAttribute("x1", x.toFixed(1));
+    crosshair.setAttribute("x2", x.toFixed(1));
+    crosshair.setAttribute("opacity", "1");
+
+    var rowA = document.createElement("div"); rowA.className = "row";
+    var keyA = document.createElement("span"); keyA.className = "key"; keyA.style.background = seriesA;
+    var nameA = document.createElement("span"); nameA.className = "name"; nameA.textContent = "A";
+    var valA = document.createElement("span"); valA.className = "val"; valA.textContent = (pa[1] >= 0 ? "+" : "") + pa[1].toFixed(1) + " LU";
+    rowA.appendChild(keyA); rowA.appendChild(nameA); rowA.appendChild(valA);
+
+    var rowB = document.createElement("div"); rowB.className = "row";
+    var keyB = document.createElement("span"); keyB.className = "key"; keyB.style.background = seriesB;
+    var nameB = document.createElement("span"); nameB.className = "name"; nameB.textContent = "B";
+    var valB = document.createElement("span"); valB.className = "val"; valB.textContent = (pb[1] >= 0 ? "+" : "") + pb[1].toFixed(1) + " LU";
+    rowB.appendChild(keyB); rowB.appendChild(nameB); rowB.appendChild(valB);
+
+    var tEl = document.createElement("div"); tEl.className = "t"; tEl.textContent = fmt(pa[0]) + " into the track";
+
+    tooltip.textContent = "";
+    tooltip.appendChild(tEl); tooltip.appendChild(rowA); tooltip.appendChild(rowB);
+    tooltip.style.display = "block";
+    var wrapRect = chartWrap.getBoundingClientRect();
+    var scale = wrapRect.width / W;
+    var left = x * scale + 10;
+    if (left + 140 > wrapRect.width) left = x * scale - 150;
+    tooltip.style.left = left + "px";
+    tooltip.style.top = (Y(clampY(pa[1])) * scale - 10) + "px";
+  }
+
+  svg.addEventListener("pointermove", function (e) {
+    var rect = svg.getBoundingClientRect();
+    var xFrac = (e.clientX - rect.left) / rect.width;
+    var svgX = xFrac * W;
+    var tt = ((svgX - padL) / plotW) * dur;
+    moveCrosshairTo(Math.max(0, Math.min(dur, tt)));
+  });
+  svg.addEventListener("pointerleave", function () {
+    if (audioA.paused) { crosshair.setAttribute("opacity", "0"); tooltip.style.display = "none"; }
+  });
+
+  // accessible fallback: downsampled table every 5s
+  var tableHost = document.getElementById("tableHost");
+  var tbl = document.createElement("table");
+  tbl.className = "data";
+  var thead = document.createElement("tr");
+  ["Time", "A rel. LU", "B rel. LU"].forEach(function (h) {
+    var th = document.createElement("th"); th.textContent = h; thead.appendChild(th);
+  });
+  tbl.appendChild(thead);
+  for (var i = 0; i < relA.length; i += 50) {
+    var tr = document.createElement("tr");
+    var c0 = document.createElement("td"); c0.textContent = fmt(relA[i][0]);
+    var c1 = document.createElement("td"); c1.textContent = relA[i][1].toFixed(1);
+    var c2 = document.createElement("td"); c2.textContent = relB[i] ? relB[i][1].toFixed(1) : "";
+    tr.appendChild(c0); tr.appendChild(c1); tr.appendChild(c2);
+    tbl.appendChild(tr);
+  }
+  tableHost.appendChild(tbl);
+
+  moveCrosshairTo(0);
+  crosshair.setAttribute("opacity", "0");
+})();
+</script>
+</body>
+</html>
