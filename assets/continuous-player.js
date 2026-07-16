@@ -37,7 +37,12 @@
   }
   if (playbackChannel) {
     playbackChannel.onmessage = function (e) {
-      if (e.data !== playbackId && !audio.paused) audio.pause();
+      if (e.data !== playbackId && !audio.paused) {
+        audio.pause();
+        // Say why it went quiet, or the pause looks like a glitch. Cleared
+        // the next time playback starts (see the 'play' listener).
+        if (statusEl) statusEl.textContent = "Paused — playback started somewhere else on the site.";
+      }
     };
   }
 
@@ -86,6 +91,7 @@
     renderNow();
     highlight();
     setMediaMetadata();
+    saveState();
   }
 
   function stop() {
@@ -93,6 +99,7 @@
     idx = -1;
     renderNow();
     highlight();
+    saveState();
   }
 
   // audio.play() rejects on autoplay blocks/decode errors/dropped
@@ -107,8 +114,13 @@
   }
 
   audio.addEventListener("ended", function () { playAt(idx + 1); });
-  audio.addEventListener("play", function () { syncPlayBtn(); syncMediaPlaybackState(); claimPlayback(); });
-  audio.addEventListener("pause", function () { syncPlayBtn(); syncMediaPlaybackState(); });
+  audio.addEventListener("play", function () {
+    syncPlayBtn(); syncMediaPlaybackState(); claimPlayback();
+    // Playing clears any transient note (paused-by-another-player, restored-
+    // queue hint, or a stale playback error) — all one-shot by design.
+    if (statusEl) statusEl.textContent = "";
+  });
+  audio.addEventListener("pause", function () { syncPlayBtn(); syncMediaPlaybackState(); saveState(); });
   audio.addEventListener("timeupdate", function () {
     var range = nowEl.querySelector(".progress-range");
     var cur = nowEl.querySelector(".pl-time-current");
@@ -126,6 +138,7 @@
         });
       } catch (e) { /* not all browsers support this yet */ }
     }
+    if (Date.now() - lastStateSave > 5000) saveState();
   });
 
   function syncPlayBtn() {
@@ -153,7 +166,7 @@
       album: (t.venue || "") + " " + (t.showDate || ""),
       // No per-track/per-show artwork exists in this archive — the site's
       // own social-share image is a reasonable generic fallback.
-      artwork: [{ src: "https://renedebos.com/assets/og.png", sizes: "1200x630", type: "image/png" }],
+      artwork: [{ src: "https://renedebos.com/assets/artwork.png", sizes: "512x512", type: "image/png" }],
     });
   }
   function syncMediaPlaybackState() {
@@ -206,6 +219,25 @@
     } else if (b.dataset.act === "next") playAt(idx + 1);
     else if (audio.paused) attemptPlay(); else audio.pause();
   });
+  // Keyboard control — this window doesn't load player.js (see the file
+  // header), so it needs its own: space toggles play/pause, arrows skip
+  // ±10s. Inputs/buttons keep their native key behavior (the seek bar's own
+  // arrow-key seeking included — it's an <input>, so it's excluded here).
+  document.addEventListener("keydown", function (e) {
+    var tag = document.activeElement.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "BUTTON") return;
+    if (e.code === "Space") {
+      e.preventDefault();
+      if (idx === -1) { if (queue.length) playAt(0); }
+      else if (audio.paused) attemptPlay();
+      else audio.pause();
+    } else if (e.code === "ArrowRight" && audio.duration) {
+      audio.currentTime = Math.min(audio.duration, audio.currentTime + 10);
+    } else if (e.code === "ArrowLeft" && audio.duration) {
+      audio.currentTime = Math.max(0, audio.currentTime - 10);
+    }
+  });
+
   nowEl.addEventListener("mousedown", function (e) { if (e.target.closest(".progress-range")) seeking = true; });
   nowEl.addEventListener("touchstart", function (e) { if (e.target.closest(".progress-range")) seeking = true; });
   nowEl.addEventListener("change", function (e) { if (e.target.closest(".progress-range")) seeking = false; });
@@ -278,17 +310,47 @@
     history.replaceState(null, "", queue.length
       ? "#p=" + queue.map(function (t) { return t.id; }).join(",")
       : location.pathname);
+    saveState();
+  }
+
+  // ── session persistence ───────────────────────────────────────────────────
+  // The queue only lives in this window's URL hash — accidentally close the
+  // popup and it's gone. Mirror queue + position to localStorage (saved on
+  // queue changes, pause, and every ~5s while playing) so a cold /player/
+  // visit with no hash can pick up where the last session left off (cued,
+  // never autoplaying — see the boot block).
+
+  var STATE_KEY = "playerState";
+  var lastStateSave = 0;
+
+  function saveState() {
+    lastStateSave = Date.now();
+    try {
+      localStorage.setItem(STATE_KEY, JSON.stringify({
+        ids: queue.map(function (t) { return t.id; }),
+        idx: idx,
+        t: idx === -1 ? 0 : (audio.currentTime || 0),
+      }));
+    } catch (e) { /* storage full/blocked — persistence is best-effort */ }
+  }
+
+  function loadState() {
+    try {
+      var s = JSON.parse(localStorage.getItem(STATE_KEY) || "null");
+      return (s && s.ids && s.ids.length) ? s : null;
+    } catch (e) { return null; }
   }
 
   function loadFreshQueue(ids) {
     queue = resolveIds(ids);
     renderQueue();
-    if (!queue.length) { idx = -1; renderNow(); return; }
+    if (!queue.length) { idx = -1; renderNow(); saveState(); return; }
     idx = 0;
     audio.src = streamUrl(queue[0]);
     renderNow();
     highlight();
     setMediaMetadata();
+    saveState();
     // No autoplay — browsers block play() before a user gesture anyway, same
     // reasoning as playlist.js's hydrateFromHash().
   }
@@ -303,6 +365,7 @@
       queue = queue.concat(resolveIds(ids.slice(currentIds.length)));
       renderQueue();
       highlight();
+      saveState();
     } else {
       loadFreshQueue(ids);
     }
@@ -316,7 +379,29 @@
       CATALOG = data;
       var m = location.hash.match(/^#p=([\w.,-]+)/);
       var t = location.hash.match(/[&#]t=([\d.]+)/);
-      loadFreshQueue(m ? m[1].split(",").filter(Boolean) : []);
+      var ids = m ? m[1].split(",").filter(Boolean) : [];
+      // Cold visit with no hash: pick up where the last session left off
+      // (queue, track, and position — cued, not playing; there's no user
+      // gesture here to justify autoplay, unlike the hand-off case below).
+      var restored = ids.length ? null : loadState();
+      if (restored) ids = restored.ids;
+      loadFreshQueue(ids);
+      if (restored && queue.length) {
+        if (restored.idx > 0 && restored.idx < queue.length) {
+          idx = restored.idx;
+          audio.src = streamUrl(queue[idx]);
+          renderNow();
+          highlight();
+          setMediaMetadata();
+        }
+        if (restored.t > 0) {
+          audio.addEventListener("loadedmetadata", function once() {
+            audio.currentTime = restored.t;
+            audio.removeEventListener("loadedmetadata", once);
+          });
+        }
+        if (statusEl) statusEl.textContent = "Restored your last queue — press play to resume.";
+      }
       // A hand-off from /playlist/ (sendToPlayer's opts.startTime) rotates
       // the queue to start on whatever was already playing there and seeds
       // this one-time position — resume there instead of at 0:00. Only

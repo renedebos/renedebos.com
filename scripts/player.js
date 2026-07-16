@@ -606,16 +606,23 @@ window.addEventListener('hashchange', focusHashTrack);
 // alongside the hash so continuous-player.js can resume at the same position
 // instead of restarting; it has no meaning for a merge into a queue that's
 // already playing something else.
+// Returns how many tracks were actually new to the player's queue (the merge
+// dedupes, so "add" can be a no-op) — callers can tell the visitor instead of
+// silently doing nothing. null means the popup was blocked.
 function sendToPlayer(ids, opts) {
   const w = window.open('', 'hannanPlayer');
-  if (!w) return; // popup blocked
+  if (!w) return null; // popup blocked
+  let added;
   if (w.location.pathname === '/player/') {
     const existing = (w.location.hash.match(/^#p=([\w.,-]+)/) || [, ''])[1].split(',').filter(Boolean);
-    const merged = existing.concat(ids).filter((id, i, a) => id && a.indexOf(id) === i);
-    w.location.hash = '#p=' + merged.join(',');
+    const fresh = ids.filter((id, i, a) => id && a.indexOf(id) === i && existing.indexOf(id) === -1);
+    if (fresh.length) w.location.hash = '#p=' + existing.concat(fresh).join(',');
+    added = fresh.length;
   } else {
     const t = opts && opts.startTime ? '&t=' + opts.startTime.toFixed(1) : '';
     w.location.href = '/player/#p=' + ids.join(',') + t;
+    added = ids.length;
   }
   if (opts && opts.focus) w.focus();
+  return added;
 }

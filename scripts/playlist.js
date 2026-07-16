@@ -553,11 +553,23 @@
       } catch (e) { /* not all browsers support this yet */ }
     }
   });
-  audio.addEventListener("play", function () { syncPlayBtn(); syncMediaPlaybackState(); claimPlayback(audio); });
+  audio.addEventListener("play", function () {
+    syncPlayBtn(); syncMediaPlaybackState(); claimPlayback(audio);
+    // Playing again clears any "paused because..." note below.
+    if (pausedByClaim) { pausedByClaim = false; updateStatus(); }
+  });
   audio.addEventListener("pause", function () { syncPlayBtn(); syncMediaPlaybackState(); });
   // Another player (a show-page track, or the /player/ popup) started
-  // playing — this page's own <audio> is no longer the active one.
-  onExternalClaim(function () { if (!audio.paused) audio.pause(); }, audio);
+  // playing — this page's own <audio> is no longer the active one. Say why
+  // it went quiet, or the pause looks like a glitch.
+  var pausedByClaim = false;
+  onExternalClaim(function () {
+    if (!audio.paused) {
+      audio.pause();
+      pausedByClaim = true;
+      statusEl.textContent = "Paused — playback started somewhere else on the site.";
+    }
+  }, audio);
 
   function syncPlayBtn() {
     var b = nowEl.querySelector('[data-act="play"]');
@@ -578,7 +590,7 @@
       title: t.title,
       artist: ARTIST_NAMES[t.artist] || "",
       album: (t.venue || "") + " " + (t.showDate || ""),
-      artwork: [{ src: "https://renedebos.com/assets/og.png", sizes: "1200x630", type: "image/png" }],
+      artwork: [{ src: "https://renedebos.com/assets/artwork.png", sizes: "512x512", type: "image/png" }],
     });
   }
   function syncMediaPlaybackState() {

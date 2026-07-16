@@ -120,8 +120,23 @@
   function addToPlayer() {
     selected = loadSelection();  // same race guard as toggle()/goToPlaylist()
     if (!selected.length) return;
-    sendToPlayer(selected, { focus: false });
-    clearSelection();
+    var added = sendToPlayer(selected, { focus: false });
+    if (added === null) return;  // popup blocked — the browser surfaces that itself
+    // Clear the selection but keep the bar visible long enough to say what
+    // happened — sendToPlayer dedupes, so "add" can be a no-op and silence
+    // here would look broken. clearSelection() would hide the bar instantly.
+    selected = [];
+    saveSelection();
+    syncAllButtons();
+    var btn = bar.querySelector('.tsb-player');
+    bar.querySelector('.tsb-count').textContent = '';
+    btn.textContent = added
+      ? 'Added ' + added + (added === 1 ? ' song' : ' songs')
+      : 'Already in player';
+    setTimeout(function () {
+      btn.textContent = 'Add to player';
+      renderBar();
+    }, 1600);
   }
 
   document.addEventListener('click', function (e) {
