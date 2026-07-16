@@ -60,6 +60,19 @@
   var PAUSE_ICON = '<svg viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="2" width="4" height="12"/><rect x="9" y="2" width="4" height="12"/></svg>';
   var PREV_ICON = '<svg viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2" width="2" height="12"/><polygon points="14,2 14,14 4,8"/></svg>';
   var NEXT_ICON = '<svg viewBox="0 0 16 16" fill="currentColor"><polygon points="2,2 2,14 12,8"/><rect x="12" y="2" width="2" height="12"/></svg>';
+  var SHUFFLE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
+    + 'stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/>'
+    + '<line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/>'
+    + '<line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>';
+
+  // Mirrors playlist.js's shuffle().
+  function shuffle(a) {
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
 
   function formatTime(s) {
     if (!isFinite(s)) return "—";
@@ -209,6 +222,7 @@
         ? ' <span class="sr-tag">' + esc(t.songwriter) + "</span>" : "")
       + "</span></div>"
       + '<div class="pl-controls">'
+      + '<button type="button" class="pl-btn" data-act="shuffle" aria-label="Shuffle remaining tracks">' + SHUFFLE_ICON + "</button>"
       + '<button type="button" class="pl-btn" data-act="prev" aria-label="Previous">' + PREV_ICON + "</button>"
       + '<button type="button" class="pl-btn pl-btn-play" data-act="play" aria-label="Play/pause">' + PAUSE_ICON + "</button>"
       + '<button type="button" class="pl-btn" data-act="next" aria-label="Next">' + NEXT_ICON + "</button>"
@@ -220,10 +234,25 @@
     syncPlayBtn();
   }
 
+  // Reorders the not-yet-played tail of the queue in place — whatever already
+  // played (everything up to and including the current track) stays put, so
+  // this can't rewrite history mid-listen, only what's coming up.
+  function shuffleRemaining() {
+    if (idx === -1) {
+      queue = shuffle(queue.slice());
+    } else {
+      queue = queue.slice(0, idx + 1).concat(shuffle(queue.slice(idx + 1)));
+    }
+    renderQueue();
+    syncHash();
+    highlight();
+  }
+
   nowEl.addEventListener("click", function (e) {
     var b = e.target.closest(".pl-btn");
     if (!b) return;
-    if (b.dataset.act === "prev") {
+    if (b.dataset.act === "shuffle") shuffleRemaining();
+    else if (b.dataset.act === "prev") {
       if (audio.currentTime > 3) audio.currentTime = 0; else playAt(idx - 1);
     } else if (b.dataset.act === "next") playAt(idx + 1);
     else if (audio.paused) attemptPlay(); else audio.pause();
