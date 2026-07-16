@@ -516,13 +516,7 @@
     attemptPlay();
     renderNow();
     highlight();
-    if ("mediaSession" in navigator) {
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: queue[idx].title,
-        artist: ARTIST_NAMES[queue[idx].artist] || "",
-        album: (queue[idx].venue || "") + " " + (queue[idx].showDate || ""),
-      });
-    }
+    setMediaMetadata();
   }
 
   function stop() {
@@ -543,13 +537,49 @@
       range.setAttribute("aria-valuetext", formatTime(audio.currentTime));
     }
     if (cur) cur.textContent = formatTime(audio.currentTime);
+    if ("mediaSession" in navigator && audio.duration) {
+      try {
+        navigator.mediaSession.setPositionState({
+          duration: audio.duration, playbackRate: audio.playbackRate, position: audio.currentTime,
+        });
+      } catch (e) { /* not all browsers support this yet */ }
+    }
   });
-  audio.addEventListener("play", function () { syncPlayBtn(); });
-  audio.addEventListener("pause", function () { syncPlayBtn(); });
+  audio.addEventListener("play", function () { syncPlayBtn(); syncMediaPlaybackState(); });
+  audio.addEventListener("pause", function () { syncPlayBtn(); syncMediaPlaybackState(); });
 
   function syncPlayBtn() {
     var b = nowEl.querySelector('[data-act="play"]');
     if (b) b.textContent = audio.paused ? "▶" : "❚❚";
+  }
+
+  // ── Media Session — lock-screen/headset controls ─────────────────────────
+  // Previously metadata-only here (continuous-player.js, the /player/ popup,
+  // got the full action-handler treatment first) — that meant playing a
+  // queue directly on this page, without opening the popup, had no
+  // lock-screen controls at all. Same treatment here now so the two players
+  // don't drift.
+
+  function setMediaMetadata() {
+    if (!("mediaSession" in navigator) || idx === -1) return;
+    var t = queue[idx];
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: t.title,
+      artist: ARTIST_NAMES[t.artist] || "",
+      album: (t.venue || "") + " " + (t.showDate || ""),
+      artwork: [{ src: "https://renedebos.com/assets/og.png", sizes: "1200x630", type: "image/png" }],
+    });
+  }
+  function syncMediaPlaybackState() {
+    if ("mediaSession" in navigator) navigator.mediaSession.playbackState = audio.paused ? "paused" : "playing";
+  }
+  if ("mediaSession" in navigator) {
+    navigator.mediaSession.setActionHandler("play", function () { attemptPlay(); });
+    navigator.mediaSession.setActionHandler("pause", function () { audio.pause(); });
+    navigator.mediaSession.setActionHandler("previoustrack", function () {
+      if (audio.currentTime > 3) audio.currentTime = 0; else playAt(idx - 1);
+    });
+    navigator.mediaSession.setActionHandler("nexttrack", function () { playAt(idx + 1); });
   }
 
   // audio.play() returns a promise that rejects on autoplay blocks, decode
