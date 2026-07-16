@@ -1835,7 +1835,17 @@ a.artist-chip:hover { filter: brightness(1.08); }
 .pl-row:first-child { border-top: none; }
 .pl-row.pl-playing { background: var(--accent-light); }
 .pl-row.pl-playing .sr-title { color: var(--accent); }
-.pl-row .track-add { width: 20px; height: 20px; margin: 0 0.6rem; }
+/* Matches .pl-remove/.pl-link's borderless ghost style here — .track-add's
+   sitewide accent ring (meant to stand out on show/song pages) read visibly
+   larger than its 24px siblings even at a smaller box size, since the ring
+   itself adds bulk no other queue-row icon carries. aria-pressed keeps its
+   own solid-accent "selected" state so the toggle is still legible. */
+.pl-row .track-add {
+  width: 24px; height: 24px; margin: 0 0.6rem;
+  border: none; background: transparent; color: var(--muted);
+}
+.pl-row .track-add:hover { background: var(--accent-light); color: var(--accent); }
+.pl-row .track-add[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
 
 /* × remove — quieter than the +: no ring, muted until hovered. */
 .pl-remove {

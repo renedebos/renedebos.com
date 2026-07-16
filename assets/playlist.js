@@ -737,9 +737,9 @@
           + '<span class="sr-meta">' + formatTime(t.durationSec) + "</span></button>"
           + trackAddButtonHtml(t.id)
           + '<a class="pl-link" href="' + esc(t.url) + '" target="_blank" rel="noopener" '
-          + 'aria-label="Open ' + esc(t.title) + ' on its show page">' + LINK_SVG + "</a>"
+          + 'aria-label="Open ' + esc(t.title) + ' on its show page" title="Open show page">' + LINK_SVG + "</a>"
           + '<button type="button" class="pl-remove" data-i="' + i
-          + '" aria-label="Remove ' + esc(t.title) + ' from this playlist">' + X_SVG + "</button>"
+          + '" aria-label="Remove ' + esc(t.title) + ' from this playlist" title="Remove from playlist">' + X_SVG + "</button>"
           + "</div>";
       }).join("") + "</div>";
   }

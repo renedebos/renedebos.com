@@ -32,8 +32,9 @@
 
   window.trackAddButtonHtml = function (id) {
     var on = selected.indexOf(id) !== -1;
+    var label = on ? 'Remove from playlist selection' : 'Add to playlist selection';
     return '<button type="button" class="track-add" data-id="' + id + '" aria-pressed="' + on
-      + '" aria-label="' + (on ? 'Remove from playlist selection' : 'Add to playlist selection') + '">'
+      + '" aria-label="' + label + '" title="' + label + '">'
       + (on ? CHECK_SVG : PLUS_SVG) + '</button>';
   };
 
@@ -69,9 +70,11 @@
   function syncAllButtons() {
     document.querySelectorAll('.track-add[data-id]').forEach(function (b) {
       var on = selected.indexOf(b.dataset.id) !== -1;
+      var label = on ? 'Remove from playlist selection' : 'Add to playlist selection';
       b.setAttribute('aria-pressed', on);
       b.innerHTML = on ? CHECK_SVG : PLUS_SVG;
-      b.setAttribute('aria-label', on ? 'Remove from playlist selection' : 'Add to playlist selection');
+      b.setAttribute('aria-label', label);
+      b.setAttribute('title', label);
     });
   }
 
