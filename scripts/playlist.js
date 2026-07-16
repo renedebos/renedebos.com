@@ -264,6 +264,7 @@
   var shareBtn = document.getElementById("pl-share");
   var saveBtn = document.getElementById("pl-save");
   var downloadBtn = document.getElementById("pl-download");
+  var playerBtn = document.getElementById("pl-player");
 
   function syncHash() {
     history.replaceState(null, "", queue.length
@@ -271,6 +272,7 @@
       : location.pathname);
     shareBtn.hidden = !queue.length;
     if (saveBtn) saveBtn.hidden = !queue.length;
+    if (playerBtn) playerBtn.hidden = !queue.length;
     if (downloadBtn) {
       downloadBtn.hidden = !queue.length;
       // Keep the visible label short ("Download ZIP") — the count/size
@@ -365,6 +367,15 @@
       if (!queue.length) return;
       var name = "Playlist - " + new Date().toISOString().slice(0, 10);
       openPasswordModal({ type: "batch", manifest: buildPlaylistManifest(name, queue) });
+    });
+  }
+
+  // Opens (or focuses/extends) the /player/ popup with this queue — see
+  // sendToPlayer() in player.js, already loaded globally on this page.
+  if (playerBtn) {
+    playerBtn.addEventListener("click", function () {
+      if (!queue.length) return;
+      sendToPlayer(queue.map(function (t) { return t.id; }), { focus: true });
     });
   }
 

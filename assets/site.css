@@ -1060,7 +1060,7 @@ main {
   background: none; border: none; cursor: pointer; text-decoration: underline;
 }
 .tsb-clear:hover { color: var(--accent); }
-.tsb-add { padding: 0.4rem 1rem; font-size: 12px; white-space: nowrap; }
+.tsb-add, .tsb-player { padding: 0.4rem 1rem; font-size: 12px; white-space: nowrap; }
 
 /* ── alternates disclosure ───────────────────────────────────────────────── */
 

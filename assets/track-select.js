@@ -45,9 +45,11 @@
     bar.hidden = true;
     bar.innerHTML = '<span class="tsb-count"></span>'
       + '<button type="button" class="tsb-clear">Clear</button>'
+      + '<button type="button" class="tsb-player pl-generate pl-share">Add to player</button>'
       + '<button type="button" class="tsb-add pl-generate">Build playlist &rarr;</button>';
     document.body.appendChild(bar);
     bar.querySelector('.tsb-clear').addEventListener('click', clearSelection);
+    bar.querySelector('.tsb-player').addEventListener('click', addToPlayer);
     bar.querySelector('.tsb-add').addEventListener('click', goToPlaylist);
     return bar;
   }
@@ -107,6 +109,18 @@
     } else {
       location.href = '/playlist/' + hash;
     }
+    clearSelection();
+  }
+
+  // Hands the selection to the continuous-player popup (see sendToPlayer()
+  // in player.js, loaded globally on every page this bar appears on) instead
+  // of navigating to /playlist/ — stays on whatever page you're browsing,
+  // and doesn't steal focus from it (opts.focus: false), unlike "Build
+  // playlist" which is a deliberate "take me there" action.
+  function addToPlayer() {
+    selected = loadSelection();  // same race guard as toggle()/goToPlaylist()
+    if (!selected.length) return;
+    sendToPlayer(selected, { focus: false });
     clearSelection();
   }
 

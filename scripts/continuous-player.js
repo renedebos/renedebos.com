@@ -1,0 +1,309 @@
+// Continuous player for /player/ — a dedicated popup window a visitor opens
+// once (see player.js's sendToPlayer()) and leaves alone so playback survives
+// navigating away in every OTHER tab, which a plain page-scoped <audio>
+// element on the main site never could. Deliberately self-contained: no
+// dependency on player.js (whose password-modal/download machinery this
+// page doesn't need) or playlist.js (whose filter-builder this page doesn't
+// need) — a small, intentional duplication of the handful of shared bits
+// (WORKER, formatTime, ARTIST_NAMES) rather than pulling in either file's
+// full surface. The playback engine (streamUrl/playAt/stop/attemptPlay, the
+// audio event listeners, the #p=... hash format) mirrors playlist.js, which
+// is the fuller reference implementation if either drifts.
+(function () {
+  var WORKER = "https://wav-download.renedebos.workers.dev";
+  var RANGE_MAX = 1000;
+  var ARTIST_NAMES = { jerry: "Jerry Hannan", sean: "Sean Hannan",
+                       mad: "Mad Hannans", seanjerry: "Sean & Jerry Hannan" };
+
+  var nowEl = document.getElementById("cp-now");
+  var queueEl = document.getElementById("cp-queue");
+  var statusEl = document.getElementById("cp-status");
+
+  var CATALOG = [];
+  var queue = [];
+  var idx = -1;
+  var audio = new Audio();
+  audio.preload = "none";
+  var seeking = false;
+
+  var esc = function (s) {
+    return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  };
+
+  function formatTime(s) {
+    if (!isFinite(s)) return "—";
+    var m = Math.floor(s / 60), sec = Math.floor(s % 60);
+    return m + ":" + (sec < 10 ? "0" : "") + sec;
+  }
+
+  function streamUrl(t) {
+    return WORKER + "/stream?file=" + encodeURIComponent(t.file) + (t.ver ? "&v=" + t.ver : "");
+  }
+
+  function trackMeta(t) {
+    return [ARTIST_NAMES[t.artist] || t.artist, t.venue, t.showDate || "unknown date"]
+      .filter(Boolean).join(" · ");
+  }
+
+  function totalStr(list) {
+    var sec = 0;
+    list.forEach(function (t) { sec += t.durationSec; });
+    var h = Math.floor(sec / 3600), m = Math.round(sec % 3600 / 60);
+    return h ? h + "h " + m + "m" : m + " min";
+  }
+
+  function resolveIds(ids) {
+    var byId = {};
+    CATALOG.forEach(function (t) { byId[t.id] = t; });
+    return ids.map(function (id) { return byId[id]; }).filter(function (t) { return t; });
+  }
+
+  // ── player engine (mirrors playlist.js) ──────────────────────────────────
+
+  function playAt(i) {
+    if (i < 0) i = 0;
+    if (i >= queue.length) { stop(); return; }
+    idx = i;
+    audio.src = streamUrl(queue[idx]);
+    attemptPlay();
+    renderNow();
+    highlight();
+    setMediaMetadata();
+  }
+
+  function stop() {
+    audio.pause();
+    idx = -1;
+    renderNow();
+    highlight();
+  }
+
+  // audio.play() rejects on autoplay blocks/decode errors/dropped
+  // connections — unhandled, that fails silently and the UI just looks stuck.
+  function attemptPlay() {
+    var p = audio.play();
+    if (p && p.catch) {
+      p.catch(function () {
+        if (statusEl) statusEl.textContent = "Couldn't start playback — tap play to try again.";
+      });
+    }
+  }
+
+  audio.addEventListener("ended", function () { playAt(idx + 1); });
+  audio.addEventListener("play", function () { syncPlayBtn(); syncMediaPlaybackState(); });
+  audio.addEventListener("pause", function () { syncPlayBtn(); syncMediaPlaybackState(); });
+  audio.addEventListener("timeupdate", function () {
+    var range = nowEl.querySelector(".progress-range");
+    var cur = nowEl.querySelector(".pl-time-current");
+    var pct = audio.duration ? audio.currentTime / audio.duration * 100 : 0;
+    if (range && !seeking) {
+      range.value = Math.round(pct * RANGE_MAX / 100);
+      range.style.background = "linear-gradient(to right, var(--accent) " + pct + "%, var(--border) " + pct + "%)";
+      range.setAttribute("aria-valuetext", formatTime(audio.currentTime));
+    }
+    if (cur) cur.textContent = formatTime(audio.currentTime);
+    if ("mediaSession" in navigator && audio.duration) {
+      try {
+        navigator.mediaSession.setPositionState({
+          duration: audio.duration, playbackRate: audio.playbackRate, position: audio.currentTime,
+        });
+      } catch (e) { /* not all browsers support this yet */ }
+    }
+  });
+
+  function syncPlayBtn() {
+    var b = nowEl.querySelector('[data-act="play"]');
+    if (b) b.textContent = audio.paused ? "▶" : "❚❚";
+  }
+
+  function highlight() {
+    queueEl.querySelectorAll(".pl-row").forEach(function (row, i) {
+      row.classList.toggle("pl-playing", i === idx);
+    });
+  }
+
+  // ── Media Session — lock-screen/headset controls ─────────────────────────
+  // playlist.js only ever sets metadata; no action handlers exist anywhere in
+  // that file today. This popup is the one place that needs them, since it's
+  // the only page meant to keep playing while the visitor's elsewhere.
+
+  function setMediaMetadata() {
+    if (!("mediaSession" in navigator) || idx === -1) return;
+    var t = queue[idx];
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: t.title,
+      artist: ARTIST_NAMES[t.artist] || "",
+      album: (t.venue || "") + " " + (t.showDate || ""),
+      // No per-track/per-show artwork exists in this archive — the site's
+      // own social-share image is a reasonable generic fallback.
+      artwork: [{ src: "https://renedebos.com/assets/og.png", sizes: "1200x630", type: "image/png" }],
+    });
+  }
+  function syncMediaPlaybackState() {
+    if ("mediaSession" in navigator) navigator.mediaSession.playbackState = audio.paused ? "paused" : "playing";
+  }
+  if ("mediaSession" in navigator) {
+    navigator.mediaSession.setActionHandler("play", function () { attemptPlay(); });
+    navigator.mediaSession.setActionHandler("pause", function () { audio.pause(); });
+    navigator.mediaSession.setActionHandler("previoustrack", function () {
+      if (audio.currentTime > 3) audio.currentTime = 0; else playAt(idx - 1);
+    });
+    navigator.mediaSession.setActionHandler("nexttrack", function () { playAt(idx + 1); });
+  }
+
+  // ── now-playing UI ────────────────────────────────────────────────────────
+
+  function renderNow() {
+    document.title = idx === -1 ? "The Hannan Tapes — Player" : queue[idx].title + " — Player";
+    if (idx === -1) {
+      nowEl.innerHTML = '<p class="cp-empty">Nothing queued yet. Use &ldquo;Open continuous '
+        + 'player&rdquo; on <a href="/playlist/">/playlist/</a>, or the + button on any show or '
+        + "song page, then &ldquo;Add to player.&rdquo;</p>";
+      return;
+    }
+    var t = queue[idx];
+    nowEl.innerHTML =
+      '<div class="pl-now-info"><a class="pl-now-title" href="' + esc(t.url) + '" target="_blank" rel="noopener">'
+      + esc(t.title) + "</a>"
+      + '<span class="pl-now-meta">' + esc(trackMeta(t))
+      + (t.songwriter && t.songwriter !== "Jerry Hannan & Sean Hannan"
+        ? ' <span class="sr-tag">' + esc(t.songwriter) + "</span>" : "")
+      + "</span></div>"
+      + '<div class="pl-controls">'
+      + '<button type="button" class="pl-btn" data-act="prev" aria-label="Previous">⏮</button>'
+      + '<button type="button" class="pl-btn pl-btn-play" data-act="play" aria-label="Play/pause">❚❚</button>'
+      + '<button type="button" class="pl-btn" data-act="next" aria-label="Next">⏭</button>'
+      + "</div>"
+      + '<div class="pl-progress"><span class="pl-time-current">0:00</span>'
+      + '<input type="range" class="progress-range" min="0" max="' + RANGE_MAX + '" value="0" step="1" '
+      + 'aria-label="Seek ' + esc(t.title) + '" aria-valuetext="0:00">'
+      + "<span>" + formatTime(t.durationSec) + "</span></div>";
+    syncPlayBtn();
+  }
+
+  nowEl.addEventListener("click", function (e) {
+    var b = e.target.closest(".pl-btn");
+    if (!b) return;
+    if (b.dataset.act === "prev") {
+      if (audio.currentTime > 3) audio.currentTime = 0; else playAt(idx - 1);
+    } else if (b.dataset.act === "next") playAt(idx + 1);
+    else if (audio.paused) attemptPlay(); else audio.pause();
+  });
+  nowEl.addEventListener("mousedown", function (e) { if (e.target.closest(".progress-range")) seeking = true; });
+  nowEl.addEventListener("touchstart", function (e) { if (e.target.closest(".progress-range")) seeking = true; });
+  nowEl.addEventListener("change", function (e) { if (e.target.closest(".progress-range")) seeking = false; });
+  nowEl.addEventListener("input", function (e) {
+    var range = e.target.closest(".progress-range");
+    if (!range || !audio.duration) return;
+    var pct = (range.value / RANGE_MAX) * 100;
+    range.style.background = "linear-gradient(to right, var(--accent) " + pct + "%, var(--border) " + pct + "%)";
+    audio.currentTime = (pct / 100) * audio.duration;
+  });
+
+  // ── queue list ────────────────────────────────────────────────────────────
+
+  var X_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" '
+    + 'stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
+
+  function renderQueue() {
+    if (!queue.length) { queueEl.innerHTML = ""; return; }
+    queueEl.innerHTML = '<p class="search-status">' + queue.length
+      + (queue.length === 1 ? " song · " : " songs · ") + totalStr(queue) + "</p>"
+      + '<div class="search-results">' + queue.map(function (t, i) {
+        return '<div class="pl-row" data-i="' + i + '">'
+          + '<button type="button" class="sr pl-row-play" data-i="' + i + '">'
+          + '<span class="sr-icon">&#9834;</span>'
+          + '<span class="sr-main"><span class="sr-title">' + esc(t.title) + "</span>"
+          + '<span class="sr-sub">' + esc(trackMeta(t)) + "</span></span>"
+          + '<span class="sr-meta">' + formatTime(t.durationSec) + "</span></button>"
+          + '<button type="button" class="pl-remove" data-i="' + i
+          + '" aria-label="Remove ' + esc(t.title) + ' from this queue">' + X_SVG + "</button>"
+          + "</div>";
+      }).join("") + "</div>";
+    highlight();
+  }
+
+  queueEl.addEventListener("click", function (e) {
+    var play = e.target.closest(".pl-row-play");
+    var remove = e.target.closest(".pl-remove");
+    if (play) { playAt(+play.dataset.i); return; }
+    if (remove) removeAt(+remove.dataset.i);
+  });
+
+  // Drop one track in place — the queue is the source of truth; the hash and
+  // playing index both resync from it (mirrors playlist.js's removeAt()).
+  function removeAt(i) {
+    if (i < 0 || i >= queue.length) return;
+    var wasPlaying = idx !== -1 && !audio.paused;
+    queue.splice(i, 1);
+    if (!queue.length) {
+      stop();
+    } else if (i < idx) {
+      idx--;
+    } else if (i === idx) {
+      if (idx >= queue.length) { stop(); }
+      else { audio.src = streamUrl(queue[idx]); if (wasPlaying) attemptPlay(); }
+    }
+    renderQueue();
+    renderNow();
+    syncHash();
+  }
+
+  // ── hash sync ─────────────────────────────────────────────────────────────
+  // Same #p=id,id,... format as /playlist/, so any page can hand this window
+  // a queue by URL alone. Unlike /playlist/, an incoming hash here is
+  // asymmetric on purpose: if it's exactly the current queue plus more ids
+  // appended (sendToPlayer()'s "add to the running player" case), splice the
+  // new ones on without touching playback; anything else (a wholly different
+  // list) is treated as a fresh load, same as opening the page cold.
+
+  function syncHash() {
+    history.replaceState(null, "", queue.length
+      ? "#p=" + queue.map(function (t) { return t.id; }).join(",")
+      : location.pathname);
+  }
+
+  function loadFreshQueue(ids) {
+    queue = resolveIds(ids);
+    renderQueue();
+    if (!queue.length) { idx = -1; renderNow(); return; }
+    idx = 0;
+    audio.src = streamUrl(queue[0]);
+    renderNow();
+    highlight();
+    setMediaMetadata();
+    // No autoplay — browsers block play() before a user gesture anyway, same
+    // reasoning as playlist.js's hydrateFromHash().
+  }
+
+  window.addEventListener("hashchange", function () {
+    var m = location.hash.match(/^#p=([\w.,-]+)/);
+    var ids = m ? m[1].split(",").filter(Boolean) : [];
+    var currentIds = queue.map(function (t) { return t.id; });
+    var isAppend = ids.length > currentIds.length
+      && currentIds.every(function (id, i) { return ids[i] === id; });
+    if (isAppend) {
+      queue = queue.concat(resolveIds(ids.slice(currentIds.length)));
+      renderQueue();
+      highlight();
+    } else {
+      loadFreshQueue(ids);
+    }
+  });
+
+  // ── boot ──────────────────────────────────────────────────────────────────
+
+  fetch("/assets/tracks.json")
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      CATALOG = data;
+      var m = location.hash.match(/^#p=([\w.,-]+)/);
+      loadFreshQueue(m ? m[1].split(",").filter(Boolean) : []);
+      syncHash();
+    })
+    .catch(function (e) {
+      if (statusEl) statusEl.textContent = "Could not load the track catalog: " + e;
+    });
+})();

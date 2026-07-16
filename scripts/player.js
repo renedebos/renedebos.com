@@ -555,3 +555,26 @@ function focusHashTrack() {
 }
 window.addEventListener('load', focusHashTrack);
 window.addEventListener('hashchange', focusHashTrack);
+
+// ── continuous player popup ─────────────────────────────────────────────────
+// Opening a tab/window with a fixed name and an empty URL returns a handle to
+// it WITHOUT navigating it away if it already exists — the standard trick for
+// "find or create" a named popup. Used from /playlist/'s "Open continuous
+// player" button and the track-selection bar's "Add to player" (see
+// track-select.js) so either can hand tracks to an already-running player
+// (by extending its #p=... hash — continuous-player.js treats an append as
+// non-disruptive, see its hashchange handler) without stealing focus from
+// whatever page the visitor is actually on, unless they asked to be taken
+// there (opts.focus).
+function sendToPlayer(ids, opts) {
+  const w = window.open('', 'hannanPlayer');
+  if (!w) return; // popup blocked
+  if (w.location.pathname === '/player/') {
+    const existing = (w.location.hash.match(/^#p=([\w.,-]+)/) || [, ''])[1].split(',').filter(Boolean);
+    const merged = existing.concat(ids).filter((id, i, a) => id && a.indexOf(id) === i);
+    w.location.hash = '#p=' + merged.join(',');
+  } else {
+    w.location.href = '/player/#p=' + ids.join(',');
+  }
+  if (opts && opts.focus) w.focus();
+}
