@@ -686,6 +686,11 @@
       renderLength();
       updateStatus();
       hydrateFromHash();
+      // The initial renderSaved() above ran against an empty CATALOG (by
+      // design, so names/counts show immediately from storage alone) — its
+      // Download buttons' size tooltips needed real tracks, so redo it now
+      // that resolveIds() can actually look them up.
+      renderSaved();
     })
     .catch(function (e) { statusEl.textContent = "Could not load the track catalog: " + e; });
 })();
