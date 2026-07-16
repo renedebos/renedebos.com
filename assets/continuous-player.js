@@ -313,6 +313,13 @@
           audio.currentTime = startTime;
           audio.removeEventListener("loadedmetadata", once);
         });
+        // Unlike a cold /player/ visit (no user gesture to point to, so no
+        // autoplay attempt below), this boot is a direct consequence of a
+        // click on /playlist/ — the popup's "sticky activation" carries
+        // that gesture over, so browsers generally allow resuming playback
+        // here without another tap. attemptPlay()'s existing rejection
+        // handler covers the browsers that still say no.
+        attemptPlay();
       }
       syncHash();
     })
