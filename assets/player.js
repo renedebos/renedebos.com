@@ -566,6 +566,12 @@ window.addEventListener('hashchange', focusHashTrack);
 // non-disruptive, see its hashchange handler) without stealing focus from
 // whatever page the visitor is actually on, unless they asked to be taken
 // there (opts.focus).
+//
+// opts.startTime only applies when the popup doesn't exist yet (a fresh
+// hand-off, not a background append) — it seeds a one-time &t=<seconds>
+// alongside the hash so continuous-player.js can resume at the same position
+// instead of restarting; it has no meaning for a merge into a queue that's
+// already playing something else.
 function sendToPlayer(ids, opts) {
   const w = window.open('', 'hannanPlayer');
   if (!w) return; // popup blocked
@@ -574,7 +580,8 @@ function sendToPlayer(ids, opts) {
     const merged = existing.concat(ids).filter((id, i, a) => id && a.indexOf(id) === i);
     w.location.hash = '#p=' + merged.join(',');
   } else {
-    w.location.href = '/player/#p=' + ids.join(',');
+    const t = opts && opts.startTime ? '&t=' + opts.startTime.toFixed(1) : '';
+    w.location.href = '/player/#p=' + ids.join(',') + t;
   }
   if (opts && opts.focus) w.focus();
 }

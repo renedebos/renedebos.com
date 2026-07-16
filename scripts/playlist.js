@@ -371,11 +371,19 @@
   }
 
   // Opens (or focuses/extends) the /player/ popup with this queue — see
-  // sendToPlayer() in player.js, already loaded globally on this page.
+  // sendToPlayer() in player.js, already loaded globally on this page. This
+  // is a genuine hand-off, not a copy: pause this page's audio (otherwise
+  // both it and the popup end up playing at once) and rotate the queue so
+  // the popup starts on whatever was actually playing here, at the same
+  // position, instead of restarting the whole queue from track 1.
   if (playerBtn) {
     playerBtn.addEventListener("click", function () {
       if (!queue.length) return;
-      sendToPlayer(queue.map(function (t) { return t.id; }), { focus: true });
+      var from = idx === -1 ? 0 : idx;
+      var startTime = idx === -1 ? 0 : audio.currentTime;
+      audio.pause();
+      var ids = queue.slice(from).concat(queue.slice(0, from)).map(function (t) { return t.id; });
+      sendToPlayer(ids, { focus: true, startTime: startTime });
     });
   }
 

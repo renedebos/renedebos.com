@@ -300,7 +300,20 @@
     .then(function (data) {
       CATALOG = data;
       var m = location.hash.match(/^#p=([\w.,-]+)/);
+      var t = location.hash.match(/[&#]t=([\d.]+)/);
       loadFreshQueue(m ? m[1].split(",").filter(Boolean) : []);
+      // A hand-off from /playlist/ (sendToPlayer's opts.startTime) rotates
+      // the queue to start on whatever was already playing there and seeds
+      // this one-time position — resume there instead of at 0:00. Only
+      // meaningful for a fresh load; syncHash() below drops it from the URL
+      // either way so it can't linger and get reapplied on a later reload.
+      if (t && queue.length) {
+        var startTime = parseFloat(t[1]);
+        audio.addEventListener("loadedmetadata", function once() {
+          audio.currentTime = startTime;
+          audio.removeEventListener("loadedmetadata", once);
+        });
+      }
       syncHash();
     })
     .catch(function (e) {
