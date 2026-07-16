@@ -1031,17 +1031,19 @@ main {
 
 /* "Download all as ZIP" — a text-labeled sibling of the icon-only
    .download-btn (that one covers a single track; this covers a whole
-   show/song's worth, assembled client-side, see player.js tryBatchDownload). */
+   show/song's worth, assembled client-side, see player.js tryBatchDownload).
+   Kept compact — count/size detail lives in the hover title rather than
+   the visible label, so it sits next to "Select all" without dominating. */
 .zip-download-btn {
-  display: inline-flex; align-items: center; gap: 0.35rem;
-  font-family: var(--sans); font-size: 11px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  font-family: var(--sans); font-size: 10.5px; font-weight: 500;
   letter-spacing: 0.02em; color: var(--accent); background: var(--accent-light);
-  border: none; border-radius: 999px; padding: 0.35rem 0.85rem;
+  border: none; border-radius: 999px; padding: 0.25rem 0.7rem;
   cursor: pointer; transition: background 0.15s, color 0.15s;
   flex-shrink: 0;
 }
 .zip-download-btn:hover { background: var(--accent); color: white; }
-.zip-download-btn svg { width: 12px; height: 12px; flex-shrink: 0; }
+.zip-download-btn svg { width: 10px; height: 10px; flex-shrink: 0; }
 
 /* Floating summary bar — appears once at least one track is selected via a
    "+" button anywhere on the page, offers Clear or committing the selection

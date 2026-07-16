@@ -273,7 +273,10 @@
     if (saveBtn) saveBtn.hidden = !queue.length;
     if (downloadBtn) {
       downloadBtn.hidden = !queue.length;
-      if (queue.length) downloadBtn.textContent = zipLabel(queue);
+      // Keep the visible label short ("Download ZIP") — the count/size
+      // detail lives in the hover title instead, same as the saved-playlist
+      // rows below, so this doesn't dwarf Save/Copy-share-link next to it.
+      if (queue.length) downloadBtn.title = zipLabel(queue);
     }
   }
 

@@ -16,6 +16,13 @@ DL_SVG = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wid
           'stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v13"/>'
           '<path d="M6 12l6 6 6-6"/><path d="M8 21h8"/></svg>')
 
+# Archive-box glyph for "download this as a ZIP" — distinct from the plain
+# down-arrow DL_SVG used for single-file downloads, so a batch action reads
+# differently from a per-track one at a glance.
+ZIP_SVG = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
+           'stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/>'
+           '<rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>')
+
 PLAY_SVG = '<svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg>'
 
 PLUS_SVG = ('<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" '
@@ -64,9 +71,9 @@ def show_zip_button_html(show):
         "infoName": f"{folder}/show-info.txt",
         "infoText": info,
     }
-    label = f"Download all {n} tracks (.zip) · {total_mb} MB"
+    title = f"Download all {n} tracks (.zip) · {total_mb} MB"
     return (f'<script>window.ZIP_MANIFEST = {json.dumps(manifest, ensure_ascii=False)};</script>'
-            f'<button type="button" class="zip-download-btn" title="{esc(label)}">{DL_SVG} {label}</button>')
+            f'<button type="button" class="zip-download-btn" title="{esc(title)}">{ZIP_SVG} Download ZIP</button>')
 
 def player(file, duration=None, download_file=None, version=None, label=None):
     """A custom-player row: play button, progress bar, and (optionally) a
@@ -688,9 +695,9 @@ def song_zip_button_html(s):
         "infoName": f"{folder}/collection-info.txt",
         "infoText": info,
     }
-    label = f"Download all {n} performance{plural} (.zip) · {total_mb} MB"
+    title = f"Download all {n} performance{plural} (.zip) · {total_mb} MB"
     return (f'<script>window.ZIP_MANIFEST = {json.dumps(manifest, ensure_ascii=False)};</script>'
-            f'<button type="button" class="zip-download-btn" title="{esc(label)}">{DL_SVG} {label}</button>')
+            f'<button type="button" class="zip-download-btn" title="{esc(title)}">{ZIP_SVG} Download ZIP</button>')
 
 def jsonld(*objs):
     """Wrap schema.org object(s) in a JSON-LD <script> for the page <head>."""
