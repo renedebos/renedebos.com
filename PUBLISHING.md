@@ -2,8 +2,9 @@
 
 *How a show gets from a whole-show WAV to renedebos.com, what you do
 by hand, what Claude runs, and what every tool in `scripts/` is for.*
-*Last updated: 2026-07-13 (matches workflow v5 — applause-aware headroom
-recovery with a true-peak safety loop, per-track treatment audit trail).*
+*Last updated: 2026-07-16 (adds Part 5, the audio processing version-history
+appendix — matches workflow v5, applause-aware headroom recovery with a
+true-peak safety loop, per-track treatment audit trail).*
 
 ---
 
@@ -305,3 +306,97 @@ per-show step; it matters when something breaks or gets upgraded.
   version) restores it.
 - **Raw archive**: whole-show WAVs + `labels.txt` + `.aup3` projects live
   on Drive; the tapes themselves remain the last resort.
+
+---
+
+## Part 5 — Appendix: audio processing version history
+
+Every processed track records which workflow version produced it (`ver` in
+`data/processing/<slug>.json`) and the literal ffmpeg chain applied
+(`chain`) — so one show can hold a mix of versions if a single track is ever
+reprocessed later on a newer engine. `scripts/audio_process.py`'s
+`WORKFLOW_VERSIONS` dict is the source of truth; this appendix is its
+human-readable decode.
+
+| Version | Introduced | What changed | Loudnorm mode |
+|---|---|---|---|
+| v1 | 2026-06-28 | Baseline: two-pass linear loudnorm to the per-artist target (all artists −20 LUFS), −1 dBTP ceiling, optional HPF/LPF/hum notch, derived 320k MP3. Recommend-only — no automatic limiter/compressor/denoise. | Linear only |
+| v2 | 2026-06-29 | Added an optional literal corrective-EQ chain (`--eq`) for restoring poor source recordings (de-mud, presence, air shelf), recorded verbatim in the track's `chain`. | Linear only |
+| v3 | 2026-07-09 | Embedded metadata tags (title/artist/album/track/date/comment) into both the FLAC master and MP3; added a true-peak check of the encoded MP3 (lossy encoding overshoots peaks); `retag` retro-fits tags onto already-published shows without touching the audio stream or its provenance MD5. | Linear only |
+| v4 | 2026-07-12 | Fixed a silent ffmpeg fallback: `linear=true` is only a *request* — if the target would push true peak past the ceiling, ffmpeg quietly switches to dynamic (frame-adaptive) normalization instead, which can flatten hand-drawn fades with zero warning in the logs. A track whose predicted true peak exceeds the ceiling is now processed at its own safe "max linear target" instead, staying in true linear mode. | Linear only (per-track reduced target when needed) |
+| v5 | 2026-07-13 | Added applause-aware headroom recovery for audience tapes where a clap peaks louder than the music itself. Peaks are classified by *behavior* (position near a track's head/tail + crest factor), never loudness alone; if applause is what's eating the headroom, the music gets one constant gain sized to the music's own peaks, with a lookahead limiter that only applause transients can reach. A measure-and-correct loop verifies the actual rendered true peak and re-renders (up to 5 attempts) if it overshoots — the limiter's own threshold is never trusted blind. Ambiguous cases fall back to the v4 reduced target. | Linear, or applause-limiter mode (music untouched, only applause capped) |
+
+### v1 — the linear baseline
+
+Two-pass `ffmpeg loudnorm` to a fixed per-artist target
+(`I=<target>:LRA=11:TP=-1:linear=true`), all artists at −20 LUFS (Mad
+Hannans moved from −16 to −20 after A/B testing showed −16 forced
+non-linear processing on band masters with no audible loudness gain).
+Optional 80 Hz high-pass, 18 kHz low-pass, and a 60 Hz hum notch. Output
+mirrors the input container plus a derived 320k MP3. Deliberately
+recommend-only: no automatic limiter, compressor, or denoise — those remain
+hand-editing territory in Audacity.
+
+### v2 — corrective EQ
+
+Same audio engine as v1, plus an optional literal ffmpeg EQ chain (`--eq`),
+prepended before the loudnorm stage, for restoring a poor source recording
+(e.g. de-mud + presence + air shelf on a muffled tape). The exact filter
+chain is recorded verbatim in the track's `chain`, so only tracks actually
+processed with `--eq` differ from v1's output.
+
+### v3 — embedded tags + MP3 true-peak check
+
+Audio processing unchanged from v2. Added embedded metadata tags
+(title/artist/album/track/date/comment, sourced from `recordings.json`)
+into both the FLAC master and the derived MP3, plus a true-peak measurement
+of the *encoded* MP3 — lossy encoding can overshoot the original peak, so
+this is recorded per-track as `mp3_tp` and flagged above 0 dBTP. `retag`
+retrofits tags onto already-published shows via a container rewrite
+(`-c copy`) that never touches the audio stream, so the provenance MD5
+stays intact.
+
+### v4 — the silent-fallback fix
+
+The most consequential fix in the series. `linear=true` is only a *request*
+to ffmpeg's `loudnorm` filter — if hitting the target would push true peak
+past the −1 dBTP ceiling, ffmpeg silently falls back to dynamic
+(frame-adaptive) normalization instead, a compressor-like mode that rides
+gain up on quiet passages and can flatten a hand-drawn fade-out, with no
+warning at all in the logs (`-loglevel error` swallows it). From v4 on, any
+track whose predicted true peak overshoots the ceiling (the same math
+`diagnose`'s `PRED_TP` flag already reports) is processed at its own honest
+"max linear target" (`I − TP − 1`) instead — a few dB quieter than its
+neighbors, but always one constant linear gain. Recorded in the provenance
+sidecar as `target_lufs` whenever it differs from the show's nominal
+target.
+
+### v5 — applause-aware headroom recovery
+
+Calibrated on "Butter" (`jerry-cafe-java-1999-03-25` track 4): on audience
+tapes the mic often sat close to the crowd, and a single clap can peak
+6+ dB above anything in the music, alone forcing v4's reduced target
+several dB quieter than the music itself needs. When the predicted
+overshoot exceeds 2 dB, the loudest windows are classified by *behavior*,
+never raw loudness: a window can only be applause if it falls within
+`min(30s, track-length/6)` of the track's very start or end (tracks are
+split from one continuous tape — applause lives at those boundaries, never
+mid-song), **and** either towers ≥ 27 dB over its own local RMS (a clap's
+signature; sustained music measures 19–22 dB) or beats the loudest window
+in the song's body by ≥ 2 dB (catches a final chord ringing out under the
+applause). If applause is confirmed as what's eating the headroom, the
+music gets one constant gain sized to the music's own peaks — the limiter
+is mathematically incapable of reaching anything classified as music —
+with a lookahead limiter (`alimiter`, threshold −1.2 dBTP) engaging only on
+the applause tail. Because `alimiter` thresholds *sample* peaks while the
+archive's ceiling is a *true* (oversampled) peak, the render is measured
+after the fact and, if it overshoots, the gain is backed off and
+re-rendered (up to 5 attempts) — the limiter's math is never trusted
+blind. Ambiguous cases (a loud moment mid-song, or where limiting would
+recover less than 1 dB) fall back to v4's reduced target and are flagged
+for a listen. QA gate: output LRA must match source LRA within 0.5 LU.
+
+This is a narrow, sanctioned exception to the "never limit the music" rule,
+not a reversal of it — it caps only the applause transient, never the
+performance itself. See `CLAUDE.md`'s linear-normalization policy note for
+the full reasoning.
