@@ -91,6 +91,10 @@ function build(PEAKS) {
       instances.forEach((w, i) => { if (i !== idx) w.pause(); });
       row.classList.add('playing');
       setPlayState(btn, true, PAUSE);
+      // Pause every OTHER player too — the same page's Full Recording
+      // custom player, and any other tab/window (see player.js's
+      // coordination block; player.js always loads before this module).
+      if (window.claimPlayback) window.claimPlayback(ws);
       // A deep-linked track (see the hash handling above) stays highlighted
       // until some other track actually starts playing.
       rows.forEach(r => { if (r !== row) r.classList.remove('target'); });
@@ -115,6 +119,8 @@ function build(PEAKS) {
       const next = instances[idx + 1];
       if (next) next.play().catch(() => {});
     });
+
+    if (window.onExternalClaim) window.onExternalClaim(() => { if (ws.isPlaying()) ws.pause(); }, ws);
 
     instances.push(ws);
   });

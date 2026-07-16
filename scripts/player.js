@@ -24,24 +24,30 @@ function setPlayState(btn, playing, iconHtml) {
 let activePlayer = null;
 const RANGE_MAX = 1000;
 
-// ── cross-tab/window playback coordination ──────────────────────────────────
-// Show/song-page track players, /playlist/, and the /player/ popup each own
-// an independent <audio> element — they're separate pages/windows with no
-// shared engine, so playing one doesn't pause the others. BroadcastChannel
-// lets each one announce "I'm playing now" so every other one pauses itself.
+// ── playback coordination (same page + other tabs/windows) ──────────────────
+// Show/song-page track players, waveform rows (wavesurfer.js), /playlist/,
+// and the /player/ popup each own an independent <audio> element with no
+// shared engine, so playing one doesn't pause the others. A claim announces
+// "I'm playing now": it's broadcast to every other tab/window AND delivered
+// to every other player on the same page — BroadcastChannel never delivers
+// to the posting page itself, and a show page mixes two independent systems
+// (waveform track rows + the Full Recording custom player). `owner` is any
+// stable per-player value; a claim skips the listener with the same owner so
+// a player never pauses itself.
 let playbackChannel = null;
 try { playbackChannel = new BroadcastChannel('hannan-playback'); } catch (e) { /* unsupported / private browsing */ }
 const playbackId = Math.random().toString(36).slice(2);
-const externalClaimListeners = [];
-function claimPlayback() {
+const claimListeners = [];
+function claimPlayback(owner) {
   if (playbackChannel) playbackChannel.postMessage(playbackId);
+  claimListeners.forEach(l => { if (l.owner !== owner) l.fn(); });
 }
-function onExternalClaim(fn) {
-  externalClaimListeners.push(fn);
+function onExternalClaim(fn, owner) {
+  claimListeners.push({ fn, owner });
 }
 if (playbackChannel) {
   playbackChannel.onmessage = e => {
-    if (e.data !== playbackId) externalClaimListeners.forEach(fn => fn());
+    if (e.data !== playbackId) claimListeners.forEach(l => l.fn());
   };
 }
 window.claimPlayback = claimPlayback;
@@ -67,7 +73,7 @@ function initCustomPlayers(root) {
 
     onExternalClaim(() => {
       if (!audio.paused) { audio.pause(); setPlayState(btn, false, playIcon); }
-    });
+    }, player);
 
     function load() {
       if (!loaded) { audio.src = src; loaded = true; }
@@ -98,7 +104,7 @@ function initCustomPlayers(root) {
 
     audio.addEventListener('play', () => {
       player.classList.add('playing');
-      claimPlayback();
+      claimPlayback(player);
       // A deep-linked track (see focusHashTrack) stays highlighted until some
       // other track actually starts playing.
       document.querySelectorAll('.track-row.target').forEach(r => { if (r !== player) r.classList.remove('target'); });
