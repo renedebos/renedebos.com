@@ -36,6 +36,12 @@
     background: #fff; color: var(--text); outline: none;
   }
   #filter:focus { border-color: var(--accent); }
+  .damage-filter {
+    display: flex; align-items: center; gap: 0.35rem; font-size: 12px;
+    color: var(--muted); text-transform: none; letter-spacing: 0; font-weight: 400;
+    white-space: nowrap; cursor: pointer;
+  }
+  .damage-filter input { width: auto; margin: 0; }
 
   .wrap { max-width: 980px; margin: 0 auto; padding: 1.2rem; }
   .note {
@@ -67,6 +73,7 @@
   .summary-slug { font-weight: 600; }
   .summary-meta { font-size: 12px; color: var(--muted); }
   .summary-flag { font-size: 11px; color: var(--accent); font-weight: 600; }
+  .summary-damage { font-size: 11px; color: var(--err); font-weight: 600; }
   .body { padding: 0.4rem 1rem 1.1rem; border-top: 1px solid var(--border); }
 
   .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.7rem 1.2rem; margin: 0.9rem 0; }
@@ -103,6 +110,7 @@
 <div class="topbar">
   <h1>Metadata Editor</h1>
   <input id="filter" type="search" placeholder="Filter shows / venues / songs…" autocomplete="off">
+  <label class="damage-filter"><input type="checkbox" id="damageOnly"> Damage only</label>
   <div class="spacer"></div>
   <span id="status">Loading…</span>
   <button id="saveBtn" disabled>Save</button>
@@ -146,6 +154,7 @@ function render() {
   const out = [];
   DATA.shows.forEach((show, si) => {
     const tracks = show.tracks || [];
+    const damageCount = tracks.filter((t) => t.dropouts).length;
     const blob = [show.slug, show.venue, show.venue_short, show.date, artistName[show.artist],
       ...tracks.map((t) => [t.title, t.songwriter || "", (t.tags || []).join(" ")].join(" "))].join(" ").toLowerCase();
     const artistOpts = ARTISTS.map((a) =>
@@ -170,11 +179,12 @@ function render() {
       </table>` : `<p class="empty section-label" style="margin-top:.8rem">No split tracks for this show (full-show only).</p>`;
 
     out.push(`
-    <details class="show" data-search="${esc(blob)}">
+    <details class="show" data-search="${esc(blob)}" data-damage="${damageCount}">
       <summary>
         <span class="summary-slug">${esc(show.slug)}</span>
         <span class="summary-meta">${esc(artistName[show.artist] || show.artist)} · ${esc(show.venue_short || "")} · ${esc(show.date || "Unknown date")}</span>
         ${tracks.length ? `<span class="summary-flag">♪ ${tracks.length}</span>` : ""}
+        <span class="summary-damage"${damageCount ? "" : ' hidden'}>⚠ ${damageCount}</span>
       </summary>
       <div class="body">
         <div class="grid">
@@ -222,11 +232,26 @@ el("#shows").addEventListener("input", (e) => {
   const obj = t.dataset.track !== undefined ? show.tracks[+t.dataset.track] : show;
   if (t.type === "checkbox") {
     if (t.checked) obj[f] = true; else delete obj[f];
+    if (f === "dropouts") updateDamageBadge(+t.dataset.show);
   } else {
     apply(obj, f, t.value, show);
   }
   setDirty();
 });
+
+// Keeps the summary's ⚠ count and the "Damage only" filter accurate as
+// checkboxes are toggled, without a full re-render (which would collapse
+// every open <details> and drop focus).
+function updateDamageBadge(si) {
+  const show = DATA.shows[si];
+  const count = (show.tracks || []).filter((t) => t.dropouts).length;
+  const details = document.querySelectorAll(".show")[si];
+  details.dataset.damage = count;
+  const badge = details.querySelector(".summary-damage");
+  badge.textContent = "⚠ " + count;
+  badge.hidden = !count;
+  if (el("#damageOnly").checked) applyFilter();
+}
 
 function apply(obj, field, v, show) {
   const tv = v.trim();
@@ -300,12 +325,19 @@ el("#saveBtn").addEventListener("click", () => {
 
 el("#siteNote").addEventListener("input", setDirty);
 
-el("#filter").addEventListener("input", (e) => {
-  const q = e.target.value.trim().toLowerCase();
+function applyFilter() {
+  const q = el("#filter").value.trim().toLowerCase();
+  const damageOnly = el("#damageOnly").checked;
   document.querySelectorAll(".show").forEach((s) => {
-    s.style.display = !q || s.dataset.search.includes(q) ? "" : "none";
+    const matches = (!q || s.dataset.search.includes(q)) && (!damageOnly || +s.dataset.damage > 0);
+    s.style.display = matches ? "" : "none";
+    // Damage-only is a "find the needle" tool — open matches automatically
+    // so the flagged track doesn't still require a click to find.
+    if (matches && damageOnly) s.open = true;
   });
-});
+}
+el("#filter").addEventListener("input", applyFilter);
+el("#damageOnly").addEventListener("change", applyFilter);
 
 window.addEventListener("beforeunload", (e) => {
   if (dirty) { e.preventDefault(); e.returnValue = ""; }
