@@ -2,6 +2,7 @@
 
 > **STATUS: approved by Rene 2026-07-07** (full 20-tag vocabulary; Claude
 > drafts tags across the existing catalog, Rene reviews and corrects).
+> `beatles` added, `singalong` retired 2026-07-16 (net unchanged, 20 tags).
 
 Controlled vocabulary for the per-track `tags` array in
 `data/recordings.json`, powering the playlist generator facets
@@ -42,7 +43,6 @@ known cover with an unknown writer.
 | `ballad` | slow, tender, quiet |
 | `upbeat` | mid/up-tempo, feel-good |
 | `rocker` | loud, driving, full-band energy |
-| `singalong` | crowd joins in / anthemic chorus |
 
 ### Flavor — needs human judgment
 | tag | meaning |
@@ -52,6 +52,7 @@ known cover with an unknown writer.
 | `country` | country/Americana feel |
 | `blues` | blues feel |
 | `rock` | rock feel (Mad Hannans default territory) |
+| `beatles` | Beatles cover (repertoire flavor, alongside the `songwriter` credit) |
 
 ### Content / format — mostly objective
 | tag | meaning |

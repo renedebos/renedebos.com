@@ -331,7 +331,8 @@
             "cover"
           ],
           "artist": "Jerry Hannan",
-          "songwriter": "Elton John"
+          "songwriter": "Elton John",
+          "dropouts": true
         },
         {
           "num": 17,
@@ -345,7 +346,7 @@
           "tags": [
             "cover"
           ],
-          "artist": "Demuir",
+          "artist": "Jerry Hannan & Demir",
           "songwriter": "Mentor Williams"
         },
         {
@@ -1150,8 +1151,7 @@
           "tags": [
             "cover",
             "folk",
-            "upbeat",
-            "singalong"
+            "upbeat"
           ]
         },
         {
@@ -2065,7 +2065,7 @@
         },
         {
           "num": 13,
-          "title": "Lover",
+          "title": "I Need a Lover",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:11",
           "size_mb": 7,
@@ -2397,8 +2397,7 @@
           "tags": [
             "cover",
             "folk",
-            "upbeat",
-            "singalong"
+            "upbeat"
           ]
         },
         {
@@ -3840,7 +3839,7 @@
         },
         {
           "num": 9,
-          "title": "Everything",
+          "title": "Everything Reminds Me of You",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:12",
           "size_mb": 7,
@@ -4290,7 +4289,7 @@
         },
         {
           "num": 4,
-          "title": "Everything",
+          "title": "Everything Reminds Me of You",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:52",
           "size_mb": 7,
@@ -4359,8 +4358,7 @@
           "tags": [
             "cover",
             "folk",
-            "upbeat",
-            "singalong"
+            "upbeat"
           ]
         },
         {
@@ -4514,7 +4512,6 @@
             "traditional",
             "irish",
             "ballad",
-            "singalong",
             "story"
           ]
         },
@@ -4703,8 +4700,7 @@
           "processed": true,
           "tags": [
             "traditional",
-            "irish",
-            "singalong"
+            "irish"
           ]
         }
       ],
@@ -4781,8 +4777,7 @@
           "tags": [
             "cover",
             "folk",
-            "upbeat",
-            "singalong"
+            "upbeat"
           ]
         },
         {
@@ -5531,8 +5526,7 @@
           "tags": [
             "cover",
             "folk",
-            "upbeat",
-            "singalong"
+            "upbeat"
           ]
         },
         {
@@ -5665,7 +5659,8 @@
           "processed": true,
           "tags": [
             "cover"
-          ]
+          ],
+          "artist": "Jerry Hannan & Demir"
         },
         {
           "num": 12,
@@ -5861,8 +5856,7 @@
           "tags": [
             "cover",
             "folk",
-            "upbeat",
-            "singalong"
+            "upbeat"
           ]
         },
         {
@@ -5965,8 +5959,7 @@
           "tags": [
             "traditional",
             "irish",
-            "upbeat",
-            "singalong"
+            "upbeat"
           ],
           "songwriter": "Traditional"
         },
@@ -6193,8 +6186,7 @@
           "tags": [
             "cover",
             "folk",
-            "upbeat",
-            "singalong"
+            "upbeat"
           ]
         },
         {
@@ -6478,7 +6470,7 @@
         },
         {
           "num": 21,
-          "title": "The Kiss - Da Da Da (Slave to an Angel)",
+          "title": "The Kiss / Da Da Da (Slave to an Angel)",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "5:02",
           "size_mb": 12,
@@ -6671,7 +6663,7 @@
         },
         {
           "num": 2,
-          "title": "The Kiss - Da Da Da (Slave to an Angel)",
+          "title": "The Kiss / Da Da Da (Slave to an Angel)",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "5:43",
           "size_mb": 14,
@@ -6726,8 +6718,7 @@
           "tags": [
             "traditional",
             "irish",
-            "upbeat",
-            "singalong"
+            "upbeat"
           ]
         },
         {
@@ -6742,8 +6733,7 @@
           "tags": [
             "traditional",
             "irish",
-            "upbeat",
-            "singalong"
+            "upbeat"
           ],
           "songwriter": "Traditional"
         },
@@ -6788,7 +6778,8 @@
           "processed": true,
           "tags": [
             "cover",
-            "story"
+            "story",
+            "beatles"
           ],
           "songwriter": "Lennon-McCartney"
         },
@@ -6850,8 +6841,7 @@
           "tags": [
             "traditional",
             "irish",
-            "upbeat",
-            "singalong"
+            "upbeat"
           ]
         },
         {
@@ -7201,7 +7191,8 @@
           "tags": [
             "cover",
             "folk",
-            "ballad"
+            "ballad",
+            "beatles"
           ]
         },
         {
@@ -7232,8 +7223,7 @@
           "tags": [
             "traditional",
             "irish",
-            "upbeat",
-            "singalong"
+            "upbeat"
           ]
         },
         {
@@ -7428,7 +7418,11 @@
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/28 Did You Ever See.flac",
           "flac_size_mb": 21,
           "processed": true,
-          "tags": []
+          "tags": [
+            "traditional",
+            "irish"
+          ],
+          "songwriter": "Traditional"
         },
         {
           "num": 29,
@@ -7448,7 +7442,6 @@
         {
           "num": 30,
           "title": "Let It Be",
-          "songwriter": "Beatles",
           "duration": "1:06",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/30 Let It Be.mp3",
           "size_mb": 3,
@@ -7458,8 +7451,9 @@
           "tags": [
             "cover",
             "ballad",
-            "singalong"
-          ]
+            "beatles"
+          ],
+          "songwriter": "Lennon & McCartney"
         },
         {
           "num": 31,
@@ -7957,8 +7951,7 @@
           "tags": [
             "traditional",
             "irish",
-            "upbeat",
-            "singalong"
+            "upbeat"
           ]
         },
         {
@@ -8231,7 +8224,7 @@
         },
         {
           "num": 13,
-          "title": "I Need a Dream",
+          "title": "I Need a Lover",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:58",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/13 I Need a Dream.mp3",
@@ -8348,7 +8341,7 @@
         },
         {
           "num": 21,
-          "title": "The Kiss - Da Da Da (Slave to an Angel)",
+          "title": "The Kiss / Da Da Da (Slave to an Angel)",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "7:25",
           "file": "MP3/MadHannans - Sweetwater 2000-02-17/20 The Kiss - Da Da Da (Slave to an Angel).mp3",
@@ -8740,7 +8733,7 @@
         },
         {
           "num": 24,
-          "title": "The Kiss_Da Da Da (Slave to an Angel)",
+          "title": "The Kiss / Da Da Da (Slave to an Angel)",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "6:31",
           "file": "MP3/MadHannans - Sweetwater 2000-10-17/24 The Kiss_DaDaDa (Slave to an Angel).mp3",
@@ -8883,8 +8876,7 @@
           "tags": [
             "traditional",
             "irish",
-            "upbeat",
-            "singalong"
+            "upbeat"
           ]
         },
         {
@@ -9006,7 +8998,7 @@
         },
         {
           "num": 15,
-          "title": "The Kiss - Da Da Da (Slave to an Angel)",
+          "title": "The Kiss / Da Da Da (Slave to an Angel)",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/15 The Kiss - Da Da Da (Slave to an Angel).mp3",
           "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/15 The Kiss - Da Da Da (Slave to an Angel).flac",
@@ -9495,13 +9487,12 @@
           "tags": [
             "traditional",
             "irish",
-            "upbeat",
-            "singalong"
+            "upbeat"
           ]
         },
         {
           "num": 21,
-          "title": "The Kiss - Da Da Da (Slave To an Angel)",
+          "title": "The Kiss / Da Da Da (Slave To an Angel)",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "6:25",
           "size_mb": 15,
@@ -9722,7 +9713,7 @@
         },
         {
           "num": 12,
-          "title": "The Kiss - Da Da Da (Slave to an Angel)",
+          "title": "The Kiss / Da Da Da (Slave to an Angel)",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "7:35",
           "size_mb": 18,
@@ -10275,8 +10266,7 @@
           "tags": [
             "traditional",
             "irish",
-            "upbeat",
-            "singalong"
+            "upbeat"
           ]
         },
         {
@@ -10383,7 +10373,7 @@
         },
         {
           "num": 22,
-          "title": "The Kiss - Da Da Da (Slave to an Angel)",
+          "title": "The Kiss / Da Da Da (Slave to an Angel)",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "6:18",
           "size_mb": 15,
@@ -10702,7 +10692,7 @@
         },
         {
           "num": 19,
-          "title": "the Belle of Belfast City",
+          "title": "The Belle of Belfast City",
           "songwriter": "Traditional",
           "duration": "3:34",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/19 the Belle of Belfast City.mp3",
@@ -10713,8 +10703,7 @@
           "tags": [
             "traditional",
             "irish",
-            "upbeat",
-            "singalong"
+            "upbeat"
           ]
         },
         {
@@ -10730,8 +10719,7 @@
           "tags": [
             "traditional",
             "irish",
-            "upbeat",
-            "singalong"
+            "upbeat"
           ]
         },
         {
@@ -10765,7 +10753,7 @@
         },
         {
           "num": 23,
-          "title": "The Kiss - Da Da Da (Slave To an Angel)",
+          "title": "The Kiss / Da Da Da (Slave To an Angel)",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "7:38",
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/23 The Kiss - Da Da Da.mp3",
@@ -11026,8 +11014,7 @@
           "processed": true,
           "tags": [
             "cover",
-            "upbeat",
-            "singalong"
+            "upbeat"
           ]
         },
         {
@@ -11107,8 +11094,7 @@
           "tags": [
             "traditional",
             "irish",
-            "upbeat",
-            "singalong"
+            "upbeat"
           ]
         },
         {
@@ -11124,7 +11110,6 @@
           "tags": [
             "traditional",
             "irish",
-            "singalong",
             "upbeat"
           ]
         },
@@ -11170,7 +11155,8 @@
           "processed": true,
           "tags": [
             "cover",
-            "rock"
+            "rock",
+            "beatles"
           ]
         },
         {
@@ -11233,7 +11219,7 @@
         },
         {
           "num": 27,
-          "title": "The Kiss - Da Da Da (Slave to an Angel)",
+          "title": "The Kiss / Da Da Da (Slave to an Angel)",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "7:28",
           "size_mb": 18,
@@ -11259,7 +11245,8 @@
           "tags": [
             "cover",
             "upbeat",
-            "folk"
+            "folk",
+            "beatles"
           ]
         },
         {

@@ -15,8 +15,8 @@ SOURCE_LABEL = {"SBD": "Soundboard", "AUD": "Audience recording"}
 
 TAG_VOCAB = {
     "original", "cover", "traditional",              # provenance
-    "ballad", "upbeat", "rocker", "singalong",       # mood
-    "irish", "folk", "country", "blues", "rock",     # flavor
+    "ballad", "upbeat", "rocker",                    # mood
+    "irish", "folk", "country", "blues", "rock", "beatles",  # flavor
     "instrumental", "medley", "story", "banter",     # format
     "guest", "improv",
     "favorite", "rarity",                            # curated
