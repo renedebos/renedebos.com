@@ -26,6 +26,21 @@
   audio.preload = "none";
   var seeking = false;
 
+  // ── cross-tab/window playback coordination (mirrors player.js) ───────────
+  // This popup isn't loaded alongside player.js (see the file header), so it
+  // duplicates the small BroadcastChannel coordinator rather than sharing it.
+  var playbackChannel = null;
+  try { playbackChannel = new BroadcastChannel("hannan-playback"); } catch (e) { /* unsupported / private browsing */ }
+  var playbackId = Math.random().toString(36).slice(2);
+  function claimPlayback() {
+    if (playbackChannel) playbackChannel.postMessage(playbackId);
+  }
+  if (playbackChannel) {
+    playbackChannel.onmessage = function (e) {
+      if (e.data !== playbackId && !audio.paused) audio.pause();
+    };
+  }
+
   var esc = function (s) {
     return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
@@ -92,7 +107,7 @@
   }
 
   audio.addEventListener("ended", function () { playAt(idx + 1); });
-  audio.addEventListener("play", function () { syncPlayBtn(); syncMediaPlaybackState(); });
+  audio.addEventListener("play", function () { syncPlayBtn(); syncMediaPlaybackState(); claimPlayback(); });
   audio.addEventListener("pause", function () { syncPlayBtn(); syncMediaPlaybackState(); });
   audio.addEventListener("timeupdate", function () {
     var range = nowEl.querySelector(".progress-range");

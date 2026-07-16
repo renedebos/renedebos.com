@@ -24,6 +24,29 @@ function setPlayState(btn, playing, iconHtml) {
 let activePlayer = null;
 const RANGE_MAX = 1000;
 
+// ── cross-tab/window playback coordination ──────────────────────────────────
+// Show/song-page track players, /playlist/, and the /player/ popup each own
+// an independent <audio> element — they're separate pages/windows with no
+// shared engine, so playing one doesn't pause the others. BroadcastChannel
+// lets each one announce "I'm playing now" so every other one pauses itself.
+let playbackChannel = null;
+try { playbackChannel = new BroadcastChannel('hannan-playback'); } catch (e) { /* unsupported / private browsing */ }
+const playbackId = Math.random().toString(36).slice(2);
+const externalClaimListeners = [];
+function claimPlayback() {
+  if (playbackChannel) playbackChannel.postMessage(playbackId);
+}
+function onExternalClaim(fn) {
+  externalClaimListeners.push(fn);
+}
+if (playbackChannel) {
+  playbackChannel.onmessage = e => {
+    if (e.data !== playbackId) externalClaimListeners.forEach(fn => fn());
+  };
+}
+window.claimPlayback = claimPlayback;
+window.onExternalClaim = onExternalClaim;
+
 // Wires up every .custom-player under `root` that isn't already initialized.
 // Runs once for the whole document on load; the Songs page also calls this
 // itself (see songs.js) after inserting a song's performance rows lazily, so
@@ -41,6 +64,10 @@ function initCustomPlayers(root) {
 
     let loaded = false;
     let seeking = false;
+
+    onExternalClaim(() => {
+      if (!audio.paused) { audio.pause(); setPlayState(btn, false, playIcon); }
+    });
 
     function load() {
       if (!loaded) { audio.src = src; loaded = true; }
@@ -71,6 +98,7 @@ function initCustomPlayers(root) {
 
     audio.addEventListener('play', () => {
       player.classList.add('playing');
+      claimPlayback();
       // A deep-linked track (see focusHashTrack) stays highlighted until some
       // other track actually starts playing.
       document.querySelectorAll('.track-row.target').forEach(r => { if (r !== player) r.classList.remove('target'); });

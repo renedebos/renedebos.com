@@ -553,8 +553,11 @@
       } catch (e) { /* not all browsers support this yet */ }
     }
   });
-  audio.addEventListener("play", function () { syncPlayBtn(); syncMediaPlaybackState(); });
+  audio.addEventListener("play", function () { syncPlayBtn(); syncMediaPlaybackState(); claimPlayback(); });
   audio.addEventListener("pause", function () { syncPlayBtn(); syncMediaPlaybackState(); });
+  // Another tab/window (a show-page track, or the /player/ popup) started
+  // playing — this page's own <audio> is no longer the active one.
+  onExternalClaim(function () { if (!audio.paused) audio.pause(); });
 
   function syncPlayBtn() {
     var b = nowEl.querySelector('[data-act="play"]');
