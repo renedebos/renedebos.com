@@ -69,6 +69,7 @@ def build_track_catalog():
             rows.append({
                 "id": f'{show["slug"]}-{t["num"]:02d}',
                 "title": t["title"],
+                "num": t["num"],
                 "song": song_of.get((show["slug"], t["num"])),
                 "artist": show["artist"],
                 "performer": t.get("artist"),

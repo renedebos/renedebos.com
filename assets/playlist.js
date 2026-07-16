@@ -699,6 +699,24 @@
   // ── queue list ────────────────────────────────────────────────────────────
 
   var X_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
+  var LINK_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" '
+    + 'stroke-linejoin="round"><path d="M6.5 3H3v10h10V9.5"/><path d="M9.5 3H13v3.5"/><path d="M13 3L7 9"/></svg>';
+
+  // Hover popup content for a queue row — same data-info convention player.js's
+  // showTip()/hideTip() already reads globally (see show pages' track-title
+  // spans), so no new tooltip code is needed here, just the attribute.
+  function trackInfoPairs(t) {
+    var pairs = [
+      ["Artist", t.performer || ARTIST_NAMES[t.artist] || t.artist],
+      ["Track", t.num != null ? ("No. " + t.num) : "—"],
+      ["Venue", t.venue || "—"],
+      ["Date", t.showDate || "Unknown date"],
+      ["Source", t.sourceType ? t.sourceType.toUpperCase() : "—"],
+      ["Duration", formatTime(t.durationSec)],
+    ];
+    if (t.songwriter && t.songwriter !== "Jerry Hannan & Sean Hannan") pairs.push(["Songwriter", t.songwriter]);
+    return pairs;
+  }
 
   function renderQueue() {
     queueEl.innerHTML = '<p class="search-status">' + queue.length
@@ -706,17 +724,20 @@
       + (mode === "endless" ? " · reshuffles when it runs out" : "") + "</p>"
       + (queue.length ? '<button type="button" class="select-all" data-target="#pl-queue">Select all</button>' : "")
       + '<div class="search-results">' + queue.map(function (t, i) {
-        // .pl-row is a plain container (not a button — it holds three
-        // separate interactive children): the play button, the "+" selection
-        // toggle (see track-select.js), and the × remove button.
+        // .pl-row is a plain container (not a button — it holds four separate
+        // interactive children): the play button, the "+" selection toggle
+        // (see track-select.js), the show-page link, and the × remove button.
+        var info = esc(JSON.stringify(trackInfoPairs(t)));
         return '<div class="pl-row" data-i="' + i + '">'
           + '<button type="button" class="sr pl-row-play" data-i="' + i + '">'
           + '<span class="sr-icon">&#9834;</span>'
-          + '<span class="sr-main"><span class="sr-title">' + esc(t.title) + "</span>"
+          + '<span class="sr-main"><span class="sr-title" data-info="' + info + '">' + esc(t.title) + "</span>"
           + '<span class="sr-sub">' + esc(trackMeta(t)) + "</span></span>"
           + '<span class="sr-src src-' + esc(t.sourceType) + '">' + esc(t.sourceType.toUpperCase()) + "</span>"
           + '<span class="sr-meta">' + formatTime(t.durationSec) + "</span></button>"
           + trackAddButtonHtml(t.id)
+          + '<a class="pl-link" href="' + esc(t.url) + '" target="_blank" rel="noopener" '
+          + 'aria-label="Open ' + esc(t.title) + ' on its show page">' + LINK_SVG + "</a>"
           + '<button type="button" class="pl-remove" data-i="' + i
           + '" aria-label="Remove ' + esc(t.title) + ' from this playlist">' + X_SVG + "</button>"
           + "</div>";

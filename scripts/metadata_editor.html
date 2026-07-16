@@ -90,6 +90,8 @@
   th { text-align: left; font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 0.3rem 0.4rem; border-bottom: 1px solid var(--border); }
   td { padding: 0.25rem 0.4rem; vertical-align: middle; border-bottom: 1px solid var(--border); }
   td.num, td.dur { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; width: 1%; }
+  td.dropouts-cell { text-align: center; width: 1%; }
+  td.dropouts-cell input { width: auto; padding: 0; }
   td .file { font-size: 11px; color: var(--muted); word-break: break-all; }
   tr.tracks-head th { position: sticky; }
   .section-label { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-top: 1rem; }
@@ -158,11 +160,12 @@ function render() {
         <td><input data-show="${si}" data-track="${ti}" data-field="songwriter" value="${esc(t.songwriter || "")}" placeholder="unknown"></td>
         <td><input data-show="${si}" data-track="${ti}" data-field="tags" value="${esc((t.tags || []).join(", "))}" placeholder="comma, separated"></td>
         <td class="dur">${esc(t.duration || "")}</td>
+        <td class="dropouts-cell"><input type="checkbox" data-show="${si}" data-track="${ti}" data-field="dropouts" ${t.dropouts ? "checked" : ""} title="Audible tape damage / heavy distortion"></td>
       </tr>`).join("");
     const tracksBlock = tracks.length ? `
       <div class="section-label">Tracks (${tracks.length})</div>
       <table>
-        <tr class="tracks-head"><th>#</th><th>Title</th><th>Artist override</th><th>Songwriter</th><th>Tags</th><th>Dur</th></tr>
+        <tr class="tracks-head"><th>#</th><th>Title</th><th>Artist override</th><th>Songwriter</th><th>Tags</th><th>Dur</th><th>Damage</th></tr>
         ${trackRows}
       </table>` : `<p class="empty section-label" style="margin-top:.8rem">No split tracks for this show (full-show only).</p>`;
 
