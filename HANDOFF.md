@@ -69,11 +69,13 @@ Shipped as `WORKFLOW_VERSION = 6`:
 - `pgrep -f '<script>.py'` can self-match the watcher process — match on the
   full path, or rely on the background-task notification instead.
 
-## ⏭️ What's next (not started, just planned)
-- **Continuous player popup** (`/player/` + `sendToPlayer()` + Media Session
-  action handlers) — full plan exists (see "Phase 7" in `PLAYLIST FEATURE.md`)
-  but no code written. Pick this up when Rene wants "keep playing while
-  browsing anything else."
+## ⏭️ What's next
+- **Correction (2026-07-16):** this doc previously listed the continuous
+  player popup here as "not started" — that was stale. Direct source check
+  found `/player/`, `scripts/continuous-player.js`, and `sendToPlayer()` all
+  already built (see "Phase 7" in `PLAYLIST FEATURE.md`, now corrected to
+  DONE). Lesson: don't trust a carried-forward plan description without
+  re-checking the repo.
 - No other open items from this session.
 
 ## Durable facts (don't undo)

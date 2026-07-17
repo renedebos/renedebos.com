@@ -298,6 +298,7 @@ def build_search():
     <div id="filters" class="search-filters"></div>
     <p id="status" class="search-status">Loading…</p>
     <div id="results" class="search-results"></div>
+    <p class="pl-intro">Looking for loudness, true peak, workflow version, or damage flags instead? See <a href="/archive-data/">Archive Data</a>.</p>
   </section>''',
         extra_scripts='\n<script src="/assets/search.js"></script>',
     )
@@ -675,6 +676,44 @@ PLAYER_SHELL = '''<!DOCTYPE html>
 </body>
 </html>
 '''
+
+def build_archive_data():
+    """/archive-data/ — a single filterable/sortable table of every track's
+    catalog + audio-processing spec data (loudness, true peak, LRA, workflow
+    version, treatment, damage flags), for managing the processing rollout
+    across the whole archive at once. Rene-facing, not a normal nav
+    destination: uses page_shell() (not a bespoke shell, unlike /manual/)
+    since it's an interactive tool that belongs to the site's app-like pages,
+    but is deliberately absent from SITE_PAGES/EXTRA_PAGES (so: no nav link,
+    no sitemap entry) and noindex'd, matching /player/'s "unlisted" treatment
+    for the same reason: not content for a visitor to stumble into."""
+    return page_shell(
+        title="Archive Data — The Hannan Tapes",
+        description="Every track in the archive with its catalog and audio-processing spec data, filterable and sortable.",
+        url="https://renedebos.com/archive-data/",
+        eyebrow="The Hannan Tapes",
+        heading="Archive Data",
+        tagline="Every track's catalog and processing spec data, in one table",
+        nav=site_nav(),
+        extra_head='\n<meta name="robots" content="noindex">',
+        extra_scripts='\n<script src="/assets/archive-data.js"></script>',
+        main='''
+  <section class="archive-data">
+    <p class="pl-intro">Every track in the archive with the spec data collected for it — loudness, true peak, LRA, workflow version, treatment, tags, and damage flags. Filter or search, click a column to sort, click a song to jump to its show page.</p>
+    <input id="ad-q" class="search-input" type="search" autocomplete="off" placeholder="Search song, show, venue, songwriter…">
+    <div class="pl-panel">
+      <div class="pl-panel-head"><span class="pl-filter-label">Filters</span><button type="button" id="ad-clear" class="pl-clear" hidden>Clear filters</button></div>
+      <div id="ad-filters" class="pl-filter-groups"></div>
+    </div>
+    <p id="ad-status" class="search-status">Loading…</p>
+    <div class="tech-scroll">
+      <table class="tech-table" id="ad-table">
+        <thead><tr id="ad-head"></tr></thead>
+        <tbody id="ad-tbody"></tbody>
+      </table>
+    </div>
+  </section>''',
+    )
 
 def build_contact():
     return page_shell(
@@ -1102,4 +1141,4 @@ def build_404():
         nav=site_nav(), main=main)
 
 
-__all__ = ['WAVESURFER_LAB_SLUG', 'build_404', 'build_archive', 'build_contact', 'build_history', 'build_home', 'build_manual', 'build_player', 'build_playlist', 'build_process', 'build_search', 'build_show', 'build_song_page', 'build_songs_index', 'build_updates', 'build_wavesurfer_lab']
+__all__ = ['WAVESURFER_LAB_SLUG', 'build_404', 'build_archive', 'build_archive_data', 'build_contact', 'build_history', 'build_home', 'build_manual', 'build_player', 'build_playlist', 'build_process', 'build_search', 'build_show', 'build_song_page', 'build_songs_index', 'build_updates', 'build_wavesurfer_lab']

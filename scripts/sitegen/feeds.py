@@ -87,6 +87,56 @@ def build_track_catalog():
             })
     return rows
 
+def build_track_spec_catalog():
+    """Flat per-track spec/provenance catalog (assets/track-spec.json) for the
+    /archive-data/ page — every track in the archive (not just processed ones;
+    "not yet processed" is itself a useful filter state), merging recordings.json
+    catalog fields with data/processing/<slug>.json provenance where it exists.
+    `procVer` is the workflow version (see WORKFLOW_VERSIONS in audio_process.py)
+    — named distinctly from tracks.json's `ver`, which is an unrelated md5-prefix
+    cache-buster, not a version number."""
+    rows = []
+    for show in sorted(M["shows"], key=sort_key):
+        if not show.get("tracks"):
+            continue
+        proc = load_processing(show["slug"])
+        ptracks = proc.get("tracks", {}) if proc else {}
+        for t in show["tracks"]:
+            p = ptracks.get(str(t["num"]), {})
+            gain = (round(p["lufs"] - p["in_lufs"], 2)
+                    if "lufs" in p and "in_lufs" in p else None)
+            rows.append({
+                "id": f'{show["slug"]}-{t["num"]:02d}',
+                "num": t["num"],
+                "title": t["title"],
+                "artist": show["artist"],
+                "performer": t.get("artist"),
+                "songwriter": t.get("songwriter"),
+                "tags": t.get("tags") or [],
+                "dropouts": bool(t.get("dropouts")),
+                "showSlug": show["slug"],
+                "venue": show.get("venue_short") or show.get("venue") or "",
+                "showDate": show.get("date"),
+                "sourceType": (show.get("source") or "").lower(),
+                "duration": t.get("duration"),
+                "mp3SizeMb": t.get("size_mb"),
+                "flacSizeMb": t.get("flac_size_mb"),
+                "url": f'{show_url(show)}#track-{t["num"]}',
+                "procVer": p.get("ver"),
+                "inLufs": p.get("in_lufs"),
+                "outLufs": p.get("lufs"),
+                "gain": gain,
+                "truePeak": p.get("tp"),
+                "mp3TruePeak": p.get("mp3_tp"),
+                "lra": p.get("lra"),
+                "plr": p.get("plr"),
+                "maxM": p.get("max_m"),
+                "maxS": p.get("max_s"),
+                "treatment": p.get("mode"),
+                "chain": p.get("chain"),
+            })
+    return rows
+
 def build_song_occurrences():
     """Per-song performance data (assets/song-occurrences.json) — fetched once
     by songs.js and rendered into a song's <details> only when it's opened, so
@@ -143,4 +193,4 @@ def build_sitemap():
             f"{items}\n</urlset>\n")
 
 
-__all__ = ['_xesc', 'build_feed', 'build_search_index', 'build_sitemap', 'build_song_occurrences', 'build_track_catalog']
+__all__ = ['_xesc', 'build_feed', 'build_search_index', 'build_sitemap', 'build_song_occurrences', 'build_track_catalog', 'build_track_spec_catalog']

@@ -334,7 +334,11 @@ Every processed track records which workflow version produced it (`ver` in
 (`chain`) — so one show can hold a mix of versions if a single track is ever
 reprocessed later on a newer engine. `scripts/audio_process.py`'s
 `WORKFLOW_VERSIONS` dict is the source of truth; this appendix is its
-human-readable decode.
+human-readable decode. To see which workflow version (and every other spec
+field — loudness, true peak, LRA, tags, damage flags) has actually landed on
+each track across the whole archive at once, filterable and sortable, see
+[Archive Data](/archive-data/) — not linked from the main nav, bookmark it
+directly.
 
 | Version | Introduced | What changed | Loudnorm mode |
 |---|---|---|---|
