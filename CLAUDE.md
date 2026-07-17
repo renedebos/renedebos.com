@@ -32,7 +32,14 @@ make refresh                          # regenerate drive_names.txt and r2_names.
 make diff                             # show files in Drive not yet in R2
 make status                           # print counts for Drive, R2, and missing
 make upload FILE="filename.wav"       # copy a file from Drive to R2
+make edit                             # local metadata editor (recordings.json), http://127.0.0.1:8765
+make build                            # python3 scripts/build.py
 ```
+
+`make edit` opens a browser automatically; when running headless (no display),
+start it with `--no-open` in the background instead and report the URL. Stop
+the server (TaskStop / Ctrl-C) once Rene confirms he's done editing, then run
+`make build` and commit/push.
 
 To upload a local staging file from `~/` directly to R2:
 ```bash
@@ -81,6 +88,19 @@ Needs the track's original unprocessed audio (not derivable from the published
 output) — for shows with an archived `Tracks/`/`Tracks Noise Reduction/` +
 `labels.txt`, that's the raw split (`split_raw.py`); older shows need a fresh
 export from the `.aup3` project onto `~/gdrive-mount`, or pass `--raw` directly.
+
+## Archive-wide Visibility
+
+Two ways to see workflow-version/spec data across the *whole* archive at once
+(not just one show), for managing the version rollout:
+- `python3 scripts/audio_process.py version-map [--only-mixed] [--version N]` —
+  CLI: per-show version tally, flags shows whose tracks span more than one
+  version (`⚠ MIXED`), or lists every track anywhere still on a given version.
+- **`/archive-data/`** — the same data, browsable: every track with its full
+  catalog + spec/provenance data, filterable/sortable/searchable (artist,
+  processing version, treatment mode, damage flag, free text). Not in the
+  main nav or sitemap (bookmark it directly) — linked from `/manual/` and
+  `/search/`. Built from `assets/track-spec.json`.
 
 ## MCP Tools Available
 

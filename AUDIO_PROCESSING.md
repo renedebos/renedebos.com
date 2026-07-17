@@ -573,6 +573,12 @@ Field notes:
   reprocessing candidates). A show being "mixed" is not a bug — it's the
   normal, expected shape after a partial re-run — but it's the thing to check
   before deciding a show is fully caught up to the current engine.
+  For a browsable, filterable equivalent (by version, treatment mode, damage
+  flag, artist, or free text) rather than a CLI listing, see the unlisted
+  `/archive-data/` page — every track in the archive with its full spec/
+  provenance data, built from `assets/track-spec.json`
+  (`build_track_spec_catalog()` in `scripts/sitegen/feeds.py`), not linked
+  from the nav (bookmark it directly; linked from `/manual/` and `/search/`).
 - **Per-show status, persisted.** `audio_process.py status` reports every show's
   `processing_status` computed from the sidecars; `status --write` persists it into
   `recordings.json` (per show) plus a per-track `processed: true` flag. **Run
