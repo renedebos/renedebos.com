@@ -2,9 +2,9 @@
 
 *How a show gets from a whole-show WAV to renedebos.com, what you do
 by hand, what Claude runs, and what every tool in `scripts/` is for.*
-*Last updated: 2026-07-16 (matches workflow v6 — explicit-gain rendering,
-LRA QA on every track, PLR/max-loudness provenance, MP3 true-peak trim; see
-Part 5 for the full version history).*
+*Last updated: 2026-07-17 (matches workflow v7 — fixed the applause-limiter
+true-peak safety loop so its retry actually moves the peak it's supposed to
+fix; see Part 5 for the full version history).*
 
 ---
 
@@ -130,9 +130,14 @@ track's dynamics to hit it exactly. `process` decides per track, in order:
    caps *sample* peaks, but the archive's −1 dBTP ceiling is a *true*
    (oversampled) peak; on hot transients the two can disagree by a few
    tenths of a dB. So the applause-limited render is measured after the
-   fact, and if the real output overshoots, the gain is backed off and
-   re-rendered (up to 5 attempts) — the ceiling is never trusted to the
-   limiter's math alone.
+   fact, and if the real output overshoots, the retry backs off both the
+   limiter threshold and the gain together (workflow v7) and re-renders (up
+   to 5 attempts) — the ceiling is never trusted to the limiter's math
+   alone. (v6 and earlier only backed off the gain; when applause, not
+   music, sets the ceiling, the limiter clamps to its fixed threshold
+   regardless of pre-gain, so a gain-only retry could measure the identical
+   overshoot on every attempt and exhaust its retries still over ceiling —
+   fixed in v7, see below.)
 
 Every track's processing sidecar (`data/processing/<slug>.json`) records
 which of the above it got and *why*, in plain language — that's the
@@ -348,6 +353,7 @@ directly.
 | v4 | 2026-07-12 | Fixed a silent ffmpeg fallback: `linear=true` is only a *request* — if the target would push true peak past the ceiling, ffmpeg quietly switches to dynamic (frame-adaptive) normalization instead, which can flatten hand-drawn fades with zero warning in the logs. A track whose predicted true peak exceeds the ceiling is now processed at its own safe "max linear target" instead, staying in true linear mode. | Linear only (per-track reduced target when needed) |
 | v5 | 2026-07-13 | Added applause-aware headroom recovery for audience tapes where a clap peaks louder than the music itself. Peaks are classified by *behavior* (position near a track's head/tail + crest factor), never loudness alone; if applause is what's eating the headroom, the music gets one constant gain sized to the music's own peaks, with a lookahead limiter that only applause transients can reach. A measure-and-correct loop verifies the actual rendered true peak and re-renders (up to 5 attempts) if it overshoots — the limiter's own threshold is never trusted blind. Ambiguous cases fall back to the v4 reduced target. | Linear, or applause-limiter mode (music untouched, only applause capped) |
 | v6 | 2026-07-16 | Linear/linear-reduced tracks now render with an explicit `volume=<gain>dB` gain instead of asking `loudnorm` for the target — the gain is computed once from a measurement pass and applied unconditionally, so a silent dynamic-mode render is no longer possible in principle, not just avoided by construction. The output LRA-preservation QA gate now runs on every track (previously applause-limiter tracks only). Provenance gains `plr` and `max_m`/`max_s` per track. The MP3 derivative gets its own independent gain trim (never touching the FLAC master) if lossy encoding would clip its true peak, iterated like the applause safety loop. | Linear only via `volume`; applause-limiter mode unchanged from v5 |
+| v7 | 2026-07-17 | Fixed the applause-limiter true-peak safety loop: on overshoot it only backed off `gain_db`, but when applause (not music) sets the ceiling, `alimiter` clamps to a fixed `limit_db` threshold regardless of pre-gain, so the retry never moved the actual overshoot and could exhaust all 5 attempts still over the −1 dBTP ceiling. Caught live on `sean-19-broadway-1999-11-29` track 21 ("Houses of the Holy") — every attempt measured the identical −0.78 dBTP. Now backs off `limit_db` and `gain_db` together, preserving the invariant that the limiter never reaches anything classified as music. Only affects applause-limiter tracks whose first render attempt already overshot the ceiling; everything else is unchanged from v6. | Linear unchanged from v6; applause-limiter retry now moves the true peak |
 
 ### v1 — the linear baseline
 
@@ -465,3 +471,34 @@ Three QA additions ride along with the same change:
   would otherwise clip on decode, iterated up to 3 times the same way the
   applause true-peak loop already re-renders and re-measures rather than
   trusting a single pass.
+
+### v7 — the safety loop's retry actually moves the peak
+
+v5 added the true-peak safety loop specifically because `alimiter` thresholds
+*sample* peaks while the archive's ceiling is a *true* (oversampled) peak, so
+on hot transients the two can disagree by a few tenths of a dB — the loop
+renders, measures the real output, and if it overshoots, backs off and
+re-renders. From v5 through v6, "backs off" meant reducing `gain_db` alone,
+the pre-limiter gain applied to the whole track. That's the right lever when
+the *music* is what's driving the overshoot — but on an applause-limiter
+track it's specifically the *applause* that's eating the headroom, and
+`alimiter` clamps that segment to its `limit_db` threshold regardless of how
+much pre-gain feeds it, as long as the input still exceeds that threshold at
+all. Reducing `gain_db` only ate into the music's already-safe headroom; the
+applause's post-limiter level — and therefore its true peak — never moved.
+
+Caught live re-processing `sean-19-broadway-1999-11-29`: track 21, "Houses of
+the Holy," came back from the safety loop still at −0.79 dBTP, over the −1
+ceiling, after all 5 attempts. The report showed why — every single attempt
+measured the identical −0.78 dBTP, the tell that nothing was actually
+changing. The fix backs off `limit_db` in lockstep with `gain_db`, so the
+clamp itself moves down on each retry, while keeping `music_peak + gain_db
+<= limit_db` — the invariant from v5 that keeps the limiter mathematically
+incapable of ever reaching anything classified as music. Re-rendered, track
+21 landed at −1.15 dBTP on the first retry.
+
+Scope is narrow: linear and linear-reduced tracks are untouched (they never
+go through this loop), and any applause-limiter track whose first attempt
+already met the ceiling never enters the retry path either — this only
+changes the outcome for a track that previously entered the loop and never
+actually got fixed by it.

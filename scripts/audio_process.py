@@ -79,7 +79,7 @@ APPLAUSE_TP_MAX_ATTEMPTS = 5  # alimiter limits SAMPLE peaks, not oversampled tr
 # re-run later with a newer version). The registry is the human-readable decode
 # of a version number; the per-track `chain` is the self-contained ground truth;
 # the `md5` proves the live audio is that exact output.
-WORKFLOW_VERSION = 6
+WORKFLOW_VERSION = 7
 WORKFLOW_VERSIONS = {
     1: {
         "desc": "Two-pass ffmpeg loudnorm to the per-artist target "
@@ -195,6 +195,27 @@ WORKFLOW_VERSIONS = {
         "loudnorm": "measurement only (plan_track's analysis pass); render uses "
                     "volume=<gain>dB:precision=double for linear/linear-reduced, "
                     "unchanged applause-limiter volume+alimiter chain for that mode",
+        "targets": dict(ARTIST_TARGET),
+        "optional_filters": ["--eq <literal ffmpeg filter chain>", "highpass=f=80",
+                             "lowpass=f=18000", "60Hz notch"],
+    },
+    7: {
+        "desc": "As v6, plus: fixed the applause-limiter true-peak safety loop so its "
+                "retry actually moves the number it's supposed to fix. On overshoot, "
+                "the loop previously only backed off gain_db (the pre-limiter gain) — "
+                "but when applause, not music, sets the ceiling, alimiter clamps to a "
+                "fixed limit_db regardless of how much pre-gain feeds it, so a track "
+                "whose applause was still over the -1 dBTP ceiling after the limiter "
+                "measured the IDENTICAL true peak on every retry attempt and could run "
+                "out of attempts still over ceiling (caught live on "
+                "sean-19-broadway-1999-11-29 trk 21 'Houses of the Holy': 4 attempts, "
+                "same -0.78 dBTP every time). Fixed by backing off limit_db and "
+                "gain_db together on retry, preserving the invariant that the limiter "
+                "never reaches anything classified as music (music_peak + gain <= "
+                "limit). Linear/linear-reduced tracks and any applause-limiter track "
+                "whose first attempt already met the ceiling are unaffected — this "
+                "only changes the outcome of a retry that previously never worked.",
+        "loudnorm": "unchanged from v6",
         "targets": dict(ARTIST_TARGET),
         "optional_filters": ["--eq <literal ffmpeg filter chain>", "highpass=f=80",
                              "lowpass=f=18000", "60Hz notch"],

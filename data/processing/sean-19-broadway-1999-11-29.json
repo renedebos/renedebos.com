@@ -341,7 +341,7 @@
       "note": "gain to -20 LUFS would overshoot the TP ceiling by 0.4 dB — small enough to simply take the track's own max linear target; dynamics untouched"
     },
     "21": {
-      "ver": 6,
+      "ver": 7,
       "chain": "volume=3.93dB,alimiter=limit=0.834642:attack=5:release=100:level=false:latency=1",
       "in_lufs": -26.2,
       "lufs": -22.31,
