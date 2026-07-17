@@ -242,6 +242,16 @@
       <li><strong>Hand-picked playlists.</strong> Until now the <a href="/playlist/"><strong>Playlist</strong></a> builder could only answer &ldquo;surprise me&rdquo; &mdash; filters and shuffle. Now every track row across the site carries a small <strong>&ldquo;+&rdquo; button</strong>: collect songs as you browse (the selection follows you from page to page), then build a playlist from exactly what you picked. Queues can be pruned song by song, and any playlist can be <strong>saved under a name</strong> in your browser &mdash; the groundwork is in place for the archive&rsquo;s own curated playlists to appear on the Playlist page.</li>
     </ul>
 
+    <h2>Week ten &mdash; a more trustworthy audio engine (July&nbsp;16, 2026)</h2>
+    <p>
+      Less new tape this week, more making sure the engine behind every track can be trusted down to the last decimal.
+    </p>
+    <ul class="reasons">
+      <li><strong>Closed the last gap in linear normalization.</strong> Since the fix a few weeks back, a track that couldn&rsquo;t safely hit the loudness target landed at its own quieter level instead of risking flattened dynamics &mdash; but that safety net still asked the normalizer itself to apply the final gain and trusted it to behave. It now computes the exact gain once and applies it as a single, plain volume change, so there&rsquo;s no longer any step where a silent fallback could sneak back in, even in principle. The dynamics-preserved check that used to run only on the trickiest tracks now runs on every single one, and two new measurements are recorded alongside the usual loudness numbers &mdash; catching the case where two tracks share the same average level but one has a much hotter chorus that makes it <em>sound</em> louder.</li>
+      <li><strong>Sean Hannan at 19&nbsp;Broadway, Jan&nbsp;24, 2000</strong> &mdash; the 31-song set whose clipped applause got hand-repaired back in Week five &mdash; was re-run through the current engine. While preparing it, one song, &ldquo;Did You Ever See,&rdquo; turned out to be missing from the working files entirely, with the two songs after it shifted up a number to cover the gap; it&rsquo;s been recovered and the numbering set right.</li>
+      <li><strong>Sean Hannan at 19&nbsp;Broadway, Feb&nbsp;21, 2000</strong> was also re-run through the current engine, and track 5&rsquo;s title corrected to its real name, &ldquo;Ode to Biddy McGee.&rdquo;</li>
+    </ul>
+
     <p class="about-note">The work continues &mdash; more shows, better audio, and small fixes are always in progress.</p>
   </section>
 </main>
