@@ -1397,6 +1397,63 @@ def cmd_status(args):
         print("\n(report only — pass --write to persist into recordings.json)")
 
 
+def cmd_version_map(args):
+    """Archive-wide view of which workflow version(s) are on each show's
+    tracks — the source of truth for reprocessing triage. A show's tracks can
+    legitimately span more than one version: re-running a single track later
+    updates only that track's `ver`/`chain` in the sidecar and leaves the rest
+    alone (see AUDIO_PROCESSING.md's provenance "merge, don't overwrite"
+    note), so a show is not "done" in one uniform sense — it's done per-track.
+    --version N lists every track anywhere in the archive still on that exact
+    version, for finding reprocessing candidates without opening every show."""
+    proc_dir = os.path.join(ROOT, "data", "processing")
+    data = json.load(open(os.path.join(ROOT, "data", "recordings.json")))
+    titles = {show["slug"]: {str(t["num"]): t["title"] for t in (show.get("tracks") or [])}
+              for show in data["shows"]}
+    sidecars = sorted(f[:-5] for f in os.listdir(proc_dir) if f.endswith(".json"))
+
+    if args.version is not None:
+        hits = []
+        for slug in sidecars:
+            prov = json.load(open(os.path.join(proc_dir, f"{slug}.json")))
+            for num in sorted(prov.get("tracks", {}), key=int):
+                if str(prov["tracks"][num].get("ver")) == str(args.version):
+                    hits.append((slug, num, titles.get(slug, {}).get(num, "?")))
+        print(f"{len(hits)} track(s) currently on workflow v{args.version}:\n")
+        for slug, num, title in hits:
+            print(f"  {slug}  track {num:>2} — {title}")
+        return
+
+    rows, totals = [], {}
+    for slug in sidecars:
+        prov = json.load(open(os.path.join(proc_dir, f"{slug}.json")))
+        vers = {}
+        for t in prov.get("tracks", {}).values():
+            v = t.get("ver", "?")
+            vers[v] = vers.get(v, 0) + 1
+            totals[v] = totals.get(v, 0) + 1
+        rows.append((slug, vers, len(vers) > 1, len(prov.get("tracks", {}))))
+
+    if args.only_mixed:
+        rows = [r for r in rows if r[2]]
+        if not rows:
+            print("No shows have mixed workflow versions across their tracks.")
+            return
+
+    print(f"{'SLUG':45s} {'TRACKS':>6s}  VERSIONS")
+    print("-" * 90)
+    for slug, vers, mixed, n in sorted(rows, key=lambda r: (not r[2], r[0])):
+        summary = ", ".join(f"v{k}: {c}" for k, c in sorted(vers.items(), key=lambda x: str(x[0])))
+        flag = "  ⚠ MIXED" if mixed else ""
+        print(f"{slug:45s} {n:>6d}  {summary}{flag}")
+
+    print(f"\nArchive-wide track totals: "
+          + ", ".join(f"v{k}: {c}" for k, c in sorted(totals.items(), key=lambda x: str(x[0]))))
+    if not args.only_mixed:
+        nmixed = sum(1 for r in rows if r[2])
+        print(f"{nmixed} show(s) have more than one workflow version across their tracks.")
+
+
 def main():
     ap = argparse.ArgumentParser(description="Audio processing workflow engine.")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -1462,6 +1519,15 @@ def main():
     st.add_argument("--write", action="store_true",
                     help="persist processing_status (+ per-track processed) into recordings.json")
     st.set_defaults(func=cmd_status)
+
+    vm = sub.add_parser("version-map", help="archive-wide view of which workflow version(s) "
+                                            "each show's tracks are on; flags shows whose tracks "
+                                            "span more than one version")
+    vm.add_argument("--only-mixed", action="store_true",
+                    help="only list shows with more than one workflow version across their tracks")
+    vm.add_argument("--version", type=int,
+                    help="list every track archive-wide currently on this exact workflow version")
+    vm.set_defaults(func=cmd_version_map)
 
     args = ap.parse_args()
     args.func(args)

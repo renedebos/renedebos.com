@@ -563,6 +563,16 @@ Field notes:
   per-track (and a version tally) for a show; `audio_process.py versions` describes
   what each version did. A track-listed show with *no* sidecar (or missing track
   entries) is one that still needs processing.
+- **Archive-wide version view (across all shows at once).**
+  `audio_process.py version-map` lists every show with a sidecar, its per-track
+  version tally, and flags any show whose tracks span more than one version
+  (`⚠ MIXED`) — the case `history` can't show you because it only looks at one
+  show at a time. `--only-mixed` filters to just those; `--version N` lists
+  every track archive-wide still on version `N` (e.g. `--version 1` to find
+  every track-listed-show that predates the v4 silent-fallback fix, as
+  reprocessing candidates). A show being "mixed" is not a bug — it's the
+  normal, expected shape after a partial re-run — but it's the thing to check
+  before deciding a show is fully caught up to the current engine.
 - **Per-show status, persisted.** `audio_process.py status` reports every show's
   `processing_status` computed from the sidecars; `status --write` persists it into
   `recordings.json` (per show) plus a per-track `processed: true` flag. **Run
