@@ -1014,10 +1014,22 @@ def cmd_process(args):
                         # honestly straight off the file. The TP>ceiling warning below
                         # already flags the shortfall from the real measurement.
                         break
+                    # Backing off gain_db alone doesn't move an overshoot caused by
+                    # the applause: alimiter clamps to limit_db regardless of how
+                    # much pre-gain feeds it, as long as the input still exceeds
+                    # that threshold — so a gain-only backoff leaves the applause's
+                    # output level (and therefore its true peak) unchanged while
+                    # only eating into the music's already-safe headroom. Back off
+                    # limit_db by the same amount so the clamp itself moves, and
+                    # gain_db in lockstep to preserve music_peak + gain <= limit
+                    # (the invariant that keeps the limiter from ever touching
+                    # anything classified as music).
+                    delta = overshoot + 0.15
                     print(f"  {f}: attempt {attempt} measured {tp_now:+.2f} dBTP "
-                          f"(> {TP_CEILING}) — backing gain off {overshoot + 0.15:.2f} dB "
-                          "and re-rendering", flush=True)
-                    plan["gain_db"] = round(plan["gain_db"] - overshoot - 0.15, 2)
+                          f"(> {TP_CEILING}) — backing off limiter threshold and gain by "
+                          f"{delta:.2f} dB and re-rendering", flush=True)
+                    plan["limit_db"] = round(plan["limit_db"] - delta, 2)
+                    plan["gain_db"] = round(plan["gain_db"] - delta, 2)
                     limiter_finalize(plan)
                 used_target = plan["target"]
             else:

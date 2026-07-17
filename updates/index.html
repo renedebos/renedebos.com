@@ -47,6 +47,10 @@
   <section class="updates">
     <ul class="update-list">
       <li class="update-item">
+        <span class="update-date">2026-07-17</span>
+        <div class="update-text">Re-normalized all 21 tracks: a bug in the loudness pipeline had silently switched several tracks into dynamic (compressor-like) processing instead of true linear gain, flattening hand-drawn fades and room dynamics. Tracks where audience applause — not the music — was the loudest thing on the tape now get linear gain sized to the music itself, with only the applause gently limited. Track 7, &quot;The Rodeo Song,&quot; has some audible clipping baked into the source recording — normalization can&#x27;t undo that, so it&#x27;s flagged rather than papered over — using the automated audio engineering workflow with ffmpeg &mdash; <a href="/shows/sean-19-broadway-1999-11-29/">Sean Hannan &middot; 19 Broadway &middot; 1999-11-29</a> <span class="src-tag src-aud">AUD</span> &middot; <a href="/shows/sean-19-broadway-1999-11-29/#technical-data">view data</a></div>
+      </li>
+      <li class="update-item">
         <span class="update-date">2026-07-16</span>
         <div class="update-text">Re-normalized all 31 tracks to −20 LUFS on the current audio engineering workflow, replacing an older processing pass, using the automated audio engineering workflow with ffmpeg &mdash; <a href="/shows/sean-19-broadway-2000-01-24/">Sean Hannan &middot; 19 Broadway &middot; 2000-01-24</a> <span class="src-tag src-aud">AUD</span> &middot; <a href="/shows/sean-19-broadway-2000-01-24/#technical-data">view data</a></div>
       </li>
