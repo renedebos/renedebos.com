@@ -8,6 +8,20 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Re-normalized all 31 tracks to −20 LUFS on the current audio engineering workflow, replac…</title>
+    <link>https://renedebos.com/shows/sean-19-broadway-2000-01-24/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-16-sean-19-broadway-2000-01-24</guid>
+    <pubDate>Thu, 16 Jul 2026 22:35:00 +0000</pubDate>
+    <description>Re-normalized all 31 tracks to −20 LUFS on the current audio engineering workflow, replacing an older processing pass, using the automated audio engineering workflow with ffmpeg</description>
+  </item>
+  <item>
+    <title>Re-normalized all 11 tracks to −20 LUFS on the current audio engineering workflow, replac…</title>
+    <link>https://renedebos.com/shows/sean-19-broadway-2000-02-21/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-16-sean-19-broadway-2000-02-21</guid>
+    <pubDate>Thu, 16 Jul 2026 22:30:00 +0000</pubDate>
+    <description>Re-normalized all 11 tracks to −20 LUFS on the current audio engineering workflow, replacing an older processing pass; also corrected track 5's title to "Ode to Biddy McGee," using the automated audio engineering workflow with ffmpeg</description>
+  </item>
+  <item>
     <title>Added the Mad Hannans' return to Marin Brewing Co. in Larkspur, April 1, 1999 — the venue…</title>
     <link>https://renedebos.com/shows/mad-marin-brewing-co-1999-04-01/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-15-mad-marin-brewing-co-1999-04-01</guid>
@@ -272,20 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-27-jerry-19-broadway-2001-01-15</guid>
     <pubDate>Sat, 27 Jun 2026 20:00:00 +0000</pubDate>
     <description>Re-normalized all 31 tracks to −16 LUFS for a more even, comfortable listening level</description>
-  </item>
-  <item>
-    <title>Loudness-normalized all tracks to −16 LUFS for a more even listening level</title>
-    <link>https://renedebos.com/shows/sean-19-broadway-2000-02-21/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-26-sean-19-broadway-2000-02-21</guid>
-    <pubDate>Fri, 26 Jun 2026 22:30:00 +0000</pubDate>
-    <description>Loudness-normalized all tracks to −16 LUFS for a more even listening level</description>
-  </item>
-  <item>
-    <title>These very muddled tracks have been processed with EQ filtering and loudness normalizatio…</title>
-    <link>https://renedebos.com/shows/mad-sweetwater-2001-01-06/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-26-mad-sweetwater-2001-01-06</guid>
-    <pubDate>Fri, 26 Jun 2026 21:00:00 +0000</pubDate>
-    <description>These very muddled tracks have been processed with EQ filtering and loudness normalization to −16 LUFS to make them sound a little better</description>
   </item>
 </channel>
 </rss>
