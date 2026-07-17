@@ -256,6 +256,36 @@ representation:
   build with +/Build → save → listen/refine → promote to a curated
   playlist in recordings.json.
 
+## Phase 7: Continuous player popup — planned, not started
+
+A full implementation plan exists (from a planning session, 2026-07-16) but no
+code has been written yet. Problem: audio on this site is page-scoped —
+navigating the tab tears down the `<audio>` element and stops playback, so
+there's no way to "keep playing while browsing" without a separate window.
+
+Sketch of the plan:
+- `sendToPlayer(ids, opts)` helper in `player.js` (already loaded site-wide):
+  uses `window.open('', 'hannanPlayer')` to find-or-create a named popup
+  without navigating it away if it's already open, then updates its
+  `location.hash` (`#p=id,id,…`, the existing Phase 3 format) to hand it a
+  queue — appending to a running queue if the popup's already on `/player/`.
+- New standalone page `/player/` (own shell like `/manual/`'s, but reusing
+  the main site's stylesheet/`.custom-player` styling rather than a bespoke
+  design system) + `scripts/continuous-player.js`, lifting the portable parts
+  of `playlist.js`'s engine (`Audio()` instance, queue/idx state, `streamUrl`/
+  `playAt`/`stop`/`attemptPlay`, the hash format) without the filter-builder/
+  save/share/ZIP machinery a popup player doesn't need.
+- Genuinely new capability: Media Session **action handlers**
+  (play/pause/prev/next + `setPositionState`) for lock-screen/headset
+  controls — today only bare metadata is set, no handlers exist.
+- Entry points: a "Open continuous player" button on `/playlist/`, and an
+  "Add to player" button next to the existing per-track "+" (Phase 5) so a
+  background player can be extended from any show/song page without
+  interrupting what's already playing or stealing focus.
+
+Full plan on file if/when this gets picked up; nothing below this point has
+shipped.
+
 ## Open decisions (need Rene’s input)
 
 1. ~~**Tag vocabulary**~~ — RESOLVED 2026-07-07: full 20-tag controlled

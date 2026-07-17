@@ -351,10 +351,31 @@ ffmpeg -i input.wav -af "{filters},loudnorm=I={target_lufs}:LRA=11:TP=-1:print_f
 ```
 Parse JSON for: `input_i`, `input_lra`, `input_tp`, `input_thresh`, `target_offset`
 
-**Pass 2** — apply filters + normalization (lossless output):
+**Pass 2 (workflow v6+) — explicit gain, not a second loudnorm pass.** Earlier
+versions handed Pass 1's measurement back into a second `loudnorm` call with
+`linear=true` and trusted ffmpeg to render it linearly. That trust was
+misplaced: `linear=true` is only a *request* — if the requested gain would
+push true peak past the ceiling, ffmpeg silently falls back to dynamic
+(frame-adaptive) normalization with no warning in the logs (see the
+linear-normalization policy above). v6 removes that reliance structurally:
+the gain is computed directly from Pass 1's measurement —
 ```
-ffmpeg -i input.wav -af "{filters},loudnorm=I={target_lufs}:LRA=11:TP=-1:measured_I={input_i}:measured_LRA={input_lra}:measured_tp={input_tp}:measured_thresh={input_thresh}:offset={target_offset}:linear=true:print_format=summary" -ar {sample_rate} -c:a {pcm_codec} ~/work/<slug>/processed/{filename}.wav
+gain_db = target_lufs − input_i        # (or the track's own max_linear_target, see below)
 ```
+— and applied with a plain, unconditional `volume` filter, which has no
+fallback mode:
+```
+ffmpeg -i input.wav -af "{filters},volume={gain_db}dB:precision=double" -ar {sample_rate} -c:a {pcm_codec} ~/work/<slug>/processed/{filename}.wav
+```
+`loudnorm`/`ebur128` remain measurement-only tools throughout the pipeline;
+they never perform the render. `target_lufs` here is either the show's
+nominal target (`linear` mode) or the track's own `max_linear_target` from
+the reduced-target math above (`linear-reduced` mode) — same two modes as
+before, just rendered without a second normalization pass. The one exception
+is **applause-limiter** tracks (workflow v5+): those still use
+`volume={gain}dB,alimiter=limit=<amp>:attack=5:release=100:level=false:latency=1`,
+gain sized to the music peaks, limiter reaching only the classified applause
+transients — see `scripts/audio_process.py`'s `limiter_chain()`/`plan_track()`.
 
 **Bit depth — do not build the codec as `pcm_s{bitdepth}le`.** 24-bit WAV (and
 24-bit FLAC) report `sample_fmt=s32` in ffprobe, so a naive `s{bitdepth}` either
@@ -375,10 +396,11 @@ not optional: loudnorm resamples to 192 kHz internally and writes the output at
 192 kHz unless the source rate is pinned back.
 
 **Pass 3 (re-measure)** — the report must show the *achieved* loudness, not an
-assumed target. With `linear=true`, loudnorm falls back to dynamic mode when
-linear gain would breach the -1 dBTP ceiling, so outputs drift (expect roughly
-±0.4 LU off the target). Re-run the loudness analysis on the output file and use
-its `input_i` as the "Output LUFS" value:
+assumed target. Since v6's `volume` render is one constant multiply, the
+achieved LUFS should land almost exactly on target (well under 0.1 LU off —
+if you see the old ~±0.4 LU drift, something upstream is still routing through
+a loudnorm render, not the current engine). Re-run the loudness analysis on
+the output file and use its `input_i` as the "Output LUFS" value:
 ```
 ffmpeg -i ~/work/<slug>/processed/{filename}.wav -af loudnorm=I={target_lufs}:LRA=11:TP=-1:print_format=json -f null - 2>&1
 ```
@@ -390,6 +412,16 @@ same folder, preserving the `NN Title` name:
 ```
 ffmpeg -hide_banner -loglevel error -y -i ~/work/<slug>/processed/{filename}.flac \
   -b:a 320k ~/work/<slug>/processed/{filename}.mp3
+```
+**MP3 true-peak trim loop (workflow v6+).** Lossy encoding can itself overshoot
+the FLAC master's true peak (decoder reconstruction adds a bit of inter-sample
+energy loudnorm/volume never saw). After encoding, measure the MP3's true peak;
+if it's over the −1 dBTP ceiling, re-encode with a small extra `volume={trim}dB`
+applied on top (the FLAC master is never touched — only the MP3 gets the trim),
+up to 3 attempts total:
+```
+ffmpeg -hide_banner -loglevel error -y -i {filename}.flac -af "volume={trim}dB:precision=double" \
+  -b:a 320k {filename}.mp3
 ```
 After this, `~/work/<slug>/processed/` holds a matched `NN Title.flac` +
 `NN Title.mp3` per track — exactly what Phase 3 publishes.
@@ -424,6 +456,10 @@ FLAGS
 - Do not modify any files in the input folder
 - Print progress to terminal as each file completes: e.g. `[3/31] 03 ….flac — done`
 - Preserve original sample rate and bit depth — do not resample or change bit depth
+- **QA gate (workflow v6+): output LRA must match source LRA within tolerance on
+  every track**, not just applause-limiter ones — a silent dynamics change (e.g.
+  a dynamic-mode render sneaking back in) shows up as an LRA shift regardless of
+  which mode produced it, so the check now runs universally.
 
 ---
 
@@ -503,6 +539,12 @@ Field notes:
   - `lufs` / `tp` / `lra` — **achieved** values from the Pass 3 re-measure of the
     output (not assumptions). `build.py` shows `In LUFS`, `Out LUFS`, and a derived
     `Gain` column, plus `True Pk` and `LRA`.
+  - `plr` (workflow v6+) — true peak minus integrated loudness (peak-to-loudness
+    ratio). `max_m` / `max_s` — the peak momentary (400 ms window) / short-term
+    (3 s window) loudness from a single `ebur128` pass. Two tracks can share the
+    same integrated LUFS while one has a much hotter chorus the average smooths
+    over — `plr`/`max_m`/`max_s` are what actually predict "sounds louder in a
+    playlist," which `lufs` alone can't.
   - `md5` — audio fingerprint of the processed FLAC for integrity / Drive↔R2 drift
     checks, and the **proof of which version's output is live**. Capture it
     (container-uniform, works for WAV too) with:
