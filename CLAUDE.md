@@ -22,6 +22,14 @@ The two large WAV files in `~/` are local staging copies for direct rclone uploa
 - **`rclone` uploads to `gdrive:` can stall mid-file** — `--timeout` won't catch it; prefer local→Drive (the gdrive-mount copy) over a direct rclone push when possible, and use a `--max-duration` retry loop if you must push large files directly.
 - **Audacity's MCP tools are unreliable** — spaces in paths choke import, `success:false` is sometimes ambiguous, and it has lost a track before. Treat it as surgical hand-editing territory for Rene, not for unattended automation; ffmpeg is the dependable path for deterministic DSP.
 - **`pgrep -f '<script>.py'` can self-match the watcher process** if the watcher's own command line contains the same script name — match on the full file path instead, or rely on the background-task completion notification rather than process-name polling.
+- **`assets/site.css` is a build output, not a source file** — `scripts/build.py` overwrites it verbatim from `scripts/site.css` on every run. Edit `scripts/site.css`; editing `assets/site.css` directly gets silently discarded by the next `make build`. Same relationship for every generated HTML page (archive, songs, search, updates, contact, history, every `/shows/*/`): they come from `scripts/sitegen/fragments.py`'s `page_shell()` template plus per-page generators in `scripts/sitegen/pages.py`, not from hand-editable HTML — edit the template/generator, then rebuild.
+
+## Site Styling & Templates
+
+Three separate, deliberate design systems live in this repo — don't blend them without a reason:
+- **`assets/home.css`** — homepage-only, hand-maintained, paired with the static `index.html` at the repo root. Not generated.
+- **`scripts/site.css`** (→ built to `assets/site.css`) — the shared "Hannan Classic" system for every generated page (archive, songs, search, updates, contact, history, every show page): warm paper palette, `Cormorant Garamond`/`Karla`/`Space Mono`, tokens in `:root`. `header`, `.page-title`, and `main` all share a common `.wrap` (1080px, 28px side padding) so pages line up under the homepage's logo/nav (2026-07-18 flow pass) — don't reintroduce independent centering on one of these without doing the others.
+- **`/process/` and `/manual/`** — self-contained pages with their own inline `<style>` block, a different accent (blue) and font stack (`system-ui`), deliberately separate from "Hannan Classic" since they're internal/dev-facing documentation, not part of the public browsing experience. Don't fold them into `site.css` without being asked — that's a bigger, separate decision.
 
 ## Common Commands
 

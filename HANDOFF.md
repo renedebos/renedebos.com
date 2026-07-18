@@ -1,103 +1,88 @@
 # Session Handoff — Hannan Recordings (renedebos.com)
-**Date:** 2026-07-17 · **Branch:** `main` (all work committed & pushed, deploy verified live)
+**Date:** 2026-07-18 · **Branch:** `main` (all work committed & pushed, deploy verified live)
 
-> This run reprocessed Jerry Hannan's 19 Broadway 2001-01-08 show to workflow
-> v7 (confirming the same v1 dynamic-fallback bug class as last session's
-> Sean Hannan fix), shipped three playlist/archive UX features, cleaned up
-> `~/work/`, and reviewed all five project docs against the actual code —
-> catching real drift in four of five, including a live staleness bug in the
-> deployed `/manual/` page. Everything is live; two shows carried over
-> undecided (see What's next), nothing else blocking.
+> This run was front-end/design, not audio processing. Built five styled
+> homepage-redesign mockups as private Claude Artifacts for Rene to compare
+> (modern library, studio console, minimal editorial, data index, broadcast),
+> then — at Rene's direction — unified every generated interior page's
+> layout with the homepage's alignment/spacing/type scale. Along the way,
+> caught and fixed a real bug: I initially edited the wrong file
+> (`assets/site.css`, a build output) and lost the edits to a rebuild before
+> catching it. Everything is live and verified; last session's audio-work
+> carryover items (below) are still untouched and still open.
 
 ## ✅ Done this session
 
-### 1. Reprocessed `jerry-19-broadway-2001-01-08` to workflow v7 (commits `7c98297`, `f1f82fc`)
-Source: a corrected `labels.txt` (fixed a garbled track-14 title, stripped
-~60 junk point-labels from a prior export) supplied via a local folder, not
-the canonical Drive Work Folder. Diagnose came back clean; applause-limiter
-engaged correctly on 2 of 30 tracks. The old v1 provenance showed the same
-tell as last session's Sean Hannan bug — nearly every track pinned at
-*exactly* −20 LUFS and −1 dBTP simultaneously, the signature of the silent
-dynamic-mode fallback several of these tracks (needing targets as low as
-−28 LUFS to stay linear) couldn't have hit any other way. Caught and fixed
-two `draft_tracks.py` side effects before shipping: track 9's title
-("Everything" vs. the established "Everything Reminds Me of You") would
-have forked a duplicate song page, and track 17's tags would have been
-overwritten by a majority-vote match against unrelated shows rather than
-this show's own correct prior curation. Added an Updates note documenting
-the v1 finding.
+### 1. Five homepage redesign mockups (Claude Artifacts, not committed to the repo)
+Rene wanted visual-direction options before committing to a redesign,
+explicitly "modern" and explicitly not gigposter-style. Built five distinct
+styled single-page mockups using real archive data (31 shows, 679 tracks,
+real venues/dates/track titles from `data/recordings.json`, real homepage
+copy) rather than lorem ipsum, each with light/dark theme support: modern
+library/reading-room (card-catalog metaphor), studio console (dark
+mixing-desk/channel-strip), minimal editorial (magazine masthead), data
+archive index (structured/tool-like), and broadcast/radio-dial (warm
+on-air log). All published as private Claude Artifacts — links are in this
+conversation's history, not stored in the repo. No site changes from this
+part; it was purely a design-exploration exercise.
 
-### 2. Shipped three playlist/archive UX features (commits `6b3e84a`, `f653330`, `5d277a7`)
-- **"How to build a playlist" help** — a collapsed-by-default disclosure on
-  `/playlist/` explaining both entry points (filter-and-generate here, vs.
-  the per-track "+" while browsing) and how the floating selection bar
-  persists across page navigation.
-- **Whole-show "+" on `/archive/`** — each split show's row gets a button
-  that adds all its tracks to the playlist selection at once (build-time id
-  list in `data-ids`, true toggle, works correctly even when some of a
-  show's songs were already picked individually elsewhere).
-- **Shuffle became a real on/off toggle** — previously a one-shot "reshuffle
-  the remaining queue" action with no visual feedback; now persists
-  (`aria-pressed`, filled button) until turned off, which restores the exact
-  pre-shuffle order. Mirrored across `playlist.js` and `continuous-player.js`
-  (the two independent implementations, by design — see `PLAYLIST FEATURE.md`
-  Phase 7).
+### 2. Unified interior-page layout with the homepage's flow (commit `a1fb39f`)
+Rene compared the homepage's spacious feel against the denser interior
+pages (archive, show pages, updates, etc.) and asked for the interior pages
+to read as "the same site." Diagnosed three concrete gaps in `scripts/site.css`
+(the actual template source — see gotcha below) vs. `assets/home.css`:
+page titles centered/narrow vs. the homepage's left-aligned wide hero; body
+copy at 14px/weight-300 vs. the homepage's 16px/weight-400; and archive
+`show-row`s cramming date/venue/badges/track-count/arrow onto one dense
+13px line. Proposed four fixes (the fourth being an optional card-language
+pass); Rene approved all four:
+- Added a shared `.wrap` (1080px, 28px padding — identical to
+  `home.css`'s) and nested it inside `header` and `.page-title` (via
+  `scripts/sitegen/fragments.py`'s `page_shell()`), so the logo, nav, and
+  page heading now align under the same left edge as the homepage instead
+  of `.page-title` independently centering itself.
+- Bumped `.about p`, `.reasons li`, `.update-text`, `.site-tagline` from
+  14px/weight-300 to 15px/weight-400, matching the homepage's readable
+  weight; added `.about h2:not(:first-child) { margin-top }` since sections
+  were previously butting straight against the prior list with zero gap.
+- `.show-venue` now stacks the venue name and its NR/highlight/alt-transfer
+  badges on two lines (pure CSS, no template change — the two spans were
+  already siblings) instead of squeezing both onto the row's single 13px
+  line.
+- Gave `.about` sections and `.update-item`s the homepage's rounded-panel
+  treatment (`--surface` background, `--border` outline, ~12–14px radius),
+  and bumped `.show-list`/`.track-list`/`.search-results` radii from 6px to
+  10px to match.
+- Fixed a real pre-existing bug found along the way: a `@media (max-width:
+  600px)` rule was setting page-title-shaped padding (`3rem 1.5rem 2.5rem`)
+  on the `header` selector instead of `.page-title` — the values never
+  matched anything `header` actually needed. Corrected to target the right
+  element.
+Deliberately left `/process/` and `/manual/` untouched — they're
+self-contained pages with their own inline stylesheet and a different
+palette/font entirely, a separate design system for internal docs, not
+part of this ask.
 
-### 3. Cleaned up `~/work/` (235 MB freed)
-Deleted a byte-identical (MD5-verified) duplicate A/B comparison folder, an
-empty `archive-zip/staging/` tree, and a throwaway benchmark subfolder. Left
-two active A/B investigations alone — see What's next.
-
-### 4. Reviewed and corrected all five project docs (commits `a012b6f`, `bcd927b`, `b60e489`, `926f7ac`, `1cdda32`, `3971fad`)
-Checked concrete, verifiable claims against the actual code rather than
-reading for plausibility — found real drift in four of five:
-- **`SETUP.md`** — Drive auth description contradicted itself (described the
-  old shared-with-me account after the switch to the owner account); deploy
-  section didn't mention the wav-download Worker at all.
-- **`PUBLISHING.md`** — tool table was missing `version-map` (an
-  `audio_process.py` subcommand) and two whole scripts (`batch_process.py`,
-  `make_stream_mp3.py`); `update_tracks.py`'s entry didn't warn that it
-  skips the provenance sidecar and MD5 verification.
-- **`PLAYLIST FEATURE.md`** — cited `scripts/build.py` for functions that
-  moved into the `sitegen` package; the `tracks.json` schema list was
-  missing four real fields (`num`, `song`, `flac`, `flac_size_mb`); three
-  shipped features (this session's help text, whole-show button, and
-  shuffle toggle) had never been logged despite the doc's own instruction
-  to treat it as the living spec.
-- **`AUDIO_PROCESSING.md`** — a real factual error, not just staleness: it
-  claimed the R2 stream URL is `Cache-Control: no-store` so a re-upload is
-  "live the moment the upload finishes." It isn't — the Worker sets a
-  1-year immutable cache keyed off a version cache-buster (the provenance
-  sidecar's MD5), or a 1-hour TTL without one; "live" actually depends on
-  updating that sidecar and rebuilding. Also: Phase 3's two publish paths
-  never mention `publish_show.py` at all, despite it being what actually
-  produced every real reprocess on record and adding safety nets (MD5
-  verify, Drive backup) the manual steps skip — added pointers rather than
-  rewriting Phase 3, since the mechanical detail is still accurate and is
-  what `batch_process.py`'s Phase 0–2 hands off to.
-- **`TAGS.md`** — accurate as written (its 20-tag vocabulary matches
-  `TAG_VOCAB` in code exactly). Auditing its validator turned up adjacent
-  dead code, not a doc problem: `LEGACY_KEY_NAMING` still exempted
-  `jerry-19-broadway-2001-01-08` from the standard filename check — this
-  session's reprocess switched every one of its tracks to the standard
-  naming, making the exemption moot. Removed (verified via `build.py
-  --check`); `mad-sweetwater-2000-02-17` stays exempt (genuine
-  track-numbering drift, tracks 19–21 carry filenames numbered 18–20).
-
-### 5. Caught and fixed my own error mid-review (commit `bcd927b`)
-Told Rene — and wrote into `SETUP.md` — that the wav-download Worker never
-auto-deploys, always manual. Wrong: missed a second GitHub Action
-(`deploy-worker.yml`, path-filtered on `worker/**`) that deploys it
-automatically too. Corrected in the very next commit.
-
-### 6. Found and fixed a live staleness bug in my own work (commit `77800b3`)
-The `PUBLISHING.md` tool-table edit (`b60e489`) was never rebuilt into
-`/manual/` — the only one of the five docs actually rendered into the live
-site. `/manual/` served the stale table through 5 subsequent commits until
-caught while auditing `TAGS.md`'s validator and rebuilding for the
-`LEGACY_KEY_NAMING` fix turned up the diff.
+### 3. Caught my own mistake: edited a build output, not the source
+Made all of the above edits to `assets/site.css` first, then ran
+`python3 scripts/build.py` to regenerate the HTML — which silently
+overwrote every one of those edits, because `build.py` copies
+`scripts/site.css` → `assets/site.css` verbatim on every run. Caught it via
+a `diff scripts/site.css assets/site.css` sanity check before reporting
+anything done, reapplied the full edit set to the correct source file
+(`scripts/site.css`), rebuilt, and re-verified the diff matched. Documented
+as a new gotcha in `CLAUDE.md` so it doesn't happen again — also noted
+there that every generated page comes from `scripts/sitegen/fragments.py` /
+`pages.py`, not hand-editable HTML.
 
 ## 🟥 Tooling gotchas (durable, still real)
+- **`assets/site.css` is a build output, not a source file** — `scripts/build.py`
+  overwrites it verbatim from `scripts/site.css` on every run, and every
+  generated page (archive, songs, search, updates, contact, history, all
+  `/shows/*/`) comes from `scripts/sitegen/fragments.py`/`pages.py`, not
+  hand-editable HTML. Edit the source, not the output — see `CLAUDE.md`
+  "Site Styling & Templates" for the full picture (this session lost a full
+  round of CSS edits to a rebuild before catching it via `diff`).
 - `rclone` uploads to `gdrive:` can stall mid-file — prefer local→Drive over
   a direct push; `--max-duration` retry loop if you must push directly.
 - Audacity's MCP tools are unreliable — surgical hand-editing territory for
@@ -202,9 +187,10 @@ caught while auditing `TAGS.md`'s validator and rebuilding for the
   + Drive backup that the older manual `update_tracks.py` path skips.
 
 ## Reference
-Full runbook: `CLAUDE.md` → "Publishing a Split Show". Owner's manual (all
-tools, all four workflow phases, full version history): `PUBLISHING.md`
-(also rendered at `/manual/` — remember to rebuild after editing it).
-Older phase-by-phase technical detail: `AUDIO_PROCESSING.md`.
+Full runbook: `CLAUDE.md` → "Publishing a Split Show". Site templates/CSS
+source-vs-output layout: `CLAUDE.md` → "Site Styling & Templates". Owner's
+manual (all tools, all four workflow phases, full version history):
+`PUBLISHING.md` (also rendered at `/manual/` — remember to rebuild after
+editing it). Older phase-by-phase technical detail: `AUDIO_PROCESSING.md`.
 Playlist/player feature spec: `PLAYLIST FEATURE.md`. Tag vocabulary:
 `TAGS.md`.
