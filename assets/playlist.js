@@ -16,7 +16,7 @@
                        mad: "Mad Hannans", seanjerry: "Sean & Jerry Hannan" };
   // Facet tags worth picking a playlist by; the rest stay search-only.
   var TAG_ORDER = ["original", "cover", "traditional", "irish", "ballad",
-                   "upbeat", "rocker", "singalong", "folk", "country", "blues",
+                   "upbeat", "rocker", "folk", "country", "blues",
                    "rock", "story", "guest", "favorite", "rarity"];
 
   // Every facet is multi-select now: an empty array means "no filter" (all

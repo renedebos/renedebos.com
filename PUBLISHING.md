@@ -274,6 +274,43 @@ player.
 > would silently disagree with the catalog. Change the catalog; let the
 > pipeline propagate it.
 
+### Playlist tags: the controlled vocabulary
+
+Don't confuse these with the embedded file tags above — this is a
+different `tags` array, the mood/flavor/format labels (`ballad`, `irish`,
+`favorite`, …) that power the [Playlist](/playlist/) filters and site
+search. Three separate places govern them, each answering a different
+question:
+
+| Question | Where |
+|---|---|
+| What tags are allowed to exist at all? | `TAGS.md` (the rules) + `TAG_VOCAB` in `scripts/sitegen/core.py` (enforced at build — an unlisted tag fails the integrity check) |
+| Which of those tags show up as filter chips on `/playlist/`? | `TAG_ORDER` in `scripts/playlist.js` — a curated, ordered subset; a tag can be valid and simply not offered as a filter |
+| Which tags does a given track actually carry? | the track's `tags: [...]` array in `data/recordings.json`, editable via `make edit` |
+
+The vocabulary currently holds 20 tags across five groups (provenance,
+mood, flavor, content/format, curated picks — see `TAGS.md` for the full
+table and definitions); 15 of those are offered as playlist filters.
+`instrumental`, `medley`, `banter`, `improv`, and `beatles` are valid tags
+you can apply to a track, but aren't in `TAG_ORDER`, so they stay
+search-only and don't clutter the filter row.
+
+To add or retire a tag:
+1. Edit `TAGS.md` first — it's the source of truth, and its own rules say
+   new vocabulary needs to land there before anywhere else. Keep the list
+   at roughly 20 tags or fewer.
+2. Update `TAG_VOCAB` in `scripts/sitegen/core.py` to match, or the next
+   build's integrity check fails on any track already carrying the tag.
+3. Decide whether it belongs in `TAG_ORDER` (`scripts/playlist.js`) as a
+   playlist filter, or stays search-only.
+4. Rebuild + push — `assets/tracks.json` (the playlist's data source) and
+   every page that surfaces tags are generated from the catalog.
+
+> `TAG_ORDER` filters itself down to tags actually present on at least one
+> track, so a retired tag with no tracks left won't render as a dead chip
+> — but the stale name is still confusing to find in the code later.
+> Remove it from `TAG_ORDER` too when retiring a tag, not just `TAGS.md`.
+
 ---
 
 ## Part 4 — Site operations
