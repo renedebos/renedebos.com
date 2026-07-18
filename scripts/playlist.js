@@ -32,7 +32,7 @@
     "Steve Poltz": "poltz",
   };
   var SONGWRITER_LABELS = [
-    ["original", "Jerry & Sean Hannan (original)"],
+    ["original", "Jerry & Sean"],
     ["traditional", "Traditional"],
     ["lennon-mccartney", "Lennon & McCartney"],
     ["poltz", "Steve Poltz"],
