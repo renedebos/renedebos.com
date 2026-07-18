@@ -27,6 +27,14 @@
 
   var queue = [];
   var idx = -1;
+  // Persistent shuffle mode (not a one-shot reorder): shuffleOn drives the
+  // button's filled/unfilled state in renderNow(), unshuffledQueue is the
+  // pre-shuffle order snapshot toggling back off restores. Reset wherever a
+  // wholly new queue replaces the old one, since there's no "before" to
+  // restore to at that point.
+  var shuffleOn = false;
+  var unshuffledQueue = null;
+  function resetShuffle() { shuffleOn = false; unshuffledQueue = null; }
   var audio = new Audio();
   audio.preload = "none";
   var seeking = false;
@@ -224,6 +232,7 @@
       renderLength();
       updateStatus();
       queue = buildQueue();
+      resetShuffle();
       if (!queue.length) return;
       renderQueue();
       syncHash();
@@ -262,6 +271,7 @@
 
   goBtn.addEventListener("click", function () {
     queue = buildQueue();
+    resetShuffle();
     if (!queue.length) return;
     renderQueue();
     syncHash();
@@ -510,6 +520,7 @@
     var m = location.hash.match(/^#p=([\w.,-]+)/);
     if (!m) return false;
     queue = resolveIds(m[1].split(","));
+    resetShuffle();
     if (!queue.length) return false;
     renderQueue();
     syncHash();
@@ -529,7 +540,7 @@
     if (i < 0) i = 0;
     if (i >= queue.length) {
       if (mode === "endless" && queue.length) {         // roll a fresh order
-        queue = buildQueue(); renderQueue(); i = 0;
+        queue = buildQueue(); resetShuffle(); renderQueue(); i = 0;
       } else { stop(); return; }
     }
     idx = i;
@@ -646,7 +657,8 @@
         ? ' <span class="sr-tag">' + esc(t.songwriter) + "</span>" : "")
       + "</span></div>"
       + '<div class="pl-controls">'
-      + '<button type="button" class="pl-btn" data-act="shuffle" aria-label="Shuffle remaining tracks">' + SHUFFLE_ICON + "</button>"
+      + '<button type="button" class="pl-btn" data-act="shuffle" aria-pressed="' + shuffleOn + '" aria-label="'
+      + (shuffleOn ? "Shuffle on — click to restore original order" : "Shuffle remaining tracks") + '">' + SHUFFLE_ICON + "</button>"
       + '<button type="button" class="pl-btn" data-act="prev" aria-label="Previous">' + PREV_ICON + "</button>"
       + '<button type="button" class="pl-btn pl-btn-play" data-act="play" aria-label="Play/pause">' + PAUSE_ICON + "</button>"
       + '<button type="button" class="pl-btn" data-act="next" aria-label="Next">' + NEXT_ICON + "</button>"
@@ -657,16 +669,32 @@
       + "<span>" + formatTime(t.durationSec) + "</span></div>";
   }
 
-  // Reorders the not-yet-played tail of the queue in place — whatever already
-  // played (everything up to and including the current track) stays put, so
-  // this can't rewrite history mid-listen, only what's coming up.
-  function shuffleRemaining() {
-    if (idx === -1) {
-      queue = shuffle(queue.slice());
+  // Persistent on/off toggle (not a one-shot reorder): turning shuffle on
+  // snapshots the current order into unshuffledQueue, then randomizes
+  // whatever hasn't played yet — same reorder as before, only the tail,
+  // so it can't rewrite history mid-listen. Turning it back off restores
+  // that snapshot verbatim and re-finds the now-playing track's new
+  // position in it, so playback doesn't jump to a different song.
+  function toggleShuffle() {
+    if (shuffleOn) {
+      if (unshuffledQueue) {
+        var playingId = idx !== -1 ? queue[idx].id : null;
+        queue = unshuffledQueue;
+        unshuffledQueue = null;
+        if (playingId != null) {
+          var restoredIdx = queue.findIndex(function (t) { return t.id === playingId; });
+          if (restoredIdx !== -1) idx = restoredIdx;
+        }
+      }
+      shuffleOn = false;
     } else {
-      queue = queue.slice(0, idx + 1).concat(shuffle(queue.slice(idx + 1)));
+      unshuffledQueue = queue.slice();
+      queue = idx === -1 ? shuffle(queue.slice())
+                          : queue.slice(0, idx + 1).concat(shuffle(queue.slice(idx + 1)));
+      shuffleOn = true;
     }
     renderQueue();
+    renderNow();
     syncHash();
     highlight();
   }
@@ -674,7 +702,7 @@
   nowEl.addEventListener("click", function (e) {
     var b = e.target.closest(".pl-btn");
     if (b) {
-      if (b.dataset.act === "shuffle") shuffleRemaining();
+      if (b.dataset.act === "shuffle") toggleShuffle();
       else if (b.dataset.act === "prev") {
         if (audio.currentTime > 3) audio.currentTime = 0; else playAt(idx - 1);
       } else if (b.dataset.act === "next") playAt(idx + 1);
@@ -749,7 +777,11 @@
   function removeAt(i) {
     if (i < 0 || i >= queue.length) return;
     var wasPlaying = idx !== -1 && !audio.paused;
+    var removedId = queue[i].id;
     queue.splice(i, 1);
+    // Keep the shuffle-off restore snapshot from resurrecting a track that
+    // was explicitly removed after shuffling.
+    if (unshuffledQueue) unshuffledQueue = unshuffledQueue.filter(function (t) { return t.id !== removedId; });
     if (!queue.length) {
       stop();
     } else if (i < idx) {

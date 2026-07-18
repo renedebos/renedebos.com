@@ -1847,6 +1847,9 @@ a.artist-chip:hover { filter: brightness(1.08); }
 .pl-btn:hover { color: var(--accent); border-color: var(--accent); }
 .pl-btn-play { color: #fff; background: var(--accent); border-color: var(--accent); }
 .pl-btn-play:hover { color: #fff; opacity: 0.9; }
+/* Shuffle mode on — same filled-solid language as .track-add[aria-pressed]. */
+.pl-btn[aria-pressed="true"] { color: #fff; background: var(--accent); border-color: var(--accent); }
+.pl-btn[aria-pressed="true"]:hover { color: #fff; opacity: 0.9; }
 .pl-progress {
   display: flex; align-items: center; gap: 0.6rem;
   font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums;

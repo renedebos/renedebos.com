@@ -22,6 +22,11 @@
   var CATALOG = [];
   var queue = [];
   var idx = -1;
+  // Persistent shuffle mode — mirrors playlist.js's toggleShuffle()/renderNow()
+  // (the fuller reference implementation, see file header).
+  var shuffleOn = false;
+  var unshuffledQueue = null;
+  function resetShuffle() { shuffleOn = false; unshuffledQueue = null; }
   var audio = new Audio();
   audio.preload = "none";
   var seeking = false;
@@ -222,7 +227,8 @@
         ? ' <span class="sr-tag">' + esc(t.songwriter) + "</span>" : "")
       + "</span></div>"
       + '<div class="pl-controls">'
-      + '<button type="button" class="pl-btn" data-act="shuffle" aria-label="Shuffle remaining tracks">' + SHUFFLE_ICON + "</button>"
+      + '<button type="button" class="pl-btn" data-act="shuffle" aria-pressed="' + shuffleOn + '" aria-label="'
+      + (shuffleOn ? "Shuffle on — click to restore original order" : "Shuffle remaining tracks") + '">' + SHUFFLE_ICON + "</button>"
       + '<button type="button" class="pl-btn" data-act="prev" aria-label="Previous">' + PREV_ICON + "</button>"
       + '<button type="button" class="pl-btn pl-btn-play" data-act="play" aria-label="Play/pause">' + PAUSE_ICON + "</button>"
       + '<button type="button" class="pl-btn" data-act="next" aria-label="Next">' + NEXT_ICON + "</button>"
@@ -234,16 +240,27 @@
     syncPlayBtn();
   }
 
-  // Reorders the not-yet-played tail of the queue in place — whatever already
-  // played (everything up to and including the current track) stays put, so
-  // this can't rewrite history mid-listen, only what's coming up.
-  function shuffleRemaining() {
-    if (idx === -1) {
-      queue = shuffle(queue.slice());
+  // Persistent on/off toggle — mirrors playlist.js's toggleShuffle().
+  function toggleShuffle() {
+    if (shuffleOn) {
+      if (unshuffledQueue) {
+        var playingId = idx !== -1 ? queue[idx].id : null;
+        queue = unshuffledQueue;
+        unshuffledQueue = null;
+        if (playingId != null) {
+          var restoredIdx = queue.findIndex(function (t) { return t.id === playingId; });
+          if (restoredIdx !== -1) idx = restoredIdx;
+        }
+      }
+      shuffleOn = false;
     } else {
-      queue = queue.slice(0, idx + 1).concat(shuffle(queue.slice(idx + 1)));
+      unshuffledQueue = queue.slice();
+      queue = idx === -1 ? shuffle(queue.slice())
+                          : queue.slice(0, idx + 1).concat(shuffle(queue.slice(idx + 1)));
+      shuffleOn = true;
     }
     renderQueue();
+    renderNow();
     syncHash();
     highlight();
   }
@@ -251,7 +268,7 @@
   nowEl.addEventListener("click", function (e) {
     var b = e.target.closest(".pl-btn");
     if (!b) return;
-    if (b.dataset.act === "shuffle") shuffleRemaining();
+    if (b.dataset.act === "shuffle") toggleShuffle();
     else if (b.dataset.act === "prev") {
       if (audio.currentTime > 3) audio.currentTime = 0; else playAt(idx - 1);
     } else if (b.dataset.act === "next") playAt(idx + 1);
@@ -322,7 +339,9 @@
   function removeAt(i) {
     if (i < 0 || i >= queue.length) return;
     var wasPlaying = idx !== -1 && !audio.paused;
+    var removedId = queue[i].id;
     queue.splice(i, 1);
+    if (unshuffledQueue) unshuffledQueue = unshuffledQueue.filter(function (t) { return t.id !== removedId; });
     if (!queue.length) {
       stop();
     } else if (i < idx) {
@@ -381,6 +400,7 @@
 
   function loadFreshQueue(ids) {
     queue = resolveIds(ids);
+    resetShuffle();
     renderQueue();
     if (!queue.length) { idx = -1; renderNow(); saveState(); return; }
     idx = 0;
@@ -400,7 +420,12 @@
     var isAppend = ids.length > currentIds.length
       && currentIds.every(function (id, i) { return ids[i] === id; });
     if (isAppend) {
-      queue = queue.concat(resolveIds(ids.slice(currentIds.length)));
+      var added = resolveIds(ids.slice(currentIds.length));
+      queue = queue.concat(added);
+      // Keep the shuffle-off restore snapshot complete — otherwise turning
+      // shuffle off later would silently drop whatever got appended while it
+      // was on, rather than just leaving shuffle mode alone as intended here.
+      if (unshuffledQueue) unshuffledQueue = unshuffledQueue.concat(added);
       renderQueue();
       highlight();
       saveState();
