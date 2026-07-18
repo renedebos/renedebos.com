@@ -345,7 +345,8 @@
           "flac_size_mb": 30,
           "processed": true,
           "tags": [
-            "cover"
+            "cover",
+            "guest"
           ],
           "artist": "Jerry Hannan & Demir",
           "songwriter": "Mentor Williams"
@@ -363,8 +364,10 @@
           "tags": [
             "cover",
             "ballad",
-            "country"
-          ]
+            "country",
+            "guest"
+          ],
+          "artist": "Kelly Peterson"
         },
         {
           "num": 19,
@@ -2023,7 +2026,7 @@
         },
         {
           "num": 11,
-          "title": "Good Life",
+          "title": "The Good Life",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:47",
           "size_mb": 9,
@@ -2502,8 +2505,10 @@
           "tags": [
             "cover",
             "ballad",
-            "country"
-          ]
+            "country",
+            "guest"
+          ],
+          "artist": "Kelly Peterson"
         },
         {
           "num": 19,
@@ -3289,7 +3294,8 @@
             "ballad",
             "country",
             "guest"
-          ]
+          ],
+          "artist": "Kelly Peterson"
         },
         {
           "num": 19,
@@ -3305,7 +3311,8 @@
           "tags": [
             "cover",
             "guest"
-          ]
+          ],
+          "artist": "Kelly Peterson"
         },
         {
           "num": 20,
@@ -5300,8 +5307,10 @@
           "tags": [
             "cover",
             "ballad",
-            "country"
-          ]
+            "country",
+            "guest"
+          ],
+          "artist": "Kelly Peterson"
         },
         {
           "num": 16,
@@ -5314,8 +5323,10 @@
           "flac_size_mb": 35,
           "processed": true,
           "tags": [
-            "cover"
-          ]
+            "cover",
+            "guest"
+          ],
+          "artist": "Kelly Peterson"
         },
         {
           "num": 17,
@@ -5615,8 +5626,10 @@
           "tags": [
             "cover",
             "folk",
-            "ballad"
-          ]
+            "ballad",
+            "guest"
+          ],
+          "artist": "Jerry Hannan & Demir"
         },
         {
           "num": 11,
@@ -5629,7 +5642,8 @@
           "flac_size_mb": 40,
           "processed": true,
           "tags": [
-            "cover"
+            "cover",
+            "guest"
           ],
           "artist": "Jerry Hannan & Demir"
         },
@@ -6482,7 +6496,8 @@
           "flac_size_mb": 35,
           "processed": true,
           "tags": [
-            "cover"
+            "cover",
+            "guest"
           ],
           "artist": "Kelly Peterson"
         },
@@ -8272,8 +8287,10 @@
           "tags": [
             "cover",
             "ballad",
-            "country"
-          ]
+            "country",
+            "guest"
+          ],
+          "artist": "Kelly Peterson"
         },
         {
           "num": 19,
@@ -8634,8 +8651,10 @@
           "tags": [
             "cover",
             "ballad",
-            "country"
-          ]
+            "country",
+            "guest"
+          ],
+          "artist": "Kelly Peterson"
         },
         {
           "num": 20,
