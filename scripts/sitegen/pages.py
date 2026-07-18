@@ -404,11 +404,16 @@ def build_history():
         main=content("history.html"),
     )
 
+# Hand-bumped whenever scripts/content/process.html's substance changes
+# (facts, figures, pipeline steps) — not on every build, so it reflects
+# actual content freshness, matching PUBLISHING.md's "Last updated" convention.
+PROCESS_UPDATED = "2026-07-17"
+
 def build_process():
     """Like /manual/, a standalone document — not the site's visual system.
     Grouped with the Manual as the two "how this archive works" reference
     pages, reading well in daylight, distinct from the interactive site."""
-    return PROCESS_SHELL.format(body=content("process.html"))
+    return PROCESS_SHELL.format(body=content("process.html"), updated=PROCESS_UPDATED)
 
 PROCESS_SHELL = '''<!DOCTYPE html>
 <html lang="en">
@@ -441,6 +446,7 @@ body {{
 .mast .crumb a:hover {{ color: var(--accent); }}
 .mast h1 {{ font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; margin-top: 0.7rem; }}
 .mast .sub {{ color: var(--muted); margin-top: 0.35rem; font-size: 15px; }}
+.mast .updated {{ color: var(--muted); margin-top: 0.5rem; font-size: 12px; }}
 main p {{ margin-bottom: 0.95rem; color: var(--muted); }}
 main a {{ color: var(--accent); }}
 main em {{ color: var(--muted); }}
@@ -493,6 +499,7 @@ main code {{
     <div class="crumb"><a href="/">&larr; The Hannan Tapes</a> &nbsp;&middot;&nbsp; <a href="/manual/">The Manual</a></div>
     <h1>The Process</h1>
     <p class="sub">From DAT tape to show page, step by step.</p>
+    <p class="updated">Last updated {updated}</p>
   </header>
   <main>
 {body}
