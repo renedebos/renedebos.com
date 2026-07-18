@@ -65,23 +65,37 @@ body {
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.6;
+}
+
+/* Shared width/alignment frame — same 1080px measure and 28px side padding
+   as the homepage's .wrap (assets/home.css), so header, page-title and main
+   all line up under the homepage's logo/nav instead of each page picking its
+   own centering (2026-07-18 flow pass). */
+.wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 28px;
 }
 
 /* Compact top bar — logo mark + inline nav, matching the homepage's header
    (2026-07-12) so the nav no longer jumps position when leaving Home. The
    per-page title (eyebrow/h1/tagline) moved to .page-title below it. */
 header {
-  display: flex;
-  align-items: center;
-  gap: 1.6rem;
-  padding: 1rem 2rem;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 10;
+}
+
+header .wrap {
+  display: flex;
+  align-items: center;
+  gap: 1.6rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
 }
 
 .mark {
@@ -105,10 +119,14 @@ header {
 }
 
 .page-title {
-  padding: 3.5rem 2rem 3rem;
-  text-align: center;
+  padding-top: 3.5rem;
+  padding-bottom: 3rem;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
+}
+
+.page-title .wrap {
+  text-align: left;
 }
 
 .site-eyebrow {
@@ -137,10 +155,10 @@ h1 em {
 
 .site-tagline {
   margin-top: 1.2rem;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--muted);
-  font-weight: 300;
-  letter-spacing: 0.03em;
+  font-weight: 400;
+  letter-spacing: 0.02em;
 }
 
 nav {
@@ -169,18 +187,20 @@ nav a.active {
 }
 
 main {
-  max-width: 820px;
+  max-width: 1080px;
   margin: 0 auto;
-  padding: 4rem 2rem 6rem;
+  padding: 4rem 28px 6rem;
 }
 
 /* ── about block ─────────────────────────────────────────────────────────── */
 
 .about {
-  max-width: 620px;
-  margin: 0 auto 3.5rem;
-  padding-bottom: 2.5rem;
-  border-bottom: 1px solid var(--border);
+  max-width: 660px;
+  margin: 0 0 3rem;
+  padding: 2rem 2.2rem 2.2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
 }
 
 .about h2 {
@@ -191,11 +211,15 @@ main {
   color: var(--text);
 }
 
+.about h2:not(:first-child) {
+  margin-top: 2.2rem;
+}
+
 .about p {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--muted);
-  line-height: 1.8;
-  font-weight: 300;
+  line-height: 1.75;
+  font-weight: 400;
   margin-bottom: 0.9rem;
 }
 
@@ -212,9 +236,9 @@ main {
 }
 
 .about .reasons li {
-  font-size: 14px;
-  line-height: 1.8;
-  font-weight: 300;
+  font-size: 15px;
+  line-height: 1.75;
+  font-weight: 400;
   margin-bottom: 0.9rem;
   padding-left: 0.4rem;
 }
@@ -289,17 +313,21 @@ main {
   list-style: none;
   display: flex;
   flex-direction: column;
+  gap: 10px;
 }
 
+/* Each entry is its own rounded panel, like a homepage card, rather than a
+   hairline-separated row — easier to scan a long changelog (2026-07-18). */
 .update-item {
   display: grid;
   grid-template-columns: 110px 1fr;
   gap: 1rem;
   align-items: baseline;
-  padding: 0.7rem 0;
-  border-top: 1px solid var(--border);
+  padding: 1rem 1.3rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
 }
-.update-item:first-child { border-top: none; }
 
 .update-date {
   font-family: var(--mono);
@@ -310,9 +338,10 @@ main {
 }
 
 .update-text {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--text);
-  font-weight: 300;
+  font-weight: 400;
+  line-height: 1.6;
 }
 .update-text a {
   color: var(--accent);
@@ -322,7 +351,7 @@ main {
 .update-text .src-tag { margin-left: 0.45rem; white-space: nowrap; }
 
 @media (max-width: 600px) {
-  .update-item { grid-template-columns: 1fr; gap: 0.2rem; }
+  .update-item { grid-template-columns: 1fr; gap: 0.3rem; padding: 0.9rem 1.1rem; }
 }
 
 /* ── archive view toggle ─────────────────────────────────────────────────── */
@@ -382,7 +411,7 @@ main {
 
 .search-status { font-size: 13px; color: var(--muted); font-weight: 300; margin: 1rem 0 0.6rem; }
 
-.search-results { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; background: var(--player-bg); }
+.search-results { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--player-bg); }
 .search-results:empty { border: none; }
 
 .sr {
@@ -421,7 +450,7 @@ main {
 
 .show-list {
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 10px;
   overflow: hidden;
   background: var(--player-bg);
 }
@@ -430,8 +459,8 @@ main {
   display: grid;
   grid-template-columns: 116px 1fr 56px 26px 52px 14px;
   align-items: center;
-  gap: 1rem;
-  padding: 0.95rem 1.5rem;
+  gap: 1.1rem;
+  padding: 1.05rem 1.6rem;
   background: var(--player-bg);
   text-decoration: none;
   border-top: 1px solid var(--border);
@@ -450,16 +479,23 @@ main {
   font-variant-numeric: tabular-nums;
 }
 
+/* Venue name and its badges (NR/highlight/alt-transfer count) stack instead
+   of sharing one line — a dense show-row was cramming title-equivalent and
+   metadata into the same 13px line; giving the badges their own quieter row
+   below reads the way a homepage card separates title from tags (2026-07-18). */
 .show-venue {
   display: flex;
-  align-items: center;
-  font-size: 13px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  font-size: 13.5px;
   color: var(--muted);
-  font-weight: 300;
+  font-weight: 400;
   min-width: 0;
 }
 
 .show-venue-text {
+  max-width: 100%;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -469,8 +505,6 @@ main {
 .show-venue em { font-style: italic; color: var(--text); }
 
 .show-badges {
-  margin-left: auto;
-  padding-left: 0.6rem;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -575,7 +609,7 @@ main {
 
 .track-list {
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 10px;
   overflow: hidden;
   background: var(--player-bg);
 }
@@ -1579,8 +1613,9 @@ footer a:hover { text-decoration: underline; }
 .track-row.target { animation: track-flash-in 0.6s ease 1 forwards; }
 
 @media (max-width: 600px) {
-  header { padding: 3rem 1.5rem 2.5rem; }
-  main { padding: 2.5rem 1.25rem 4rem; }
+  .page-title { padding-top: 2.5rem; padding-bottom: 2rem; }
+  .page-title .wrap, header .wrap, main { padding-left: 1.25rem; padding-right: 1.25rem; }
+  main { padding-top: 2.5rem; padding-bottom: 4rem; }
   nav { gap: 1rem; }
   nav a { font-size: 11px; }
   .custom-player { flex-wrap: wrap; }

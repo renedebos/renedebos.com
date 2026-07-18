@@ -167,16 +167,20 @@ def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main,
 <a class="skip-link" href="#main">Skip to content</a>
 
 <header>
-  <a class="mark" href="/" aria-label="The Hannan Tapes &mdash; home">&#9834;</a>
-  <nav>
+  <div class="wrap">
+    <a class="mark" href="/" aria-label="The Hannan Tapes &mdash; home">&#9834;</a>
+    <nav>
 {nav}
-  </nav>
+    </nav>
+  </div>
 </header>
 
 <div class="page-title">
-  <p class="site-eyebrow">{eyebrow}</p>
-  <h1>{heading}</h1>
-  <p class="site-tagline">{tagline}</p>
+  <div class="wrap">
+    <p class="site-eyebrow">{eyebrow}</p>
+    <h1>{heading}</h1>
+    <p class="site-tagline">{tagline}</p>
+  </div>
 </div>
 
 <main id="main">
