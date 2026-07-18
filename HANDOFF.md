@@ -1,88 +1,97 @@
 # Session Handoff — Hannan Recordings (renedebos.com)
 **Date:** 2026-07-18 · **Branch:** `main` (all work committed & pushed, deploy verified live)
 
-> This run was front-end/design, not audio processing. Built five styled
-> homepage-redesign mockups as private Claude Artifacts for Rene to compare
-> (modern library, studio console, minimal editorial, data index, broadcast),
-> then — at Rene's direction — unified every generated interior page's
-> layout with the homepage's alignment/spacing/type scale. Along the way,
-> caught and fixed a real bug: I initially edited the wrong file
-> (`assets/site.css`, a build output) and lost the edits to a rebuild before
-> catching it. Everything is live and verified; last session's audio-work
-> carryover items (below) are still untouched and still open.
+> Two front-end/content sessions back to back, no audio processing. First:
+> unified every generated interior page's layout with the homepage's
+> alignment/spacing/type scale (five Artifact mockups explored first, none
+> shipped). Second (this one): retired the one un-split, not-currently-
+> planned show from public view site-wide, cleaned up several copy/UI
+> inconsistencies that assumed it still existed or that the "split shows"
+> distinction still mattered, fixed a stale leftover sentence on the
+> homepage, trimmed the archive legend, and added a reusable hover-info
+> popup to song-page performance rows. Everything below is live and
+> verified; last session's audio-work carryover items are still untouched
+> and still open (checked, not stale — see "What's next").
 
-## ✅ Done this session
+## ✅ Done this session (2026-07-18, part 2)
 
-### 1. Five homepage redesign mockups (Claude Artifacts, not committed to the repo)
-Rene wanted visual-direction options before committing to a redesign,
-explicitly "modern" and explicitly not gigposter-style. Built five distinct
-styled single-page mockups using real archive data (31 shows, 679 tracks,
-real venues/dates/track titles from `data/recordings.json`, real homepage
-copy) rather than lorem ipsum, each with light/dark theme support: modern
-library/reading-room (card-catalog metaphor), studio console (dark
-mixing-desk/channel-strip), minimal editorial (magazine masthead), data
-archive index (structured/tool-like), and broadcast/radio-dial (warm
-on-air log). All published as private Claude Artifacts — links are in this
-conversation's history, not stored in the repo. No site changes from this
-part; it was purely a design-exploration exercise.
+### 1. Hid the un-split 2025-07-03 show site-wide (commit `45243c2`)
+Rene doesn't plan to process the Western Saloon show for a while and wanted
+it off the public site entirely, not just off one page. Added a `"hidden":
+true` flag on the show in `data/recordings.json` and a new `PUBLIC_SHOWS`
+filter in `scripts/sitegen/core.py` (`M["shows"]` minus anything hidden),
+threaded through every listing/feed that used to iterate `M["shows"]`
+directly: archive page (`artist_sections`/`date_sorted_list` in
+`fragments.py`), homepage show count, `assets/search-index.json`,
+`sitemap.xml`. `build.py`'s per-show page-generation loop now skips hidden
+shows too, so `/shows/jerry-western-saloon-2025-07-03/` 404s — its stale
+prior-build output dir was `git rm`'d. **`M["shows"]` itself (unfiltered)
+is still what `validate()`/`stamp_added_dates()` use** — those write back
+to `recordings.json`, so they must see the full show, not a filtered copy,
+or a rebuild would silently delete it from the data file.
 
-### 2. Unified interior-page layout with the homepage's flow (commit `a1fb39f`)
-Rene compared the homepage's spacious feel against the denser interior
-pages (archive, show pages, updates, etc.) and asked for the interior pages
-to read as "the same site." Diagnosed three concrete gaps in `scripts/site.css`
-(the actual template source — see gotcha below) vs. `assets/home.css`:
-page titles centered/narrow vs. the homepage's left-aligned wide hero; body
-copy at 14px/weight-300 vs. the homepage's 16px/weight-400; and archive
-`show-row`s cramming date/venue/badges/track-count/arrow onto one dense
-13px line. Proposed four fixes (the fourth being an optional card-language
-pass); Rene approved all four:
-- Added a shared `.wrap` (1080px, 28px padding — identical to
-  `home.css`'s) and nested it inside `header` and `.page-title` (via
-  `scripts/sitegen/fragments.py`'s `page_shell()`), so the logo, nav, and
-  page heading now align under the same left edge as the homepage instead
-  of `.page-title` independently centering itself.
-- Bumped `.about p`, `.reasons li`, `.update-text`, `.site-tagline` from
-  14px/weight-300 to 15px/weight-400, matching the homepage's readable
-  weight; added `.about h2:not(:first-child) { margin-top }` since sections
-  were previously butting straight against the prior list with zero gap.
-- `.show-venue` now stacks the venue name and its NR/highlight/alt-transfer
-  badges on two lines (pure CSS, no template change — the two spans were
-  already siblings) instead of squeezing both onto the row's single 13px
-  line.
-- Gave `.about` sections and `.update-item`s the homepage's rounded-panel
-  treatment (`--surface` background, `--border` outline, ~12–14px radius),
-  and bumped `.show-list`/`.track-list`/`.search-results` radii from 6px to
-  10px to match.
-- Fixed a real pre-existing bug found along the way: a `@media (max-width:
-  600px)` rule was setting page-title-shaped padding (`3rem 1.5rem 2.5rem`)
-  on the `header` selector instead of `.page-title` — the values never
-  matched anything `header` actually needed. Corrected to target the right
-  element.
-Deliberately left `/process/` and `/manual/` untouched — they're
-self-contained pages with their own inline stylesheet and a different
-palette/font entirely, a separate design system for internal docs, not
-part of this ask.
+With that show gone, every remaining listed show is track-indexed, so the
+"split shows only" distinction stopped meaning anything:
+- Archive page: removed the "Split shows only (N)" toggle button and its
+  `data-split` view-rendering/localStorage JS entirely (view is now just
+  artist/date, no split dimension); `artist_sections()`/`date_sorted_list()`
+  dropped their now-unused `only_tracks` parameter; tagline copy dropped
+  "filter to split shows".
+- Homepage: removed the "30 INDEXED" stat (redundant with "SHOWS" once
+  every show is indexed) from `HOME_SHELL`'s stat line and `build_home()`.
+  Also removed the "Most of these tracks have not been processed..."
+  paragraph from `scripts/content/about.html` — outdated now that every
+  track has gone through the audio workflow at least once.
+- Songs page: removed the "The N other shows in the archive aren't split
+  into individual songs yet" note and its `n_other` computation — no longer
+  true.
+- Search page: `scripts/search.js`'s idle-state status line went from one
+  combined "N songs and shows" count to "N songs and M shows" (counts
+  `type: "track"` vs `type: "show"` rows in the index separately).
 
-### 3. Caught my own mistake: edited a build output, not the source
-Made all of the above edits to `assets/site.css` first, then ran
-`python3 scripts/build.py` to regenerate the HTML — which silently
-overwrote every one of those edits, because `build.py` copies
-`scripts/site.css` → `assets/site.css` verbatim on every run. Caught it via
-a `diff scripts/site.css assets/site.css` sanity check before reporting
-anything done, reapplied the full edit set to the correct source file
-(`scripts/site.css`), rebuilt, and re-verified the diff matched. Documented
-as a new gotcha in `CLAUDE.md` so it doesn't happen again — also noted
-there that every generated page comes from `scripts/sitegen/fragments.py` /
-`pages.py`, not hand-editable HTML.
+### 2. Fixed a stale leftover sentence on the homepage (commit `5258244`)
+`scripts/content/why.html`'s closing line of the second paragraph read
+"...That's really where the three reasons below come from," but the list
+below it has read **four** reasons for a while — the sentence was never
+updated when the fourth reason was added. Deleted the stale clause.
+
+### 3. Trimmed the archive-page legend (commit `12c1dde`)
+Rene wanted `SBD`/`AUD` (source) and the "Individual tracks available"
+track-count badge dropped from the `.archive-legend` key at the top of
+`/archive/`, but the actual icons/badges on each show row left alone —
+legend text only, in `build_archive()`; `show_row()` in `fragments.py`
+(which renders the per-row badges) wasn't touched.
+
+### 4. Hover info popup on song-page performance rows (commits `38f9c88`, `2c19e15`)
+Reused the existing `data-info`/`.info-tooltip` convention (`assets/player.js`
+already drives this for show-page track titles) rather than inventing a new
+mechanism. Hovering a performance's venue/date line on `/songs/<slug>/` (and
+the lazily-rendered occurrence rows on `/songs/`) now shows Title, Venue,
+Date, Source, Duration, Size, and Process version (the workflow version
+number from the processing sidecar, e.g. "v5" — distinct from the
+unrelated MD5-prefix `ver` cache-buster already on each occurrence).
+`collect_songs()` in `core.py` now carries `source`/`size_mb`/`proc_ver` on
+every occurrence dict so both the server-rendered song page
+(`_song_occ_html` in `fragments.py`) and the client-side render path
+(`scripts/songs.js`, fed by `assets/song-occurrences.json`) have the same
+fields — the popup needed building twice since occurrences render two
+different ways depending on which page you're on. A "Show" field
+(show title) was in the first cut but Rene asked to drop it as redundant
+with Venue/Date already being there.
 
 ## 🟥 Tooling gotchas (durable, still real)
-- **`assets/site.css` is a build output, not a source file** — `scripts/build.py`
-  overwrites it verbatim from `scripts/site.css` on every run, and every
-  generated page (archive, songs, search, updates, contact, history, all
-  `/shows/*/`) comes from `scripts/sitegen/fragments.py`/`pages.py`, not
-  hand-editable HTML. Edit the source, not the output — see `CLAUDE.md`
-  "Site Styling & Templates" for the full picture (this session lost a full
-  round of CSS edits to a rebuild before catching it via `diff`).
+- **Everything under `assets/` that `build.py` writes is a build output, not
+  a source file** — not just `assets/site.css` (source: `scripts/site.css`).
+  Same pattern for `assets/search.js` (source: `scripts/search.js`),
+  `assets/songs.js`, `assets/player.js`, `assets/playlist.js`, etc. — every
+  `write("assets/X", open(.../"X").read())` line in `scripts/build.py`'s
+  `main()`. And every generated HTML page (archive, songs, search, updates,
+  contact, history, all `/shows/*/`) comes from
+  `scripts/sitegen/fragments.py`/`pages.py`, not hand-editable HTML. Edit
+  the source under `scripts/`, not the copy under `assets/` — see
+  `CLAUDE.md` "Site Styling & Templates". Lost a full round of CSS edits to
+  this once (2026-07-18); nearly repeated it on `search.js` the very next
+  session, caught that time via `diff` before losing anything.
 - `rclone` uploads to `gdrive:` can stall mid-file — prefer local→Drive over
   a direct push; `--max-duration` retry loop if you must push directly.
 - Audacity's MCP tools are unreliable — surgical hand-editing territory for
