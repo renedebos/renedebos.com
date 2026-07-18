@@ -50,7 +50,8 @@ scripts. Re-create them with `rclone config`:
   (it filters to shared-with-me items and would exclude owned content).
   - Primary audio path: `gdrive:DAT Tapes/DAT Tapes WAV Files/Hannans`
   - Split-track work folders: `gdrive:DAT Tapes/Work Folder/<show>/Tracks`
-  - Auth: OAuth via Google account that the DAT Tapes folder is shared with.
+  - Auth: OAuth directly as `renedebos@hotmail` (the folder's owner) — not a
+    shared-with-me account, and don't pass `--drive-shared-with-me`.
 - **`r2`** — type `s3`, provider Cloudflare R2. Bucket `hannan-audio`.
   - All operations pass `--s3-no-check-bucket`.
   - Auth: an R2 API token (Access Key ID + Secret) from the Cloudflare dashboard,
@@ -64,9 +65,19 @@ make status                        # Drive vs R2 file counts
 
 ## 4. Cloudflare auth (only if deploying manually)
 
-Normal deploys happen automatically via the GitHub Action's `npx wrangler
-deploy` on every push to `main`. You only need `wrangler login` locally if you
-want to manage the Worker or trigger a deploy by hand.
+There are **two separate Workers** — don't assume "deployed" covers both:
+
+- **`renedebos-site`** (config: `wrangler.jsonc`, repo root) — static assets +
+  playlist short-link endpoints, i.e. renedebos.com itself. Deploys
+  automatically via the GitHub Action's `npx wrangler deploy` on every push
+  to `main`. You only need `wrangler login` locally if you want to manage it
+  or trigger a deploy by hand.
+- **`wav-download`** (config: `worker/wrangler.toml`) — the R2 audio-streaming
+  endpoint. **Never covered by CI** — always deploy it yourself after editing
+  `worker/index.js`:
+  ```bash
+  cd worker && npx wrangler@4.110.0 deploy
+  ```
 
 **Use the same wrangler version as CI** (`npx wrangler@4.110.0 ...`, matching
 the pin in `.github/workflows/deploy.yml`) for both manual deploys and local
