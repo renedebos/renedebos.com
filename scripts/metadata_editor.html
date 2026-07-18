@@ -43,15 +43,20 @@
   }
   .damage-filter input { width: auto; margin: 0; }
 
-  #songTable { width: 100%; border-collapse: collapse; }
+  #songTable { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  #songTable th:nth-child(1), #songTable td:nth-child(1) { width: 20%; }   /* Title — trimmed by a third */
+  #songTable th:nth-child(2), #songTable td:nth-child(2) { width: 15%; }   /* Show */
+  #songTable th:nth-child(3), #songTable td:nth-child(3) { width: 15%; }   /* Artist override */
+  #songTable th:nth-child(4), #songTable td:nth-child(4) { width: 15%; }   /* Songwriter */
+  #songTable th:nth-child(5), #songTable td:nth-child(5) { width: 35%; }   /* Tags — gets the reclaimed space */
   #songTable th {
     position: sticky; top: 45px; background: var(--bg);
     text-align: left; font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase;
     color: var(--muted); font-weight: 600; padding: 0.4rem; border-bottom: 1px solid var(--border);
   }
   #songTable td { padding: 0.3rem 0.4rem; vertical-align: middle; border-bottom: 1px solid var(--border); }
-  #songTable td.song-title { font-weight: 600; white-space: nowrap; }
-  #songTable td.song-show { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  #songTable td.song-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #songTable td.song-show { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #songTable td.song-show .ro-note { display: block; font-size: 11px; }
 
   .wrap { max-width: 980px; margin: 0 auto; padding: 1.2rem; }
@@ -105,11 +110,6 @@
   textarea { min-height: 64px; resize: vertical; line-height: 1.5; }
 
   table { width: 100%; border-collapse: collapse; margin-top: 0.6rem; }
-  .tracks-table { table-layout: fixed; }
-  .tracks-table th:nth-child(2), .tracks-table td:nth-child(2) { width: 20%; }   /* Title — was ~30%, trimmed by a third */
-  .tracks-table th:nth-child(3), .tracks-table td:nth-child(3) { width: 15%; }   /* Artist override */
-  .tracks-table th:nth-child(4), .tracks-table td:nth-child(4) { width: 15%; }   /* Songwriter */
-  .tracks-table th:nth-child(5), .tracks-table td:nth-child(5) { width: 33%; }   /* Tags — gets the reclaimed space */
   th { text-align: left; font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 0.3rem 0.4rem; border-bottom: 1px solid var(--border); }
   td { padding: 0.25rem 0.4rem; vertical-align: middle; border-bottom: 1px solid var(--border); }
   td.num, td.dur { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; width: 1%; }
