@@ -1734,6 +1734,15 @@ a.artist-chip:hover { filter: brightness(1.08); }
   font-size: 14px; color: var(--muted); font-weight: 300; line-height: 1.7;
 }
 
+.pl-help { margin-bottom: 1.2rem; }
+.pl-help p {
+  max-width: 620px; margin: 0 0 0.7rem;
+  font-size: 13.5px; color: var(--muted); font-weight: 300; line-height: 1.65;
+}
+.pl-help p:last-child { margin-bottom: 0; }
+.pl-help strong { color: var(--text); font-weight: 500; }
+.pl-help a { color: var(--accent); }
+
 /* One-click starting points — most visitors don't want to build a set from
    a blank slate; these generate immediately rather than just pre-filling. */
 .pl-presets { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.2rem; }
