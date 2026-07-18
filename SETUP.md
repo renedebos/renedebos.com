@@ -65,19 +65,23 @@ make status                        # Drive vs R2 file counts
 
 ## 4. Cloudflare auth (only if deploying manually)
 
-There are **two separate Workers** — don't assume "deployed" covers both:
+There are **two separate Workers**, each with its own GitHub Action:
 
-- **`renedebos-site`** (config: `wrangler.jsonc`, repo root) — static assets +
-  playlist short-link endpoints, i.e. renedebos.com itself. Deploys
-  automatically via the GitHub Action's `npx wrangler deploy` on every push
-  to `main`. You only need `wrangler login` locally if you want to manage it
-  or trigger a deploy by hand.
-- **`wav-download`** (config: `worker/wrangler.toml`) — the R2 audio-streaming
-  endpoint. **Never covered by CI** — always deploy it yourself after editing
-  `worker/index.js`:
-  ```bash
-  cd worker && npx wrangler@4.110.0 deploy
-  ```
+- **`renedebos-site`** (`.github/workflows/deploy.yml`, config `wrangler.jsonc`
+  in the repo root) — static assets + playlist short-link endpoints, i.e.
+  renedebos.com itself. Deploys on every push to `main`.
+- **`wav-download`** (`.github/workflows/deploy-worker.yml`, config
+  `worker/wrangler.toml`) — the R2 audio-streaming endpoint. Deploys
+  automatically too, but only when a push to `main` touches `worker/**`
+  (path-filtered, so ordinary site commits don't trigger it).
+
+You only need `wrangler login` locally to manage either Worker or trigger a
+deploy by hand — e.g. after a `worker/` change made outside `main`, or to
+roll back:
+```bash
+cd worker && npx wrangler@4.110.0 deploy --config wrangler.toml   # wav-download
+npx wrangler@4.110.0 deploy                                       # renedebos-site
+```
 
 **Use the same wrangler version as CI** (`npx wrangler@4.110.0 ...`, matching
 the pin in `.github/workflows/deploy.yml`) for both manual deploys and local
