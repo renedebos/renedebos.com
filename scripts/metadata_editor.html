@@ -43,6 +43,17 @@
   }
   .damage-filter input { width: auto; margin: 0; }
 
+  #songTable { width: 100%; border-collapse: collapse; }
+  #songTable th {
+    position: sticky; top: 45px; background: var(--bg);
+    text-align: left; font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--muted); font-weight: 600; padding: 0.4rem; border-bottom: 1px solid var(--border);
+  }
+  #songTable td { padding: 0.3rem 0.4rem; vertical-align: middle; border-bottom: 1px solid var(--border); }
+  #songTable td.song-title { font-weight: 600; white-space: nowrap; }
+  #songTable td.song-show { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  #songTable td.song-show .ro-note { display: block; font-size: 11px; }
+
   .wrap { max-width: 980px; margin: 0 auto; padding: 1.2rem; }
   .note {
     font-size: 12px; color: var(--muted); background: var(--accent-light);
@@ -111,6 +122,7 @@
   <h1>Metadata Editor</h1>
   <input id="filter" type="search" placeholder="Filter shows / venues / songs…" autocomplete="off">
   <label class="damage-filter"><input type="checkbox" id="damageOnly"> Damage only</label>
+  <label class="damage-filter"><input type="checkbox" id="songMode"> Song list</label>
   <div class="spacer"></div>
   <span id="status">Loading…</span>
   <button id="saveBtn" disabled>Save</button>
@@ -152,6 +164,7 @@ fetch("/api/data").then((r) => r.json()).then((d) => {
 
 function render() {
   const out = [];
+  const songMatches = [];
   DATA.shows.forEach((show, si) => {
     const tracks = show.tracks || [];
     const damageCount = tracks.filter((t) => t.dropouts).length;
@@ -161,6 +174,10 @@ function render() {
       `<option value="${esc(a.id)}"${a.id === show.artist ? " selected" : ""}>${esc(a.name)}</option>`).join("");
     const srcOpts = ["AUD", "SBD"].map((s) =>
       `<option value="${s}"${s === show.source ? " selected" : ""}>${s}</option>`).join("");
+    tracks.forEach((t, ti) => {
+      const rowSearch = [t.title, t.songwriter || "", (t.tags || []).join(" ")].join(" ").toLowerCase();
+      songMatches.push({ si, ti, t, show, rowSearch });
+    });
     const trackRows = tracks.map((t, ti) => `
       <tr>
         <td class="num">${t.num}</td>
@@ -218,7 +235,25 @@ function render() {
       </div>
     </details>`);
   });
-  el("#shows").innerHTML = out.join("");
+  if (el("#songMode").checked) {
+    songMatches.sort((a, b) =>
+      a.t.title.toLowerCase().localeCompare(b.t.title.toLowerCase()) ||
+      (a.show.date || "").localeCompare(b.show.date || ""));
+    const rows = songMatches.map(({ si, ti, t, show, rowSearch }) => `
+      <tr data-search="${esc(rowSearch)}">
+        <td class="song-title">${esc(t.title)}</td>
+        <td class="song-show">${esc(show.slug)}<span class="ro-note">${esc(artistName[show.artist] || show.artist)} · ${esc(show.date || "Unknown date")}</span></td>
+        <td><input data-show="${si}" data-track="${ti}" data-field="artist" value="${esc(t.artist || "")}" placeholder="${esc(artistName[show.artist] || "")}"></td>
+        <td><input data-show="${si}" data-track="${ti}" data-field="songwriter" value="${esc(t.songwriter || "")}" placeholder="unknown"></td>
+        <td><input data-show="${si}" data-track="${ti}" data-field="tags" value="${esc((t.tags || []).join(", "))}" placeholder="comma, separated"></td>
+      </tr>`).join("");
+    el("#shows").innerHTML = `<table id="songTable">
+      <tr><th>Title</th><th>Show</th><th>Artist override</th><th>Songwriter</th><th>Tags</th></tr>
+      ${rows}
+    </table>`;
+  } else {
+    el("#shows").innerHTML = out.join("");
+  }
 }
 
 // One delegated handler mutates DATA in place; unmanaged fields are never touched.
@@ -327,6 +362,12 @@ el("#siteNote").addEventListener("input", setDirty);
 
 function applyFilter() {
   const q = el("#filter").value.trim().toLowerCase();
+  if (el("#songMode").checked) {
+    document.querySelectorAll("#songTable tr[data-search]").forEach((r) => {
+      r.style.display = (!q || r.dataset.search.includes(q)) ? "" : "none";
+    });
+    return;
+  }
   const damageOnly = el("#damageOnly").checked;
   document.querySelectorAll(".show").forEach((s) => {
     const matches = (!q || s.dataset.search.includes(q)) && (!damageOnly || +s.dataset.damage > 0);
@@ -338,6 +379,7 @@ function applyFilter() {
 }
 el("#filter").addEventListener("input", applyFilter);
 el("#damageOnly").addEventListener("change", applyFilter);
+el("#songMode").addEventListener("change", () => { render(); applyFilter(); });
 
 window.addEventListener("beforeunload", (e) => {
   if (dirty) { e.preventDefault(); e.returnValue = ""; }
