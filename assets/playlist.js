@@ -19,9 +19,28 @@
                    "upbeat", "rocker", "folk", "country", "blues",
                    "rock", "story", "guest", "favorite", "rarity"];
 
+  // Curated songwriter facet — the catalog has ~25 distinct songwriter
+  // strings (mostly one-off covers), too many to list as chips, so this maps
+  // only the handful worth filtering by to a canonical key. Two raw values
+  // ("Lennon-McCartney" / "Lennon & McCartney") mean the same songwriter, a
+  // pre-existing data inconsistency this map papers over rather than fixes.
+  var SONGWRITER_MAP = {
+    "Jerry Hannan & Sean Hannan": "original",
+    "Traditional": "traditional",
+    "Lennon & McCartney": "lennon-mccartney",
+    "Lennon-McCartney": "lennon-mccartney",
+    "Steve Poltz": "poltz",
+  };
+  var SONGWRITER_LABELS = [
+    ["original", "Jerry & Sean Hannan (original)"],
+    ["traditional", "Traditional"],
+    ["lennon-mccartney", "Lennon & McCartney"],
+    ["poltz", "Steve Poltz"],
+  ];
+
   // Every facet is multi-select now: an empty array means "no filter" (all
   // match); a non-empty array is OR'd within the facet, AND'd across facets.
-  var filters = { artist: [], venue: [], source: [], tags: [] };
+  var filters = { artist: [], venue: [], source: [], tags: [], songwriter: [] };
   var mode = "songs";                    // songs | minutes | endless
   var amounts = { songs: 12, minutes: 45 };
 
@@ -68,6 +87,7 @@
     if (filters.artist.length && filters.artist.indexOf(t.artist) === -1) return false;
     if (filters.venue.length && filters.venue.indexOf(t.venue) === -1) return false;
     if (filters.source.length && filters.source.indexOf(t.sourceType) === -1) return false;
+    if (filters.songwriter.length && filters.songwriter.indexOf(SONGWRITER_MAP[t.songwriter]) === -1) return false;
     for (var i = 0; i < filters.tags.length; i++) {
       if (t.tags.indexOf(filters.tags[i]) === -1) return false;
     }
@@ -123,6 +143,10 @@
       uniq("venue").map(function (v) { return [v, v]; })));
     groups.push(filterGroup("Source", "source", "All sources",
       [["aud", "AUD"], ["sbd", "SBD"]]));
+    var swPresent = SONGWRITER_LABELS.filter(function (sw) {
+      return CATALOG.some(function (t) { return SONGWRITER_MAP[t.songwriter] === sw[0]; });
+    });
+    groups.push(filterGroup("Songwriter", "songwriter", "All songwriters", swPresent));
     var present = TAG_ORDER.filter(function (tg) {
       return CATALOG.some(function (t) { return t.tags.indexOf(tg) !== -1; });
     });
@@ -171,7 +195,7 @@
     goBtn.disabled = !p.length;
     if (clearBtn) {
       clearBtn.hidden = !(filters.artist.length || filters.venue.length
-        || filters.source.length || filters.tags.length);
+        || filters.source.length || filters.tags.length || filters.songwriter.length);
     }
   }
 
@@ -205,7 +229,7 @@
 
   if (clearBtn) {
     clearBtn.addEventListener("click", function () {
-      filters = { artist: [], venue: [], source: [], tags: [] };
+      filters = { artist: [], venue: [], source: [], tags: [], songwriter: [] };
       renderFilters();
       updateStatus();
     });
@@ -214,9 +238,9 @@
   // One-click starting points: set filters/mode/amount, then generate right
   // away — most visitors want a set to press play on, not a pre-filled form.
   var PRESETS = {
-    mixed45: { filters: { artist: [], venue: [], source: [], tags: [] }, mode: "minutes", amount: 45 },
-    traditional: { filters: { artist: [], venue: [], source: [], tags: ["traditional"] }, mode: "songs", amount: 12 },
-    soundboard: { filters: { artist: [], venue: [], source: ["sbd"], tags: [] }, mode: "endless" },
+    mixed45: { filters: { artist: [], venue: [], source: [], tags: [], songwriter: [] }, mode: "minutes", amount: 45 },
+    traditional: { filters: { artist: [], venue: [], source: [], tags: ["traditional"], songwriter: [] }, mode: "songs", amount: 12 },
+    soundboard: { filters: { artist: [], venue: [], source: ["sbd"], tags: [], songwriter: [] }, mode: "endless" },
   };
   if (presetsEl) {
     presetsEl.addEventListener("click", function (e) {
@@ -225,7 +249,8 @@
       var preset = PRESETS[b.dataset.preset];
       if (!preset) return;
       filters = { artist: preset.filters.artist.slice(), venue: preset.filters.venue.slice(),
-                  source: preset.filters.source.slice(), tags: preset.filters.tags.slice() };
+                  source: preset.filters.source.slice(), tags: preset.filters.tags.slice(),
+                  songwriter: preset.filters.songwriter.slice() };
       mode = preset.mode;
       if (preset.amount) amounts[mode] = preset.amount;
       renderFilters();
