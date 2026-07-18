@@ -6466,7 +6466,8 @@
           "tags": [
             "cover",
             "ballad",
-            "country"
+            "country",
+            "guest"
           ],
           "artist": "Kelly Peterson"
         },
@@ -6749,7 +6750,8 @@
           "processed": true,
           "tags": [
             "cover",
-            "beatles"
+            "beatles",
+            "country"
           ],
           "songwriter": "Lennon-McCartney"
         },
@@ -7149,7 +7151,7 @@
         {
           "num": 13,
           "title": "Hide Your Love Away",
-          "songwriter": "John Lennon",
+          "songwriter": "Lennon-McCartney",
           "duration": "2:20",
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/13 Hide Your Love Away.mp3",
           "size_mb": 6,
@@ -7420,7 +7422,7 @@
             "ballad",
             "beatles"
           ],
-          "songwriter": "Lennon & McCartney"
+          "songwriter": "Lennon-McCartney"
         },
         {
           "num": 31,
