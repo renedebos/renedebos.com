@@ -345,7 +345,7 @@ def collect_songs():
                 "url": show_url(s), "num": t["num"], "duration": t.get("duration"),
                 "file": t["file"], "ver": ver, "title": t["title"],
                 "flac": t.get("flac"), "flac_size_mb": t.get("flac_size_mb"),
-                "show_title": show_title(s), "source": s.get("source"),
+                "source": s.get("source"),
                 "size_mb": t.get("size_mb"), "proc_ver": proc_ver,
             })
     songs, used = [], set()

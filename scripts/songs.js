@@ -37,7 +37,6 @@
     if (o.size_mb) sizes.push("MP3 " + o.size_mb + " MB");
     var info = JSON.stringify([
       ["Title", songTitle],
-      ["Show", o.show_title || "—"],
       ["Venue", o.venue],
       ["Date", o.date],
       ["Source", SOURCE_LABEL[o.source] || o.source || "—"],

@@ -689,7 +689,6 @@ def _song_occ_html(o, song_title):
         sizes.append(f'MP3 {o["size_mb"]} MB')
     info_rows = [
         ["Title", song_title],
-        ["Show", o.get("show_title") or "—"],
         ["Venue", o["venue"]],
         ["Date", o["date"]],
         ["Source", SOURCE_LABEL.get(o.get("source"), o.get("source") or "—")],
