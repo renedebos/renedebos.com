@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Re-normalized all 30 tracks: the show's original v1 processing used ffmpeg's naive loudno…</title>
+    <link>https://renedebos.com/shows/jerry-19-broadway-2001-01-08/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-17-jerry-19-broadway-2001-01-08</guid>
+    <pubDate>Fri, 17 Jul 2026 18:04:20 +0000</pubDate>
+    <description>Re-normalized all 30 tracks: the show's original v1 processing used ffmpeg's naive loudnorm, which had silently hit exactly −20 LUFS and exactly −1 dBTP on nearly every track — the signature of the same dynamic-mode fallback bug that flattened Sean Hannan's 1999-11-29 show, since several of these tracks in fact needed a target as low as −28 LUFS to stay linear. Tracks where audience applause — not the music — set the ceiling (Anna May, Luxury of Murder) now get linear gain sized to the music itself, with only the applause gently limited. Also re-split from a corrected label export that fixed a garbled track title and stripped stray junk labels.</description>
+  </item>
+  <item>
     <title>Re-normalized all 21 tracks: a bug in the loudness pipeline had silently switched several…</title>
     <link>https://renedebos.com/shows/sean-19-broadway-1999-11-29/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-17-sean-19-broadway-1999-11-29</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-28-jerry-19-broadway-2001-01-08</guid>
     <pubDate>Sun, 28 Jun 2026 22:00:00 +0000</pubDate>
     <description>Re-normalized all 30 tracks to −20 LUFS for a more even, comfortable listening level, and added lossless FLAC downloads, using the automated audio engineering workflow with ffmpeg</description>
-  </item>
-  <item>
-    <title>Re-normalized all 21 tracks to −20 LUFS for a more even, comfortable listening level, usi…</title>
-    <link>https://renedebos.com/shows/jerry-19-broadway-1999-06-21/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-28-jerry-19-broadway-1999-06-21</guid>
-    <pubDate>Sun, 28 Jun 2026 12:28:31 +0000</pubDate>
-    <description>Re-normalized all 21 tracks to −20 LUFS for a more even, comfortable listening level, using the automated audio engineering workflow with ffmpeg</description>
   </item>
 </channel>
 </rss>

@@ -11835,6 +11835,13 @@
   "updates": [
     {
       "date": "2026-07-17",
+      "ts": "2026-07-17T18:04:20.088239",
+      "slug": "jerry-19-broadway-2001-01-08",
+      "report": true,
+      "text": "Re-normalized all 30 tracks: the show's original v1 processing used ffmpeg's naive loudnorm, which had silently hit exactly −20 LUFS and exactly −1 dBTP on nearly every track — the signature of the same dynamic-mode fallback bug that flattened Sean Hannan's 1999-11-29 show, since several of these tracks in fact needed a target as low as −28 LUFS to stay linear. Tracks where audience applause — not the music — set the ceiling (Anna May, Luxury of Murder) now get linear gain sized to the music itself, with only the applause gently limited. Also re-split from a corrected label export that fixed a garbled track title and stripped stray junk labels."
+    },
+    {
+      "date": "2026-07-17",
       "ts": "2026-07-17T01:00:00",
       "slug": "sean-19-broadway-1999-11-29",
       "report": true,
