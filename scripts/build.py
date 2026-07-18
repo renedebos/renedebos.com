@@ -73,6 +73,8 @@ def main():
     write("robots.txt", "User-agent: *\nAllow: /\nSitemap: https://renedebos.com/sitemap.xml\n")
     n = 0
     for show in M["shows"]:
+        if show.get("hidden"):
+            continue
         out = (show["page"] or f"shows/{show['slug']}") + "/index.html"
         write(out, build_show(show))
         n += 1

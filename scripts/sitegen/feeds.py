@@ -15,7 +15,7 @@ def build_search_index():
     track plus one per show, with show fields resolved onto each track so a single
     text search spans song / artist / venue / city / date / source / tags."""
     rows = []
-    for show in M["shows"]:
+    for show in PUBLIC_SHOWS:
         aname = artist_name(show["artist"])
         city = show_city(show)
         year = (show.get("date") or "")[:4]
@@ -185,7 +185,7 @@ def build_feed():
 def build_sitemap():
     base = "https://renedebos.com"
     urls = [base + p for _, p in SITE_PAGES + EXTRA_PAGES]
-    urls += [base + show_url(s) for s in M["shows"]]
+    urls += [base + show_url(s) for s in PUBLIC_SHOWS]
     urls += [f"{base}/songs/{s['slug']}/" for s in collect_songs()[0]]
     items = "\n".join(f"  <url><loc>{esc(u)}</loc></url>" for u in urls)
     return ('<?xml version="1.0" encoding="UTF-8"?>\n'

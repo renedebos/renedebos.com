@@ -11,6 +11,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 M = json.load(open(os.path.join(ROOT, "data", "recordings.json")))
 WORKER = M["worker"]
 
+# Shows flagged "hidden" (e.g. not yet processed and not planned for a while)
+# are kept in recordings.json for provenance but excluded from every public
+# listing/page/feed. validate()/stamp_added_dates() still see the full M["shows"].
+PUBLIC_SHOWS = [s for s in M["shows"] if not s.get("hidden")]
+
 SOURCE_LABEL = {"SBD": "Soundboard", "AUD": "Audience recording"}
 
 TAG_VOCAB = {
@@ -373,4 +378,4 @@ def write(path, content):
         f.write(content)
 
 
-__all__ = ['write', 'ARTIST_SHORT', 'DURATION_RE', 'LEGACY_KEY_NAMING', 'M', 'ROOT', 'SONG_CANONICAL_OVERRIDE', 'SONG_MANUAL_MERGE', 'SOURCE_LABEL', 'TAG_VOCAB', 'WORKER', '_ARTIST_ORDER', '_duration_sec', 'added_sort_key', 'artist_name', 'check_orphan_song_dirs', 'check_rarity_drift', 'collect_songs', 'date_with_subtitle', 'esc', 'iso_duration', 'load_processing', 'sanitize_filename', 'show_city', 'show_title', 'show_url', 'show_zip_entries', 'show_zip_folder', 'singles_for_show', 'song_norm', 'song_slug', 'sort_key', 'stamp_added_dates', 'stream_url', 'track_total', 'validate']
+__all__ = ['write', 'ARTIST_SHORT', 'DURATION_RE', 'LEGACY_KEY_NAMING', 'M', 'PUBLIC_SHOWS', 'ROOT', 'SONG_CANONICAL_OVERRIDE', 'SONG_MANUAL_MERGE', 'SOURCE_LABEL', 'TAG_VOCAB', 'WORKER', '_ARTIST_ORDER', '_duration_sec', 'added_sort_key', 'artist_name', 'check_orphan_song_dirs', 'check_rarity_drift', 'collect_songs', 'date_with_subtitle', 'esc', 'iso_duration', 'load_processing', 'sanitize_filename', 'show_city', 'show_title', 'show_url', 'show_zip_entries', 'show_zip_folder', 'singles_for_show', 'song_norm', 'song_slug', 'sort_key', 'stamp_added_dates', 'stream_url', 'track_total', 'validate']

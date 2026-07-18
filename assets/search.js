@@ -86,7 +86,9 @@
 
     if (!tokens.length) {
       resultsEl.innerHTML = "";
-      statusEl.textContent = pool.length + " songs and shows — start typing to search.";
+      var nSongs = pool.filter(function (r) { return r.type === "track"; }).length;
+      var nShows = pool.filter(function (r) { return r.type === "show"; }).length;
+      statusEl.textContent = nSongs + " songs and " + nShows + " shows — start typing to search.";
       syncUrl(q);
       return;
     }

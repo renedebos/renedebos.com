@@ -87,7 +87,7 @@ def build_home():
     """The homepage is a standalone document (like /manual/) rather than
     page_shell + site.css — a deliberately different "tape deck" look the
     rest of the site doesn't share, per the 2026-07-10 redesign."""
-    tracked = [s for s in M["shows"] if s.get("tracks")]
+    tracked = [s for s in PUBLIC_SHOWS if s.get("tracks")]
     n_tracks = sum(len(s["tracks"]) for s in tracked)
     songs, _cols = collect_songs()
     n_songs = len(songs)
@@ -101,8 +101,7 @@ def build_home():
     return HOME_SHELL.format(
         nav_links="\n    ".join(f'<a href="{href}">{label}</a>'
                                  for label, href in SITE_PAGES[1:]),
-        n_shows=len(M["shows"]),
-        n_indexed=len(tracked),
+        n_shows=len(PUBLIC_SHOWS),
         n_tracks=n_tracks,
         n_songs=n_songs,
         cards=cards,
@@ -164,7 +163,7 @@ HOME_SHELL = '''<!DOCTYPE html>
 
   <div class="grid-head">
     <h2>Recently Added</h2>
-    <span>{n_shows} SHOWS &middot; {n_indexed} INDEXED &middot; {n_songs} SONGS &middot; {n_tracks} TRACKS</span>
+    <span>{n_shows} SHOWS &middot; {n_songs} SONGS &middot; {n_tracks} TRACKS</span>
   </div>
 
   <div class="grid">
@@ -191,11 +190,9 @@ HOME_SHELL = '''<!DOCTYPE html>
 '''
 
 def build_archive():
-    # Absorbs the old /shows/ page (2026-07-08): the four view combinations
-    # (artist/date × all/split-only) are prerendered and toggled client-side —
-    # same pattern the by-artist/by-date switch always used, so section counts
-    # stay honest and no artist header lingers over a filtered-empty list.
-    n_split = sum(1 for s in M["shows"] if s.get("tracks"))
+    # Absorbs the old /shows/ page (2026-07-08): the by-artist/by-date views
+    # are prerendered and toggled client-side. (A "split shows only" filter
+    # existed here until every listed show was track-indexed — see git log.)
     archive_zip_html = ""
     archive_zip_path = os.path.join(ROOT, "data", "archive_zip_meta.json")
     if os.path.exists(archive_zip_path):
@@ -216,9 +213,6 @@ def build_archive():
       <button type="button" class="seg active" data-view="artist">By artist</button>
       <button type="button" class="seg" data-view="date">By date</button>
     </div>
-    <div class="view-toggle" role="group" aria-label="Filter shows">
-      <button type="button" class="seg" data-split="1" aria-pressed="false">&#9834; Split shows only ({n_split})</button>
-    </div>
   </div>
   <p class="archive-legend">
     <span class="src-tag src-sbd">SBD</span> Soundboard &middot;
@@ -229,27 +223,20 @@ def build_archive():
     <span class="show-tracks">&#9834; N</span> Individual tracks available
   </p>{archive_zip_html}'''
     views = f'''
-  <div class="archive-view" data-view="artist" data-split="all">{artist_sections(only_tracks=False)}
+  <div class="archive-view" data-view="artist">{artist_sections()}
   </div>
-  <div class="archive-view" data-view="date" data-split="all" hidden>{date_sorted_list()}
-  </div>
-  <div class="archive-view" data-view="artist" data-split="split" hidden>{artist_sections(only_tracks=True)}
-  </div>
-  <div class="archive-view" data-view="date" data-split="split" hidden>{date_sorted_list(only_tracks=True)}
+  <div class="archive-view" data-view="date" hidden>{date_sorted_list()}
   </div>'''
     script = '''
 <script>
 (function () {
-  var VIEW_KEY = 'archiveView', SPLIT_KEY = 'archiveSplit';
-  var view = 'artist', split = 'all';
+  var VIEW_KEY = 'archiveView';
+  var view = 'artist';
   var segs = document.querySelectorAll('.view-toggle .seg[data-view]');
-  var splitBtn = document.querySelector('.view-toggle .seg[data-split]');
   var views = document.querySelectorAll('.archive-view');
   function apply() {
     segs.forEach(function (s) { s.classList.toggle('active', s.dataset.view === view); });
-    splitBtn.classList.toggle('active', split === 'split');
-    splitBtn.setAttribute('aria-pressed', split === 'split' ? 'true' : 'false');
-    views.forEach(function (x) { x.hidden = !(x.dataset.view === view && x.dataset.split === split); });
+    views.forEach(function (x) { x.hidden = x.dataset.view !== view; });
   }
   segs.forEach(function (s) {
     s.addEventListener('click', function () {
@@ -258,14 +245,8 @@ def build_archive():
       try { localStorage.setItem(VIEW_KEY, view); } catch (e) {}
     });
   });
-  splitBtn.addEventListener('click', function () {
-    split = split === 'split' ? 'all' : 'split';
-    apply();
-    try { localStorage.setItem(SPLIT_KEY, split); } catch (e) {}
-  });
   try {
     if (localStorage.getItem(VIEW_KEY) === 'date') view = 'date';
-    if (localStorage.getItem(SPLIT_KEY) === 'split') split = 'split';
   } catch (e) {}
   apply();
 })();
@@ -276,7 +257,7 @@ def build_archive():
         url="https://renedebos.com/archive/",
         eyebrow="The Hannan Tapes",
         heading="Archive",
-        tagline="Every show &middot; by artist or by date &middot; filter to split shows",
+        tagline="Every show &middot; by artist or by date",
         nav=site_nav("Archive"),
         main=toggle + views,
         extra_scripts='<script src="/assets/track-select.js"></script>' + script,
@@ -1012,7 +993,6 @@ def build_wavesurfer_lab():
 
 def build_songs_index():
     songs, cols = collect_songs()
-    n_other = len(M["shows"]) - len(cols)
     multi = sum(1 for s in songs if s["plays"] > 1)
 
     present = [a for a in _ARTIST_ORDER if any(a in s["artists"] for s in songs)]
@@ -1072,7 +1052,6 @@ def build_songs_index():
     <p>
       Every song across the {len(cols)} shows that have been split into individual tracks &mdash; <strong>{len(songs)} distinct songs</strong>, {multi} of them played more than once. Click a song to see every time it was played, each with a player and a link to that exact performance. The same songs turn up across Jerry, the Mad Hannans, and Sean &mdash; that shared repertoire is what this page is for.
     </p>
-    <p class="about-note">The {n_other} other shows in the archive aren&rsquo;t split into individual songs yet, so they don&rsquo;t appear here.</p>
   </section>
   <div class="songs-controls">
     <input type="search" id="song-search" class="song-search" placeholder="Search songs&hellip;" autocomplete="off" aria-label="Search songs">

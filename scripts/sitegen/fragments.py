@@ -426,11 +426,10 @@ def show_row(show, with_artist=False):
         <span class="show-arrow">&rarr;</span>
       </a>'''
 
-def artist_sections(only_tracks=False):
+def artist_sections():
     out = []
     for artist in M["artists"]:
-        shows = sorted((s for s in M["shows"]
-                        if s["artist"] == artist["id"] and (s.get("tracks") if only_tracks else True)),
+        shows = sorted((s for s in PUBLIC_SHOWS if s["artist"] == artist["id"]),
                        key=sort_key)
         if not shows:
             continue
@@ -448,10 +447,10 @@ def artist_sections(only_tracks=False):
   </section>''')
     return "".join(out)
 
-def date_sorted_list(only_tracks=False):
+def date_sorted_list():
     # One flat chronological list across all artists (oldest first; undated shows
     # sort last via sort_key). Used by the Archive's "By date" view.
-    shows = sorted((s for s in M["shows"] if s.get("tracks") or not only_tracks), key=sort_key)
+    shows = sorted(PUBLIC_SHOWS, key=sort_key)
     rows = "\n".join(show_row(s, with_artist=True) for s in shows)
     return f'''
   <section class="artist-section">

@@ -6621,7 +6621,8 @@
       "tracks": null,
       "description": null,
       "page": null,
-      "processing_status": "needs-processing"
+      "processing_status": "needs-processing",
+      "hidden": true
     },
     {
       "slug": "sean-19-broadway-1999-11-29",
