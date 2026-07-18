@@ -279,7 +279,7 @@ def build_archive():
         tagline="Every show &middot; by artist or by date &middot; filter to split shows",
         nav=site_nav("Archive"),
         main=toggle + views,
-        extra_scripts=script,
+        extra_scripts='<script src="/assets/track-select.js"></script>' + script,
     )
 
 def build_search():

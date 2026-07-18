@@ -38,6 +38,18 @@ def track_add_button(track_id):
     return (f'<button type="button" class="track-add" data-id="{esc(track_id)}" '
             f'aria-pressed="false" aria-label="Add to playlist selection">{PLUS_SVG}</button>')
 
+def show_add_button(show):
+    """Whole-show sibling of track_add_button() for the archive listing, where
+    rows are show-level (no per-track markup exists to "select all" over —
+    see PLAYLIST FEATURE.md). Track ids are fully known at build time
+    ({slug}-{num:02d}, matching assets/tracks.json), so this carries its own
+    id list in data-ids rather than needing a client-side fetch or a DOM scan
+    like the song page's .select-all. track-select.js toggles all of them
+    together and keeps this button's pressed state in sync."""
+    ids = " ".join(f'{show["slug"]}-{t["num"]:02d}' for t in show["tracks"])
+    return (f'<button type="button" class="show-add" data-ids="{esc(ids)}" '
+            f'aria-pressed="false" aria-label="Add whole show to playlist selection">{PLUS_SVG}</button>')
+
 def dl_button(file, *, title="Download"):
     # Icon-only (no text label): with only the password-protected lossless
     # download left, the format doesn't need spelling out in the button —
@@ -367,8 +379,10 @@ def show_row(show, with_artist=False):
     if show.get("tracks"):
         n = len(show["tracks"])
         marker = f'<span class="show-tracks" title="{n} songs available">&#9834; {n}</span>'
+        add_html = show_add_button(show)
     else:
         marker = '<span class="show-tracks"></span>'
+        add_html = ""
     # Pre-edit pill: shows whose provenance records manual pre-edits get a
     # marker on the listing, mirroring the show page's tech-table badge.
     # Rendered inside the venue cell — the row is a fixed 5-column grid, so
@@ -395,10 +409,15 @@ def show_row(show, with_artist=False):
     # grouping header that would otherwise name it is gone.
     artist_prefix = f'<span class="show-artist">{esc(artist["name"])}</span> &middot; ' if with_artist else ""
     badges_html = f'<span class="show-badges">{nr_html}{hl_html}</span>' if (nr_html or hl_html) else ""
+    # add_html's button nests inside this <a> — invalid-strictly, but the only
+    # way to keep the whole-show add control in the row's own grid rather than
+    # a separate element; track-select.js stops the click from also following
+    # the link.
     return f'''      <a class="show-row" href="{show_url(show)}" data-info="{info}">
         <span class="show-date">{esc(show["date"] or "Unknown date")}</span>
         <span class="show-venue"><span class="show-venue-text">{artist_prefix}{esc(show["venue"] or "")}{subtitle}{extra_html}</span>{badges_html}</span>
         {marker}
+        <span class="show-add-cell">{add_html}</span>
         <span class="show-src src-{show["source"].lower()}">{esc(show["source"])}</span>
         <span class="show-arrow">&rarr;</span>
       </a>'''

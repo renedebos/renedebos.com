@@ -76,6 +76,15 @@
       b.setAttribute('aria-label', label);
       b.setAttribute('title', label);
     });
+    document.querySelectorAll('.show-add[data-ids]').forEach(function (b) {
+      var ids = b.dataset.ids.split(' ');
+      var on = ids.every(function (id) { return selected.indexOf(id) !== -1; });
+      var label = on ? 'Remove whole show from playlist selection' : 'Add whole show to playlist selection';
+      b.setAttribute('aria-pressed', on);
+      b.innerHTML = on ? CHECK_SVG : PLUS_SVG;
+      b.setAttribute('aria-label', label);
+      b.setAttribute('title', label);
+    });
   }
 
   function toggle(id) {
@@ -87,6 +96,25 @@
     selected = loadSelection();
     var i = selected.indexOf(id);
     if (i === -1) selected.push(id); else selected.splice(i, 1);
+    saveSelection();
+    syncAllButtons();
+    renderBar();
+  }
+
+  // Archive-page "add whole show" button: true toggle, like a single track's
+  // +/checkmark — if every one of the show's tracks is already selected,
+  // clicking removes them all; otherwise it adds whatever's missing. Ids come
+  // straight off the clicked button's data-ids (build-time-known, see
+  // show_add_button() in fragments.py) rather than a DOM scan, since the
+  // archive page renders no per-track markup to scan.
+  function toggleShow(ids) {
+    selected = loadSelection();
+    var allIn = ids.every(function (id) { return selected.indexOf(id) !== -1; });
+    if (allIn) {
+      selected = selected.filter(function (id) { return ids.indexOf(id) === -1; });
+    } else {
+      ids.forEach(function (id) { if (selected.indexOf(id) === -1) selected.push(id); });
+    }
     saveSelection();
     syncAllButtons();
     renderBar();
@@ -143,6 +171,14 @@
   }
 
   document.addEventListener('click', function (e) {
+    // Checked ahead of .track-add below: the archive page's show-row is
+    // itself a link, so this button's click must not also follow it.
+    var showBtn = e.target.closest('.show-add');
+    if (showBtn) {
+      e.preventDefault(); e.stopPropagation();
+      toggleShow(showBtn.dataset.ids.split(' '));
+      return;
+    }
     var btn = e.target.closest('.track-add');
     if (btn) { e.preventDefault(); toggle(btn.dataset.id); return; }
     var all = e.target.closest('.select-all');
