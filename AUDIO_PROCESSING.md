@@ -476,6 +476,17 @@ This phase covers the **split-song tracks** only. Whole-show lossless downloads
 and their stream proxies are a separate concern (`scripts/make_stream_mp3.py`) and
 are out of scope here.
 
+> **This phase (both paths below) predates `scripts/publish_show.py`, which is
+> now the preferred way to actually publish** — its `prepare`/`publish` two-step
+> is documented end-to-end in `PUBLISHING.md` and handles a new show or a
+> reprocess of an existing one the same way (it's what produced every
+> reprocess on record — see `PUBLISHING.md` Part 5). It additionally
+> MD5-verifies the R2 upload against the provenance sidecar and backs the
+> files up to Drive, neither of which the manual steps below do on their own.
+> The detail below stays accurate for what's actually happening under the
+> hood, for `batch_process.py`'s scope (Phases 0–2 only, see its docstring),
+> and for a narrow manual fix — but for a normal publish, use `publish_show.py`.
+
 ### First decide: is this show already on the site?
 ```
 python3 - <<'PY'
@@ -597,19 +608,23 @@ Field notes:
 
 ---
 
-### Path A — Re-processing a show already on the site
+### Path A — Re-processing a show already on the site (manual/legacy route — see the note above)
 
 1. **Upload + refresh metadata in one step.** `update_tracks.py` matches your
    processed files to the show's existing tracks by leading number, overwrites the
    matching MP3/FLAC keys in R2, and refreshes each track's `size_mb`/`duration`
-   in `recordings.json`:
+   in `recordings.json`. It does **not** touch the provenance sidecar.
    ```
    python3 scripts/update_tracks.py <slug> ~/work/<slug>/processed
    ```
-   Partial sets are fine — only tracks present in the folder are touched. Because
-   the site streams from R2 with `Cache-Control: no-store`, the new audio is
-   **live the moment the upload finishes**; the rest is to refresh displayed sizes
-   and the changelog.
+   Partial sets are fine — only tracks present in the folder are touched.
+   **The R2 stream URL is not `Cache-Control: no-store`** — the Worker sets
+   `public, max-age=31536000, immutable` when the URL carries a `v=`
+   cache-buster (the provenance sidecar's MD5 prefix, appended by `build.py`
+   from `data/processing/<slug>.json`), or a 1-hour TTL when it doesn't. The
+   new audio only becomes reachable at a *new* URL once you've updated the
+   provenance sidecar's `md5` for the changed tracks (see above) and rebuilt
+   — do that before calling the upload "live," not just the R2 copy finishing.
 
 2. **Regenerate waveform peaks** (the waveform changed):
    ```
@@ -643,7 +658,7 @@ Field notes:
 
 ---
 
-### Path B — Adding a new show
+### Path B — Adding a new show (manual/legacy route — see the note above)
 
 1. **Establish naming.** Pick the artist id (`jerry`/`sean`/`mad`/`seanjerry`),
    venue, and date. Conventions:
@@ -693,10 +708,12 @@ Field notes:
    after the entry exists. Leave `recordings[]` empty unless you are also adding
    whole-show files (out of scope here).
 
-4. **Do NOT add a manual Updates entry.** `build.py`'s `stamp_added_dates()`
-   auto-stamps `added`/`added_ts` for any show that has tracks but no `added`, and
-   `updates_list()` then auto-generates an "Added … N split tracks" feed event. A
-   manual entry on top would duplicate it. (The auto "Added" event has no "view
+4. **Do NOT add a manual Updates entry.** `stamp_added_dates()`
+   (`scripts/sitegen/core.py`, run by `build.py`) auto-stamps `added`/`added_ts`
+   for any show that has tracks but no `added`, and `updates_list()`
+   (`scripts/sitegen/fragments.py`) then auto-generates an "Added … N split
+   tracks" feed event. A manual entry on top would duplicate it. (The auto
+   "Added" event has no "view
    data" link, but the **Technical data** table still renders on the show page from
    the `data/processing/<slug>.json` you wrote above — reachable directly there.)
 
@@ -743,7 +760,7 @@ rclone copy ~/work/<slug>/processed \
   recomputes `processing_status` (per show) and `processed` (per track) in
   `recordings.json` from the sidecars, then rebuild/commit so the data reflects the
   new work. A freshly-published show should flip to `done` (or `partial`).
-- **Update the History page** (`build_history()` in `scripts/build.py`). It's a
+- **Update the History page** (`build_history()` in `scripts/sitegen/pages.py`). It's a
   hand-written, visitor-facing narrative organized by week — NOT auto-generated. Add
   each newly processed/re-mastered show into the current `<h2>Week …</h2>` section
   (or start a new dated week as time moves on), in the same plain-language voice
