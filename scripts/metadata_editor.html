@@ -105,6 +105,11 @@
   textarea { min-height: 64px; resize: vertical; line-height: 1.5; }
 
   table { width: 100%; border-collapse: collapse; margin-top: 0.6rem; }
+  .tracks-table { table-layout: fixed; }
+  .tracks-table th:nth-child(2), .tracks-table td:nth-child(2) { width: 20%; }   /* Title — was ~30%, trimmed by a third */
+  .tracks-table th:nth-child(3), .tracks-table td:nth-child(3) { width: 15%; }   /* Artist override */
+  .tracks-table th:nth-child(4), .tracks-table td:nth-child(4) { width: 15%; }   /* Songwriter */
+  .tracks-table th:nth-child(5), .tracks-table td:nth-child(5) { width: 33%; }   /* Tags — gets the reclaimed space */
   th { text-align: left; font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 0.3rem 0.4rem; border-bottom: 1px solid var(--border); }
   td { padding: 0.25rem 0.4rem; vertical-align: middle; border-bottom: 1px solid var(--border); }
   td.num, td.dur { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; width: 1%; }
@@ -190,7 +195,7 @@ function render() {
       </tr>`).join("");
     const tracksBlock = tracks.length ? `
       <div class="section-label">Tracks (${tracks.length})</div>
-      <table>
+      <table class="tracks-table">
         <tr class="tracks-head"><th>#</th><th>Title</th><th>Artist override</th><th>Songwriter</th><th>Tags</th><th>Dur</th><th>Damage</th></tr>
         ${trackRows}
       </table>` : `<p class="empty section-label" style="margin-top:.8rem">No split tracks for this show (full-show only).</p>`;
