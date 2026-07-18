@@ -24,16 +24,31 @@
     return occPromise;
   }
 
+  var SOURCE_LABEL = { SBD: "Soundboard", AUD: "Audience recording" };
+
   function occRowHtml(o, songTitle) {
     var label = songTitle + ", " + o.artist_name + ", " + o.date;
     var anchor = o.url + "#track-" + o.num;
     var stream = WORKER + "/stream?file=" + encodeURIComponent(o.file) + (o.ver ? "&v=" + o.ver : "");
     var dur = o.duration ? '<span class="time-label">' + escOcc(o.duration) + "</span>" : "";
     var trackId = o.slug + "-" + (o.num < 10 ? "0" + o.num : o.num);
+    var sizes = [];
+    if (o.flac_size_mb) sizes.push("FLAC " + o.flac_size_mb + " MB");
+    if (o.size_mb) sizes.push("MP3 " + o.size_mb + " MB");
+    var info = JSON.stringify([
+      ["Title", songTitle],
+      ["Show", o.show_title || "—"],
+      ["Venue", o.venue],
+      ["Date", o.date],
+      ["Source", SOURCE_LABEL[o.source] || o.source || "—"],
+      ["Duration", o.duration || "—"],
+      ["Size", sizes.join(" · ") || "—"],
+      ["Process version", o.proc_ver ? "v" + o.proc_ver : "Not yet processed"],
+    ]);
     return '<div class="song-occ">'
       + '<div class="song-occ-head">'
       + '<a class="artist-chip artist-' + o.artist + '" href="' + escOcc(anchor) + '">' + escOcc(o.artist_name) + "</a>"
-      + '<span class="song-occ-where">' + escOcc(o.venue) + " &middot; " + escOcc(o.date) + "</span>"
+      + '<span class="song-occ-where" data-info="' + escOcc(info) + '">' + escOcc(o.venue) + " &middot; " + escOcc(o.date) + "</span>"
       + '<a class="song-occ-open" href="' + escOcc(anchor) + '">open on show page &rarr;</a>'
       + trackAddButtonHtml(trackId)
       + "</div>"

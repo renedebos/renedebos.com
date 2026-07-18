@@ -682,10 +682,26 @@ def _song_occ_html(o, song_title):
     anchor = f'{esc(o["url"])}#track-{o["num"]}'
     track_id = f'{o["slug"]}-{o["num"]:02d}'
     add_btn = track_add_button(track_id)
+    sizes = []
+    if o.get("flac_size_mb"):
+        sizes.append(f'FLAC {o["flac_size_mb"]} MB')
+    if o.get("size_mb"):
+        sizes.append(f'MP3 {o["size_mb"]} MB')
+    info_rows = [
+        ["Title", song_title],
+        ["Show", o.get("show_title") or "—"],
+        ["Venue", o["venue"]],
+        ["Date", o["date"]],
+        ["Source", SOURCE_LABEL.get(o.get("source"), o.get("source") or "—")],
+        ["Duration", o.get("duration") or "—"],
+        ["Size", " · ".join(sizes) or "—"],
+        ["Process version", f'v{o["proc_ver"]}' if o.get("proc_ver") else "Not yet processed"],
+    ]
+    info = esc(json.dumps(info_rows, ensure_ascii=False))
     return f'''<div class="song-occ">
         <div class="song-occ-head">
           <a class="artist-chip artist-{o['artist']}" href="{anchor}">{esc(o['artist_name'])}</a>
-          <span class="song-occ-where">{esc(o['venue'])} &middot; {esc(o['date'])}</span>
+          <span class="song-occ-where" data-info="{info}">{esc(o['venue'])} &middot; {esc(o['date'])}</span>
           <a class="song-occ-open" href="{anchor}">open on show page &rarr;</a>
           {add_btn}
         </div>

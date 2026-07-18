@@ -337,6 +337,7 @@ def collect_songs():
             g = groups.setdefault(key, {"variants": {}, "occ": []})
             g["variants"][t["title"]] = g["variants"].get(t["title"], 0) + 1
             ver = (ptracks.get(str(t["num"]), {}).get("md5") or "")[:12] or None
+            proc_ver = ptracks.get(str(t["num"]), {}).get("ver")
             g["occ"].append({
                 "artist": s["artist"], "artist_name": artist_name(s["artist"]),
                 "venue": s.get("venue_short") or s.get("venue") or "—",
@@ -344,6 +345,8 @@ def collect_songs():
                 "url": show_url(s), "num": t["num"], "duration": t.get("duration"),
                 "file": t["file"], "ver": ver, "title": t["title"],
                 "flac": t.get("flac"), "flac_size_mb": t.get("flac_size_mb"),
+                "show_title": show_title(s), "source": s.get("source"),
+                "size_mb": t.get("size_mb"), "proc_ver": proc_ver,
             })
     songs, used = [], set()
     for key, g in groups.items():
