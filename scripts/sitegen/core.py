@@ -24,7 +24,7 @@ TAG_VOCAB = {
 
 DURATION_RE = re.compile(r"^\d+:[0-5]\d$")
 
-LEGACY_KEY_NAMING = {"jerry-19-broadway-2001-01-08", "mad-sweetwater-2000-02-17"}
+LEGACY_KEY_NAMING = {"mad-sweetwater-2000-02-17"}
 
 def esc(s):
     return html.escape(str(s), quote=True)
