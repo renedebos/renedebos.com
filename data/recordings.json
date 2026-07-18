@@ -252,7 +252,8 @@
           "flac_size_mb": 23,
           "processed": true,
           "tags": [
-            "original"
+            "original",
+            "rock"
           ],
           "artist": "Jerry Hannan"
         },
@@ -1782,7 +1783,6 @@
           "flac_size_mb": 16,
           "processed": true,
           "tags": [
-            "traditional",
             "banter"
           ]
         },
@@ -7836,7 +7836,8 @@
           "processed": true,
           "tags": [
             "cover",
-            "upbeat"
+            "country",
+            "ballad"
           ]
         },
         {
@@ -9080,7 +9081,8 @@
           "duration": "3:58",
           "flac_size_mb": 48,
           "tags": [
-            "original"
+            "original",
+            "rock"
           ]
         },
         {
@@ -9751,7 +9753,8 @@
           "flac_size_mb": 35,
           "processed": true,
           "tags": [
-            "original"
+            "original",
+            "rock"
           ]
         },
         {
@@ -10732,7 +10735,8 @@
           "flac_size_mb": 39,
           "processed": true,
           "tags": [
-            "original"
+            "original",
+            "rock"
           ]
         },
         {
