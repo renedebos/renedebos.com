@@ -215,12 +215,9 @@ def build_archive():
     </div>
   </div>
   <p class="archive-legend">
-    <span class="src-tag src-sbd">SBD</span> Soundboard &middot;
-    <span class="src-tag">AUD</span> Audience recording &middot;
     <span class="proc-status pre-edit pre-edit-nr">NR</span> Noise-reduced &middot;
     <span class="proc-status pre-edit pre-edit-pe">PE</span> Pre-edited (EQ, etc.) &middot;
-    <span class="h-badge">{HIGHLIGHT_STAR_SVG}</span> Highlight show &middot;
-    <span class="show-tracks">&#9834; N</span> Individual tracks available
+    <span class="h-badge">{HIGHLIGHT_STAR_SVG}</span> Highlight show
   </p>{archive_zip_html}'''
     views = f'''
   <div class="archive-view" data-view="artist">{artist_sections()}
