@@ -22,7 +22,7 @@ TAG_VOCAB = {
     "original", "cover", "traditional",              # provenance
     "ballad", "upbeat", "rocker",                    # mood
     "irish", "folk", "country", "blues", "rock", "beatles",  # flavor
-    "instrumental", "medley", "story", "banter",     # format
+    "instrumental", "medley", "banter",              # format
     "guest", "improv",
     "favorite", "rarity",                            # curated
 }

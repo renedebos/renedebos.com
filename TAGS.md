@@ -3,6 +3,7 @@
 > **STATUS: approved by Rene 2026-07-07** (full 20-tag vocabulary; Claude
 > drafts tags across the existing catalog, Rene reviews and corrects).
 > `beatles` added, `singalong` retired 2026-07-16 (net unchanged, 20 tags).
+> `story` retired 2026-07-18 (19 tags).
 
 Controlled vocabulary for the per-track `tags` array in
 `data/recordings.json`, powering the playlist generator facets
@@ -59,7 +60,6 @@ known cover with an unknown writer.
 |---|---|
 | `instrumental` | no vocals |
 | `medley` | multiple songs in one track |
-| `story` | narrative song or long spoken intro worth hearing |
 | `banter` | stage talk / crowd work is a highlight of the track |
 | `guest` | guest performer features (also see `performer` field) |
 | `improv` | made up on the spot / jam |

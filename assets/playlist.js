@@ -17,7 +17,7 @@
   // Facet tags worth picking a playlist by; the rest stay search-only.
   var TAG_ORDER = ["original", "cover", "traditional", "irish", "ballad",
                    "upbeat", "rocker", "folk", "country", "blues",
-                   "rock", "story", "guest", "favorite", "rarity"];
+                   "rock", "guest", "favorite", "rarity"];
 
   // Curated songwriter facet — the catalog has ~25 distinct songwriter
   // strings (mostly one-off covers), too many to list as chips, so this maps
