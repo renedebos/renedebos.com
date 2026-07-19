@@ -780,6 +780,7 @@ def build_show(show):
                 sizes.append(f'MP3 {t["size_mb"]} MB')
             # A track may override the show artist (e.g. a guest singer).
             track_artist = t.get("artist") or artist["name"]
+            proc_ver = proc_tracks.get(str(t["num"]), {}).get("ver")
             info_rows = [
                 ["Artist", track_artist],
                 ["Song", t["title"]],
@@ -787,6 +788,7 @@ def build_show(show):
                 ["Date", show["date"] or "Unknown date"],
                 ["Format", "FLAC + MP3" if t.get("flac") else "MP3"],
                 ["Size", " · ".join(sizes) or "—"],
+                ["Process version", f"v{proc_ver}" if proc_ver else "Not yet processed"],
             ]
             # Some tracks have audible tape damage / dropouts; flag them inline
             # with a small badge and in the track info popup.

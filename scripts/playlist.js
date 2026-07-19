@@ -766,6 +766,7 @@
       ["Date", t.showDate || "Unknown date"],
       ["Source", t.sourceType ? t.sourceType.toUpperCase() : "—"],
       ["Duration", formatTime(t.durationSec)],
+      ["Process version", t.procVer ? ("v" + t.procVer) : "Not yet processed"],
     ];
     if (t.songwriter && t.songwriter !== "Jerry Hannan & Sean Hannan") pairs.push(["Songwriter", t.songwriter]);
     return pairs;

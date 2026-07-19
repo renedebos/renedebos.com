@@ -83,6 +83,9 @@ def build_track_catalog():
                 "flac": t.get("flac"),
                 "flac_size_mb": t.get("flac_size_mb"),
                 "ver": (ptracks.get(str(t["num"]), {}).get("md5") or "")[:12] or None,
+                # workflow version, named distinctly from "ver" above (that's an
+                # unrelated md5-prefix cache-buster) — same field as track-spec.json's procVer.
+                "procVer": ptracks.get(str(t["num"]), {}).get("ver"),
                 "url": f'{show_url(show)}#track-{t["num"]}',
             })
     return rows
