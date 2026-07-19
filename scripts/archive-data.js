@@ -174,6 +174,17 @@
     }).join("");
   }
 
+  // Before any column header is clicked, sort for browsing rather than in
+  // whatever order track-spec.json happens to list rows: title, then date,
+  // then track number — same convention as /search/.
+  function defaultSort(a, b) {
+    var ta = (a.title || "").toLowerCase(), tb = (b.title || "").toLowerCase();
+    if (ta !== tb) return ta < tb ? -1 : 1;
+    var da = a.showDate || "", db = b.showDate || "";
+    if (da !== db) return da < db ? -1 : 1;
+    return (a.num || 0) - (b.num || 0);
+  }
+
   function render() {
     var rows = CATALOG.filter(matches);
     if (sortKey) {
@@ -187,6 +198,8 @@
         if (av > bv) return 1 * sortDir;
         return 0;
       });
+    } else {
+      rows = rows.slice().sort(defaultSort);
     }
     bodyEl.innerHTML = rows.map(function (t) {
       return "<tr>" + COLUMNS.map(function (c) {
