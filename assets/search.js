@@ -99,9 +99,16 @@
       var sc = score(r, tokens);
       if (sc >= 0) hits.push([sc, r]);
     });
+    // Sorted for browsing, not by match relevance: title, then date, then
+    // track number — so every performance of the same song lands together
+    // in chronological order (e.g. searching a songwriter's name).
     hits.sort(function (a, b) {
-      if (b[0] !== a[0]) return b[0] - a[0];
-      return (b[1].date || "").localeCompare(a[1].date || ""); // newer first on ties
+      var ra = a[1], rb = b[1];
+      var ta = norm(ra.song || ra.artist || ""), tb = norm(rb.song || rb.artist || "");
+      if (ta !== tb) return ta < tb ? -1 : 1;
+      var da = ra.date || "", db = rb.date || "";
+      if (da !== db) return da < db ? -1 : 1;
+      return (ra.num || 0) - (rb.num || 0);
     });
 
     var total = hits.length;

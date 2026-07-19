@@ -42,6 +42,7 @@ def build_search_index():
             rows.append(dict(base, **{
                 "type": "track",
                 "song": t["title"],
+                "num": t["num"],
                 "artist": t.get("artist") or aname,
                 "songwriter": t.get("songwriter") or "",
                 "duration": t.get("duration") or "",
