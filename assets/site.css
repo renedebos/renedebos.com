@@ -1783,6 +1783,7 @@ a.artist-chip:hover { filter: brightness(1.08); }
   max-width: 620px; margin: 0 0 1.2rem;
   font-size: 14px; color: var(--muted); font-weight: 300; line-height: 1.7;
 }
+.pl-intro a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--accent); }
 
 .pl-help { margin-bottom: 1.2rem; }
 .pl-help p {

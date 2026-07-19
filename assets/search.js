@@ -79,6 +79,28 @@
       + '<span class="sr-meta">show</span></a>';
   }
 
+  // A song played many times (e.g. "Truck", 25+ performances) used to show one
+  // near-identical row per performance. Above GROUP_MIN matches, collapse them
+  // into a single row linking to the song's own page instead.
+  var GROUP_MIN = 3;
+  var RESULT_CAP = 60;
+
+  function groupHtml(g) {
+    var tags = {};
+    g.forEach(function (r) { (r.tags || []).forEach(function (t) { tags[t] = true; }); });
+    var tagHtml = Object.keys(tags).map(function (t) {
+      return '<span class="sr-tag">' + esc(t) + "</span>";
+    }).join("");
+    var sw = g.map(function (r) { return r.songwriter; })
+      .find(function (s) { return s && s !== "Jerry Hannan & Sean Hannan"; });
+    if (sw) tagHtml = '<span class="sr-tag">' + esc(sw) + "</span>" + tagHtml;
+    return '<a class="sr" href="/songs/' + esc(g[0].songSlug) + '/">'
+      + '<span class="sr-icon">&#9834;</span>'
+      + '<span class="sr-main"><span class="sr-title">' + esc(g[0].song) + "</span>"
+      + '<span class="sr-sub">' + g.length + " performances" + tagHtml + "</span></span>"
+      + '<span class="sr-meta">' + g.length + "&times;</span></a>";
+  }
+
   function run() {
     var q = qEl.value.trim();
     var tokens = norm(q).split(/\s+/).filter(Boolean);
@@ -97,14 +119,44 @@
       var sc = score(r, tokens);
       if (sc >= 0) hits.push([sc, r]);
     });
-    hits.sort(function (a, b) {
-      if (b[0] !== a[0]) return b[0] - a[0];
-      return (b[1].date || "").localeCompare(a[1].date || ""); // newer first on ties
+
+    // A song with many matching performances (e.g. "Truck") collapses into one
+    // grouped row instead of one near-identical row per performance.
+    var bySong = {}; // songSlug -> [hit index, ...]
+    hits.forEach(function (h, i) {
+      var r = h[1];
+      if (r.type === "track" && r.songSlug) {
+        (bySong[r.songSlug] = bySong[r.songSlug] || []).push(i);
+      }
     });
-    statusEl.textContent = hits.length
-      ? hits.length + (hits.length === 1 ? " result" : " results")
-      : "No matches for “" + q + "”.";
-    resultsEl.innerHTML = hits.map(function (h) { return rowHtml(h[1]); }).join("");
+    var folded = {}; // hit index -> true once folded into a group row
+    var combined = [];
+    Object.keys(bySong).forEach(function (slug) {
+      var idxs = bySong[slug];
+      if (idxs.length < GROUP_MIN) return;
+      idxs.forEach(function (i) { folded[i] = true; });
+      var recs = idxs.map(function (i) { return hits[i][1]; });
+      var maxScore = Math.max.apply(null, idxs.map(function (i) { return hits[i][0]; }));
+      combined.push([maxScore, { grouped: true, records: recs, sortDate: recs[0].date || "" }]);
+    });
+    hits.forEach(function (h, i) { if (!folded[i]) combined.push(h); });
+
+    combined.sort(function (a, b) {
+      if (b[0] !== a[0]) return b[0] - a[0];
+      var ad = a[1].grouped ? a[1].sortDate : (a[1].date || "");
+      var bd = b[1].grouped ? b[1].sortDate : (b[1].date || "");
+      return bd.localeCompare(ad); // newer first on ties
+    });
+
+    var total = combined.length;
+    var shown = combined.slice(0, RESULT_CAP);
+    statusEl.textContent = !total ? "No matches for “" + q + "”."
+      : shown.length < total
+        ? "Showing " + shown.length + " of " + total + " results — refine your search to narrow it down."
+        : total + (total === 1 ? " result" : " results");
+    resultsEl.innerHTML = shown.map(function (h) {
+      return h[1].grouped ? groupHtml(h[1].records) : rowHtml(h[1]);
+    }).join("");
     syncUrl(q);
   }
 
