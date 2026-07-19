@@ -49,7 +49,7 @@
   }
 
   function srcTag(r) {
-    return r.source ? '<span class="sr-src src-' + r.source.toLowerCase() + '">'
+    return r.source ? '<span class="sr-src src-tag src-' + r.source.toLowerCase() + '">'
       + esc(r.source) + "</span>" : "";
   }
 
