@@ -91,6 +91,34 @@ def build_track_catalog():
             })
     return rows
 
+def build_home_shows():
+    """Show-level catalog (assets/home-shows.json) for the homepage's merged
+    archive listing — one row per track-listed show, sortable client-side by
+    date/artist/venue (scripts/home.js) without loading recordings.json."""
+    rows = []
+    for show in sorted([s for s in PUBLIC_SHOWS if s.get("tracks")], key=sort_key):
+        proc = load_processing(show["slug"])
+        pre_edit, pre_edit_title = None, None
+        if proc and proc.get("pre_edits"):
+            label = _pre_edit_label(proc["pre_edits"])
+            pre_edit = "NR" if label == "noise-reduced" else "PE"
+            pre_edit_title = proc["pre_edits"]
+        rows.append({
+            "slug": show["slug"],
+            "artist": artist_name(show["artist"]),
+            "date": show.get("date"),
+            "dateDisplay": show.get("date_display") or "Unknown date",
+            "venue": show.get("venue") or show.get("venue_short") or "",
+            "n": len(show["tracks"]),
+            "dur": track_total(show["tracks"]),
+            "source": show["source"],
+            "highlight": bool(show.get("highlight")),
+            "preEdit": pre_edit,
+            "preEditTitle": pre_edit_title,
+            "url": show_url(show),
+        })
+    return rows
+
 def build_track_spec_catalog():
     """Flat per-track spec/provenance catalog (assets/track-spec.json) for the
     /archive-data/ page — every track in the archive (not just processed ones;
@@ -197,4 +225,4 @@ def build_sitemap():
             f"{items}\n</urlset>\n")
 
 
-__all__ = ['_xesc', 'build_feed', 'build_search_index', 'build_sitemap', 'build_song_occurrences', 'build_track_catalog', 'build_track_spec_catalog']
+__all__ = ['_xesc', 'build_feed', 'build_home_shows', 'build_search_index', 'build_sitemap', 'build_song_occurrences', 'build_track_catalog', 'build_track_spec_catalog']

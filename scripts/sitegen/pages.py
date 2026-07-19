@@ -10,11 +10,6 @@ import urllib.parse
 from .core import *       # noqa: F401,F403
 from .fragments import *  # noqa: F401,F403
 
-RING_ICON_SVG = ('<svg width="24" height="24" viewBox="0 0 24 24" fill="none">'
-                  '<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.2"/>'
-                  '<circle cx="12" cy="12" r="6" stroke="currentColor" stroke-width="1.2"/>'
-                  '<circle cx="12" cy="12" r="2" fill="currentColor"/></svg>')
-
 def _home_content_blocks(name):
     """Pull the ordered blocks (h2 heading, then each p/ol element) out of a
     scripts/content/*.html prose fragment — lets the homepage show a one-paragraph
@@ -39,30 +34,6 @@ def _home_info_card(name, summary_label):
       </details>
     </div>'''
 
-HOME_SOURCE_SHORT = {"SBD": "Soundboard", "AUD": "Audience"}
-
-def _home_show_card(show):
-    n = len(show["tracks"])
-    tags = (('<span class="tag highlight">&#9733; Highlight</span>' if show.get("highlight") else "") +
-            f'<span class="tag">{esc(ARTIST_SHORT.get(show["artist"], artist_name(show["artist"])))}</span>' +
-            f'<span class="tag">{esc(HOME_SOURCE_SHORT.get(show["source"], show["source"]))}</span>')
-    added = show.get("added")
-    added_html = f'\n      <div class="added">ADDED {esc(added)}</div>' if added else ""
-    venue = show["venue"] or show["venue_short"] or ""
-    return f'''    <a class="card" href="{show_url(show)}">
-      <div class="card-top">
-        <span class="ring-icon">{RING_ICON_SVG}</span>
-        <span class="count">{n} TRACK{"S" if n != 1 else ""}</span>
-      </div>
-      <h3>{esc(artist_name(show["artist"]))} &mdash; {esc(date_with_subtitle(show))}</h3>
-      <div class="venue">{esc(venue)}</div>{added_html}
-      <div class="tags">{tags}</div>
-      <div class="card-foot">
-        <span class="stream">Stream</span>
-        <span class="dur">{esc(track_total(show["tracks"]))}</span>
-      </div>
-    </a>'''
-
 RANDOM_TAPE_SCRIPT = '''
 <script>
 (function () {
@@ -71,14 +42,14 @@ RANDOM_TAPE_SCRIPT = '''
   btn.addEventListener('click', function (e) {
     e.preventDefault();
     fetch('/assets/tracks.json').then(function (r) { return r.json(); }).then(function (rows) {
-      if (!rows.length) { location.href = '/archive/'; return; }
+      if (!rows.length) { location.href = '/'; return; }
       var url = rows[Math.floor(Math.random() * rows.length)].url;
       var i = url.indexOf('#');
       // Autoplay marker for the destination page's focusHashTrack (player.js /
       // wavesurfer.js) — kept out of tracks.json's shared `url` field since other
       // consumers (song-page occurrence links) should only deep-link, not autoplay.
       location.href = i === -1 ? url : url.slice(0, i) + '?autoplay=1' + url.slice(i);
-    }).catch(function () { location.href = '/archive/'; });
+    }).catch(function () { location.href = '/'; });
   });
 })();
 </script>'''
@@ -86,13 +57,20 @@ RANDOM_TAPE_SCRIPT = '''
 def build_home():
     """The homepage is a standalone document (like /manual/) rather than
     page_shell + site.css — a deliberately different "tape deck" look the
-    rest of the site doesn't share, per the 2026-07-10 redesign."""
+    rest of the site doesn't share, per the 2026-07-10 redesign.
+
+    Absorbs the old /archive/ page (2026-07-19): the full show listing, sortable
+    by date/artist/venue, lives right below the hero instead of a teaser grid
+    of 6 "recently added" shows plus a click-through to a separate page —
+    once every show was track-listed, "recently added" had nothing left to
+    say (see HANDOFF.md for the reasoning). Rendered client-side from
+    assets/home-shows.json by home.js, same pattern as /search/ and
+    /playlist/, so the collapsed/expanded and grouped/flat states don't need
+    prerendering every combination server-side."""
     tracked = [s for s in PUBLIC_SHOWS if s.get("tracks")]
     n_tracks = sum(len(s["tracks"]) for s in tracked)
     songs, _cols = collect_songs()
     n_songs = len(songs)
-    grid_shows = sorted(tracked, key=added_sort_key, reverse=True)[:6]
-    cards = "\n".join(_home_show_card(s) for s in grid_shows)
 
     notes = [a for a in M["artists"] if a.get("note")]
     artist_links = (f'\n    <div class="artist-links">{" &middot; ".join(a["note"] for a in notes)}</div>'
@@ -101,10 +79,10 @@ def build_home():
     return HOME_SHELL.format(
         nav_links="\n    ".join(f'<a href="{href}">{label}</a>'
                                  for label, href in SITE_PAGES[1:]),
-        n_shows=len(PUBLIC_SHOWS),
+        n_shows=len(tracked),
         n_tracks=n_tracks,
         n_songs=n_songs,
-        cards=cards,
+        archive_zip_html=_archive_zip_line(),
         why_card=_home_info_card("why.html", "Read the full story"),
         what_card=_home_info_card("about.html", "Read more"),
         artist_links=artist_links,
@@ -148,9 +126,9 @@ HOME_SHELL = '''<!DOCTYPE html>
   <section class="hero">
     <div class="eyebrow">Live &middot; DAT-sourced &middot; primarily 1998&ndash;2003</div>
     <h1>The <em>Hannan</em> Tapes</h1>
-    <p class="lede">Live recordings of Jerry Hannan, Sean Hannan, and the Mad Hannans, taped from the audience and soundboard at clubs across Marin County. Digitized, cataloged, and streamable &mdash; hiss and all.</p>
+    <p class="lede">Live recordings of Jerry Hannan, Sean Hannan, and the Mad Hannans, taped from the audience and soundboard at clubs across Marin County. Every show is digitized, split into songs, and streamable &mdash; hiss and all.</p>
     <div class="actions">
-      <a class="btn btn-primary" href="/archive/" id="randomTape">
+      <a class="btn btn-primary" href="#every-show" id="randomTape">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.6" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><path d="M8 1.4v2M8 12.6v2M1.4 8h2M12.6 8h2" stroke="currentColor" stroke-width="1.3"/></svg>
         Play random tape
       </a>
@@ -161,16 +139,24 @@ HOME_SHELL = '''<!DOCTYPE html>
     </div>
   </section>
 
-  <div class="grid-head">
-    <h2>Recently Added</h2>
-    <span>{n_shows} SHOWS &middot; {n_songs} SONGS &middot; {n_tracks} TRACKS</span>
+  <div class="grid-head" id="every-show">
+    <h2>Every Show</h2>
+    <span class="stat">{n_shows} SHOWS &middot; {n_songs} SONGS &middot; {n_tracks} TRACKS</span>
   </div>
 
-  <div class="grid">
-{cards}
+  <div class="sort-bar">
+    <div class="sort-group">
+      <span class="sort-label">Sort</span>
+      <div class="seg-group" role="group" aria-label="Sort shows">
+        <button type="button" class="seg" data-sort="date">Date</button>
+        <button type="button" class="seg" data-sort="artist">Artist</button>
+        <button type="button" class="seg" data-sort="venue">Venue</button>
+      </div>
+    </div>
   </div>
 
-  <div class="all-shows"><a href="/archive/">Browse all shows &rarr;</a></div>
+  <div id="sections"></div>
+{archive_zip_html}
 
   <section class="home-about-grid">
 {why_card}
@@ -185,80 +171,31 @@ HOME_SHELL = '''<!DOCTYPE html>
 
 </div>
 {random_tape_script}
+<script src="/assets/player.js"></script>
+<script src="/assets/home.js"></script>
 </body>
 </html>
 '''
 
-def build_archive():
-    # Absorbs the old /shows/ page (2026-07-08): the by-artist/by-date views
-    # are prerendered and toggled client-side. (A "split shows only" filter
-    # existed here until every listed show was track-indexed — see git log.)
-    archive_zip_html = ""
+def _archive_zip_line():
+    """The homepage's "download the complete archive" line — a standalone
+    ZIP snapshot of every curated FLAC, regenerated occasionally by
+    build_archive_zip.py (see data/archive_zip_meta.json), not part of the
+    per-show build."""
     archive_zip_path = os.path.join(ROOT, "data", "archive_zip_meta.json")
-    if os.path.exists(archive_zip_path):
-        meta = json.load(open(archive_zip_path))
-        size_gb = round(meta["size_mb"] / 1000, 1)
-        updated = meta["generated"][:10]
-        btn = dl_button(meta["r2_key"],
-                         title=f'Download the complete archive (password protected) · '
-                               f'{meta["n_tracks"]} tracks · {size_gb} GB FLAC')
-        archive_zip_html = f'''
+    if not os.path.exists(archive_zip_path):
+        return ""
+    meta = json.load(open(archive_zip_path))
+    size_gb = round(meta["size_mb"] / 1000, 1)
+    updated = meta["generated"][:10]
+    btn = dl_button(meta["r2_key"],
+                     title=f'Download the complete archive (password protected) · '
+                           f'{meta["n_tracks"]} tracks · {size_gb} GB FLAC')
+    return f'''
   <p class="archive-zip-line">
     {btn}
     <span>Download the complete archive &middot; {meta["n_tracks"]} tracks &middot; {size_gb} GB FLAC &middot; updated {esc(updated)}</span>
   </p>'''
-    toggle = f'''
-  <div class="archive-controls">
-    <div class="view-toggle" role="group" aria-label="Sort shows">
-      <button type="button" class="seg active" data-view="artist">By artist</button>
-      <button type="button" class="seg" data-view="date">By date</button>
-    </div>
-  </div>
-  <p class="archive-legend">
-    <span class="proc-status pre-edit pre-edit-nr">NR</span> Noise-reduced &middot;
-    <span class="proc-status pre-edit pre-edit-pe">PE</span> Pre-edited (EQ, etc.) &middot;
-    <span class="h-badge">{HIGHLIGHT_STAR_SVG}</span> Highlight show
-  </p>{archive_zip_html}'''
-    views = f'''
-  <div class="archive-view" data-view="artist">{artist_sections()}
-  </div>
-  <div class="archive-view" data-view="date" hidden>{date_sorted_list()}
-  </div>'''
-    script = '''
-<script>
-(function () {
-  var VIEW_KEY = 'archiveView';
-  var view = 'artist';
-  var segs = document.querySelectorAll('.view-toggle .seg[data-view]');
-  var views = document.querySelectorAll('.archive-view');
-  function apply() {
-    segs.forEach(function (s) { s.classList.toggle('active', s.dataset.view === view); });
-    views.forEach(function (x) { x.hidden = x.dataset.view !== view; });
-  }
-  segs.forEach(function (s) {
-    s.addEventListener('click', function () {
-      view = s.dataset.view;
-      apply();
-      try { localStorage.setItem(VIEW_KEY, view); } catch (e) {}
-    });
-  });
-  try {
-    if (localStorage.getItem(VIEW_KEY) === 'date') view = 'date';
-  } catch (e) {}
-  apply();
-})();
-</script>'''
-    return page_shell(
-        title="Archive — The Hannan Tapes",
-        description="Every Jerry Hannan, Sean Hannan, and Mad Hannans recording in the archive, by artist or by date.",
-        url="https://renedebos.com/archive/",
-        eyebrow="The Hannan Tapes",
-        heading="Archive",
-        tagline="Every show &middot; by artist or by date",
-        nav=site_nav("Archive"),
-        main=toggle + views,
-        extra_scripts='<script src="/assets/track-select.js"></script>' + script,
-    )
 
 def build_search():
     return page_shell(
@@ -1118,10 +1055,9 @@ def build_404():
     <h2>Page not found</h2>
     <p>This page doesn&rsquo;t exist &mdash; it may have moved, or a song may have been renamed or merged into another. A few good places to pick back up:</p>
     <ul class="notfound-links">
-      <li><a href="/archive/">Browse all shows</a></li>
+      <li><a href="/">Browse all shows</a></li>
       <li><a href="/songs/">Every song, cross-referenced</a></li>
       <li><a href="/search/">Search the archive</a></li>
-      <li><a href="/">Back to the home page</a></li>
     </ul>
   </section>'''
     return page_shell(
@@ -1132,4 +1068,4 @@ def build_404():
         nav=site_nav(), main=main)
 
 
-__all__ = ['WAVESURFER_LAB_SLUG', 'build_404', 'build_archive', 'build_archive_data', 'build_contact', 'build_history', 'build_home', 'build_manual', 'build_player', 'build_playlist', 'build_process', 'build_search', 'build_show', 'build_song_page', 'build_songs_index', 'build_updates', 'build_wavesurfer_lab']
+__all__ = ['WAVESURFER_LAB_SLUG', 'build_404', 'build_archive_data', 'build_contact', 'build_history', 'build_home', 'build_manual', 'build_player', 'build_playlist', 'build_process', 'build_search', 'build_show', 'build_song_page', 'build_songs_index', 'build_updates', 'build_wavesurfer_lab']

@@ -38,18 +38,6 @@ def track_add_button(track_id):
     return (f'<button type="button" class="track-add" data-id="{esc(track_id)}" '
             f'aria-pressed="false" aria-label="Add to playlist selection">{PLUS_SVG}</button>')
 
-def show_add_button(show):
-    """Whole-show sibling of track_add_button() for the archive listing, where
-    rows are show-level (no per-track markup exists to "select all" over —
-    see PLAYLIST FEATURE.md). Track ids are fully known at build time
-    ({slug}-{num:02d}, matching assets/tracks.json), so this carries its own
-    id list in data-ids rather than needing a client-side fetch or a DOM scan
-    like the song page's .select-all. track-select.js toggles all of them
-    together and keeps this button's pressed state in sync."""
-    ids = " ".join(f'{show["slug"]}-{t["num"]:02d}' for t in show["tracks"])
-    return (f'<button type="button" class="show-add" data-ids="{esc(ids)}" '
-            f'aria-pressed="false" aria-label="Add whole show to playlist selection">{PLUS_SVG}</button>')
-
 def dl_button(file, *, title="Download"):
     # Icon-only (no text label): with only the password-protected lossless
     # download left, the format doesn't need spelling out in the button —
@@ -204,7 +192,6 @@ def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main,
 
 SITE_PAGES = [
     ("Home", "/"),
-    ("Archive", "/archive/"),
     ("Songs", "/songs/"),
     ("Playlist", "/playlist/"),
     ("Search", "/search/"),
@@ -369,95 +356,6 @@ def highlight_badge(show):
         return ""
     return (f' <span class="h-badge" title="A particularly good performance">'
             f'{HIGHLIGHT_STAR_SVG}</span>')
-
-def show_row(show, with_artist=False):
-    artist = next(a for a in M["artists"] if a["id"] == show["artist"])
-    n_alt = sum(1 for r in show["recordings"] if r["alternate"])
-    n_can = len(show["recordings"]) - n_alt
-    extra = []
-    if n_can > 1:
-        extra.append(f"{n_can} parts")
-    if n_alt:
-        extra.append(f"{n_alt} alt transfer{'s' if n_alt > 1 else ''}")
-    extra_html = f' <span class="show-extra">&middot; {" &middot; ".join(extra)}</span>' if extra else ""
-    if show.get("tracks"):
-        n = len(show["tracks"])
-        marker = f'<span class="show-tracks" title="{n} songs available">&#9834; {n}</span>'
-        add_html = show_add_button(show)
-    else:
-        marker = '<span class="show-tracks"></span>'
-        add_html = ""
-    # Pre-edit pill: shows whose provenance records manual pre-edits get a
-    # marker on the listing, mirroring the show page's tech-table badge.
-    # Rendered inside the venue cell — the row is a fixed 5-column grid, so
-    # it must not be an extra grid child.
-    proc = load_processing(show["slug"])
-    nr_html = ""
-    if proc and proc.get("pre_edits"):
-        label = _pre_edit_label(proc["pre_edits"])
-        tag = "NR" if label == "noise-reduced" else "PE"
-        nr_html = (f' <span class="proc-status pre-edit {_pre_edit_class(label)} show-nr" '
-                   f'title="{esc(proc["pre_edits"])}">{tag}</span>')
-    hl_html = highlight_badge(show)
-    subtitle = f' &middot; <em>{esc(show["subtitle"])}</em>' if show.get("subtitle") else ""
-    primary_size = next((r["size"] for r in show["recordings"] if not r["alternate"]), "—")
-    info = esc(json.dumps([
-        ["Artist", artist["name"]],
-        ["Venue", show["venue"] or "—"],
-        ["Date", show["date"] or "Unknown date"],
-        ["Source", SOURCE_LABEL.get(show["source"], show["source"])],
-        ["Tracks", str(len(show["tracks"])) if show.get("tracks") else "—"],
-        ["Size", primary_size],
-    ], ensure_ascii=False))
-    # In the cross-artist date view each row carries the artist, since the
-    # grouping header that would otherwise name it is gone.
-    artist_prefix = f'<span class="show-artist">{esc(artist["name"])}</span> &middot; ' if with_artist else ""
-    badges_html = f'<span class="show-badges">{nr_html}{hl_html}</span>' if (nr_html or hl_html) else ""
-    # add_html's button nests inside this <a> — invalid-strictly, but the only
-    # way to keep the whole-show add control in the row's own grid rather than
-    # a separate element; track-select.js stops the click from also following
-    # the link.
-    return f'''      <a class="show-row" href="{show_url(show)}" data-info="{info}">
-        <span class="show-date">{esc(show["date"] or "Unknown date")}</span>
-        <span class="show-venue"><span class="show-venue-text">{artist_prefix}{esc(show["venue"] or "")}{subtitle}{extra_html}</span>{badges_html}</span>
-        {marker}
-        <span class="show-add-cell">{add_html}</span>
-        <span class="show-src src-{show["source"].lower()}">{esc(show["source"])}</span>
-        <span class="show-arrow">&rarr;</span>
-      </a>'''
-
-def artist_sections():
-    out = []
-    for artist in M["artists"]:
-        shows = sorted((s for s in PUBLIC_SHOWS if s["artist"] == artist["id"]),
-                       key=sort_key)
-        if not shows:
-            continue
-        rows = "\n".join(show_row(s) for s in shows)
-        out.append(f'''
-  <section class="artist-section" id="{artist["id"]}">
-    <div class="artist-header">
-      <h2 class="artist-name">{esc(artist["name"])}</h2>
-      <span class="recording-count">{len(shows)} show{"s" if len(shows) != 1 else ""}</span>
-    </div>
-    <div class="artist-divider"></div>
-    <div class="show-list">
-{rows}
-    </div>
-  </section>''')
-    return "".join(out)
-
-def date_sorted_list():
-    # One flat chronological list across all artists (oldest first; undated shows
-    # sort last via sort_key). Used by the Archive's "By date" view.
-    shows = sorted(PUBLIC_SHOWS, key=sort_key)
-    rows = "\n".join(show_row(s, with_artist=True) for s in shows)
-    return f'''
-  <section class="artist-section">
-    <div class="show-list">
-{rows}
-    </div>
-  </section>'''
 
 STATUS_BLURB = {
     "done": "All tracks loudness-normalized through the audio workflow.",
@@ -804,4 +702,4 @@ def song_jsonld(s):
     })
 
 
-__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', 'STATUS_BLURB', '_show_label', '_song_occ_html', '_src_tag', 'artist_sections', 'contact_block', 'content', 'date_sorted_list', 'dl_button', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'player', 'recording_card', 'show_jsonld', 'show_row', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'track_add_button', 'updates_list']
+__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', 'STATUS_BLURB', '_pre_edit_class', '_pre_edit_label', '_show_label', '_song_occ_html', '_src_tag', 'contact_block', 'content', 'dl_button', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'player', 'recording_card', 'show_jsonld', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'track_add_button', 'updates_list']

@@ -23,6 +23,7 @@
 // asset layer. Add an entry here whenever a page's path changes.
 const LEGACY_REDIRECTS = {
   "/jerry-hannan-19-broadway-2001/": "/shows/jerry-19-broadway-2001-01-08/",
+  "/archive/": "/",
 };
 
 const ID_RE = /^[a-z0-9-]{1,80}$/;
