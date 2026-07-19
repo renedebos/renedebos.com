@@ -161,7 +161,6 @@
           "flac_size_mb": 35,
           "processed": true,
           "tags": [
-            "traditional",
             "irish"
           ]
         },
@@ -630,7 +629,6 @@
           "flac_size_mb": 22,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -850,7 +848,6 @@
           "flac_size_mb": 38,
           "processed": true,
           "tags": [
-            "traditional",
             "irish"
           ]
         },
@@ -877,10 +874,7 @@
           "file": "MP3/JerryHannan - 19 Broadway 1999-03-29/27 Hitler Has Only Got One Ball.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-03-29/27 Hitler Has Only Got One Ball.flac",
           "flac_size_mb": 10,
-          "processed": true,
-          "tags": [
-            "traditional"
-          ]
+          "processed": true
         },
         {
           "num": 28,
@@ -922,7 +916,6 @@
           "flac_size_mb": 23,
           "processed": true,
           "tags": [
-            "traditional",
             "medley"
           ]
         },
@@ -966,7 +959,6 @@
           "flac_size_mb": 19,
           "processed": true,
           "tags": [
-            "traditional",
             "irish"
           ]
         },
@@ -981,7 +973,6 @@
           "flac_size_mb": 24,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -1045,7 +1036,6 @@
           "flac_size_mb": 38,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -1310,7 +1300,6 @@
           "flac_size_mb": 44,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -1439,7 +1428,6 @@
           "flac_size_mb": 49,
           "processed": true,
           "tags": [
-            "traditional",
             "irish"
           ]
         },
@@ -1541,7 +1529,6 @@
           "flac_size_mb": 11,
           "processed": true,
           "tags": [
-            "traditional",
             "irish"
           ]
         },
@@ -1789,7 +1776,6 @@
           "flac_size_mb": 48,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -1990,7 +1976,6 @@
           "flac_size_mb": 38,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -2093,7 +2078,6 @@
           "flac_size_mb": 23,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -2443,7 +2427,6 @@
           "flac_size_mb": 42,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -3082,7 +3065,6 @@
           "flac_size_mb": 40,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -3231,7 +3213,6 @@
           "flac_size_mb": 21,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "upbeat"
           ]
@@ -3325,7 +3306,6 @@
           "flac_size_mb": 17,
           "processed": true,
           "tags": [
-            "traditional",
             "irish"
           ]
         },
@@ -3616,7 +3596,6 @@
           "flac_size_mb": 45,
           "processed": true,
           "tags": [
-            "traditional",
             "irish"
           ]
         },
@@ -3735,7 +3714,6 @@
           "flac_size_mb": 34,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -3909,7 +3887,6 @@
           "flac_size_mb": 33,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -3997,7 +3974,6 @@
           "flac_size_mb": 55,
           "processed": true,
           "tags": [
-            "traditional",
             "irish"
           ]
         },
@@ -4145,7 +4121,6 @@
           "flac_size_mb": 50,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -4253,7 +4228,6 @@
           "flac_size_mb": 42,
           "processed": true,
           "tags": [
-            "traditional",
             "irish"
           ]
         },
@@ -4475,7 +4449,6 @@
           "flac_size_mb": 40,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -4491,7 +4464,6 @@
           "flac_size_mb": 44,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -4507,7 +4479,6 @@
           "flac_size_mb": 20,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "upbeat"
           ]
@@ -4680,7 +4651,6 @@
           "flac_size_mb": 36,
           "processed": true,
           "tags": [
-            "traditional",
             "irish"
           ]
         }
@@ -4981,7 +4951,6 @@
           "flac_size_mb": 27,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -5039,7 +5008,6 @@
           "flac_size_mb": 24,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -5428,7 +5396,6 @@
           "flac_size_mb": 31,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -5702,7 +5669,6 @@
           "flac_size_mb": 38,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -5760,7 +5726,6 @@
           "flac_size_mb": 31,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -5942,7 +5907,6 @@
           "flac_size_mb": 49,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "upbeat"
           ],
@@ -6119,7 +6083,6 @@
           "flac_size_mb": 29,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -6272,7 +6235,6 @@
           "flac_size_mb": 35,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -6527,7 +6489,6 @@
           "flac_size_mb": 31,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -6702,7 +6663,6 @@
           "flac_size_mb": 23,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "upbeat"
           ]
@@ -6717,7 +6677,6 @@
           "flac_size_mb": 31,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "upbeat"
           ],
@@ -6810,10 +6769,7 @@
           "file": "MP3/SeanHannan - 19 Broadway 1999-11-29/12 Ode to Biddy McGee.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway 1999-11-29/12 Ode to Biddy McGee.flac",
           "flac_size_mb": 28,
-          "processed": true,
-          "tags": [
-            "traditional"
-          ]
+          "processed": true
         },
         {
           "num": 13,
@@ -6826,7 +6782,6 @@
           "flac_size_mb": 39,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "upbeat"
           ]
@@ -6931,7 +6886,6 @@
           "flac_size_mb": 35,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -7068,7 +7022,6 @@
           "flac_size_mb": 32,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -7206,7 +7159,6 @@
           "flac_size_mb": 29,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "upbeat"
           ]
@@ -7311,7 +7263,6 @@
           "flac_size_mb": 39,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "upbeat"
           ]
@@ -7389,7 +7340,6 @@
           "flac_size_mb": 34,
           "processed": true,
           "tags": [
-            "traditional",
             "irish"
           ]
         },
@@ -7403,7 +7353,6 @@
           "flac_size_mb": 22,
           "processed": true,
           "tags": [
-            "traditional",
             "irish"
           ],
           "songwriter": "Traditional"
@@ -7450,7 +7399,6 @@
           "flac_size_mb": 36,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -7528,7 +7476,6 @@
           "flac_size_mb": 50,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -7557,10 +7504,7 @@
           "size_mb": 9,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-02-21/05 Ode to Biddy McGee.flac",
           "flac_size_mb": 37,
-          "processed": true,
-          "tags": [
-            "traditional"
-          ]
+          "processed": true
         },
         {
           "num": 6,
@@ -7573,7 +7517,6 @@
           "flac_size_mb": 26,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "upbeat"
           ]
@@ -7785,7 +7728,6 @@
           "flac_size_mb": 30,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "upbeat"
           ]
@@ -7831,7 +7773,6 @@
           "flac_size_mb": 37,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -7847,7 +7788,6 @@
           "flac_size_mb": 50,
           "processed": true,
           "tags": [
-            "traditional",
             "folk",
             "ballad",
             "guest"
@@ -7929,7 +7869,6 @@
           "flac_size_mb": 32,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "upbeat"
           ]
@@ -7958,10 +7897,7 @@
           "file": "MP3/SeanHannan - 19 Broadway unknown date/17 Ode to Biddy McGee.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/17 Ode to Biddy McGee.flac",
           "flac_size_mb": 32,
-          "processed": true,
-          "tags": [
-            "traditional"
-          ]
+          "processed": true
         },
         {
           "num": 18,
@@ -8856,7 +8792,6 @@
           "duration": "5:14",
           "flac_size_mb": 63,
           "tags": [
-            "traditional",
             "irish",
             "upbeat"
           ]
@@ -9186,7 +9121,6 @@
           "flac_size_mb": 39,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -9464,7 +9398,6 @@
           "flac_size_mb": 62,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "upbeat"
           ]
@@ -10240,7 +10173,6 @@
           "flac_size_mb": 28,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "upbeat"
           ]
@@ -10676,7 +10608,6 @@
           "flac_size_mb": 38,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "upbeat"
           ]
@@ -10692,7 +10623,6 @@
           "flac_size_mb": 68,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "upbeat"
           ]
@@ -10912,7 +10842,6 @@
           "flac_size_mb": 20,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -11018,7 +10947,6 @@
           "flac_size_mb": 33,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -11034,7 +10962,6 @@
           "flac_size_mb": 28,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "ballad"
           ]
@@ -11050,7 +10977,6 @@
           "flac_size_mb": 24,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "upbeat"
           ]
@@ -11066,7 +10992,6 @@
           "flac_size_mb": 22,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "upbeat"
           ]
@@ -11082,7 +11007,6 @@
           "flac_size_mb": 56,
           "processed": true,
           "tags": [
-            "traditional",
             "irish",
             "upbeat"
           ]
@@ -11098,7 +11022,6 @@
           "flac_size_mb": 9,
           "processed": true,
           "tags": [
-            "traditional",
             "irish"
           ]
         },

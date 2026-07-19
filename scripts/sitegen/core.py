@@ -19,7 +19,7 @@ PUBLIC_SHOWS = [s for s in M["shows"] if not s.get("hidden")]
 SOURCE_LABEL = {"SBD": "Soundboard", "AUD": "Audience recording"}
 
 TAG_VOCAB = {
-    "original", "cover", "traditional",              # provenance
+    "original", "cover",                              # provenance
     "ballad", "upbeat", "rocker",                    # mood
     "irish", "folk", "country", "blues", "rock", "beatles",  # flavor
     "instrumental", "medley", "banter",              # format

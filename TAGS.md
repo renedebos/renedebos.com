@@ -3,7 +3,9 @@
 > **STATUS: approved by Rene 2026-07-07** (full 20-tag vocabulary; Claude
 > drafts tags across the existing catalog, Rene reviews and corrects).
 > `beatles` added, `singalong` retired 2026-07-16 (net unchanged, 20 tags).
-> `story` retired 2026-07-18 (19 tags).
+> `story` retired 2026-07-18 (19 tags). `traditional` retired 2026-07-19
+> (18 tags) — fully redundant with `songwriter: Traditional`, unlike
+> `cover`/`original` which stay since a cover's writer can be unknown.
 
 Controlled vocabulary for the per-track `tags` array in
 `data/recordings.json`, powering the playlist generator facets
@@ -36,7 +38,6 @@ known cover with an unknown writer.
 |---|---|
 | `original` | Hannan-written song |
 | `cover` | someone else's song (writer in `songwriter` when known) |
-| `traditional` | trad/public-domain, mostly Irish repertoire |
 
 ### Mood / energy — needs human judgment
 | tag | meaning |

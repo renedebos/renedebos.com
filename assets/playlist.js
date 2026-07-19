@@ -15,7 +15,7 @@
   var ARTIST_NAMES = { jerry: "Jerry Hannan", sean: "Sean Hannan",
                        mad: "Mad Hannans", seanjerry: "Sean & Jerry Hannan" };
   // Facet tags worth picking a playlist by; the rest stay search-only.
-  var TAG_ORDER = ["original", "cover", "traditional", "irish", "ballad",
+  var TAG_ORDER = ["original", "cover", "irish", "ballad",
                    "upbeat", "rocker", "folk", "country", "blues",
                    "rock", "guest", "favorite", "rarity"];
 
@@ -239,7 +239,7 @@
   // away — most visitors want a set to press play on, not a pre-filled form.
   var PRESETS = {
     mixed45: { filters: { artist: [], venue: [], source: [], tags: [], songwriter: [] }, mode: "minutes", amount: 45 },
-    traditional: { filters: { artist: [], venue: [], source: [], tags: ["traditional"], songwriter: [] }, mode: "songs", amount: 12 },
+    traditional: { filters: { artist: [], venue: [], source: [], tags: [], songwriter: ["traditional"] }, mode: "songs", amount: 12 },
     soundboard: { filters: { artist: [], venue: [], source: ["sbd"], tags: [], songwriter: [] }, mode: "endless" },
   };
   if (presetsEl) {
