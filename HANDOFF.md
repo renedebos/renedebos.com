@@ -1,313 +1,168 @@
 # Session Handoff — Hannan Recordings (renedebos.com)
-**Date:** 2026-07-19 · **Branch:** `main` — everything below marked ✅ is committed & pushed, deploy verified live, including `jerry-19-broadway-2001-01-15` (see resolution below — the show that was broken/uncommitted at the end of the prior session is now fully shipped and cleaned up).
+**Date:** 2026-07-19 · **Branch:** `main` — everything below is committed & pushed, deploy verified live on renedebos.com itself (not just green Action).
 
-> Long session: pushed a batch of accumulated metadata-editor edits, retired
-> two tag-vocabulary entries, added a playlist songwriter filter and
-> process-version hover info, then spent most of the session reprocessing
-> v1/v2 shows to the current engine (workflow v7) at Rene's request. Three
-> of four reprocesses shipped clean. The fourth (`2001-01-15`) hit a
-> filename/folder-path bug that's still open — see below, don't assume it's
-> done just because earlier work in this same session said "0 mismatches."
-> Also explored a full visual redesign of `/search/` via an Artifact
-> mockup; Rene rejected it, nothing was built from it. Fixed three
-> genuine (non-cosmetic) bugs on `/search/` along the way and carried the
-> same default-sort fix to `/archive-data/`.
+> Front-end/architecture session, no audio processing. Rene noted the
+> archive is now fully split (every show track-listed) — which meant the
+> homepage's "Recently Added" 6-card teaser had lost its reason to exist,
+> since new shows will land rarely from here on. Talked through the
+> tradeoffs, built an interactive Artifact mockup, iterated on it live with
+> Rene through several rounds of feedback, then implemented the approved
+> design for real: merged the old `/archive/` page into the homepage as a
+> single sortable show listing.
 
 ## ✅ Done this session
 
-### 1. Pushed a backlog of metadata-editor edits (commits `29adb08`, `a4f27fb`, several more)
-Rene had unsaved edits sitting in the metadata editor across several
-`git push` requests through the session: tag/songwriter corrections on a
-handful of tracks, Kelly Peterson guest-appearance credits (`guest` tag +
-artist override) added consistently across her tracks and two Jerry Hannan
-& Demir covers, a "Good Life" → "The Good Life" title fix, and — later —
-tape-damage (`dropouts`) flags plus a couple of tags on the
-`jerry-19-broadway-1999-08-23` "Part 1 (Distorted)" batch (tracks 15–21).
-One of these batches also had a typo (`erry Hannan & Sean Hannan` missing
-the leading "J" on `sean-19-broadway-unknown` track 11) — caught and fixed
-before pushing rather than shipping the typo.
+### Homepage/Archive merge (commit `fc2f280`)
+The core change: `/archive/` no longer exists as a separate page. The
+homepage (`/`) now shows the full 30-show catalog directly below the hero,
+sortable by **date, artist, or venue** (venue is new — the old archive page
+only had artist/date). `/archive/` 301-redirects to `/` (`site_worker.js`
+`LEGACY_REDIRECTS`) for existing bookmarks/search-index entries; dropped
+from nav everywhere via `SITE_PAGES` in `scripts/sitegen/fragments.py`.
 
-### 2. Fixed a mistitled/duplicate song (commit `e5a7973`)
-`jerry-19-broadway-1999-06-07` track 27 was titled "Come On All You Young
-Maidens" — actually the same traditional song already correctly catalogued
-elsewhere as "A Bunch of Thyme" (confirmed: same opening lyric). Renaming
-merged both performances onto one canonical `/songs/a-bunch-of-thyme/`
-page and dropped the now-orphaned `/songs/come-on-all-you-young-maidens/`
-per the build's own integrity check (`git rm -r songs/...`).
+**Design, arrived at through several mockup rounds with Rene:**
+- Kept the homepage's own "tape deck" look (`home.css`), not `site.css` —
+  ported the archive's *sorting capability*, not its visual system.
+- Default view is a **9-card collapsed preview**, not the full 30 — but
+  every group actually represented in those 9 cards gets its real header
+  and true count shown up front (e.g. "Jerry Hannan · 16 SHOWS"), not just
+  after clicking "Show all N shows". This took two iterations to get
+  right: first attempt showed all headers for every group regardless of
+  whether their cards were visible (rejected — too much upfront), second
+  attempt dropped headers entirely from the collapsed view (rejected —
+  Rene specifically wanted the count visible without expanding). Final:
+  walk groups in original order, stop adding groups once the 9-card budget
+  is hit, only show headers for groups actually contributing a card.
+- Cards got smaller: dropped the "added" date (dead weight once "recently
+  added" stopped being the framing) and the artist tag (redundant — the
+  card's own `<h3>` already says the artist name). Source (AUD/SBD) and
+  NR/PE pre-edit badges shrunk from full pills to small inline badges.
+  Highlight star moved inline with the title instead of a separate tag row.
+  Grid went from 3 to 4 columns on desktop as a result.
+- **Why/About stays below the listing, not above** — deliberately not
+  moved despite Rene questioning it once mobile scroll depth came up (a
+  30-show single-column mobile list is a long scroll to reach it). Fixed
+  the actual problem (scroll depth) with the 9-card collapse instead of
+  relocating the section — the hero already orients a first-time visitor,
+  and most visits (especially repeat ones, likely common given the
+  personal nature of this project) just want the shows.
+- Sort choice persists across visits via localStorage (`homeSort` key),
+  same pattern the old archive page's toggle used.
+- Legend (NR/PE/Highlight explainer) and the old subtitle sentence under
+  "Every Show" were both explicitly cut on Rene's request mid-review.
 
-### 3. Retired two tag-vocabulary entries (commits `4a1e4e2`, `77ded5e`)
-- **`story`** — Rene's call, no replacement; stripped from 51 tracks.
-- **`traditional`** — fully redundant with `songwriter: Traditional` (unlike
-  `cover`/`original`, which stay since a cover's writer can be unknown);
-  stripped from 69 tracks. The playlist's "Traditional & Irish" preset and
-  any traditional-song filtering now goes through the **Songwriter** facet
-  instead of a tag.
+**Technical shape:** rendered client-side by new `scripts/home.js` from a
+new `assets/home-shows.json` (via `build_home_shows()` in
+`scripts/sitegen/feeds.py`) — same pattern `/search/` and `/playlist/`
+already use, not server-prerendered toggle blocks like the old archive
+page. Chosen deliberately over prerendering every sort/collapsed/expanded
+combination server-side.
 
-Both removals: dropped from `TAG_VOCAB` in `scripts/sitegen/core.py`,
-`TAGS.md`, and `scripts/playlist.js`'s `TAG_ORDER`/presets.
+**The "download the complete archive" line** (the old archive page's only
+download affordance) moved to the homepage — it would otherwise have had
+nowhere to live. This required **porting the password-modal/toast/
+download-button CSS from `site.css` into `home.css`** (`.pw-overlay`,
+`.pw-modal`, `.dl-toast`, `.download-btn`, translated to `home.css`'s own
+token names) and adding `<script src="/assets/player.js">` to the
+homepage — `player.js`'s download-gating JS is shared sitewide and expects
+those exact class names to exist wherever a `.download-btn` renders;
+without the CSS the modal would appear completely unstyled. Verified
+working end-to-end with a real Playwright click-through (temporarily faked
+`data/archive_zip_meta.json`, screenshotted the modal, then reverted).
 
-### 4. Playlist: songwriter filter + label tweak (commits `bb4e8bb`, `e321e09`)
-New **Songwriter** facet on `/playlist/`: `Jerry & Sean` (original),
-`Traditional`, `Lennon & McCartney` (merges the catalog's two raw spellings
-— `Lennon-McCartney` / `Lennon & McCartney` — under one chip), `Steve
-Poltz`. Renamed the "original" label from "Jerry & Sean Hannan (original)"
-to just "Jerry & Sean" per Rene's request.
+**Cleanup:** removed now-dead code — `build_archive`, `artist_sections`,
+`date_sorted_list`, `show_row`, `_home_show_card`, `show_add_button` (Python)
+— and the matching ~230 lines of now-unreferenced CSS in `site.css`
+(`.show-row`, `.archive-legend`, `.view-toggle`, etc., checked one by one
+for cross-page reuse before deleting — kept `.src-tag` since `/search/`
+and `/updates/` still use it). Deleted the stale tracked `archive/index.html`
+file itself (the generator only ever writes, never deletes — it would have
+sat there stale otherwise). Fixed 3 now-stale `/archive/` references in
+CLAUDE.md's own docs (design-system count, two runbook mentions).
 
-### 5. Metadata editor: song-list view + column widths (commits `5582ce5`, `1ce171b`, `ce3a838`)
-Added a "Song list" toggle that flips the per-show accordion into a flat,
-alphabetized table of every track — searching a song title now surfaces
-every performance across every show in one screen, for fast batch tag
-editing. A later width-rebalance request ("Title too wide, Tags too
-narrow") was first applied to the wrong view (per-show table) and had to
-be moved to the actual `#songTable` view once Rene caught it — Title 20%,
-Tags 33%, with ellipsis truncation.
+**Verification before pushing:** full local rebuild + `--check`, a
+Playwright smoke test (sort switching, expand button, light/dark theme,
+zero console errors) against a local server, then the same checks again
+against the live production URL after deploy — actual screenshots, not
+just "the Action went green."
 
-### 6. Process-version in hover popups (commit `ea42edd`)
-The song-page hover popup already showed a track's workflow version; added
-the same "Process version" row to (a) each track's hover popup on its own
-**show page**, and (b) the **playlist queue's** track-info popup. Needed a
-new `procVer` field on `assets/tracks.json` (`scripts/sitegen/feeds.py`) —
-distinct from that file's existing `ver` field, which is an unrelated
-MD5-prefix cache-buster, not a workflow version.
+## ⚠️ Not done — known gaps, surfaced but not fixed
 
-### 7. Reprocessed 3 of 4 targeted v1/v2 shows to v7 — ✅ shipped
-Rene asked to bring the archive's remaining pre-v4 shows up to the current
-engine. Full archive-wide audit found 12 shows on v1/v2; verified real
-Drive state (not assumptions) before touching anything, catching two false
-negatives from Drive-API rate-limiting in the process. Shipped:
-
-- **`jerry-19-broadway-1999-06-21`** (commit `2e11001`) — v1→v7. Diagnose
-  clean (no CLIPPING). Caught and fixed a stray trailing-space filename
-  collision that briefly duplicated 2 tracks in R2, and restored 3 titles
-  the fresh hand-edit export had corrupted (`_` substituted for `/` in two
-  slash-titled tracks — filesystem can't hold `/` in a filename — plus one
-  shortened title) back to the catalog's established names.
-- **`jerry-19-broadway-1999-05-10`** (commit `594bfef`) — v2→v7. **3 tracks
-  flagged full CLIPPING** (Model Family Man, Luxury of Murder, The Parting
-  Glass) — sent back to Rene per the runbook. First re-export round-trip
-  didn't actually change the audio (same MD5 as before — the Audacity
-  export hadn't picked up the fix); second round-trip did. Also caught a
-  **pre-existing, unrelated** FLAC/MP3 naming mismatch on "Hear Me" — its
-  MP3 had been misnamed "I Need a Lover" since the original 2026-07-09 v1
-  publish, nothing to do with this reprocess.
-- **`jerry-19-broadway-1999-07-19`** (commit `594bfef`) — v2→v7. No
-  clipping. Caught two title regressions where the fresh export used
-  different names than the established catalog ("She is The Girlfriend of
-  The Boyfriend of Herself" vs "The Girlfriend of The Boyfriend of
-  Herself"; "Leprechaun" vs "The Barney Stone Blues") — confirmed same
-  audio via exact duration match, Rene chose to keep the **old** titles for
-  both.
-- Both of the above hit the same R2 duplicate-key gotcha as `1999-06-21`
-  (fresh export uses a different filename than the archived original →
-  `rclone copy` creates a new object instead of overwriting → track-count
-  check fails) — same fix each time: rename the local `out/` file to match
-  the established title, delete the stray R2 object, re-upload.
-- A separate bug surfaced and got fixed in commit `5d157fc`: regenerating
-  `data/processing/*.json` provenance for these two shows (after an
-  unrelated `git checkout` accident, see gotcha below) produced a
-  correctly-v7 **audio** render but a stale **`ver: 2` label** in the
-  provenance JSON — the resume-skip logic faithfully trusted whatever was
-  in the (accidentally-reverted) provenance file for the "what actually
-  rendered this track" field. Site was briefly showing "Process version:
-  v2" on genuinely-v7 tracks. Corrected directly (`ver` → `7` for every
-  affected track) rather than re-rendering (audio was never wrong).
-
-### 8. `/search/` — 3 real bugs fixed, sort order changed (commits `9423296`, `b969111`, `bda4a90`)
-While investigating a planned visual redesign, found and fixed:
-- **Unbounded result list**: a broad query ("hannan") rendered all 709
-  matches with zero cap — a **66,748px-tall** mobile page. Capped at 60
-  with a "showing X of Y" status when truncated.
-- **AUD/SBD badge rendering at browser-default link style** (16px,
-  link-blue, body font) instead of the site's actual small-badge component
-  (`.src-tag`, already used on Archive/Updates) — `search.js`'s `srcTag()`
-  built the class `sr-src src-aud`/`src-sbd` but never included the
-  `src-tag` class that actually carries the styling. One-line fix.
-- **The "Archive Data" footer link** rendered unstyled (same root cause as
-  the badge, different mechanism — it wasn't inside the `.about` wrapper
-  that gives every other in-prose link its accent-green treatment). Scoped
-  `.about a`'s styling to `.pl-intro a` instead (shared with `/playlist/`).
-
-Also **tried and reverted** a song-grouping feature (25 "Truck" rows →
-1 row w/ "25 performances", triggered above a 3-match threshold) — Rene
-disliked the inconsistency (a 2-performance song stayed ungrouped next to
-grouped 3+ ones) and asked to undo it. Reverted cleanly (commit `87e20c0`),
-kept the cap + link fixes. **Sort order changed** on Rene's request
-(commit `b969111`, extended to `/archive-data/` in `adf488a`): both pages
-now sort by **title, then date, then track number** instead of
-text-match-relevance score — searching a songwriter's name now groups all
-their songs together chronologically instead of scattering them by score.
-Needed a new `num` field on the search index.
-
-### 9. Visual redesign of `/search/` — explored, rejected
-Built a full interactive Artifact mockup (real site fonts inlined,
-existing color tokens, live sample-data filtering) addressing Rene's brief
-(whitespace, typographic hierarchy, search-bar-as-focus, grouped/labeled
-filters, active-filter chips, results-dominant). **Rene didn't like it —
-explicitly told not to build it.** Nothing from the mockup was ported into
-`search.js`/`site.css`. Don't re-propose the same direction without new
-input from Rene on what specifically didn't work.
-
-## ✅ Resolved this follow-up session — `jerry-19-broadway-2001-01-15`
-
-Picked up exactly where the prior session's broken/uncommitted state left
-off (commits `9b5e02a`, `1e7d572`). All 9 steps of the resume plan below
-completed in order: renamed the 4 disputed tracks' local `out/` files and
-R2 objects to the corrected titles, deleted the 4 stale first-draft-named
-R2 objects, re-ran `draft_tracks.py` (now correctly derives both titles
-and the `...SBD` R2 paths), trimmed 3 reintroduced trailing-space titles,
-regenerated peaks, `audio_process.py verify` → **0/31 mismatches**.
-
-Along the way, caught and fixed one more genuine regression the rebuild
-surfaced: `sean-19-broadway-unknown` track 11's `artist` override field
-had reverted to a stale typo (`"erry Hannan & Sean Hannan"`, missing the
-leading J) that HEAD already had fixed — likely fallout from the same
-messy pre-crash working-tree state. Restored to match HEAD.
-
-The Drive `Processed/` backup was also a mess (70 files: 62 correct + 8
-stale-named leftovers from an interrupted mid-session attempt) — purged
-and re-copied clean from local `out/` (hit the known `rclone`-to-`gdrive:`
-stall gotcha partway through; finished with a retry loop), then
-MD5-verified all 63 files match. Deleted the now-fully-orphaned no-`SBD`
-R2 folder (66 stale v1 files, confirmed unreferenced first). Added the
-one consolidated Updates note Rene asked for, covering all 4 reprocessed
-shows (`1999-06-21`, `1999-05-10`, `1999-07-19`, `2001-01-15`) as a single
-site-wide entry rather than four per-show ones. Ran
-`publish_show.py cleanup` — freed 2.21 GB, all safety checks (live page,
-R2 counts, Drive backup count) passed.
-
-**Original bug writeup, for reference (now fixed):**
-Audio was genuinely fine on R2 (verified, real v7 render) —
-the problem was entirely in the catalog data pointing at the wrong place.
-
-**What happened:** Splice.flac (a stray point-label artifact, confirmed by
-Rene as safe to ignore) got removed from both local staging and the real
-Drive `Tracks/`+`labels.txt`. Reprocessing produced 4 titles that
-disagreed with the established catalog (State Trooper/Highway Patrolman,
-Everything/Everything Reminds Me of You, Four Leaf Clover Inn/The Barney
-Stone Blues, Never Knew a Woman/Woman) — **Rene chose to keep all 4 old
-titles**, applied directly to `recordings.json` by hand (not by renaming
-the `out/` files, unlike the `1999-06-21`/`1999-07-19` fixes — this is the
-root of the bug below). Verification and the Drive `Processed/` backup
-were in progress when **something outside this session deleted the entire
-local `~/work/` staging tree** (`1999-05-10`, `1999-07-19` — both harmless,
-already shipped — and `2001-01-15`, mid-flight; cause unknown, never
-explained, worth asking Rene about in case it recurs on a future long
-job). Re-ran `prepare`+`process` to regenerate the lost `out/` (audio is
-byte-identical — deterministic render, confirmed by matching MD5s). Then a
-`verify` run turned up **31/31 mismatches**, which led to this discovery:
-
-- `data/recordings.json`'s `file`/`flac` paths for this show still point
-  to **`FLAC/JerryHannan - 19 Broadway 2001-01-15/`** (no `SBD` suffix) —
-  the **old, stale, pre-reprocess R2 folder** (33 files, dated 2026-07-09).
-- Tonight's actual v7 reprocessed audio is sitting on R2 at
-  **`FLAC/JerryHannan - 19 Broadway 2001-01-15 SBD/`** (31 files, correct
-  content, MD5-matches the fresh render) — **but still under the
-  first-draft, uncorrected filenames** (`01 State Trooper.flac`, `04
-  Everything.flac`, `20 Four Leaf Clover Inn.flac`, `30 Never Knew a
-  Woman.flac`) because the title fix was applied to `recordings.json` text
-  only, never renamed on disk/R2 — the step that was done correctly for
-  `1999-06-21`/`1999-07-19`'s title fixes was skipped here.
-- Exactly how `recordings.json` ended up pointing at the **no-`SBD`**
-  folder given `draft_tracks.py` always derives the path from
-  `publish.json`'s `folder` field (confirmed `"...2001-01-15 SBD"` every
-  time it was checked) is **not fully understood** — likely relates to
-  this show already being a previously-published v1 show with pre-existing
-  `file`/`flac` values before tonight's `draft_tracks` run; needs the
-  historical `git diff` reread with fresh eyes, not more guessing under
-  time pressure.
-
-*(Root cause note above is preserved for reference; the fix itself is
-summarized at the top of this section — see "✅ Resolved this follow-up
-session".)*
+1. **Lost feature: whole-show "add to playlist" button.** The old
+   `/archive/` row listing (`show_row`) had a `show_add_button` — select an
+   entire show's tracks for the playlist queue in one click. The card
+   design never had an equivalent and the approved mockup never included
+   one, so it's gone now. Flagged to Rene twice (once before building,
+   once after) — no decision yet on whether to add it back to the new card
+   design. `track-select.js` still has harmless dead `.show-add` selectors
+   (matches nothing now) — intentionally left alone rather than risk
+   editing a file shared across show/songs/playlist pages for a
+   zero-functional-impact cleanup.
+2. **Stale copy in `content/about.html`**, unrelated to this session's
+   code but now more obviously wrong given the framing change: "About This
+   Archive" still says *"This is very much a work in progress. I'm
+   steadily working through the show tapes — splitting them into
+   individual songs..."* — directly contradicts the premise that started
+   this whole session (splitting is done). Deliberately not rewritten —
+   it's Rene's narrative voice, not layout, and he writes his own blurbs
+   by convention. Sitting right next to the new lede ("Every show is
+   digitized, split into songs, and streamable") it reads inconsistently.
+3. **`about.html`'s first paragraph** (kept, unedited) also still opens
+   with the DAT-recorder/audio-quality note before the now-stale
+   "work in progress" paragraph — worth a full pass, not just deleting one
+   sentence, if Rene wants to fix this.
 
 ## Gotchas learned this session
-- **A fresh hand-edit re-export can silently disagree with the established
-  catalog** — different filename spelling/wording than what's already in
-  `recordings.json`, even for the exact same audio (confirmed via matching
-  duration). `draft_tracks.py` always trusts the *current* export's
-  filename for the title, never the old catalog value, so **always diff
-  title/songwriter/tags against `git show HEAD:data/recordings.json` after
-  every `draft_tracks` run**, not just eyeball the FLAG output — this
-  caught real regressions on 3 of the 4 shows reprocessed this session.
-- **Fixing a title after `draft_tracks` has already run must rename the
-  actual `out/` files (and R2 objects), not just edit `recordings.json`
-  text** — editing text-only leaves the R2 path pointing at (or
-  R2 objects named after) the pre-correction filename. This is exactly
-  what broke `2001-01-15` (see above) after being done correctly for two
-  other shows earlier the same session.
-- **A fresh export reusing a different filename than the archived original
-  creates a duplicate object in R2 instead of overwriting** — `rclone
-  copy` matches by filename. Always check counts *and* content (MD5) after
-  any re-upload, not just the automated count check, which can both
-  false-fail (stale files inflate the "already there" count past the real
-  target) and — new this session — mask a wrong-folder bug entirely
-  (`2001-01-15` uploaded "successfully" to the wrong-but-real folder).
-- **`git checkout HEAD -- <file>` on `data/processing/*.json` right before
-  re-running `audio_process.py process`** feeds the resume-skip logic a
-  stale provenance file it has no way to know is wrong — it will honestly
-  report whatever `ver` that stale file says for any track it decides not
-  to re-render. If you must isolate an unrelated commit from a file that's
-  mid-edit, copy the working version aside first and restore it after,
-  don't `git checkout` and re-derive.
-- **Local `~/work/` staging can disappear mid-job for reasons outside this
-  session's own actions** (see the `2001-01-15` section) — nothing in this
-  conversation deleted it. Everything is recoverable if it happens
-  (deterministic reprocessing, source safely on Drive) but it cost real
-  time. Worth a heads-up to Rene; unclear if this is an environment policy
-  that could recur.
-- **A Drive `Processed/` file-count check can be satisfied by stale files
-  from a prior run of the *same* show** — always MD5-verify content after
-  any Drive backup, not just trust the count, especially on a show that
-  was already published once before (which is every reprocess by
-  definition).
-- Drive's API can **rate-limit a rapid sequence of `rclone lsf` calls and
-  return an empty/error result indistinguishable at a glance from "folder
-  is genuinely empty"** — one show (`4th-street-tavern-1999-05-01`) was
-  briefly misdiagnosed as missing its `Tracks/` folder entirely because of
-  this; re-checking individually (slower, `rclone lsjson`) caught it.
-  Don't trust a single rapid-fire loop's negative result for anything
-  irreversible.
+- **`home.css` and `site.css` are two independent token systems with the
+  same underlying colors but different CSS variable names** (`--panel` vs
+  `--surface`, `--ink` vs `--text`, `--ink-dim` vs `--muted`, `--hairline`
+  vs `--border`, `--accent-dim` vs `--accent-light`). Porting any
+  site.css-styled component into a home.css context (as happened with the
+  password modal this session) means manually remapping every token, not
+  copy-pasting the rule — get the mapping wrong and it silently falls back
+  to unstyled/inherited values rather than erroring.
+- **The static site generator (`build.py`) only ever writes files, it
+  never deletes ones a removed page generator used to write.** Retiring
+  `archive/index.html` from the build required an explicit `git rm` — the
+  stale file doesn't get cleaned up automatically just because
+  `write("archive/index.html", ...)` disappeared from `build.py`.
+- **Before deleting anything from a shared CSS file, grep for the class
+  name across every `sitegen/*.py` generator, not just the page you're
+  editing** — several classes removed this session (`.src-tag` was almost
+  one of them) are reused across `/search/`, `/updates/`, and elsewhere in
+  ways that aren't obvious from the page being retired.
+- **A component that gates behavior through shared, sitewide JS
+  (`player.js`'s password modal) can't be dropped into a page that doesn't
+  load that JS *and* doesn't have the CSS it expects** — both pieces have
+  to move together. Missing either one fails silently (no JS error, just
+  a broken-looking modal or a non-functional click), so it needs an actual
+  browser test, not just "the build didn't error."
+- **`npx playwright screenshot`** (CLI, no project install needed) is
+  enough for a single static screenshot; multi-step interaction (click,
+  sort, expand, check console errors, compare themes) needs a real script
+  — `npm install playwright --no-save` in a scratch dir + a `.mjs` file
+  worked fine here since Node/npx were already available in this
+  environment.
 
 ## Durable facts (don't undo)
-- **All artists → −20 LUFS, −1 dBTP ceiling. Linear normalization only —
-  never a limiter/compressor on the music itself** (applause-only limiting
-  on audience tapes is the one sanctioned exception). A −16 LUFS archive-
-  wide target was proposed and reviewed this session-adjacent — rejected:
-  raising the target doesn't make quiet tracks louder (the per-track "max
-  linear target" ceiling is fixed by the source audio, independent of the
-  requested target), it just pushes more tracks into the quieter
-  reduced-target bucket, making the archive *less* consistent, not more.
-  Already tested once for Mad Hannans specifically (2026-06-28) and
-  reverted for the same reason.
-- **Workflow v7: render is explicit `volume=<gain>dB`, not a second
-  loudnorm pass.** Never reintroduce a loudnorm-linear-mode render.
-- `gdrive:` = owner account `renedebos@hotmail` (5 TB). No
-  `--drive-shared-with-me` anywhere. `~/gdrive-mount` is a **local-only**
-  staging copy on this machine — never synced automatically in either
-  direction, always needs an explicit `rclone copy` push before Drive
-  actually has what's placed there. Distinct from `~/work/`, the
-  `publish_show.py` pipeline's own local staging dir (also never synced to
-  Drive, purely transient).
-- **Tag vocabulary is now 18 entries** (`story` and `traditional` retired
-  this session) — see `TAGS.md`. `traditional`-song filtering now lives on
-  the playlist's Songwriter facet, not a tag.
-- Engine: `audio_process.py` (diagnose/process/verify/status/versions/
-  version-map/history/plan). `/archive-data/` is the browsable,
-  whole-archive counterpart to `version-map` — check it before assuming a
-  show is fully caught up to the current engine (this is exactly how the
-  `2001-01-15` gap got noticed this session).
-- `publish_show.py prepare`/`publish` (re-run against an existing slug) is
-  the preferred way to reprocess an already-published show. Its automated
-  MD5 verify + Drive backup are necessary but **not sufficient** on their
-  own if a title got hand-corrected after `draft_tracks` ran — always
-  re-verify file paths/R2 folder names after any manual metadata edit, not
-  just trust the pipeline's own "0 mismatches."
+- **Three design systems, not two**: `home.css` (homepage — now also the
+  full show listing), `site.css` ("Hannan Classic" — every other generated
+  page), and `/process/`+`/manual/`'s own inline styles. See CLAUDE.md →
+  "Site Styling & Templates" for the full breakdown, kept current as of
+  this session.
+- **`/archive/` is retired as a URL** — permanently redirects to `/`.
+  Don't recreate it; any future archive-browsing feature belongs on the
+  homepage's existing sort/listing UI.
+- Audio-processing policy (−20 LUFS, linear-only normalization, workflow
+  v7, gdrive/R2 remote setup) is unchanged by this session — see CLAUDE.md
+  → "Publishing a Split Show" for the canonical, current version; not
+  restated here since nothing about it changed today.
 
 ## Reference
 Full runbook: `CLAUDE.md` → "Publishing a Split Show". Site templates/CSS
-source-vs-output layout: `CLAUDE.md` → "Site Styling & Templates". Owner's
-manual (all tools, all four workflow phases, full version history):
-`PUBLISHING.md` (also rendered at `/manual/` — remember to rebuild after
-editing it). Older phase-by-phase technical detail: `AUDIO_PROCESSING.md`.
-Playlist/player feature spec: `PLAYLIST FEATURE.md`. Tag vocabulary:
-`TAGS.md`.
+source-vs-output layout, including today's homepage/archive merge:
+`CLAUDE.md` → "Site Styling & Templates". Owner's manual (all tools, all
+four workflow phases, full version history): `PUBLISHING.md` (also
+rendered at `/manual/` — remember to rebuild after editing it). Older
+phase-by-phase technical detail: `AUDIO_PROCESSING.md`. Playlist/player
+feature spec: `PLAYLIST FEATURE.md`. Tag vocabulary: `TAGS.md`.
