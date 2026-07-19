@@ -13,12 +13,7 @@ from .fragments import *  # noqa: F401,F403
 def build_search_index():
     """Flat, denormalised index the /search/ page loads — one row per curated
     track plus one per show, with show fields resolved onto each track so a single
-    text search spans song / artist / venue / city / date / source / tags.
-    `songSlug` lets the page group a song's many performances into one result."""
-    song_of = {}
-    for s in collect_songs()[0]:
-        for o in s["occ"]:
-            song_of[(o["slug"], o["num"])] = s["slug"]
+    text search spans song / artist / venue / city / date / source / tags."""
     rows = []
     for show in PUBLIC_SHOWS:
         aname = artist_name(show["artist"])
@@ -47,7 +42,6 @@ def build_search_index():
             rows.append(dict(base, **{
                 "type": "track",
                 "song": t["title"],
-                "songSlug": song_of.get((show["slug"], t["num"])),
                 "artist": t.get("artist") or aname,
                 "songwriter": t.get("songwriter") or "",
                 "duration": t.get("duration") or "",
