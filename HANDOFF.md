@@ -1,5 +1,5 @@
 # Session Handoff — Hannan Recordings (renedebos.com)
-**Date:** 2026-07-19 · **Branch:** `main` — everything below marked ✅ is committed & pushed, deploy verified live. **`jerry-19-broadway-2001-01-15` is NOT shipped and has uncommitted, currently-broken working-tree state — read its section before touching that show.**
+**Date:** 2026-07-19 · **Branch:** `main` — everything below marked ✅ is committed & pushed, deploy verified live, including `jerry-19-broadway-2001-01-15` (see resolution below — the show that was broken/uncommitted at the end of the prior session is now fully shipped and cleaned up).
 
 > Long session: pushed a batch of accumulated metadata-editor edits, retired
 > two tag-vocabulary entries, added a playlist songwriter filter and
@@ -147,11 +147,37 @@ explicitly told not to build it.** Nothing from the mockup was ported into
 `search.js`/`site.css`. Don't re-propose the same direction without new
 input from Rene on what specifically didn't work.
 
-## ⚠️ NOT done — `jerry-19-broadway-2001-01-15` is broken in the working tree, uncommitted
+## ✅ Resolved this follow-up session — `jerry-19-broadway-2001-01-15`
 
-**Do not commit `data/recordings.json` as it currently sits without fixing
-this first.** Audio is genuinely fine on R2 (verified, real v7 render) —
-the problem is entirely in the catalog data pointing at the wrong place.
+Picked up exactly where the prior session's broken/uncommitted state left
+off (commits `9b5e02a`, `1e7d572`). All 9 steps of the resume plan below
+completed in order: renamed the 4 disputed tracks' local `out/` files and
+R2 objects to the corrected titles, deleted the 4 stale first-draft-named
+R2 objects, re-ran `draft_tracks.py` (now correctly derives both titles
+and the `...SBD` R2 paths), trimmed 3 reintroduced trailing-space titles,
+regenerated peaks, `audio_process.py verify` → **0/31 mismatches**.
+
+Along the way, caught and fixed one more genuine regression the rebuild
+surfaced: `sean-19-broadway-unknown` track 11's `artist` override field
+had reverted to a stale typo (`"erry Hannan & Sean Hannan"`, missing the
+leading J) that HEAD already had fixed — likely fallout from the same
+messy pre-crash working-tree state. Restored to match HEAD.
+
+The Drive `Processed/` backup was also a mess (70 files: 62 correct + 8
+stale-named leftovers from an interrupted mid-session attempt) — purged
+and re-copied clean from local `out/` (hit the known `rclone`-to-`gdrive:`
+stall gotcha partway through; finished with a retry loop), then
+MD5-verified all 63 files match. Deleted the now-fully-orphaned no-`SBD`
+R2 folder (66 stale v1 files, confirmed unreferenced first). Added the
+one consolidated Updates note Rene asked for, covering all 4 reprocessed
+shows (`1999-06-21`, `1999-05-10`, `1999-07-19`, `2001-01-15`) as a single
+site-wide entry rather than four per-show ones. Ran
+`publish_show.py cleanup` — freed 2.21 GB, all safety checks (live page,
+R2 counts, Drive backup count) passed.
+
+**Original bug writeup, for reference (now fixed):**
+Audio was genuinely fine on R2 (verified, real v7 render) —
+the problem was entirely in the catalog data pointing at the wrong place.
 
 **What happened:** Splice.flac (a stray point-label artifact, confirmed by
 Rene as safe to ignore) got removed from both local staging and the real
@@ -190,39 +216,9 @@ byte-identical — deterministic render, confirmed by matching MD5s). Then a
   historical `git diff` reread with fresh eyes, not more guessing under
   time pressure.
 
-**To resume, in order:**
-1. Rename the 4 disputed tracks' files in `~/work/jerry-19-broadway-2001-01-15/out/`
-   (both `.flac` and `.mp3`) to the corrected titles Rene chose (Highway
-   Patrolman / Everything Reminds Me of You / The Barney Stone Blues /
-   Woman) — matching filenames, not just catalog text.
-2. Re-run `python3 scripts/draft_tracks.py jerry-19-broadway-2001-01-15` —
-   should now derive both correct titles *and* correct (`...SBD`) R2 paths
-   in one pass. Re-run the title/songwriter/tags diff-against-HEAD check
-   (see `CLAUDE.md`-adjacent habit this session used repeatedly) to confirm
-   clean — trim the trailing-space titles on tracks 11/21/22 again if
-   `draft_tracks` reintroduces them (it will, they come from source
-   filenames).
-3. Re-upload the 4 renamed tracks to `FLAC/…SBD/` and `MP3/…SBD/`,
-   deleting the stale first-draft-named objects — same pattern as the
-   `Angel from Montgomery`/`Hear Me` fixes earlier this session.
-4. `gen_peaks.py`, then `audio_process.py verify` — **must show 0/31
-   mismatches this time**; if not, stop and re-diagnose, don't force it.
-5. Re-run the Drive `Processed/` backup (the one that failed when
-   `~/work/` vanished) and content-verify (MD5, not just count — the
-   folder already has 62 stale files from the original v1 publish, so a
-   bare count check would false-pass).
-6. Once verified clean end to end: `build.py`, commit, push, spot-check
-   live.
-7. Decide what to do with the now-fully-orphaned **no-`SBD`** R2 folder
-   (33 old v1 files) — safe to delete once `recordings.json` is confirmed
-   to no longer reference it anywhere, but don't delete before that's
-   certain.
-8. Write the **one consolidated Updates-page note** covering all 4
-   reprocessed shows (`1999-06-21`, `1999-05-10`, `1999-07-19`,
-   `2001-01-15`) — Rene asked for a summary version, not per-show entries;
-   still not written since `2001-01-15` isn't done.
-9. Run `publish_show.py cleanup` for the shows once each is fully verified
-   live (frees local disk, double-checks live+R2+Drive first).
+*(Root cause note above is preserved for reference; the fix itself is
+summarized at the top of this section — see "✅ Resolved this follow-up
+session".)*
 
 ## Gotchas learned this session
 - **A fresh hand-edit re-export can silently disagree with the established
