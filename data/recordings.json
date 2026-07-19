@@ -11745,6 +11745,11 @@
   ],
   "updates": [
     {
+      "date": "2026-07-19",
+      "ts": "2026-07-19T08:20:20.748430",
+      "text": "Brought four more pre-v4 shows up to the current processing engine (v7) — Jerry Hannan at 19 Broadway on 1999-05-10, 1999-06-21, 1999-07-19, and 2001-01-15 — replacing early loudnorm-based passes that had occasionally fallen back to dynamic-mode compression instead of true linear gain. All four re-split from fresh hand-edit exports and re-verified against R2."
+    },
+    {
       "date": "2026-07-18",
       "ts": "2026-07-18T17:16:26.161114",
       "slug": "jerry-19-broadway-1999-06-21",
