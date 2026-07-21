@@ -1,168 +1,117 @@
 # Session Handoff — Hannan Recordings (renedebos.com)
-**Date:** 2026-07-19 · **Branch:** `main` — everything below is committed & pushed, deploy verified live on renedebos.com itself (not just green Action).
+**Date:** 2026-07-22 · **Branch:** `main` — everything below is committed & pushed, deploy verified live on renedebos.com itself (not just green Action).
 
-> Front-end/architecture session, no audio processing. Rene noted the
-> archive is now fully split (every show track-listed) — which meant the
-> homepage's "Recently Added" 6-card teaser had lost its reason to exist,
-> since new shows will land rarely from here on. Talked through the
-> tradeoffs, built an interactive Artifact mockup, iterated on it live with
-> Rene through several rounds of feedback, then implemented the approved
-> design for real: merged the old `/archive/` page into the homepage as a
-> single sortable show listing.
+> Audio-processing session: reprocessed one show (`sean-19-broadway-unknown`)
+> to the current engine, following the full publish runbook end to end,
+> including two mid-run snags that needed fixing before it could ship clean.
 
 ## ✅ Done this session
 
-### Homepage/Archive merge (commit `fc2f280`)
-The core change: `/archive/` no longer exists as a separate page. The
-homepage (`/`) now shows the full 30-show catalog directly below the hero,
-sortable by **date, artist, or venue** (venue is new — the old archive page
-only had artist/date). `/archive/` 301-redirects to `/` (`site_worker.js`
-`LEGACY_REDIRECTS`) for existing bookmarks/search-index entries; dropped
-from nav everywhere via `SITE_PAGES` in `scripts/sitegen/fragments.py`.
+### Reprocessed `sean-19-broadway-unknown` to workflow v7 (commits `86573ea`, `8bf72c2`)
+An undated Sean Hannan show at 19 Broadway, previously normalized with an
+older Audacity −16 LUFS pass (workflow v2, from 2026-06-30). Rene had hand-
+edited a fresh set of tracks with light noise reduction (−6 dB reduction,
+sensitivity 5) sitting in the Drive Work Folder's `Tracks Noise Reduction/`
+export but no `notes.txt` — I wrote one with the NR settings and uploaded it
+to Drive so `publish_show.py prepare` would pick it up as `pre_edits`
+provenance, rather than falling back to the generic "noise reduction
+(Audacity, whole show)" string.
 
-**Design, arrived at through several mockup rounds with Rene:**
-- Kept the homepage's own "tape deck" look (`home.css`), not `site.css` —
-  ported the archive's *sorting capability*, not its visual system.
-- Default view is a **9-card collapsed preview**, not the full 30 — but
-  every group actually represented in those 9 cards gets its real header
-  and true count shown up front (e.g. "Jerry Hannan · 16 SHOWS"), not just
-  after clicking "Show all N shows". This took two iterations to get
-  right: first attempt showed all headers for every group regardless of
-  whether their cards were visible (rejected — too much upfront), second
-  attempt dropped headers entirely from the collapsed view (rejected —
-  Rene specifically wanted the count visible without expanding). Final:
-  walk groups in original order, stop adding groups once the 9-card budget
-  is hit, only show headers for groups actually contributing a card.
-- Cards got smaller: dropped the "added" date (dead weight once "recently
-  added" stopped being the framing) and the artist tag (redundant — the
-  card's own `<h3>` already says the artist name). Source (AUD/SBD) and
-  NR/PE pre-edit badges shrunk from full pills to small inline badges.
-  Highlight star moved inline with the title instead of a separate tag row.
-  Grid went from 3 to 4 columns on desktop as a result.
-- **Why/About stays below the listing, not above** — deliberately not
-  moved despite Rene questioning it once mobile scroll depth came up (a
-  30-show single-column mobile list is a long scroll to reach it). Fixed
-  the actual problem (scroll depth) with the 9-card collapse instead of
-  relocating the section — the hero already orients a first-time visitor,
-  and most visits (especially repeat ones, likely common given the
-  personal nature of this project) just want the shows.
-- Sort choice persists across visits via localStorage (`homeSort` key),
-  same pattern the old archive page's toggle used.
-- Legend (NR/PE/Highlight explainer) and the old subtitle sentence under
-  "Every Show" were both explicitly cut on Rene's request mid-review.
+**Diagnose came back clean** — 18 tracks, no clipping/drops/clicks. The only
+flags were auto-handled types (`PRED_TP` → engine used each track's own
+reduced linear target automatically; `HIGH_LRA` → informational, the
+recording's own dynamics; `BANDWIDTH` → audience mic doesn't fill above
+~20 kHz, expected for this source) — nothing needed to go back to Rene in
+Audacity.
 
-**Technical shape:** rendered client-side by new `scripts/home.js` from a
-new `assets/home-shows.json` (via `build_home_shows()` in
-`scripts/sitegen/feeds.py`) — same pattern `/search/` and `/playlist/`
-already use, not server-prerendered toggle blocks like the old archive
-page. Chosen deliberately over prerendering every sort/collapsed/expanded
-combination server-side.
+**Two snags hit during publish, both resolved:**
+1. **R2 already held 3 stale FLACs from the old 2026-07-10 run** with
+   slightly different filenames than today's fresh export (capitalization/
+   wording drift in Rene's track exports: `Don't` vs `don't`, `Angel from
+   Montgomery` vs `Angel of Montgomery`, `Ode to` vs `Ode To`). The
+   `R2 FLAC incomplete: 21/18` count-mismatch safety check in
+   `publish_show.py` caught it correctly — it isn't a bug, it's the check
+   working as designed. `rclone delete` is hard-blocked for the agent by a
+   `deny` rule in `.claude/settings.local.json` (guarding against exactly
+   this kind of destructive R2 action), so Rene ran the 3 deletes himself.
+   Same issue recurred on the MP3 side (old run's MP3s were still under the
+   old names) — Rene deleted those too, then `publish` was re-run and
+   resumed instantly from cached per-track output (the engine skips tracks
+   whose processed output already exists).
+2. **Two tracks in the fresh export used slightly different titles than the
+   archive's established convention** for those songs (confirmed by
+   grepping every other appearance of "Angel from Montgomery" and "Don't
+   Think Twice It's All Right" across ~10 other shows) — fixed the `title`
+   field in `recordings.json` for track 3 and track 14 without touching the
+   already-uploaded R2 filenames (title display is independent of the R2
+   key). This is the same class of issue Week eleven's history entry
+   (jerry-19-broadway-1999-06-21) already documented — a fresh hand-edit
+   pass drifting from the established title, restored rather than
+   overwritten.
 
-**The "download the complete archive" line** (the old archive page's only
-download affordance) moved to the homepage — it would otherwise have had
-nowhere to live. This required **porting the password-modal/toast/
-download-button CSS from `site.css` into `home.css`** (`.pw-overlay`,
-`.pw-modal`, `.dl-toast`, `.download-btn`, translated to `home.css`'s own
-token names) and adding `<script src="/assets/player.js">` to the
-homepage — `player.js`'s download-gating JS is shared sitewide and expects
-those exact class names to exist wherever a `.download-btn` renders;
-without the CSS the modal would appear completely unstyled. Verified
-working end-to-end with a real Playwright click-through (temporarily faked
-`data/archive_zip_meta.json`, screenshotted the modal, then reverted).
+**Full runbook completed:** R2 upload MD5-verified (0 mismatches), Drive
+`Processed/` backup confirmed 36/36 files, `draft_tracks.py` flags reviewed
+(2 title fixes above; "Flag Decal" — genuinely new to the archive — and the
+two "prior appearances disagree" flags on Long Black Veil/Elephant Shoes
+were fine as auto-drafted), manual Updates note added, Week twelve History
+entry added, `build.py --check` clean (no orphan pages), `status --write`
+run and rebuilt, committed, pushed, GitHub Action green, spot-checked the
+live show page/song pages/updates feed/download-zip metadata directly on
+renedebos.com.
 
-**Cleanup:** removed now-dead code — `build_archive`, `artist_sections`,
-`date_sorted_list`, `show_row`, `_home_show_card`, `show_add_button` (Python)
-— and the matching ~230 lines of now-unreferenced CSS in `site.css`
-(`.show-row`, `.archive-legend`, `.view-toggle`, etc., checked one by one
-for cross-page reuse before deleting — kept `.src-tag` since `/search/`
-and `/updates/` still use it). Deleted the stale tracked `archive/index.html`
-file itself (the generator only ever writes, never deletes — it would have
-sat there stale otherwise). Fixed 3 now-stale `/archive/` references in
-CLAUDE.md's own docs (design-system count, two runbook mentions).
-
-**Verification before pushing:** full local rebuild + `--check`, a
-Playwright smoke test (sort switching, expand button, light/dark theme,
-zero console errors) against a local server, then the same checks again
-against the live production URL after deploy — actual screenshots, not
-just "the Action went green."
-
-## ⚠️ Not done — known gaps, surfaced but not fixed
-
-1. **Lost feature: whole-show "add to playlist" button.** The old
-   `/archive/` row listing (`show_row`) had a `show_add_button` — select an
-   entire show's tracks for the playlist queue in one click. The card
-   design never had an equivalent and the approved mockup never included
-   one, so it's gone now. Flagged to Rene twice (once before building,
-   once after) — no decision yet on whether to add it back to the new card
-   design. `track-select.js` still has harmless dead `.show-add` selectors
-   (matches nothing now) — intentionally left alone rather than risk
-   editing a file shared across show/songs/playlist pages for a
-   zero-functional-impact cleanup.
-2. **Stale copy in `content/about.html`**, unrelated to this session's
-   code but now more obviously wrong given the framing change: "About This
-   Archive" still says *"This is very much a work in progress. I'm
-   steadily working through the show tapes — splitting them into
-   individual songs..."* — directly contradicts the premise that started
-   this whole session (splitting is done). Deliberately not rewritten —
-   it's Rene's narrative voice, not layout, and he writes his own blurbs
-   by convention. Sitting right next to the new lede ("Every show is
-   digitized, split into songs, and streamable") it reads inconsistently.
-3. **`about.html`'s first paragraph** (kept, unedited) also still opens
-   with the DAT-recorder/audio-quality note before the now-stale
-   "work in progress" paragraph — worth a full pass, not just deleting one
-   sentence, if Rene wants to fix this.
+### Cleanup: untracked two stray files (commit `8bf72c2`)
+The first commit used `git add -A` and accidentally swept in two
+pre-existing untracked files that had nothing to do with this session:
+`.claude/settings.json` and `codex-notes.md` (an external tool's
+architecture-review doc — see project memory `codex_notes_doc.md`). Caught
+it, `git rm --cached` both in a follow-up commit (kept on disk, just
+untracked) rather than amending the prior commit.
 
 ## Gotchas learned this session
-- **`home.css` and `site.css` are two independent token systems with the
-  same underlying colors but different CSS variable names** (`--panel` vs
-  `--surface`, `--ink` vs `--text`, `--ink-dim` vs `--muted`, `--hairline`
-  vs `--border`, `--accent-dim` vs `--accent-light`). Porting any
-  site.css-styled component into a home.css context (as happened with the
-  password modal this session) means manually remapping every token, not
-  copy-pasting the rule — get the mapping wrong and it silently falls back
-  to unstyled/inherited values rather than erroring.
-- **The static site generator (`build.py`) only ever writes files, it
-  never deletes ones a removed page generator used to write.** Retiring
-  `archive/index.html` from the build required an explicit `git rm` — the
-  stale file doesn't get cleaned up automatically just because
-  `write("archive/index.html", ...)` disappeared from `build.py`.
-- **Before deleting anything from a shared CSS file, grep for the class
-  name across every `sitegen/*.py` generator, not just the page you're
-  editing** — several classes removed this session (`.src-tag` was almost
-  one of them) are reused across `/search/`, `/updates/`, and elsewhere in
-  ways that aren't obvious from the page being retired.
-- **A component that gates behavior through shared, sitewide JS
-  (`player.js`'s password modal) can't be dropped into a page that doesn't
-  load that JS *and* doesn't have the CSS it expects** — both pieces have
-  to move together. Missing either one fails silently (no JS error, just
-  a broken-looking modal or a non-functional click), so it needs an actual
-  browser test, not just "the build didn't error."
-- **`npx playwright screenshot`** (CLI, no project install needed) is
-  enough for a single static screenshot; multi-step interaction (click,
-  sort, expand, check console errors, compare themes) needs a real script
-  — `npm install playwright --no-save` in a scratch dir + a `.mjs` file
-  worked fine here since Node/npx were already available in this
-  environment.
+- **`rclone delete`/`purge`/`sync`/`move` are hard-denied in
+  `.claude/settings.local.json`** — this is a deliberate guardrail, not a
+  per-call prompt; no amount of retrying or user confirmation via
+  AskUserQuestion bypasses a `deny` rule. When a reprocess needs a stale R2
+  object removed, hand the exact `rclone delete` command to Rene to run
+  himself.
+- **`publish_show.py`'s `R2 {FLAC,MP3} incomplete: N/expected` check is a
+  real safety net, not a flaky failure** — it fires whenever Rene's fresh
+  track export uses different filenames than a prior run for the same
+  track number (capitalization, wording), leaving old+new versions
+  side-by-side in R2. Don't just re-run and hope; find the stale
+  old-dated files (`rclone lsl` shows mtimes) and remove them first, on
+  **both** the FLAC and MP3 sides — they don't necessarily go stale at the
+  same time (this show's MP3s were still 100% on the old names even after
+  the FLAC side was partly fixed).
+- **A show with no `date` (`"date": null`, "Unknown date" display) can't be
+  auto-located by `publish_show.py prepare`** — `find_work_folder()`
+  matches Drive Work Folder names by the show's `date` field, so it always
+  needs an explicit `--folder "<exact Drive folder name>"` for this kind of
+  show.
+- **A missing `notes.txt` for a noise-reduced show's pre-edits provenance
+  can be supplied by writing and uploading one yourself** (`rclone copy` a
+  small text file into the Drive `Tracks Noise Reduction/` folder) when
+  Rene tells you the NR settings directly instead of leaving them in the
+  folder — `find_tracks_source()` reads it the same way either way.
+- **`git add -A` before a runbook commit needs a `git status` sanity check
+  first** if there's any chance of stray untracked files in the repo root —
+  it will happily stage and push anything sitting there, not just the
+  files the current task touched.
 
 ## Durable facts (don't undo)
-- **Three design systems, not two**: `home.css` (homepage — now also the
-  full show listing), `site.css` ("Hannan Classic" — every other generated
-  page), and `/process/`+`/manual/`'s own inline styles. See CLAUDE.md →
-  "Site Styling & Templates" for the full breakdown, kept current as of
-  this session.
-- **`/archive/` is retired as a URL** — permanently redirects to `/`.
-  Don't recreate it; any future archive-browsing feature belongs on the
-  homepage's existing sort/listing UI.
 - Audio-processing policy (−20 LUFS, linear-only normalization, workflow
   v7, gdrive/R2 remote setup) is unchanged by this session — see CLAUDE.md
-  → "Publishing a Split Show" for the canonical, current version; not
-  restated here since nothing about it changed today.
+  → "Publishing a Split Show" for the canonical, current version.
+- `sean-19-broadway-unknown` is now fully on workflow v7 — no longer a
+  version-map outlier.
+- `.claude/settings.local.json` has hard `deny` rules for
+  `rclone delete/purge/sync/move` and `rm -rf/-r` — intentional guardrails,
+  not something to work around by retrying or asking the user to "grant
+  permission" (there's no session-level override for a `deny` rule; the
+  action has to be done by Rene directly, or the rule edited deliberately).
 
 ## Reference
-Full runbook: `CLAUDE.md` → "Publishing a Split Show". Site templates/CSS
-source-vs-output layout, including today's homepage/archive merge:
-`CLAUDE.md` → "Site Styling & Templates". Owner's manual (all tools, all
-four workflow phases, full version history): `PUBLISHING.md` (also
-rendered at `/manual/` — remember to rebuild after editing it). Older
-phase-by-phase technical detail: `AUDIO_PROCESSING.md`. Playlist/player
-feature spec: `PLAYLIST FEATURE.md`. Tag vocabulary: `TAGS.md`.
+Full runbook: `CLAUDE.md` → "Publishing a Split Show". Owner's manual (all
+tools, all four workflow phases, full version history): `PUBLISHING.md`
+(also rendered at `/manual/`). Older phase-by-phase technical detail:
+`AUDIO_PROCESSING.md`. Tag vocabulary: `TAGS.md`.
