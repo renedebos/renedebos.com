@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Re-normalized all 18 tracks to −20 LUFS on the current audio engineering workflow, replac…</title>
+    <link>https://renedebos.com/shows/sean-19-broadway-unknown/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-22-sean-19-broadway-unknown</guid>
+    <pubDate>Wed, 22 Jul 2026 00:00:00 +0000</pubDate>
+    <description>Re-normalized all 18 tracks to −20 LUFS on the current audio engineering workflow, replacing an older processing pass; also corrected track 3's title to "Don't Think Twice It's All Right" and track 14's to "Angel from Montgomery," using the automated audio engineering workflow with ffmpeg</description>
+  </item>
+  <item>
     <title>Brought four more pre-v4 shows up to the current processing engine (v7) — Jerry Hannan at…</title>
     <link>https://renedebos.com/updates/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-19-site</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-29-mad-sweetwater-2000-10-17</guid>
     <pubDate>Mon, 29 Jun 2026 08:00:00 +0000</pubDate>
     <description>Loudness-normalized all 24 tracks to −20 LUFS for an even, comfortable listening level consistent with the rest of the archive, using the automated audio engineering workflow with ffmpeg</description>
-  </item>
-  <item>
-    <title>Loudness-normalized all 21 tracks to −20 LUFS for an even, comfortable listening level co…</title>
-    <link>https://renedebos.com/shows/mad-sweetwater-2000-02-17/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-28-mad-sweetwater-2000-02-17</guid>
-    <pubDate>Sun, 28 Jun 2026 23:55:00 +0000</pubDate>
-    <description>Loudness-normalized all 21 tracks to −20 LUFS for an even, comfortable listening level consistent with the rest of the archive, using the automated audio engineering workflow with ffmpeg</description>
   </item>
 </channel>
 </rss>

@@ -7657,7 +7657,7 @@
           "num": 1,
           "title": "Woman",
           "songwriter": "Jerry Hannan & Sean Hannan",
-          "duration": "2:52",
+          "duration": "2:55",
           "size_mb": 7,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/01 Woman.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/01 Woman.flac",
@@ -7672,10 +7672,10 @@
           "title": "Long Black Veil",
           "songwriter": "Lefty Frizzell",
           "duration": "2:42",
-          "size_mb": 6,
+          "size_mb": 7,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/02 Long Black Veil.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/02 Long Black Veil.flac",
-          "flac_size_mb": 30,
+          "flac_size_mb": 31,
           "processed": true,
           "tags": [
             "cover",
@@ -7685,13 +7685,13 @@
         },
         {
           "num": 3,
-          "title": "Don't Think Twice It's Alright",
+          "title": "Don't Think Twice It's All Right",
           "songwriter": "Bob Dylan",
-          "duration": "3:51",
+          "duration": "3:34",
           "size_mb": 9,
-          "file": "MP3/SeanHannan - 19 Broadway unknown date/03 Don't Think Twice It's Alright.mp3",
-          "flac": "FLAC/SeanHannan - 19 Broadway unknown date/03 Don't Think Twice It's Alright.flac",
-          "flac_size_mb": 41,
+          "file": "MP3/SeanHannan - 19 Broadway unknown date/03 don't Think Twice It's Alright.mp3",
+          "flac": "FLAC/SeanHannan - 19 Broadway unknown date/03 don't Think Twice It's Alright.flac",
+          "flac_size_mb": 37,
           "processed": true,
           "tags": [
             "cover",
@@ -7702,7 +7702,7 @@
           "num": 4,
           "title": "I Thought I Was You",
           "songwriter": "Jerry Hannan & Sean Hannan",
-          "duration": "4:10",
+          "duration": "4:09",
           "size_mb": 10,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/04 I Thought I Was You.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/04 I Thought I Was You.flac",
@@ -7721,7 +7721,7 @@
           "size_mb": 6,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/05 Gold's Gym Guy.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/05 Gold's Gym Guy.flac",
-          "flac_size_mb": 28,
+          "flac_size_mb": 29,
           "processed": true,
           "tags": [
             "cover",
@@ -7733,7 +7733,7 @@
           "title": "The German Clockwinder",
           "songwriter": "Traditional",
           "duration": "2:43",
-          "size_mb": 6,
+          "size_mb": 7,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/06 The German Clockwinder.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/06 The German Clockwinder.flac",
           "flac_size_mb": 30,
@@ -7747,11 +7747,11 @@
           "num": 7,
           "title": "Model Family Man",
           "songwriter": "Paddy Nash",
-          "duration": "3:39",
-          "size_mb": 8,
+          "duration": "3:43",
+          "size_mb": 9,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/07 Model Family Man.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/07 Model Family Man.flac",
-          "flac_size_mb": 40,
+          "flac_size_mb": 42,
           "processed": true,
           "tags": [
             "cover"
@@ -7762,10 +7762,10 @@
           "title": "Flag Decal",
           "songwriter": "John Prine",
           "duration": "3:33",
-          "size_mb": 8,
+          "size_mb": 9,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/08 Flag Decal.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/08 Flag Decal.flac",
-          "flac_size_mb": 39,
+          "flac_size_mb": 40,
           "processed": true,
           "tags": [
             "cover",
@@ -7781,7 +7781,7 @@
           "size_mb": 8,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/09 Galway Shawl.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/09 Galway Shawl.flac",
-          "flac_size_mb": 37,
+          "flac_size_mb": 38,
           "processed": true,
           "tags": [
             "irish",
@@ -7792,16 +7792,14 @@
           "num": 10,
           "title": "The Grey Funnel Line",
           "songwriter": "Traditional",
-          "duration": "4:26",
-          "size_mb": 10,
+          "duration": "4:23",
+          "size_mb": 11,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/10 The Grey Funnel Line.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/10 The Grey Funnel Line.flac",
           "flac_size_mb": 50,
           "processed": true,
           "tags": [
-            "folk",
-            "ballad",
-            "guest"
+            "irish"
           ],
           "artist": "Jerry Hannan & Sean Hannan"
         },
@@ -7809,15 +7807,14 @@
           "num": 11,
           "title": "Rugburns",
           "songwriter": "Jerry Hannan & Sean Hannan",
-          "duration": "5:11",
+          "duration": "5:09",
           "size_mb": 12,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/11 Rugburns.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/11 Rugburns.flac",
-          "flac_size_mb": 57,
+          "flac_size_mb": 59,
           "processed": true,
           "tags": [
-            "original",
-            "guest"
+            "original"
           ],
           "artist": "Jerry Hannan & Sean Hannan"
         },
@@ -7825,15 +7822,14 @@
           "num": 12,
           "title": "Elephant Shoes",
           "songwriter": "Jerry Hannan & Sean Hannan",
-          "duration": "3:38",
-          "size_mb": 8,
+          "duration": "3:37",
+          "size_mb": 9,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/12 Elephant Shoes.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/12 Elephant Shoes.flac",
-          "flac_size_mb": 40,
+          "flac_size_mb": 39,
           "processed": true,
           "tags": [
-            "original",
-            "guest"
+            "original"
           ],
           "artist": "Jerry Hannan & Sean Hannan"
         },
@@ -7846,7 +7842,7 @@
           "size_mb": 7,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/13 Daddy.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/13 Daddy.flac",
-          "flac_size_mb": 32,
+          "flac_size_mb": 33,
           "processed": true,
           "tags": [
             "cover",
@@ -7859,9 +7855,9 @@
           "songwriter": "John Prine",
           "artist": "Kelly Peterson",
           "duration": "4:27",
-          "size_mb": 10,
-          "file": "MP3/SeanHannan - 19 Broadway unknown date/14 Angel from Montgomery.mp3",
-          "flac": "FLAC/SeanHannan - 19 Broadway unknown date/14 Angel from Montgomery.flac",
+          "size_mb": 11,
+          "file": "MP3/SeanHannan - 19 Broadway unknown date/14 Angel of Montgomery.mp3",
+          "flac": "FLAC/SeanHannan - 19 Broadway unknown date/14 Angel of Montgomery.flac",
           "flac_size_mb": 49,
           "processed": true,
           "tags": [
@@ -7879,7 +7875,7 @@
           "size_mb": 7,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/15 The Black Velvet Band.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/15 The Black Velvet Band.flac",
-          "flac_size_mb": 32,
+          "flac_size_mb": 33,
           "processed": true,
           "tags": [
             "irish",
@@ -7903,14 +7899,15 @@
         },
         {
           "num": 17,
-          "title": "Ode to Biddy McGee",
+          "title": "Ode To Biddy McGee",
           "songwriter": "Traditional",
-          "duration": "2:53",
+          "duration": "2:49",
           "size_mb": 7,
-          "file": "MP3/SeanHannan - 19 Broadway unknown date/17 Ode to Biddy McGee.mp3",
-          "flac": "FLAC/SeanHannan - 19 Broadway unknown date/17 Ode to Biddy McGee.flac",
+          "file": "MP3/SeanHannan - 19 Broadway unknown date/17 Ode To Biddy McGee.mp3",
+          "flac": "FLAC/SeanHannan - 19 Broadway unknown date/17 Ode To Biddy McGee.flac",
           "flac_size_mb": 32,
-          "processed": true
+          "processed": true,
+          "tags": []
         },
         {
           "num": 18,
@@ -12090,6 +12087,13 @@
       "slug": "sean-19-broadway-2000-01-24",
       "report": true,
       "text": "Re-normalized all 31 tracks to −20 LUFS on the current audio engineering workflow, replacing an older processing pass, using the automated audio engineering workflow with ffmpeg"
+    },
+    {
+      "date": "2026-07-22",
+      "ts": "2026-07-22T00:00:00",
+      "slug": "sean-19-broadway-unknown",
+      "report": true,
+      "text": "Re-normalized all 18 tracks to −20 LUFS on the current audio engineering workflow, replacing an older processing pass; also corrected track 3's title to \"Don't Think Twice It's All Right\" and track 14's to \"Angel from Montgomery,\" using the automated audio engineering workflow with ffmpeg"
     }
   ],
   "playlists": []
