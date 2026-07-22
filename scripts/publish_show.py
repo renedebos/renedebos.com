@@ -170,36 +170,53 @@ MANUAL_BACKUP_GRACE_SECONDS = 180
 MANUAL_BACKUP_POLL_SECONDS = 15
 
 
-def drive_backup(folder, out, n_expected, manual_first=False):
+def drive_backup_matches(out, dst):
+    """True iff every local FLAC/MP3 in `out` exists in Drive `dst` with a
+    matching hash, and processing_report.txt made it across. A count-only
+    check can't tell fresh output apart from stale same-named leftovers from
+    a prior run — `rclone check` compares content, so leftovers fail loudly
+    instead of silently satisfying a count."""
+    r = subprocess.run(
+        ["rclone", "check", out, dst,
+         "--include", "*.flac", "--include", "*.mp3", "--one-way"],
+        capture_output=True, text=True)
+    if r.returncode != 0:
+        return False
+    if os.path.exists(os.path.join(out, "processing_report.txt")):
+        return "processing_report.txt" in rclone_lsf(dst)
+    return True
+
+
+def drive_backup(folder, out, manual_first=False):
     dst = f"{DRIVE_WORK}/{folder}/Processed"
 
-    def have():
-        return len([f for f in rclone_lsf(dst)
-                    if f.lower().endswith((".flac", ".mp3"))])
+    if DRY:
+        return
 
-    if manual_first and not DRY:
+    if manual_first:
         print(f"\n[Drive backup] copy {out} -> '{dst}' yourself now if you want "
               f"— manual copy is often faster than rclone here. Waiting up to "
               f"{MANUAL_BACKUP_GRACE_SECONDS}s before falling back to rclone.")
         deadline = time.time() + MANUAL_BACKUP_GRACE_SECONDS
         while time.time() < deadline:
-            h = have()
-            print(f"  [waiting for manual copy] Drive Processed has {h}/{n_expected}")
-            if h >= n_expected:
+            if drive_backup_matches(out, dst):
                 return
+            print(f"  [waiting for manual copy] Drive Processed doesn't fully "
+                  f"match local out/ yet")
             time.sleep(MANUAL_BACKUP_POLL_SECONDS)
-        print("  no manual copy detected — falling back to rclone")
+        print("  no matching manual copy detected — falling back to rclone")
 
     for attempt in range(1, 21):
-        h = have()
-        print(f"  [backup attempt {attempt}] Drive Processed has {h}/{n_expected}")
-        if h >= n_expected or DRY:
+        if drive_backup_matches(out, dst):
             return
+        print(f"  [backup attempt {attempt}] Drive Processed doesn't fully "
+              f"match local out/ yet")
         run(["timeout", "1200", "rclone", "copy", out, dst,
              "--include", "*.flac", "--include", "*.mp3",
              "--include", "processing_report.txt", "--transfers", "4"])
         time.sleep(2)
-    raise SystemExit("Drive backup did not complete after 20 attempts")
+    raise SystemExit("Drive backup did not complete after 20 attempts "
+                     "(local out/ still doesn't match Drive Processed/ content)")
 
 
 def cmd_publish(args):
@@ -245,7 +262,7 @@ def cmd_publish(args):
         raise SystemExit("MD5 verify FAILED — do not ship")
 
     print("[6/7] Drive backup of processed files")
-    drive_backup(folder, out, 2 * n, manual_first=args.manual_drive_backup)
+    drive_backup(folder, out, manual_first=args.manual_drive_backup)
 
     print("[7/7] cleanup local tracks copy (out/ kept until the show is shipped)")
     if not DRY:
@@ -287,10 +304,13 @@ def cmd_cleanup(args):
             raise SystemExit(f"R2 {top} has {have}/{n} — refusing")
     st = state_path(args.slug)
     folder = json.load(open(st))["folder"] if os.path.exists(st) else r2dir
-    have = len([f for f in rclone_lsf(f"{DRIVE_WORK}/{folder}/Processed")
-                if f.lower().endswith((".flac", ".mp3"))])
-    if have < 2 * n:
-        raise SystemExit(f"Drive Processed has {have}/{2*n} — refusing")
+    out = os.path.join(WORK_ROOT, args.slug, "out")
+    dst = f"{DRIVE_WORK}/{folder}/Processed"
+    if os.path.isdir(out) and not drive_backup_matches(out, dst):
+        raise SystemExit(f"Drive Processed at {dst!r} doesn't fully match "
+                         f"local {out!r} by content — refusing (a count-only "
+                         "check can be fooled by stale same-named leftovers "
+                         "from a prior run)")
 
     freed = 0
     for d in (os.path.join(WORK_ROOT, args.slug),
