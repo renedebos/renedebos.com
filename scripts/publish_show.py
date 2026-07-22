@@ -25,6 +25,7 @@ import argparse
 import datetime
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -138,6 +139,49 @@ LABELS_NAG = ("⚠ labels.txt is MISSING from the Work Folder — the raw archiv
               "as labels.txt next to the whole-show WAV, then copy to Drive.")
 
 
+def parse_duration(s):
+    parts = [int(p) for p in s.split(":")]
+    secs = 0
+    for p in parts:
+        secs = secs * 60 + p
+    return secs
+
+
+def audio_duration_seconds(path):
+    r = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+         "-of", "csv=p=0", path], capture_output=True, text=True)
+    return float(r.stdout.strip()) if r.returncode == 0 and r.stdout.strip() else None
+
+
+DURATION_DROP_RATIO = 0.5  # flag a track that shrank to less than half its prior length
+
+
+def check_duration_regression(show, dest, files):
+    """A reprocess's fresh export replacing an already-published track that's
+    suddenly a fraction of its old length is very likely a bad/truncated
+    Audacity export, not a real edit — diagnose (loudness/clipping/clicks)
+    has no notion of 'is this the right length' and will pass it cleanly."""
+    old_tracks = show.get("tracks") or []
+    if not old_tracks:
+        return []  # first-time publish for this show — nothing to compare
+    old_by_num = {t["num"]: t.get("duration") for t in old_tracks if t.get("duration")}
+    problems = []
+    for f in sorted(files):
+        m = re.match(r"^(\d+)\s", f)
+        if not m:
+            continue
+        num = int(m.group(1))
+        old = old_by_num.get(num)
+        if not old:
+            continue
+        old_s = parse_duration(old)
+        new_s = audio_duration_seconds(os.path.join(dest, f))
+        if old_s and new_s is not None and new_s < old_s * DURATION_DROP_RATIO:
+            problems.append((num, f, old, new_s))
+    return problems
+
+
 def cmd_prepare(args):
     show = load_show(args.slug)
     folder = find_work_folder(show, args.folder)
@@ -151,6 +195,21 @@ def cmd_prepare(args):
 
     dest = os.path.join(WORK_ROOT, args.slug, "tracks")
     fetch_tracks(folder, sub, files, dest)
+
+    if not DRY:
+        problems = check_duration_regression(show, dest, files)
+        if problems:
+            print("\n⚠ DURATION REGRESSION — fresh export is far shorter than the "
+                  "currently-published track (likely a truncated/wrong Audacity "
+                  "export, not a real edit):")
+            for num, f, old, new_s in problems:
+                print(f"  track {num} {f!r}: was {old}, fresh export is only "
+                      f"{new_s:.1f}s")
+            if not args.allow_duration_drift:
+                raise SystemExit(
+                    "\nrefusing to proceed — re-export the track(s) above at full "
+                    "length, or pass --allow-duration-drift if this is a genuine "
+                    "intentional change (e.g. a real re-edit that trims the song)")
 
     print("\nrunning full diagnose …")
     run([sys.executable, os.path.join(ROOT, "scripts", "audio_process.py"),
@@ -336,6 +395,11 @@ def main():
                      help="publish: give a few minutes to manually copy out/ to "
                           "Drive Processed/ (often faster than rclone) before "
                           "falling back to the automated rclone copy")
+    ap.add_argument("--allow-duration-drift", action="store_true",
+                     help="prepare: proceed even though a fresh track export is "
+                          "far shorter than the currently-published version — "
+                          "only for a genuine intentional re-edit, not a suspected "
+                          "bad export")
     args = ap.parse_args()
     DRY = args.dry_run
     {"prepare": cmd_prepare, "publish": cmd_publish,
