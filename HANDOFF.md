@@ -1,153 +1,134 @@
 # Session Handoff — Hannan Recordings (renedebos.com)
-**Date:** 2026-07-23 · **Branch:** `main` — everything below is committed & pushed, deploy verified live on renedebos.com itself (not just green Action).
+**Date:** 2026-07-25 · **Branch:** `main` — everything below is committed & pushed, both deploys verified live on renedebos.com itself (not just green Action).
 
-> Reprocessed `mad-sweetwater-2000-02-17` to workflow v7 — a messier-than-usual
-> run that surfaced a real content defect (not just a title drift), a
-> duration-regression catch that worked as designed, and a stale-leftover
-> bug in `publish_show.py` itself (local `out/`, not just R2/Drive). Also
-> did a data-only triage of `mad-cafe-java-1999-09-09` as a dynamic-fallback
-> remediation candidate, and permanently unblocked `rclone delete` for the
-> agent.
+> No audio work this session. Rene brought in an external site-audit writeup
+> (weaknesses/improvements across search, caching, JSON payloads, CSP) and
+> asked for the two highest-ROI items. Verifying the audit's claims against
+> the live site first turned out to matter more than the fixes: **half of it
+> was wrong**, including the item billed as the biggest available win. Shipped
+> the part that was real (font caching) plus the one genuine defect
+> (`/search/` had no no-JS fallback), and closed out three other items as
+> non-problems without writing code for them.
 
 ## ✅ Done this session
 
-### Reprocessed `mad-sweetwater-2000-02-17` to workflow v7 (commit `5e08c0d`)
-Mad Hannans at the Sweetwater, previously on v2 processing (an old
-pre-linear-preserving pass). 21 tracks, standard fades/clip-fixes in
-Drive's `Tracks/` folder, `labels.txt` present.
+### Verified the audit against the live site before acting (do this first)
+The audit was confident and specific, and much of it did not survive a
+`curl -I` against renedebos.com. Worth recording because the same claims will
+resurface if another review runs over this repo:
 
-**Real content defect, not a title drift:** the first `Tracks/` folder
-Rene pointed at had track 14 exported as "There She Was" — but a
-2026-07-06 Updates note already on record explained this exact mislabel:
-it's actually "Butter," and back then the original transfer was missing
-its opening chords, fixed by swapping in a complete version. The fresh
-export's duration (3:02) was 25s shorter than the previously-published
-correct one (3:27) — a strong signal the *old broken* transfer had
-resurfaced in Drive, not the fix. Caught by cross-checking `git diff` on
-the duration before publishing, not by the automated duration-regression
-check (25s/12% shrink didn't cross its "under half" hard-stop threshold).
-Rene confirmed he'd pointed at the wrong `Tracks/` folder, fixed it, and
-a full redo (`prepare` → `publish`) picked up the corrected "Butter" file.
+- **"No cache-control headers; repeat visitors re-download 1.5 MB of JSON;
+  CSS/JS can be served stale."** Wrong on all three. Cloudflare's asset server
+  already returns `public, max-age=0, must-revalidate` **with working ETags**
+  on every asset — confirmed a real `304` on `search-index.json`. Repeat
+  visitors were already getting 304s, and `must-revalidate` makes staleness
+  impossible. The recommended fix (`max-age=31536000, immutable` on unhashed
+  filenames) would have been an actively harmful one-way door.
+- **"~1.46 MB of overlapping JSON."** True on disk, misleading on the wire —
+  `content-encoding: br` is on for all four JSON files, `site.css`, and
+  `/songs/`. That's ~300 KB actually transferred. Dropped the proposed
+  JSON-dedup refactor entirely.
+- **"`site.css` is 55 KB unminified, a minify pass is free."** Pointless once
+  Brotli is confirmed. Not done, deliberately.
+- **"Add `<noscript>` + preload to `/search/`."** This one was real — see below.
 
-**Duration-regression check did its job on the redo:** the corrected
-`Tracks/` folder's `prepare` run still had 4 tracks (15–18) truncated to
-under 10 seconds — `check_duration_regression()` (added last session)
-refused to proceed automatically, exactly as designed. Rene re-exported
-those four; second `prepare` came back clean.
+### Cache headers: fonts immutable, peaks for a day (commit `3817f48`)
+What was actually left after the above: not bytes, just the revalidation
+**round trip** on assets whose filename can't change meaning. Added to
+`_headers` (hand-maintained root file, not generated):
+- `/assets/fonts/*` → `max-age=31536000, immutable`. Google's content-hashed
+  woff2 names, ~10 fetches per page load on the text-rendering path. The real
+  win here, and a modest one.
+- `/assets/peaks/*` → `max-age=86400`, **not** immutable on purpose: a show
+  reprocess regenerates the peaks JSON under the same slug filename, and a
+  year-long cache would shadow it with no client-side purge.
+- `og.png` / `artwork.png` → one week.
+- CSS/JS/top-level JSON deliberately left on revalidation.
 
-**New bug found in `publish_show.py` itself — stale local `out/` isn't
-cleaned between retries.** Step 1 ("processing") skips re-encoding a
-track if its output file already exists in `~/work/<slug>/out/` — a
-speed optimization for resuming after a mid-publish failure. But it means
-files from an *aborted* run (e.g. the original broken "14 There She
-Was.flac", the typo'd "18 Angel from Montgomerey.flac") never get removed
-from `out/` even after the *source* is fixed and re-run. Every retry's
-`rclone copy out/ → R2` step re-uploads them right back to R2/Drive,
-even immediately after manually deleting them there — looked exactly
-like R2 list-consistency lag on first glance (deleted, confirmed clean,
-reappeared with identical original timestamps) until checking `out/`
-directly. Fixed by deleting the 4 stale files from local `out/`, not by
-chasing phantom R2 caching. **Not patched in the script — still a trap
-for the next mid-publish retry on any show.**
+Verified live: every path returns exactly the intended header, all 6 security
+headers still present, nothing regressed.
 
-**Old-run orphans also found in Drive `Processed/`,** separate from this
-session's mess: 6 files (3 track pairs) left over from the *original*
-2026-06-29 v2 publish under different track numbers than the current
-catalog (`18 Dysfunctional Guy`, `19 Baby`, `20 The Kiss - Da Da Da...`
-vs. today's correct `19`/`20`/`21`). Cleaned up alongside the session's
-own stale leftovers — `rclone check` now reports 0 differences, 42/42
-files.
+### `/search/` no-JS fallback, preload, skeleton (commit `9ec7e2a`)
+The one genuine defect in the audit. `/search/` was a 3 KB shell rendering
+nothing until `search.js` fetched and processed the index — crawlers saw an
+inert input and an empty page, and the homepage's `WebSite` schema advertises
+a `SearchAction` pointing straight at it (`index.html:21`).
+- `<noscript>` with an inline `<style>` hiding `#search-live` (so the dead
+  input and filter chips disappear rather than sitting there doing nothing),
+  plus prose pointing at `/songs/` and `/` — both genuinely server-rendered,
+  so it's a real fallback, not an apology.
+- `rel="preload" as="fetch" crossorigin` for the index.
+- `.sr-skeleton` placeholder rows sized to match `.sr` so the list doesn't
+  jump, with a `prefers-reduced-motion` opt-out.
+- `search.js`'s error path clears the skeleton (it would otherwise pulse
+  forever on a failed load) and offers the same two no-JS indexes.
 
-**Title drift, same pattern as `mad-sweetwater-2000-10-17` last session:**
-`draft_tracks.py` derives titles from the fresh export's filenames, which
-had drifted from archive convention on 3 tracks: "Hard Drinking " (trailing
-space), "I Need a Dream" (should be "I Need a Lover"), "DaDaDa" (should be
-"The Kiss / Da Da Da (Slave to an Angel)"). **Gotcha: these fixes got
-silently reverted twice** by subsequent `draft_tracks` runs during the
-redo cycle — each full `publish` re-invokes `draft_tracks`, which
-re-derives from filenames every time, clobbering any manual title edit
-made after a previous publish attempt. Titles weren't re-checked until
-right before the final commit, which is where the reverts were caught.
+Touched `scripts/sitegen/pages.py` (`build_search`), `scripts/site.css`,
+`scripts/search.js` — the sources, not the build outputs. `build.py --check`
+clean: 31 shows, 679 curated tracks, no orphan song pages.
 
-Full runbook completed: R2 21/21 FLAC+MP3 MD5-verified (0 mismatches),
-Drive `Processed/` content-verified (0 differences after orphan cleanup),
-Updates note + Week twelve History bullet added (extended from
-`mad-sweetwater-2000-10-17`'s entry into a two-show week), `build.py
---check` clean, committed, pushed, Action green, spot-checked the live
-show page, updates feed, and history page directly on renedebos.com.
-
-**Open item, not blocking:** track 14 "Butter"'s final duration (3:12)
-still doesn't exactly match the pre-session published value (3:27) — 15s
-closer than the broken version but not identical. Likely just a different
-fade/tail length in the fresh export; worth Rene giving it a listen to
-confirm the opening chords are there and nothing else got trimmed.
-
-### `mad-cafe-java-1999-09-09` — data-only triage, no action taken
-Rene asked whether this show (catalogued as artist **"mad"**, not
-"jerry" — despite being on a folder Rene remembered as Jerry's; setlist
-confirms Mad Hannans-era material) should be upgraded from workflow v1.
-Sidecar analysis: 16 of 21 tracks (76%) have output true peak pinned at
-≈−0.9 to −1.0 dBTP — the dynamic-fallback fingerprint validated against
-the definitive `jerry-cafe-java-1999-03-25` audit in the
-[[dynamic-fallback-remediation-roadmap]] memory. Presented reasons for
-and against; **Rene has not given a go-ahead** — this was analysis only,
-nothing pulled from Drive or touched in the repo.
-
-### Permanently unblocked `rclone delete` for the agent
-`.claude/settings.local.json`'s `permissions.deny` previously hard-blocked
-`rclone delete/purge/sync/move` (alongside `rm -rf`/`rm -r`). After this
-session's repeated stale-R2-object cleanups needed hand-holding Rene
-through the exact commands each time, Rene asked to lift the block.
-**Removed only `Bash(rclone delete:*)` from deny** — `purge`, `sync`, and
-`move` (higher blast radius, bulk/mirror operations) are still hard-blocked,
-as is `rm -rf`/`rm -r`. `rclone delete` now behaves like a normal
-risky-but-approvable command instead of a silent refusal.
+## ⚠️ Open item — needs a browser, couldn't verify here
+No browser on this machine, so the `/search/` markup and headers were verified
+but the page was **never watched running**. Two things worth a minute on the
+live page:
+1. **DevTools → Network on `/search/`: there must be exactly ONE
+   `search-index.json` request.** If there are two, the preload's `crossorigin`
+   isn't matching the fetch — drop the preload rather than double a 314 KB
+   download.
+2. **Disable JS and reload** — input and filter chips should vanish, leaving
+   the "needs JavaScript" line and the links.
 
 ## Gotchas learned this session
-- **`publish_show.py`'s local `out/` resume-cache isn't cleaned between
-  retries of the same show.** If an early attempt produces wrong-named or
-  broken files in `~/work/<slug>/out/`, deleting them from R2/Drive alone
-  doesn't fix anything — the next `publish` retry's upload step re-copies
-  everything currently sitting in `out/`, resurrecting the exact same
-  stale objects with the exact same content. Symptom looks identical to
-  R2 list-consistency lag (object reappears with unchanged original
-  timestamp) — check local `out/` before assuming it's a storage-layer
-  quirk. Fix: delete the stale files from local `out/` directly (plain
-  `rm`, no `-r`/`-f` needed on individual files).
-- **Every `publish` run re-invokes `draft_tracks.py`,** which re-derives
-  titles from the current export's filenames every time — not just on
-  first draft. A manual title fix applied to `recordings.json` after one
-  `publish` attempt will be silently overwritten if a later retry
-  (e.g. after fixing a stale-R2-object problem) re-runs `publish` and
-  therefore `draft_tracks` again. Re-check flagged titles right before
-  final commit, not just once mid-session.
-- **A duration-regression check with a "shrank to under half" threshold
-  won't catch every truncated re-export** — a 25s/12% shrink (Butter:
-  3:27 → 3:02) sailed through `check_duration_regression()` even though
-  it was the exact same class of bug (old broken transfer resurfacing)
-  the check was built for last session. Cross-checking `git diff` on a
-  track's duration against the pre-session published value is still
-  worth doing by hand when a title's history has a known "missing
-  content" precedent in the Updates feed.
+- **Verify an audit's claims against the live site before planning around
+  them.** A `curl -I` would have taken 30 seconds and would have prevented
+  presenting a wrong plan (and calling a non-existent problem "the single
+  biggest perf win available"). Run it *before* the plan, not after approval.
+- **`rel="preload" as="fetch"` needs `crossorigin` even same-origin.** Without
+  it the preload is a `no-cors` request that can't satisfy `fetch()`'s default
+  `cors` mode, so the browser downloads the file twice — worse than no preload.
+  Commented in place in `pages.py` so it doesn't get "cleaned up" later.
+- **Never put `Cache-Control` in `site_worker.js`'s `SECURITY_HEADERS`.** That
+  set is applied blanketly to every response via `secure()`, which would
+  clobber the per-path values from `_headers` and the 404's `no-store`.
+  Cache-Control belongs in `_headers` only — the "keep both in sync" comment
+  at `site_worker.js:36` is about the *security* headers, not this.
+- **Filename hashing is not the cheap win it looks like here.** Assets aren't
+  only referenced from the Python generators — the shipped JS fetches them by
+  literal path (`search.js`→`search-index.json`, `songs.js`→
+  `song-occurrences.json`, `archive-data.js`→`track-spec.json`, plus dynamic
+  `import()` of `wavesurfer.esm.js` and `client-zip.js`). Hashing needs either
+  a manifest (extra round trip before every data fetch) or build-time string
+  rewriting inside the JS. Not worth it while revalidation is working.
 
 ## Durable facts (don't undo)
-- `mad-sweetwater-2000-02-17` is now fully on workflow v7, R2/Drive both
-  content-verified (0 mismatches / 0 differences).
-- `Bash(rclone delete:*)` is no longer in `.claude/settings.local.json`'s
-  deny list — don't re-add it without Rene asking. `purge`/`sync`/`move`
-  remain denied; don't lift those without being asked.
-- `publish_show.py`'s local `out/` resume-skip logic (step 1) is a known
-  source of stale-file resurrection on any multi-attempt publish — not
-  yet patched in the script itself. When a show needs more than one
-  `publish` attempt, check `~/work/<slug>/out/` by eye for leftover
-  wrong-named files before retrying, not just R2/Drive.
-- `mad-cafe-java-1999-09-09` is a strong, data-backed candidate for the
-  [[dynamic-fallback-remediation-roadmap]] (76% of tracks affected) but
-  is **not approved to start** — analysis only, awaiting Rene's go-ahead,
-  same status as the roadmap's other 20 shows.
+- **Cloudflare already serves `public, max-age=0, must-revalidate` + ETags on
+  everything, and Brotli is on.** Don't re-open "add caching" or "the JSON is
+  too big" without re-measuring — both were checked 2026-07-25 and are fine.
+- `/assets/fonts/*` is `immutable` because the names are content hashes.
+  `/assets/peaks/*` is deliberately only a day — don't "upgrade" it to
+  immutable, reprocesses reuse the filename.
+- **CSP `script-src 'unsafe-inline'` is still open and known.** Real hardening,
+  but a much bigger job: inline bootstrap `<script>`s on every show page would
+  each need a nonce or hash. Not started, not scoped.
+- Carried forward, still true from 2026-07-23 and **not** addressed this
+  session:
+  - `publish_show.py`'s local `out/` resume-skip (step 1) still resurrects
+    stale files on any multi-attempt publish — not patched in the script.
+    Check `~/work/<slug>/out/` by eye before retrying, not just R2/Drive.
+  - Every `publish` re-invokes `draft_tracks.py`, which re-derives titles from
+    export filenames and silently clobbers manual title fixes. Re-check titles
+    right before final commit.
+  - `mad-cafe-java-1999-09-09` remains a strong data-backed candidate for the
+    [[dynamic-fallback-remediation-roadmap]] (76% of tracks showing the
+    dynamic-fallback fingerprint) but is **not approved to start**.
+  - `Bash(rclone delete:*)` stays out of `.claude/settings.local.json`'s deny
+    list; `purge`/`sync`/`move` remain denied.
+  - `mad-sweetwater-2000-02-17` track 14 "Butter" (3:12 vs. pre-session 3:27)
+    still worth a listen to confirm the opening chords survived.
 
 ## Reference
 Full runbook: `CLAUDE.md` → "Publishing a Split Show". Owner's manual (all
 tools, all four workflow phases, full version history): `PUBLISHING.md`
 (also rendered at `/manual/`). Older phase-by-phase technical detail:
-`AUDIO_PROCESSING.md`. Tag vocabulary: `TAGS.md`.
+`AUDIO_PROCESSING.md`. Tag vocabulary: `TAGS.md`. Site styling systems and
+build-output rules: `CLAUDE.md` → "Site Styling & Templates" / "Known Gotchas".
