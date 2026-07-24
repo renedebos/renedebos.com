@@ -171,5 +171,12 @@
       if (params.get("q")) qEl.value = params.get("q");
       run();
     })
-    .catch(function (e) { statusEl.textContent = "Could not load the search index: " + e; });
+    .catch(function (e) {
+      // Clear the loading skeleton — otherwise it pulses forever on a failure —
+      // and route to the server-rendered indexes, which need no JS at all.
+      resultsEl.innerHTML = "";
+      statusEl.innerHTML = "Could not load the search index (" + esc(String(e))
+        + '). You can still browse the <a href="/songs/">Songs index</a> or the '
+        + '<a href="/">list of shows</a>.';
+    });
 })();

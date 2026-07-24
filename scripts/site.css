@@ -347,6 +347,24 @@ main {
 .search-results { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--player-bg); }
 .search-results:empty { border: none; }
 
+/* Placeholder rows shown while search-index.json is in flight. Sized to match
+   .sr so the list doesn't jump when real results replace them; search.js
+   overwrites #results wholesale on its first run(), which removes these. */
+.sr-skeleton span {
+  display: block; height: 15px; margin: 0.95rem 1.1rem;
+  border-radius: 4px; background: var(--border);
+  animation: sr-pulse 1.4s ease-in-out infinite;
+}
+.sr-skeleton span + span { border-top: none; }
+.sr-skeleton span:nth-child(2) { width: 72%; animation-delay: 0.1s; }
+.sr-skeleton span:nth-child(3) { width: 84%; animation-delay: 0.2s; }
+.sr-skeleton span:nth-child(4) { width: 64%; animation-delay: 0.3s; }
+.sr-skeleton span:nth-child(5) { width: 78%; animation-delay: 0.4s; }
+@keyframes sr-pulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 0.9; } }
+@media (prefers-reduced-motion: reduce) {
+  .sr-skeleton span { animation: none; }
+}
+
 .sr {
   display: flex; align-items: center; gap: 0.85rem;
   padding: 0.7rem 1.1rem; text-decoration: none;

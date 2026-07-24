@@ -206,13 +206,36 @@ def build_search():
         heading="Search",
         tagline="Find a song, show, venue, or date",
         nav=site_nav("Search"),
+        # search.js fetches the index immediately on parse, so preloading it
+        # alongside the script (rather than after it) is worth ~one round trip
+        # on first search. `crossorigin` is required, not decorative: without
+        # it the preload is a no-cors request, which can't satisfy fetch()'s
+        # default cors mode, and the browser downloads the index twice.
+        extra_head='\n<link rel="preload" href="/assets/search-index.json" as="fetch" '
+                   'type="application/json" crossorigin>',
+        # The live UI is JS-only — the input and filters do nothing until the
+        # index lands. Without a fallback this page is blank to crawlers, and
+        # the homepage's SearchAction schema points them straight here. /songs/
+        # ships the whole concordance server-rendered, so the archive really is
+        # reachable without JS; noscript hides the dead controls and says so.
         main='''
   <section class="search">
-    <input id="q" class="search-input" type="search" autocomplete="off" autofocus
-           placeholder="Search songs, shows, venues, dates, covers…">
-    <div id="filters" class="search-filters"></div>
-    <p id="status" class="search-status">Loading…</p>
-    <div id="results" class="search-results"></div>
+    <noscript>
+      <style>#search-live { display: none; }</style>
+      <p class="search-status">Search runs in your browser, so it needs JavaScript.</p>
+      <p class="pl-intro">Without it you can still browse the whole archive: the
+        <a href="/songs/">Songs index</a> lists every song and each show it was played at,
+        and the <a href="/">home page</a> lists every show by date, artist, and venue.</p>
+    </noscript>
+    <div id="search-live">
+      <input id="q" class="search-input" type="search" autocomplete="off" autofocus
+             placeholder="Search songs, shows, venues, dates, covers…">
+      <div id="filters" class="search-filters"></div>
+      <p id="status" class="search-status">Loading…</p>
+      <div id="results" class="search-results">
+        <div class="sr-skeleton" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
     <p class="pl-intro">Looking for loudness, true peak, workflow version, or damage flags instead? See <a href="/archive-data/">Archive Data</a>.</p>
   </section>''',
         extra_scripts='\n<script src="/assets/search.js"></script>',
