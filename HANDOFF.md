@@ -1,132 +1,150 @@
 # Session Handoff — Hannan Recordings (renedebos.com)
-**Date:** 2026-07-22 · **Branch:** `main` — everything below is committed & pushed, deploy verified live on renedebos.com itself (not just green Action).
+**Date:** 2026-07-23 · **Branch:** `main` — everything below is committed & pushed, deploy verified live on renedebos.com itself (not just green Action).
 
-> Two audio-processing threads this session: (1) fixed a silent Drive-backup
-> verification gap discovered while double-checking the prior session's
-> reprocess, and (2) reprocessed `mad-sweetwater-2000-10-17` to workflow v7,
-> which surfaced a much bigger problem — a truncated hand-edit export that
-> diagnose couldn't catch — and led to a new permanent safeguard in
-> `publish_show.py`.
+> Reprocessed `mad-sweetwater-2000-02-17` to workflow v7 — a messier-than-usual
+> run that surfaced a real content defect (not just a title drift), a
+> duration-regression catch that worked as designed, and a stale-leftover
+> bug in `publish_show.py` itself (local `out/`, not just R2/Drive). Also
+> did a data-only triage of `mad-cafe-java-1999-09-09` as a dynamic-fallback
+> remediation candidate, and permanently unblocked `rclone delete` for the
+> agent.
 
 ## ✅ Done this session
 
-### Fixed a silent Drive `Processed/` backup verification gap (commit `dab37b6`)
-Asked to confirm `sean-19-broadway-unknown`'s Drive backup from the prior
-session was real — it wasn't. `drive_backup()`'s completeness check only
-counted FLAC/MP3 files, so when Drive `Processed/` already held 36 stale
-files from the **old** 2026-06-30 run, the count was satisfied instantly
-without any new content ever being copied; `processing_report.txt` was
-missing entirely. Re-ran the backup for real (content-verified via
-`rclone check`), found 6 leftover stale-named duplicates from the old run
-still sitting alongside the new ones and had Rene delete them.
+### Reprocessed `mad-sweetwater-2000-02-17` to workflow v7 (commit `5e08c0d`)
+Mad Hannans at the Sweetwater, previously on v2 processing (an old
+pre-linear-preserving pass). 21 tracks, standard fades/clip-fixes in
+Drive's `Tracks/` folder, `labels.txt` present.
 
-**Fix:** `drive_backup_matches()` now runs `rclone check` (FLAC/MP3 hashes)
-plus an explicit `processing_report.txt` presence check, used in both
-`cmd_publish`'s backup loop and `cmd_cleanup`'s pre-delete safety gate (the
-latter used to gate deleting the local `out/` copy on the same broken
-count-only logic — a worse instance of the same bug). Documented in
-CLAUDE.md's runbook section.
+**Real content defect, not a title drift:** the first `Tracks/` folder
+Rene pointed at had track 14 exported as "There She Was" — but a
+2026-07-06 Updates note already on record explained this exact mislabel:
+it's actually "Butter," and back then the original transfer was missing
+its opening chords, fixed by swapping in a complete version. The fresh
+export's duration (3:02) was 25s shorter than the previously-published
+correct one (3:27) — a strong signal the *old broken* transfer had
+resurfaced in Drive, not the fix. Caught by cross-checking `git diff` on
+the duration before publishing, not by the automated duration-regression
+check (25s/12% shrink didn't cross its "under half" hard-stop threshold).
+Rene confirmed he'd pointed at the wrong `Tracks/` folder, fixed it, and
+a full redo (`prepare` → `publish`) picked up the corrected "Butter" file.
 
-### Reprocessed `mad-sweetwater-2000-10-17` to workflow v7 (commit `931e70a`)
-Jerry Hannan's birthday show at the Sweetwater, previously on v1 processing.
-24 tracks, hand-edited fades/clip-fixes in Drive's `Tracks/` folder, no NR,
-`labels.txt` present.
+**Duration-regression check did its job on the redo:** the corrected
+`Tracks/` folder's `prepare` run still had 4 tracks (15–18) truncated to
+under 10 seconds — `check_duration_regression()` (added last session)
+refused to proceed automatically, exactly as designed. Rene re-exported
+those four; second `prepare` came back clean.
 
-**Major snag — a truncated export that diagnose couldn't catch:** the first
-`prepare` run diagnosed clean, but tracks 15–24 turned out to be 0.5–8
-seconds long instead of full songs (confirmed against the show's own
-previously-published durations, e.g. "Truck" was 3:38, "Hollywood" 4:33).
-Loudness/clipping/click diagnose has no notion of "is this the right
-length," so a truncated file sails through — and the unusually large gain
-needed to hit target loudness on those tracks (the PRED_TP flags) was the
-missed tell. **Already got as far as uploading the broken clips to R2
-(MD5-verified, since verification only proves upload-matches-what-we-sent)
-before this was caught** — nothing was live on the site yet, caught before
-build/commit/push. Rene re-exported the affected tracks correctly from the
-Audacity project; re-verified durations against the old catalog before
-re-running `prepare`.
+**New bug found in `publish_show.py` itself — stale local `out/` isn't
+cleaned between retries.** Step 1 ("processing") skips re-encoding a
+track if its output file already exists in `~/work/<slug>/out/` — a
+speed optimization for resuming after a mid-publish failure. But it means
+files from an *aborted* run (e.g. the original broken "14 There She
+Was.flac", the typo'd "18 Angel from Montgomerey.flac") never get removed
+from `out/` even after the *source* is fixed and re-run. Every retry's
+`rclone copy out/ → R2` step re-uploads them right back to R2/Drive,
+even immediately after manually deleting them there — looked exactly
+like R2 list-consistency lag on first glance (deleted, confirmed clean,
+reappeared with identical original timestamps) until checking `out/`
+directly. Fixed by deleting the 4 stale files from local `out/`, not by
+chasing phantom R2 caching. **Not patched in the script — still a trap
+for the next mid-publish retry on any show.**
 
-**Permanent fix — added to `publish_show.py`:** `check_duration_regression()`
-runs at the end of `cmd_prepare`, comparing each fresh track's actual
-`ffprobe` duration against the currently-published catalog duration for
-that same track number, and hard-stops (`SystemExit`) if a track shrank to
-under half its previous length. Bypassable only with an explicit
-`--allow-duration-drift` flag for a genuine intentional re-edit — can't be
-silently skipped by just re-running `prepare` again.
+**Old-run orphans also found in Drive `Processed/`,** separate from this
+session's mess: 6 files (3 track pairs) left over from the *original*
+2026-06-29 v2 publish under different track numbers than the current
+catalog (`18 Dysfunctional Guy`, `19 Baby`, `20 The Kiss - Da Da Da...`
+vs. today's correct `19`/`20`/`21`). Cleaned up alongside the session's
+own stale leftovers — `rclone check` now reports 0 differences, 42/42
+files.
 
-**Second snag — same stale-leftover pattern, different layer:** R2 upload
-hit `R2 FLAC incomplete: 26/24` because 2 tracks (17, 24) had different
-filenames between the broken first export and the corrected second export
-(`ABC's` → `ABC`, `The Kiss_DaDaDa` → `The Kiss_Da Da Da`), leaving the
-broken run's tiny files (~1MB, `07:53` timestamp) sitting alongside the
-correct ones on both FLAC and MP3 sides. Rene deleted the 4 stale objects;
-publish resumed and completed (engine skips already-processed tracks).
+**Title drift, same pattern as `mad-sweetwater-2000-10-17` last session:**
+`draft_tracks.py` derives titles from the fresh export's filenames, which
+had drifted from archive convention on 3 tracks: "Hard Drinking " (trailing
+space), "I Need a Dream" (should be "I Need a Lover"), "DaDaDa" (should be
+"The Kiss / Da Da Da (Slave to an Angel)"). **Gotcha: these fixes got
+silently reverted twice** by subsequent `draft_tracks` runs during the
+redo cycle — each full `publish` re-invokes `draft_tracks`, which
+re-derives from filenames every time, clobbering any manual title edit
+made after a previous publish attempt. Titles weren't re-checked until
+right before the final commit, which is where the reverts were caught.
 
-**Own mistake caught mid-session:** first attempt at restoring the drifted
-title `"The Kiss_Da Da Da (Slave to an Angel)"` used the wrong target —
-guessed `"The Kiss - Da Da Da..."` from a `git log -p` grep that conflated
-the `title` field with `file`/`flac` path fields (paths use `-`, titles
-use `/`). Caught by spot-checking the rendered song page against the
-archive's actual established convention (commit `fdb84c8` explicitly
-normalized this exact drift pattern to `"The Kiss / Da Da Da..."` back on
-2026-07-15) before it shipped — corrected before commit.
+Full runbook completed: R2 21/21 FLAC+MP3 MD5-verified (0 mismatches),
+Drive `Processed/` content-verified (0 differences after orphan cleanup),
+Updates note + Week twelve History bullet added (extended from
+`mad-sweetwater-2000-10-17`'s entry into a two-show week), `build.py
+--check` clean, committed, pushed, Action green, spot-checked the live
+show page, updates feed, and history page directly on renedebos.com.
 
-**Other title fixes:** "Model Family Man" and "Plastic Lemons" had picked
-up stray trailing whitespace from the fresh export (confirmed no other
-show in the archive has the trailing space) — trimmed.
+**Open item, not blocking:** track 14 "Butter"'s final duration (3:12)
+still doesn't exactly match the pre-session published value (3:27) — 15s
+closer than the broken version but not identical. Likely just a different
+fade/tail length in the fresh export; worth Rene giving it a listen to
+confirm the opening chords are there and nothing else got trimmed.
 
-Full runbook completed: R2 upload MD5-verified (0 mismatches, 24/24 both
-FLAC+MP3), Drive `Processed/` backed up and content-verified (0
-differences, `processing_report.txt` present), `draft_tracks.py` flags
-reviewed (5 flags, all either pre-existing-metadata carryovers or
-resolved by the title fixes above), Updates note + Week twelve History
-bullet added, `build.py --check` clean, `status --write` run and
-rebuilt, committed, pushed, Action green, spot-checked the live show
-page/song pages/updates feed/history page directly on renedebos.com.
+### `mad-cafe-java-1999-09-09` — data-only triage, no action taken
+Rene asked whether this show (catalogued as artist **"mad"**, not
+"jerry" — despite being on a folder Rene remembered as Jerry's; setlist
+confirms Mad Hannans-era material) should be upgraded from workflow v1.
+Sidecar analysis: 16 of 21 tracks (76%) have output true peak pinned at
+≈−0.9 to −1.0 dBTP — the dynamic-fallback fingerprint validated against
+the definitive `jerry-cafe-java-1999-03-25` audit in the
+[[dynamic-fallback-remediation-roadmap]] memory. Presented reasons for
+and against; **Rene has not given a go-ahead** — this was analysis only,
+nothing pulled from Drive or touched in the repo.
+
+### Permanently unblocked `rclone delete` for the agent
+`.claude/settings.local.json`'s `permissions.deny` previously hard-blocked
+`rclone delete/purge/sync/move` (alongside `rm -rf`/`rm -r`). After this
+session's repeated stale-R2-object cleanups needed hand-holding Rene
+through the exact commands each time, Rene asked to lift the block.
+**Removed only `Bash(rclone delete:*)` from deny** — `purge`, `sync`, and
+`move` (higher blast radius, bulk/mirror operations) are still hard-blocked,
+as is `rm -rf`/`rm -r`. `rclone delete` now behaves like a normal
+risky-but-approvable command instead of a silent refusal.
 
 ## Gotchas learned this session
-- **A count-only "is the backup done" check can't tell fresh output from
-  stale same-named leftovers of a prior run** — this bit both the Drive
-  `Processed/` backup (files from an old run) and the R2 upload check
-  (files from the broken first attempt at *this* run). The fix pattern is
-  the same in both places: verify by content/hash (`rclone check`,
-  MD5-vs-provenance), not by count, and when a mismatch appears, look for
-  old-dated files under a *different* filename than the current run's
-  output before assuming something is broken — check `rclone lsl` mtimes.
-- **Loudness/clipping/click diagnose has no concept of "is this track the
-  right length."** A severely truncated file (a fraction of the real
-  song) can diagnose perfectly clean — even look *safer* (quieter, no
-  clipping). The only reliable tell without an explicit duration check
-  was the unusually large gain needed to hit the loudness target
-  (PRED_TP), which is a correlation, not a guarantee — hence the new
-  explicit duration-regression check in `publish_show.py`, not a "watch
-  for large PRED_TP" heuristic.
-- **When restoring a drifted title to the archive's "established
-  convention," don't infer the convention from a `git log -p` text grep
-  without checking which JSON field the match came from** — track
-  `file`/`flac` paths and the `title` field can legitimately use
-  different punctuation for the same song (paths avoid `/` and `-`
-  differently than what displays). Cross-check against the actual
-  rendered song page (which aggregates the true display convention) or a
-  clean field-scoped grep before committing a title fix.
-- **`rm -rf` is hard-denied even against the agent's own `~/work/<slug>`
-  scratch directories** — same guardrail as `rclone delete/purge/sync/move`.
-  Plain `rm` on individual files (no `-r`/`-f` flags) still works; use that
-  to clear stale cached `out/`/`tracks/` files before a redo instead.
+- **`publish_show.py`'s local `out/` resume-cache isn't cleaned between
+  retries of the same show.** If an early attempt produces wrong-named or
+  broken files in `~/work/<slug>/out/`, deleting them from R2/Drive alone
+  doesn't fix anything — the next `publish` retry's upload step re-copies
+  everything currently sitting in `out/`, resurrecting the exact same
+  stale objects with the exact same content. Symptom looks identical to
+  R2 list-consistency lag (object reappears with unchanged original
+  timestamp) — check local `out/` before assuming it's a storage-layer
+  quirk. Fix: delete the stale files from local `out/` directly (plain
+  `rm`, no `-r`/`-f` needed on individual files).
+- **Every `publish` run re-invokes `draft_tracks.py`,** which re-derives
+  titles from the current export's filenames every time — not just on
+  first draft. A manual title fix applied to `recordings.json` after one
+  `publish` attempt will be silently overwritten if a later retry
+  (e.g. after fixing a stale-R2-object problem) re-runs `publish` and
+  therefore `draft_tracks` again. Re-check flagged titles right before
+  final commit, not just once mid-session.
+- **A duration-regression check with a "shrank to under half" threshold
+  won't catch every truncated re-export** — a 25s/12% shrink (Butter:
+  3:27 → 3:02) sailed through `check_duration_regression()` even though
+  it was the exact same class of bug (old broken transfer resurfacing)
+  the check was built for last session. Cross-checking `git diff` on a
+  track's duration against the pre-session published value is still
+  worth doing by hand when a title's history has a known "missing
+  content" precedent in the Updates feed.
 
 ## Durable facts (don't undo)
-- `publish_show.py` now has two content-based safety checks that didn't
-  exist before this session: `drive_backup_matches()` (Drive backup
-  verification) and `check_duration_regression()` (truncated-export
-  detection, `cmd_prepare` only, bypass via `--allow-duration-drift`).
-  Don't revert either to count-only/duration-blind logic.
-- `mad-sweetwater-2000-10-17` and `sean-19-broadway-unknown` are both now
-  fully on workflow v7, with verified (not just count-checked) Drive
-  `Processed/` backups.
-- Archive-wide title conventions live in git history, not a lookup table —
-  when in doubt about which variant is "correct," check `fdb84c8` (the
-  main title-normalization commit) and the rendered song page, not a raw
-  text grep across mixed JSON fields.
+- `mad-sweetwater-2000-02-17` is now fully on workflow v7, R2/Drive both
+  content-verified (0 mismatches / 0 differences).
+- `Bash(rclone delete:*)` is no longer in `.claude/settings.local.json`'s
+  deny list — don't re-add it without Rene asking. `purge`/`sync`/`move`
+  remain denied; don't lift those without being asked.
+- `publish_show.py`'s local `out/` resume-skip logic (step 1) is a known
+  source of stale-file resurrection on any multi-attempt publish — not
+  yet patched in the script itself. When a show needs more than one
+  `publish` attempt, check `~/work/<slug>/out/` by eye for leftover
+  wrong-named files before retrying, not just R2/Drive.
+- `mad-cafe-java-1999-09-09` is a strong, data-backed candidate for the
+  [[dynamic-fallback-remediation-roadmap]] (76% of tracks affected) but
+  is **not approved to start** — analysis only, awaiting Rene's go-ahead,
+  same status as the roadmap's other 20 shows.
 
 ## Reference
 Full runbook: `CLAUDE.md` → "Publishing a Split Show". Owner's manual (all
