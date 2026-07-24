@@ -5,3 +5,32 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://wav-download.renedebos.workers.dev https://contact-form.renedebos.workers.dev; media-src 'self' https://wav-download.renedebos.workers.dev; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'
+
+# Caching. Cloudflare's asset server already defaults everything to
+# `public, max-age=0, must-revalidate` with ETags, so repeat visitors get 304s
+# and nothing is ever served stale — the rules below only remove the
+# revalidation round trip where a filename genuinely can't change meaning.
+# Do NOT add a long max-age to /assets/*.css, *.js or the top-level *.json:
+# those ship under stable, unhashed names, so a cached copy would shadow the
+# next deploy with no way to purge it client-side. Revalidation is correct
+# for them. Cache-Control is deliberately set here and NOT in site_worker.js's
+# SECURITY_HEADERS — that set is applied blanketly to every response, which
+# would clobber these per-path values and the 404's `no-store`.
+
+# Font filenames are Google's content hashes: a different file is a different
+# name, so a year-long immutable cache can never go stale. ~10 woff2 fetches
+# per page load, on the text-rendering path — this is the real win here.
+/assets/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Waveform data is written once per show, but a reprocess (see the publish
+# runbook) DOES regenerate it under the same slug filename — so a day, not
+# immutable. Stale peaks after a reprocess self-heal within 24h.
+/assets/peaks/*
+  Cache-Control: public, max-age=86400
+
+# Social preview + player artwork: edited rarely, staleness is cosmetic.
+/assets/og.png
+  Cache-Control: public, max-age=604800
+/assets/artwork.png
+  Cache-Control: public, max-age=604800
