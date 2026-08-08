@@ -335,6 +335,8 @@ def cmd_publish(args):
         cmd += ["--transient-cap-accept", args.tcap_accept]
     if args.tcap_partial:
         cmd += ["--transient-cap-partial", args.tcap_partial]
+    if args.tcap_force:
+        cmd += ["--transient-cap-force", args.tcap_force]
     r = run(cmd)
     if r.returncode not in (0, 2):  # 2 = processed with non-fatal warnings, see report
         raise SystemExit("processing failed")
@@ -459,6 +461,9 @@ def main():
                      help="publish: comma-separated track numbers allowed partial "
                           "capping (full 6 dB attenuation, lands short of target) — "
                           "Rene's explicit per-track opt-in for over-cap tracks")
+    ap.add_argument("--transient-cap-force", dest="tcap_force", default="",
+                     help="publish: comma-separated track numbers where Rene, after "
+                          "listening, overrides the sparsity gate/listen-flags")
     args = ap.parse_args()
     DRY = args.dry_run
     {"prepare": cmd_prepare, "publish": cmd_publish,

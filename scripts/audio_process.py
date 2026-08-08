@@ -818,7 +818,8 @@ def window_stats(path, pre="", win_s=APPLAUSE_WIN_S):
     return wins
 
 
-def plan_track(path, target, pre="", transient_cap=False, tcap_partial=False):
+def plan_track(path, target, pre="", transient_cap=False, tcap_partial=False,
+               tcap_force=False):
     """Decide how one track gets normalized (workflow v5; v8 adds the opt-in
     transient_cap flag). Returns a dict: mode ('linear' | 'linear-reduced' |
     'applause-limiter' | 'transient-cap'), target (projected output LUFS),
@@ -854,7 +855,7 @@ def plan_track(path, target, pre="", transient_cap=False, tcap_partial=False):
     if pred - TP_CEILING <= APPLAUSE_MIN_SHORTFALL:
         # applause-limiter never engages on overshoots this small (not worth a
         # limiter), so the cap doesn't need to defer to it here
-        if transient_cap and try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=tcap_partial):
+        if transient_cap and try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=tcap_partial, force=tcap_force):
             return plan
         plan.update(mode="linear-reduced", target=maxlin,
                     note=f"gain to {target:g} LUFS would overshoot the TP ceiling by "
@@ -901,7 +902,7 @@ def plan_track(path, target, pre="", transient_cap=False, tcap_partial=False):
     if not applause or not music:
         # the music itself sets the ceiling — exactly the case the opt-in
         # transient cap exists for (applause-limiter has nothing to act on)
-        if transient_cap and try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=tcap_partial):
+        if transient_cap and try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=tcap_partial, force=tcap_force):
             return plan
         plan.update(mode="linear-reduced", target=maxlin,
                     note=f"gain to {target:g} LUFS would overshoot the TP ceiling by "
@@ -916,7 +917,7 @@ def plan_track(path, target, pre="", transient_cap=False, tcap_partial=False):
     gain = round(min(target - in_I, APPLAUSE_LIMIT_DB - music_peak), 2)
     benefit = gain - (TP_CEILING - in_TP)  # dB recovered vs the v4 reduced target
     if benefit < APPLAUSE_MIN_BENEFIT:
-        if transient_cap and try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=tcap_partial):
+        if transient_cap and try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=tcap_partial, force=tcap_force):
             return plan
         plan.update(mode="linear-reduced", target=maxlin,
                     note=f"gain to {target:g} LUFS would overshoot the TP ceiling by "
@@ -975,7 +976,8 @@ def limiter_chain(plan, pre=""):
 
 # ── sparse-transient cap (workflow v8, opt-in) ───────────────────────────────
 
-def try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=False):
+def try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=False,
+                      force=False):
     """Attempt to upgrade a would-be linear-reduced track to the opt-in
     transient-cap mode (workflow v8). Mutates and returns `plan` on success;
     returns None (leaving only flags behind) when any eligibility gate fails,
@@ -1001,12 +1003,13 @@ def try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=False):
         return None
     top = max(peaks)
     near_pct = 100.0 * sum(1 for p in peaks if p >= top - TCAP_NEAR_PEAK_DB) / len(peaks)
-    if near_pct > TCAP_MAX_NEAR_PEAK_PCT:
+    if near_pct > TCAP_MAX_NEAR_PEAK_PCT and not force:
         plan["flags"].append(
             f"transient-cap declined: {near_pct:.1f}% of the track sits within "
             f"{TCAP_NEAR_PEAK_DB:g} dB of its own peak (> {TCAP_MAX_NEAR_PEAK_PCT:g}% "
             f"— repeatedly loud, not a sparse transient; the A/B evidence does not "
-            f"cover this regime) — reduced linear target instead")
+            f"cover this regime) — reduced linear target instead (Rene can override "
+            f"per track after listening: --transient-cap-force)")
         return None
     # Size the gain against the ATTENUATION cap, not just the target: the
     # shave at the loudest instant is in_TP + gain - limit, and the written
@@ -1022,6 +1025,13 @@ def try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=False):
                 sr=int(probe(path)["sr"]), tcap_peaks=peaks,
                 near_peak_pct=round(near_pct, 2))
     tcap_finalize(plan)
+    if force and near_pct > TCAP_MAX_NEAR_PEAK_PCT:
+        # recorded, not blocking: force means Rene already listened — his
+        # ears outrank the calibrated gate, and the provenance says so
+        plan["flags"].append(
+            f"sparsity gate ({near_pct:.1f}% near-peak > "
+            f"{TCAP_MAX_NEAR_PEAK_PCT:g}%) overridden by Rene after listening "
+            f"(--transient-cap-force)")
     if excess > 0:
         plan["flags"].append(
             f"gain trimmed {excess:.2f} dB to honor the {TCAP_MAX_GR:g} dB "
@@ -1149,10 +1159,12 @@ def cmd_plan(args):
     tcap_on = bool(getattr(args, "transient_cap", False))
     tcap_excl = _num_set(getattr(args, "transient_cap_exclude", ""))
     tcap_part = _num_set(getattr(args, "transient_cap_partial", ""))
+    tcap_frc = _num_set(getattr(args, "transient_cap_force", ""))
     for f in files:
         p = plan_track(os.path.join(folder, f), target, pre=pre,
                        transient_cap=tcap_on and lead_num(f) not in tcap_excl,
-                       tcap_partial=lead_num(f) in tcap_part)
+                       tcap_partial=lead_num(f) in tcap_part,
+                       tcap_force=lead_num(f) in tcap_frc)
         counts[p["mode"]] += 1
         j = p["measure"]
         rows.append((f, float(j["input_i"]), float(j["input_tp"]), p))
@@ -1244,8 +1256,9 @@ def cmd_process(args):
         tc_on = (bool(getattr(args, "transient_cap", False))
                  and num not in _num_set(getattr(args, "transient_cap_exclude", "")))
         tc_partial = num in _num_set(getattr(args, "transient_cap_partial", ""))
+        tc_force = num in _num_set(getattr(args, "transient_cap_force", ""))
         plan = plan_track(src, target, pre=filt, transient_cap=tc_on,
-                          tcap_partial=tc_partial)
+                          tcap_partial=tc_partial, tcap_force=tc_force)
         used_target = plan["target"]
         limiter = plan["mode"] == "applause-limiter"
         tcap = plan["mode"] == "sparse-transient-cap"
@@ -1257,7 +1270,7 @@ def cmd_process(args):
         # ships unheard. Resolve by listening and re-running with an explicit
         # per-track decision — accept (ears approved) or exclude (stay linear).
         blocking = [fl for fl in plan["flags"] if "listen before shipping" in fl]
-        if tcap and blocking and num not in _num_set(
+        if tcap and blocking and not tc_force and num not in _num_set(
                 getattr(args, "transient_cap_accept", "")):
             raise SystemExit(
                 f"{f}: the transient cap flagged this track for ears:\n  - "
@@ -1935,6 +1948,11 @@ def main():
                          "track needing > 6 dB of recovery gets the full 6 dB "
                          "attenuation and lands honestly short of target instead of "
                          "declining — Rene's explicit per-track opt-in, never automatic")
+    pl.add_argument("--transient-cap-force", dest="transient_cap_force", default="",
+                    help="comma-separated track numbers where Rene, AFTER LISTENING, "
+                         "overrides the sparsity gate (and any listen-flags) for that "
+                         "track — his ears outrank the calibrated gate; recorded in "
+                         "provenance")
     pl.set_defaults(func=cmd_plan)
 
     p = sub.add_parser("process")
@@ -1970,6 +1988,11 @@ def main():
                          "track needing > 6 dB of recovery gets the full 6 dB "
                          "attenuation and lands honestly short of target instead of "
                          "declining — Rene's explicit per-track opt-in, never automatic")
+    p.add_argument("--transient-cap-force", dest="transient_cap_force", default="",
+                    help="comma-separated track numbers where Rene, AFTER LISTENING, "
+                         "overrides the sparsity gate (and any listen-flags) for that "
+                         "track — his ears outrank the calibrated gate; recorded in "
+                         "provenance")
     p.set_defaults(func=cmd_process)
 
     v = sub.add_parser("verify")

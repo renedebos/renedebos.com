@@ -180,6 +180,7 @@ function body(s){
         <option value="auto"${cur==="auto"?" selected":""}>auto</option>
         <option value="exclude"${cur==="exclude"?" selected":""}>exclude (veto)</option>
         <option value="accept"${cur==="accept"?" selected":""}>accept (listened)</option>
+        <option value="force"${cur==="force"?" selected":""}>force cap (listened — overrides sparsity gate)</option>
       </select>`;
     else if (t.cls === "over")
       sel = `<select class="dec" onchange="decide('${s.slug}',${t.num},this.value)">

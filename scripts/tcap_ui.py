@@ -187,10 +187,11 @@ def _log(msg, logf):
     logf.flush()
 
 
-def _analyze_one(path, target, logf, partial=False):
+def _analyze_one(path, target, logf, partial=False, force=False):
     """Run the engine's own decision on one file and reduce it to the entry
     the page renders."""
-    plan = ap.plan_track(path, target, transient_cap=True, tcap_partial=partial)
+    plan = ap.plan_track(path, target, transient_cap=True, tcap_partial=partial,
+                         tcap_force=force)
     entry = {"mode": plan["mode"], "target": plan["target"],
              "flags": plan["flags"]}
     if plan["mode"] == "sparse-transient-cap":
@@ -275,12 +276,13 @@ def analyze_worker(slug, nums, source, logpath):
     side = _sidecar(slug)
     audio_dir = os.path.join(WORK, slug, "audio")
     results = {}
-    partial_nums = {int(n) for n, v in _decisions(slug)["tracks"].items()
-                    if v == "partial"}
+    decs = _decisions(slug)["tracks"]
+    partial_nums = {int(n) for n, v in decs.items() if v == "partial"}
+    force_nums = {int(n) for n, v in decs.items() if v == "force"}
 
     def is_candidate(t):
-        if t["num"] in partial_nums:
-            return True  # over-cap track Rene opted into partial capping
+        if t["num"] in partial_nums or t["num"] in force_nums:
+            return True  # Rene's explicit per-track opt-in (partial/force)
         d = side.get(str(t["num"]), {})
         if d.get("lufs") is None:
             return False
@@ -306,7 +308,8 @@ def analyze_worker(slug, nums, source, logpath):
                     num = int(m.group(1)) if m else None
                     _log(f"[{i}/{len(files)}] {f}", logf)
                     entry = _analyze_one(os.path.join(tdir, f), target, logf,
-                                         partial=num in partial_nums)
+                                         partial=num in partial_nums,
+                                         force=num in force_nums)
                     if num is not None:
                         results[str(num)] = entry
                 fp = (_publish_state(slug) or {}).get("fingerprint")
@@ -354,7 +357,8 @@ def analyze_worker(slug, nums, source, logpath):
                         os.remove(dest)
                         continue
                     entry = _analyze_one(dest, target, logf,
-                                         partial=t["num"] in partial_nums)
+                                         partial=t["num"] in partial_nums,
+                                         force=t["num"] in force_nums)
                     entry["approx"] = d.get("ver") in (1, 2, 3) or "ver" not in d
                     results[str(t["num"])] = entry
                     os.remove(dest)
@@ -429,6 +433,11 @@ def start_job(slug, kind, extra):
                     cmd += ["--transient-cap-accept", acc]
                 if part:
                     cmd += ["--transient-cap-partial", part]
+                frc = ",".join(n for n, v in sorted(dec["tracks"].items(),
+                                                    key=lambda kv: int(kv[0]))
+                               if v == "force")
+                if frc:
+                    cmd += ["--transient-cap-force", frc]
             if kind == "prepare" and extra.get("folder"):
                 cmd += ["--folder", extra["folder"]]
             logf = open(logpath, "w")
@@ -530,9 +539,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return
         if kind == "decide":
             num, dec = str(extra.get("num")), extra.get("decision")
-            if dec not in ("auto", "exclude", "accept", "partial") or not num.isdigit():
+            if dec not in ("auto", "exclude", "accept", "partial",
+                           "force") or not num.isdigit():
                 self._send(400, '{"error": "decision must be '
-                                'auto/exclude/accept/partial"}')
+                                'auto/exclude/accept/partial/force"}')
                 return
             d = _decisions(slug)
             if dec == "auto":
