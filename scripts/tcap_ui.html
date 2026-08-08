@@ -12,11 +12,11 @@
   header { background:#0f172a; color:#e2e8f0; padding:14px 22px; }
   header h1 { font-size:17px; margin:0; font-weight:600; }
   header p { margin:3px 0 0; font-size:12.5px; color:#94a3b8; }
-  main { max-width:1100px; margin:18px auto; padding:0 18px; }
+  main { max-width:1140px; margin:18px auto; padding:0 18px; }
   .show { background:#fff; border:1px solid #e5e7eb; border-radius:8px; margin:10px 0; }
-  .show-head { display:flex; align-items:center; gap:12px; padding:10px 14px; cursor:pointer; }
+  .show-head { display:flex; align-items:center; gap:10px; padding:10px 14px; cursor:pointer; flex-wrap:wrap; }
   .show-head:hover { background:#f1f5f9; }
-  .show-head .t { flex:1; }
+  .show-head .t { flex:1; min-width:280px; }
   .show-head .t b { font-weight:600; }
   .show-head .t small { color:var(--mut); margin-left:8px; }
   .pill { font-size:12px; padding:1px 9px; border-radius:99px; white-space:nowrap; }
@@ -24,10 +24,12 @@
   .p-over { background:#fee2e2; color:#991b1b; }
   .p-spread { background:#f3f4f6; color:#374151; }
   .p-done { background:#dcfce7; color:#166534; }
+  .p-est { background:#fef9c3; color:#854d0e; }
+  .p-stale { background:#fee2e2; color:#991b1b; }
   .body { display:none; border-top:1px solid #e5e7eb; padding:12px 14px; }
   .show.open .body { display:block; }
   table { border-collapse:collapse; width:100%; font-size:13px; margin:8px 0; }
-  th, td { text-align:left; padding:4px 8px; border-bottom:1px solid #f1f5f9; }
+  th, td { text-align:left; padding:4px 8px; border-bottom:1px solid #f1f5f9; vertical-align:top; }
   th { color:var(--mut); font-weight:500; font-size:12px; }
   td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
   .c-at { color:var(--ok); } .c-close { color:var(--mut); }
@@ -43,6 +45,7 @@
   button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
   button.primary:hover { background:#1d4ed8; }
   button:disabled { opacity:.45; cursor:not-allowed; }
+  select.dec { font:12px system-ui; padding:1px 4px; border-radius:5px; border:1px solid #d1d5db; }
   label.ck { font-size:13px; color:#374151; display:inline-flex; gap:5px; align-items:center; }
   .hint { font-size:12px; color:var(--mut); margin:6px 0; }
   #jobpane { position:fixed; left:0; right:0; bottom:0; max-height:42vh; background:#0f172a;
@@ -52,6 +55,7 @@
   #jobhead .spin { color:var(--accent); }
   #joblog { flex:1; overflow:auto; margin:0; padding:4px 16px 12px; font:12px/1.45 ui-monospace,monospace;
             white-space:pre-wrap; }
+  #jobcancel { background:transparent; color:#fca5a5; border-color:#7f1d1d; display:none; }
   #jobclose { margin-left:auto; background:transparent; color:#94a3b8; border-color:#334155; }
   .nag { background:#fefce8; border:1px solid #fde68a; color:#713f12; border-radius:6px;
          padding:8px 12px; font-size:12.5px; margin:8px 0; }
@@ -60,13 +64,14 @@
 <body>
 <header>
   <h1>sparse-transient-cap — control panel</h1>
-  <p>workflow v8 rollout · scan is offline provenance; Analyze runs the real engine decision on the published audio; Prepare/Publish drive publish_show.py. One job at a time. Local only.</p>
+  <p>workflow v8 rollout · offline scan → preliminary R2 analysis → Prepare → canonical analysis → per-track decisions → Publish. The engine's gates (listen-flags hard-block, strict −1 dBTP, 6 dB attenuation cap, source fingerprint) are the real barrier — this page is the convenient face on them. One job at a time. Local only.</p>
 </header>
 <main id="main"><p class="hint">loading scan…</p></main>
 
 <div id="jobpane">
   <div id="jobhead">
     <span id="jobtitle"></span><span class="spin" id="jobspin">running…</span>
+    <button id="jobcancel" onclick="cancelJob()">cancel</button>
     <button id="jobclose" onclick="hideJob()">close</button>
   </div>
   <pre id="joblog"></pre>
@@ -74,6 +79,7 @@
 
 <script>
 "use strict";
+const TOKEN = "__TOKEN__";
 const ARTISTS = { jerry:"Jerry Hannan", sean:"Sean Hannan", mad:"Mad Hannans",
                   seanjerry:"Sean & Jerry Hannan" };
 const CLS = { at:"at target", close:"< 1 dB", candidate:"CANDIDATE",
@@ -82,6 +88,11 @@ let SCAN = [], polling = null, logOffset = 0;
 
 function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
 function fmt(v,d=1){ return v==null ? "—" : v.toFixed(d); }
+function post(path, body){
+  return fetch(path, {method:"POST",
+    headers:{"Content-Type":"application/json","X-Tcap-Token":TOKEN},
+    body: JSON.stringify(body||{})});
+}
 
 async function load(){
   SCAN = await (await fetch("/api/scan")).json();
@@ -97,8 +108,15 @@ function render(){
     div.className = "show" + (open.has(s.slug) ? " open" : "");
     div.dataset.slug = s.slug;
     const an = s.analysis, c = s.counts;
-    const anPill = an ? `<span class="pill p-done">analyzed</span>` : "";
-    const prepPill = s.prepared ? `<span class="pill p-done">prepared</span>` : "";
+    let anPill = "";
+    if (an){
+      const canonical = an.source === "drive-canonical";
+      const stale = canonical && s.fingerprint && an.fingerprint !== s.fingerprint;
+      anPill = stale ? `<span class="pill p-stale">analysis STALE</span>`
+        : `<span class="pill ${canonical?"p-done":"p-est"}">${canonical?"canonical":"R2 estimate"} · ${esc((an.ts||"").slice(0,16))} · v${an.engine_ver||"?"}</span>`;
+    }
+    const prepPill = s.prepared
+      ? `<span class="pill p-done" title="fingerprint ${esc(s.fingerprint||"—")}">prepared ${esc((s.preparedAt||"").slice(0,16))}</span>` : "";
     div.innerHTML = `
       <div class="show-head" onclick="this.parentNode.classList.toggle('open')">
         <div class="t"><b>${esc(s.date)}</b> — ${esc(ARTISTS[s.artist]||s.artist)}, ${esc(s.venue)}
@@ -115,8 +133,11 @@ function render(){
 
 function body(s){
   const an = (s.analysis && s.analysis.tracks) || {};
+  const dec = (s.decisions && s.decisions.tracks) || {};
+  const decStale = s.decisions && Object.keys(dec).length &&
+                   s.fingerprint && s.decisions.fingerprint !== s.fingerprint;
   let rows = "";
-  for (const t of s.tracksSorted || sortTracks(s)){
+  for (const t of sortTracks(s)){
     const a = an[String(t.num)];
     let verdict = "";
     if (a){
@@ -128,42 +149,56 @@ function body(s){
       for (const f of (a.flags||[])) verdict += `<span class="flag">⚠ ${esc(f)}</span>`;
       if (a.approx) verdict += `<span class="hint">pre-v5 source — approximate</span>`;
     }
+    const decidable = t.cls === "candidate";
+    const cur = dec[String(t.num)] || "auto";
+    const sel = decidable ? `<select class="dec" onchange="decide('${s.slug}',${t.num},this.value)">
+        <option value="auto"${cur==="auto"?" selected":""}>auto</option>
+        <option value="exclude"${cur==="exclude"?" selected":""}>exclude (veto)</option>
+        <option value="accept"${cur==="accept"?" selected":""}>accept (listened)</option>
+      </select>` : "—";
     rows += `<tr><td class="num">${t.num}</td><td>${esc(t.title)}</td>
       <td class="num">${fmt(t.lufs,2)}</td><td class="num">${fmt(t.gap)}</td>
       <td class="c-${t.cls}">${CLS[t.cls]}</td>
       <td>${esc(t.mode||"—")}${t.ver?` <span class="hint">v${t.ver}</span>`:""}</td>
-      <td>${verdict}</td></tr>`;
+      <td>${sel}</td><td>${verdict}</td></tr>`;
   }
-  const pubDisabled = s.prepared ? "" : "disabled title='run Prepare first'";
+  const pubDisabled = s.prepared && !decStale ? "" : "disabled";
+  const canonDisabled = s.prepared ? "" : "disabled title='run Prepare first'";
   return `
+    ${decStale ? `<div class="nag">⚠ Decisions were made against a different prepared source (fingerprint changed). Re-review them — Publish is blocked until then.</div>` : ""}
     <div class="btns">
-      <button class="primary" onclick="startJob('analyze','${s.slug}')">Analyze candidates</button>
+      <button onclick="startJob('analyze','${s.slug}',{source:'r2'})">Analyze (R2 estimate)</button>
+      <button class="primary" ${canonDisabled} onclick="startJob('analyze','${s.slug}',{source:'prepared'})">Analyze prepared (canonical)</button>
       <button onclick="startJob('prepare','${s.slug}')">Prepare (Drive → diagnose)</button>
       <label class="ck"><input type="checkbox" id="tc-${s.slug}" checked> --transient-cap</label>
       <button ${pubDisabled} onclick="startPublish('${s.slug}')">Publish</button>
     </div>
-    <div class="hint">Analyze fetches the published FLACs for candidate tracks only, runs the v8 engine decision, deletes the audio. Prepare/Publish are the real runbook steps — review the diagnose output (CLIPPING → Rene in Audacity) before publishing.</div>
+    <div class="hint">R2 analysis = preliminary estimate on published audio (candidates only, MD5-verified, deleted after). Canonical analysis runs on the exact prepared Drive sources and is what supports publishing. Decisions persist and are passed to publish as --transient-cap-exclude/-accept; a flagged track with no decision makes the engine abort before upload.</div>
     <table><tr><th class="num">#</th><th>Title</th><th class="num">LUFS</th><th class="num">gap dB</th>
-      <th>status</th><th>current mode</th><th>analysis</th></tr>${rows}</table>
+      <th>status</th><th>current mode</th><th>decision</th><th>analysis</th></tr>${rows}</table>
     <div class="nag">After a publish: review draft_tracks FLAGs, write the description + updates note + /history/ entry, then <code>python3 scripts/build.py</code>, commit, push, and spot-check the live page. This panel does none of that for you.</div>`;
 }
 
 function sortTracks(s){
-  // candidates first (biggest gap first), then the rest by track number —
-  // cached so re-renders keep the order stable
-  s.tracksSorted = [...s.tracks].sort((a,b)=>{
-    const ca = a.cls==="candidate", cb = b.cls==="candidate";
-    if (ca!==cb) return ca ? -1 : 1;
-    if (ca && cb) return (b.gap??0)-(a.gap??0);
-    return a.num-b.num;
-  });
+  if (!s.tracksSorted)
+    s.tracksSorted = [...s.tracks].sort((a,b)=>{
+      const ca = a.cls==="candidate", cb = b.cls==="candidate";
+      if (ca!==cb) return ca ? -1 : 1;
+      if (ca && cb) return (b.gap??0)-(a.gap??0);
+      return a.num-b.num;
+    });
   return s.tracksSorted;
 }
 
+async function decide(slug, num, decision){
+  const r = await post(`/api/decide/${slug}`, {num, decision});
+  if (!r.ok){ alert((await r.json()).error || "decide failed"); }
+  await load();
+}
+
 async function startJob(kind, slug, extra){
-  if (kind==="prepare" && !confirm(`Prepare ${slug}?\nFetches the show's hand-edited tracks from Drive and runs the full diagnose (~5–10 min).`)) return;
-  const r = await fetch(`/api/${kind}/${slug}`, {method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify(extra||{})});
+  if (kind==="prepare" && !confirm(`Prepare ${slug}?\nFetches the show's hand-edited tracks from Drive, runs the full diagnose and fingerprints the sources (~5–10 min).`)) return;
+  const r = await post(`/api/${kind}/${slug}`, extra||{});
   const j = await r.json();
   if (j.error){ alert(j.error); return; }
   showJob(`${kind} — ${slug}`);
@@ -171,7 +206,11 @@ async function startJob(kind, slug, extra){
 
 function startPublish(slug){
   const tc = document.getElementById(`tc-${slug}`).checked;
-  if (!confirm(`Publish ${slug}${tc?" with --transient-cap":""}?\nThis renders, uploads to R2, verifies MD5s and backs up to Drive (~30–40 min). Only proceed if the diagnose output was clean.`)) return;
+  const s = SCAN.find(x=>x.slug===slug);
+  const dec = (s.decisions && s.decisions.tracks) || {};
+  const ex = Object.keys(dec).filter(k=>dec[k]==="exclude").join(",") || "none";
+  const ac = Object.keys(dec).filter(k=>dec[k]==="accept").join(",") || "none";
+  if (!confirm(`Publish ${slug}${tc?" with --transient-cap":""}?\nExcluded tracks: ${ex}\nAccepted (listened): ${ac}\nRenders, uploads to R2, verifies MD5s, backs up to Drive (~30–40 min). The engine verifies the source fingerprint and aborts on unresolved listen-flags. Only proceed if the diagnose output was clean.`)) return;
   startJob("publish", slug, {transient_cap: tc});
 }
 
@@ -188,6 +227,7 @@ function showJob(title){
 async function poll(){
   const j = await (await fetch(`/api/job?offset=${logOffset}`)).json();
   if (!j.active) return;
+  document.getElementById("jobcancel").style.display = j.cancellable ? "" : "none";
   if (j.log){
     const pre = document.getElementById("joblog");
     pre.textContent += j.log;
@@ -198,13 +238,15 @@ async function poll(){
     clearInterval(polling); polling = null;
     document.getElementById("jobspin").textContent =
       j.rc === 0 ? "done ✓" : `exited ${j.rc} — read the log`;
-    load();  // refresh scan (analysis/prepared state changed)
+    document.getElementById("jobcancel").style.display = "none";
+    SCAN.forEach(s=>delete s.tracksSorted);
+    load();  // refresh scan (analysis/prepared/decision state changed)
   }
 }
 
+async function cancelJob(){ await post("/api/cancel", {}); }
 function hideJob(){ document.getElementById("jobpane").classList.remove("on"); }
 
-// resume an in-flight job's pane on page load (e.g. after a refresh)
 (async function(){
   await load();
   const j = await (await fetch("/api/job?offset=0")).json();

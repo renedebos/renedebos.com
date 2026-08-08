@@ -182,6 +182,26 @@ def check_duration_regression(show, dest, files):
     return problems
 
 
+def source_manifest(dest):
+    """Per-file audio-MD5 manifest of the fetched tracks plus one combined
+    fingerprint. Binds the prepared state (and the UI's analysis/decisions)
+    to the exact source bytes: same count with silently different contents —
+    a corrected same-named export, a stale mount copy — no longer passes.
+    Audio MD5s are already this repo's provenance currency."""
+    import hashlib
+    rows = []
+    for f in sorted(audio_files(os.listdir(dest))):
+        p = os.path.join(dest, f)
+        md5 = subprocess.run(
+            ["ffmpeg", "-hide_banner", "-loglevel", "error", "-i", p,
+             "-map", "0:a", "-f", "md5", "-"],
+            capture_output=True, text=True).stdout.strip().replace("MD5=", "")
+        rows.append({"file": f, "size": os.path.getsize(p), "md5": md5})
+    fp = hashlib.sha256(
+        json.dumps(rows, sort_keys=True).encode()).hexdigest()[:16]
+    return rows, fp
+
+
 def cmd_prepare(args):
     show = load_show(args.slug)
     folder = find_work_folder(show, args.folder)
@@ -216,11 +236,15 @@ def cmd_prepare(args):
          "diagnose", dest, "--target", str(TARGET_LUFS)])
 
     if not DRY:
+        print("\nfingerprinting sources …")
+        manifest, fp = source_manifest(dest)
         os.makedirs(os.path.dirname(state_path(args.slug)), exist_ok=True)
         json.dump({"slug": args.slug, "folder": folder, "source_sub": sub,
                    "pre_edits": pre_edits, "n_tracks": len(files),
-                   "prepared": datetime.datetime.now().isoformat()},
+                   "prepared": datetime.datetime.now().isoformat(),
+                   "manifest": manifest, "fingerprint": fp},
                   open(state_path(args.slug), "w"), indent=2, ensure_ascii=False)
+        print(f"source fingerprint: {fp}")
     print(f"\nSTOP — review the diagnose verdicts above (report in {dest}).")
     print(f"Clean?  python3 scripts/publish_show.py publish {args.slug}")
 
@@ -286,6 +310,17 @@ def cmd_publish(args):
     tracks = os.path.join(WORK_ROOT, args.slug, "tracks")
     out = os.path.join(WORK_ROOT, args.slug, "out")
 
+    # the sources on disk must be the ones prepare fingerprinted — same count
+    # with silently different bytes (re-export, stale mount) aborts here
+    if not DRY and st.get("fingerprint"):
+        print("verifying source fingerprint …")
+        _, fp_now = source_manifest(tracks)
+        if fp_now != st["fingerprint"]:
+            raise SystemExit(
+                f"source fingerprint mismatch: prepared {st['fingerprint']}, "
+                f"tracks/ now {fp_now} — the local sources changed since "
+                "prepare. Re-run prepare (and re-review the diagnose) first.")
+
     print(f"[1/7] loudness-normalize {n} tracks to {TARGET_LUFS} LUFS"
           + (" (transient cap OPTED IN)" if args.transient_cap else ""))
     cmd = [sys.executable, os.path.join(ROOT, "scripts", "audio_process.py"),
@@ -294,6 +329,10 @@ def cmd_publish(args):
         cmd += ["--pre-edits", st["pre_edits"]]
     if args.transient_cap:
         cmd += ["--transient-cap"]
+    if args.tcap_exclude:
+        cmd += ["--transient-cap-exclude", args.tcap_exclude]
+    if args.tcap_accept:
+        cmd += ["--transient-cap-accept", args.tcap_accept]
     r = run(cmd)
     if r.returncode not in (0, 2):  # 2 = processed with non-fatal warnings, see report
         raise SystemExit("processing failed")
@@ -407,6 +446,13 @@ def main():
                      help="publish: opt this show in to the v8 sparse-transient cap "
                           "(audio_process.py --transient-cap) — per-track eligibility "
                           "gates still apply; Rene's per-show call, never assume it")
+    ap.add_argument("--transient-cap-exclude", dest="tcap_exclude", default="",
+                     help="publish: comma-separated track numbers vetoed from the cap "
+                          "(passed through to audio_process.py)")
+    ap.add_argument("--transient-cap-accept", dest="tcap_accept", default="",
+                     help="publish: comma-separated track numbers whose listen-flags "
+                          "were reviewed by ear and accepted (without this, a flagged "
+                          "track aborts the publish before upload)")
     args = ap.parse_args()
     DRY = args.dry_run
     {"prepare": cmd_prepare, "publish": cmd_publish,

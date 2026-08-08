@@ -6,38 +6,45 @@ Serves a single page at http://127.0.0.1:<port> with three layers:
 1. SCAN (instant, offline) — reads data/recordings.json + the provenance
    sidecars and classifies every track by its loudness gap to the show target:
    at-target / close-enough (<1 dB) / CANDIDATE (1-6 dB, the cap's window) /
-   too-quiet-for-cap (>6 dB). No audio is read; this is the "which shows
-   would benefit" table.
+   too-quiet-for-cap (>6 dB). No audio is read.
 
-2. ANALYZE (per show, background) — fetches the published FLACs for the
-   show's candidate tracks from R2 (MD5-checked against provenance) and runs
-   the REAL engine decision (`audio_process.plan_track(transient_cap=True)`)
-   on each, so the page shows exactly what a reprocess would do: capped (with
-   depth/engagement stats) or declined (with the reason). Valid because
-   linear/linear-reduced outputs are linear transforms of their sources;
-   applause-limiter and pre-v5 tracks are marked approximate/needs-source.
-   Downloads are deleted after analysis.
+2. ANALYZE (per show, background) — two sources:
+   - "r2" (preliminary estimate): fetches the published FLACs for candidate
+     tracks (MD5-verified against provenance), runs the real engine decision
+     (`plan_track(transient_cap=True)`) on each, deletes the audio. Valid for
+     linear/linear-reduced outputs (linear transforms of their sources);
+     applause-limiter and pre-v5 tracks are marked approximate/needs-source.
+   - "prepared" (canonical): after publish_show prepare has fetched the real
+     Drive sources into ~/work/<slug>/tracks/, runs the same decision on
+     those exact bytes — the analysis that supports publishing. Tagged with
+     the prepare fingerprint so staleness is detectable.
 
-3. REPROCESS (per show, background) — drives the existing runbook commands:
-   `publish_show.py prepare <slug>` then, after the diagnose gate,
-   `publish_show.py publish <slug> [--transient-cap]`, streaming their logs
-   into the page. The human steps (CLIPPING verdicts, draft_tracks flags,
-   description/history, build + commit) stay human — the page nags about
-   them instead of pretending to do them.
+3. REPROCESS (per show, background) — drives the existing runbook commands
+   (`publish_show.py prepare` / `publish`), streaming logs into the page.
+   Per-track decisions (auto / exclude / accept-after-listening) persist in
+   a small decisions.json bound to the prepared source fingerprint, and are
+   passed to publish as --transient-cap-exclude/--transient-cap-accept. The
+   engine's own gates (listen-flags hard-block, strict -1 dBTP, attenuation
+   cap) remain the real safety barrier — this panel is the convenient face
+   on them, not a substitute. Editorial steps stay human.
 
-One background job at a time. State lives under ~/work/tcap-ui/<slug>/.
-This file and its UI live in scripts/, which is .assetsignore'd — the tool
-is never deployed.
+POSTs require the per-session token the page carries (X-Tcap-Token) plus
+Host/Origin checks, so a malicious webpage can't fire drive-by requests at
+the mutation endpoints. One background job at a time; Analyze is cancellable.
+State lives under ~/work/tcap-ui/<slug>/. This file and its UI live in
+scripts/, which is .assetsignore'd — never deployed.
 
 Usage:
   python3 scripts/tcap_ui.py                 # opens the browser
   python3 scripts/tcap_ui.py --port 8769 --no-open
 """
 import argparse
+import datetime
 import http.server
 import json
 import os
 import re
+import secrets
 import shutil
 import socketserver
 import subprocess
@@ -54,12 +61,13 @@ import audio_process as ap  # noqa: E402  (plan_track, measure, targets)
 UI_HTML = os.path.join(HERE, "tcap_ui.html")
 WORK = os.path.expanduser("~/work/tcap-ui")
 PUBLISH_STATE = os.path.expanduser("~/work/{slug}/publish.json")
+PREPARED_TRACKS = os.path.expanduser("~/work/{slug}/tracks")
 BUCKET = "r2:hannan-audio"
+TOKEN = secrets.token_hex(16)  # per-session; embedded in the page, required on POST
 
-# One job at a time — prepare/publish are bandwidth- and disk-heavy, and a
-# second concurrent analyze would make the log pane a lie.
 _job_lock = threading.Lock()
 _job = None  # {"slug","kind","log","proc"|None,"thread"|None,"rc"|None,"done"}
+_cancel = threading.Event()
 
 
 def _shows():
@@ -75,12 +83,40 @@ def _sidecar(slug):
         return {}
 
 
+def _publish_state(slug):
+    try:
+        return json.load(open(PUBLISH_STATE.format(slug=slug)))
+    except Exception:
+        return None
+
+
+def _analysis_path(slug):
+    return os.path.join(WORK, slug, "analysis.json")
+
+
+def _analysis(slug):
+    try:
+        return json.load(open(_analysis_path(slug)))
+    except Exception:
+        return None
+
+
+def _decisions_path(slug):
+    return os.path.join(WORK, slug, "decisions.json")
+
+
+def _decisions(slug):
+    try:
+        return json.load(open(_decisions_path(slug)))
+    except Exception:
+        return {"tracks": {}, "fingerprint": None}
+
+
 def scan():
     """Offline candidacy per track, rolled up per show. Candidacy is judged
-    purely on the published loudness gap (out LUFS vs the show target) — the
-    sparsity gate needs audio and is Analyze's job. Whatever mode produced
-    the current file, a reprocess re-decides modes fresh, so the gap is the
-    honest first-pass filter."""
+    purely on the published loudness gap — the sparsity gate needs audio and
+    is Analyze's job. A reprocess re-decides modes fresh, so the gap is the
+    honest first-pass filter whatever mode produced the current file."""
     out = []
     for s in _shows():
         target = ap.ARTIST_TARGET[s["artist"]]
@@ -108,27 +144,19 @@ def scan():
                          "approx": mode is None or mode == "applause-limiter"})
         spread = (round(max(lufs_vals) - min(lufs_vals), 1)
                   if len(lufs_vals) > 1 else 0.0)
+        pstate = _publish_state(s["slug"])
         out.append({"slug": s["slug"], "artist": s["artist"],
                     "venue": s.get("venue_short") or s.get("venue") or "",
                     "date": s.get("date") or "", "target": target,
                     "n": len(s["tracks"]), "counts": counts, "spread": spread,
                     "tracks": rows,
                     "analysis": _analysis(s["slug"]),
-                    "prepared": os.path.exists(
-                        PUBLISH_STATE.format(slug=s["slug"]))})
+                    "decisions": _decisions(s["slug"]),
+                    "prepared": bool(pstate),
+                    "preparedAt": (pstate or {}).get("prepared"),
+                    "fingerprint": (pstate or {}).get("fingerprint")})
     out.sort(key=lambda r: (-r["counts"]["candidate"], -r["spread"]))
     return out
-
-
-def _analysis_path(slug):
-    return os.path.join(WORK, slug, "analysis.json")
-
-
-def _analysis(slug):
-    try:
-        return json.load(open(_analysis_path(slug)))
-    except Exception:
-        return None
 
 
 def _log(msg, logf):
@@ -136,85 +164,120 @@ def _log(msg, logf):
     logf.flush()
 
 
-def analyze_worker(slug, nums, logpath):
-    """Fetch each candidate track's published FLAC and run the engine's own
-    plan_track(transient_cap=True) on it — the same decision a reprocess
-    would make, including every eligibility gate."""
+def _analyze_one(path, target, logf):
+    """Run the engine's own decision on one file and reduce it to the entry
+    the page renders."""
+    plan = ap.plan_track(path, target, transient_cap=True)
+    entry = {"mode": plan["mode"], "target": plan["target"],
+             "flags": plan["flags"]}
+    if plan["mode"] == "sparse-transient-cap":
+        entry["tcap"] = plan["tcap"]
+        _log(f"  → CAP: +{plan['tcap']['gain_db']:.1f} dB to "
+             f"{plan['target']:g} LUFS, shave max {plan['tcap']['gr_db']:.1f} dB, "
+             f"{plan['tcap']['engaged_pct']:.1f}% engaged, "
+             f"{plan['tcap']['near_peak_pct']:.1f}% near-peak", logf)
+    else:
+        _log(f"  → {plan['mode']} @ {plan['target']:g} LUFS", logf)
+    for fl in plan["flags"]:
+        _log(f"  ⚠ {fl}", logf)
+    return entry
+
+
+def analyze_worker(slug, nums, source, logpath):
     global _job
     shows = {s["slug"]: s for s in _shows()}
     s = shows[slug]
     target = ap.ARTIST_TARGET[s["artist"]]
     side = _sidecar(slug)
     audio_dir = os.path.join(WORK, slug, "audio")
-    os.makedirs(audio_dir, exist_ok=True)
     results = {}
-    prev = _analysis(slug) or {}
-    results.update(prev.get("tracks", {}))
+
     def is_candidate(t):
         d = side.get(str(t["num"]), {})
         if d.get("lufs") is None:
             return False
-        gap = target - d["lufs"]
-        return ap.TCAP_MIN_BENEFIT <= gap <= ap.TCAP_MAX_GR
+        return ap.TCAP_MIN_BENEFIT <= target - d["lufs"] <= ap.TCAP_MAX_GR
 
     with open(logpath, "w") as logf:
         try:
-            todo = [t for t in s["tracks"]
-                    if (t["num"] in nums if nums else is_candidate(t))]
-            _log(f"analyzing {len(todo)} track(s) of {len(s['tracks'])} "
-                 f"({'explicit list' if nums else 'candidates only'})", logf)
-            for i, t in enumerate(todo, 1):
-                d = side.get(str(t["num"]), {})
-                mode = d.get("mode")
-                if mode == "applause-limiter":
-                    _log(f"[{i}/{len(todo)}] #{t['num']} {t['title']}: "
-                         "applause-limited — published file is not a linear "
-                         "transform of the source; needs the Drive source "
-                         "(prepare does that). Skipping.", logf)
-                    results[str(t["num"])] = {"skip": "applause-limited; needs source"}
-                    continue
-                key = t.get("flac")
-                if not key:
-                    results[str(t["num"])] = {"skip": "no FLAC key"}
-                    continue
-                dest = os.path.join(audio_dir, os.path.basename(key))
-                _log(f"[{i}/{len(todo)}] #{t['num']} {t['title']}: fetching…", logf)
-                r = subprocess.run(["rclone", "copy", f"{BUCKET}/{key}",
-                                    audio_dir, "--s3-no-check-bucket"],
-                                   capture_output=True, text=True)
-                if r.returncode != 0 or not os.path.exists(dest):
-                    results[str(t["num"])] = {"error": "fetch failed"}
-                    _log(f"  fetch FAILED: {r.stderr[-200:]}", logf)
-                    continue
-                if d.get("md5"):
-                    got = ap.audio_md5(dest)
-                    if got != d["md5"]:
+            if source == "prepared":
+                # canonical: the exact bytes publish will process
+                tdir = PREPARED_TRACKS.format(slug=slug)
+                files = sorted(f for f in os.listdir(tdir)
+                               if f.lower().endswith((".flac", ".wav")))
+                if nums:
+                    files = [f for f in files
+                             if (m := re.match(r"^(\d+)\s", f))
+                             and int(m.group(1)) in nums]
+                _log(f"canonical analysis of {len(files)} prepared track(s)", logf)
+                for i, f in enumerate(files, 1):
+                    if _cancel.is_set():
+                        _log("cancelled.", logf)
+                        break
+                    m = re.match(r"^(\d+)\s", f)
+                    num = int(m.group(1)) if m else None
+                    _log(f"[{i}/{len(files)}] {f}", logf)
+                    entry = _analyze_one(os.path.join(tdir, f), target, logf)
+                    if num is not None:
+                        results[str(num)] = entry
+                fp = (_publish_state(slug) or {}).get("fingerprint")
+            else:
+                # r2 estimate: candidates only, published files, MD5-verified
+                prev = _analysis(slug) or {}
+                if prev.get("source") == source:
+                    results.update(prev.get("tracks", {}))
+                os.makedirs(audio_dir, exist_ok=True)
+                todo = [t for t in s["tracks"]
+                        if (t["num"] in nums if nums else is_candidate(t))]
+                _log(f"preliminary (R2) analysis of {len(todo)} track(s) of "
+                     f"{len(s['tracks'])} "
+                     f"({'explicit list' if nums else 'candidates only'})", logf)
+                for i, t in enumerate(todo, 1):
+                    if _cancel.is_set():
+                        _log("cancelled.", logf)
+                        break
+                    d = side.get(str(t["num"]), {})
+                    if d.get("mode") == "applause-limiter":
+                        _log(f"[{i}/{len(todo)}] #{t['num']} {t['title']}: "
+                             "applause-limited — not a linear transform of the "
+                             "source; needs prepare. Skipping.", logf)
                         results[str(t["num"])] = {
-                            "error": f"MD5 mismatch vs provenance ({got})"}
-                        _log("  MD5 MISMATCH vs provenance — not analyzing "
-                             "a file that isn't what we shipped", logf)
+                            "skip": "applause-limited; needs canonical source"}
+                        continue
+                    key = t.get("flac")
+                    if not key:
+                        results[str(t["num"])] = {"skip": "no FLAC key"}
+                        continue
+                    dest = os.path.join(audio_dir, os.path.basename(key))
+                    _log(f"[{i}/{len(todo)}] #{t['num']} {t['title']}: fetching…", logf)
+                    r = subprocess.run(["rclone", "copy", f"{BUCKET}/{key}",
+                                        audio_dir, "--s3-no-check-bucket"],
+                                       capture_output=True, text=True)
+                    if r.returncode != 0 or not os.path.exists(dest):
+                        results[str(t["num"])] = {"error": "fetch failed"}
+                        _log(f"  fetch FAILED: {r.stderr[-200:]}", logf)
+                        continue
+                    if d.get("md5") and ap.audio_md5(dest) != d["md5"]:
+                        results[str(t["num"])] = {
+                            "error": "MD5 mismatch vs provenance"}
+                        _log("  MD5 MISMATCH vs provenance — not analyzing a "
+                             "file that isn't what we shipped", logf)
                         os.remove(dest)
                         continue
-                plan = ap.plan_track(dest, target, transient_cap=True)
-                entry = {"mode": plan["mode"], "target": plan["target"],
-                         "flags": plan["flags"],
-                         "approx": d.get("ver") in (1, 2, 3) or "ver" not in d}
-                if plan["mode"] == "sparse-transient-cap":
-                    entry["tcap"] = plan["tcap"]
-                    _log(f"  → CAP: +{plan['tcap']['gain_db']:.1f} dB to "
-                         f"{plan['target']:g} LUFS, max {plan['tcap']['gr_db']:.1f} dB, "
-                         f"{plan['tcap']['engaged_pct']:.1f}% engaged, "
-                         f"{plan['tcap']['near_peak_pct']:.1f}% near-peak", logf)
-                else:
-                    _log(f"  → {plan['mode']} @ {plan['target']:g} LUFS", logf)
-                for fl in plan["flags"]:
-                    _log(f"  ⚠ {fl}", logf)
-                results[str(t["num"])] = entry
-                os.remove(dest)
-            payload = {"target": target, "tracks": results}
-            os.makedirs(os.path.dirname(_analysis_path(slug)), exist_ok=True)
-            json.dump(payload, open(_analysis_path(slug), "w"), indent=1)
-            _log("analysis saved.", logf)
+                    entry = _analyze_one(dest, target, logf)
+                    entry["approx"] = d.get("ver") in (1, 2, 3) or "ver" not in d
+                    results[str(t["num"])] = entry
+                    os.remove(dest)
+                fp = None
+            if not _cancel.is_set():
+                payload = {"tracks": results, "source":
+                           "drive-canonical" if source == "prepared" else "r2-estimate",
+                           "ts": datetime.datetime.now().isoformat(timespec="seconds"),
+                           "engine_ver": ap.WORKFLOW_VERSION, "target": target,
+                           "fingerprint": fp}
+                os.makedirs(os.path.dirname(_analysis_path(slug)), exist_ok=True)
+                json.dump(payload, open(_analysis_path(slug), "w"), indent=1)
+                _log("analysis saved.", logf)
             _job["rc"] = 0
         except Exception as e:  # surface, don't vanish — the page shows the log
             _log(f"ANALYZE FAILED: {e!r}", logf)
@@ -232,18 +295,41 @@ def start_job(slug, kind, extra):
         os.makedirs(os.path.join(WORK, slug), exist_ok=True)
         logpath = os.path.join(WORK, slug, f"{kind}.log")
         if kind == "analyze":
+            source = extra.get("source", "r2")
+            if source == "prepared" and not os.path.isdir(
+                    PREPARED_TRACKS.format(slug=slug)):
+                return None, "no prepared tracks/ — run Prepare first"
+            _cancel.clear()
             _job = {"slug": slug, "kind": kind, "log": logpath, "proc": None,
                     "thread": None, "rc": None, "done": False}
-            th = threading.Thread(target=analyze_worker,
-                                  args=(slug, extra.get("nums") or [], logpath),
-                                  daemon=True)
+            th = threading.Thread(
+                target=analyze_worker,
+                args=(slug, extra.get("nums") or [], source, logpath),
+                daemon=True)
             _job["thread"] = th
             th.start()
         elif kind in ("prepare", "publish"):
             cmd = [sys.executable, os.path.join(HERE, "publish_show.py"),
                    kind, slug]
-            if kind == "publish" and extra.get("transient_cap"):
-                cmd.append("--transient-cap")
+            if kind == "publish":
+                dec = _decisions(slug)
+                fp = (_publish_state(slug) or {}).get("fingerprint")
+                if dec["tracks"] and dec.get("fingerprint") != fp:
+                    return None, ("decisions were made against a different "
+                                  "prepared source (fingerprint mismatch) — "
+                                  "re-review after the latest prepare")
+                excl = ",".join(n for n, v in sorted(dec["tracks"].items(),
+                                                     key=lambda kv: int(kv[0]))
+                                if v == "exclude")
+                acc = ",".join(n for n, v in sorted(dec["tracks"].items(),
+                                                    key=lambda kv: int(kv[0]))
+                               if v == "accept")
+                if extra.get("transient_cap"):
+                    cmd.append("--transient-cap")
+                if excl:
+                    cmd += ["--transient-cap-exclude", excl]
+                if acc:
+                    cmd += ["--transient-cap-accept", acc]
             if kind == "prepare" and extra.get("folder"):
                 cmd += ["--folder", extra["folder"]]
             logf = open(logpath, "w")
@@ -274,7 +360,8 @@ def job_status(offset):
     except OSError:
         pass
     return {"active": True, "slug": _job["slug"], "kind": _job["kind"],
-            "done": _job["done"], "rc": _job["rc"], "log": tail, "size": size}
+            "done": _job["done"], "rc": _job["rc"], "log": tail, "size": size,
+            "cancellable": _job["kind"] == "analyze" and not _job["done"]}
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
@@ -283,25 +370,57 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(data)))
+        self.send_header("Cache-Control", "no-store")
         self.end_headers()
         self.wfile.write(data)
+
+    def _local_ok(self):
+        host = (self.headers.get("Host") or "").split(":")[0]
+        if host not in ("127.0.0.1", "localhost"):
+            return False
+        origin = self.headers.get("Origin")
+        if origin:
+            oh = urllib.parse.urlparse(origin).hostname
+            if oh not in ("127.0.0.1", "localhost"):
+                return False
+        return True
 
     def do_GET(self):
         url = urllib.parse.urlparse(self.path)
         if url.path in ("/", "/index.html"):
-            with open(UI_HTML, "rb") as f:
-                self._send(200, f.read(), "text/html; charset=utf-8")
+            html = open(UI_HTML).read().replace("__TOKEN__", TOKEN)
+            self._send(200, html, "text/html; charset=utf-8")
         elif url.path == "/api/scan":
             self._send(200, json.dumps(scan()))
         elif url.path == "/api/job":
             q = urllib.parse.parse_qs(url.query)
-            off = int(q.get("offset", ["0"])[0])
+            try:
+                off = int(q.get("offset", ["0"])[0])
+            except ValueError:
+                off = 0
             self._send(200, json.dumps(job_status(off)))
         else:
             self._send(404, '{"error": "not found"}')
 
     def do_POST(self):
-        m = re.match(r"^/api/(analyze|prepare|publish)/([a-z0-9-]+)$", self.path)
+        # drive-by defense: local host/origin only, plus the session token the
+        # page carries (a foreign page can neither read nor forge it, and the
+        # custom header forces a CORS preflight that will fail)
+        if not self._local_ok() or self.headers.get("X-Tcap-Token") != TOKEN:
+            self._send(403, '{"error": "forbidden"}')
+            return
+        try:
+            n = int(self.headers.get("Content-Length") or 0)
+            extra = json.loads(self.rfile.read(n) or b"{}") if n else {}
+        except (ValueError, TypeError):
+            self._send(400, '{"error": "malformed request body"}')
+            return
+        if self.path == "/api/cancel":
+            _cancel.set()
+            self._send(200, '{"cancelling": true}')
+            return
+        m = re.match(r"^/api/(analyze|prepare|publish|decide)/([a-z0-9-]+)$",
+                     self.path)
         if not m:
             self._send(404, '{"error": "not found"}')
             return
@@ -309,9 +428,23 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if slug not in {s["slug"] for s in _shows()}:
             self._send(404, '{"error": "unknown slug"}')
             return
-        n = int(self.headers.get("Content-Length") or 0)
-        extra = json.loads(self.rfile.read(n) or b"{}") if n else {}
-        if kind == "publish" and not os.path.exists(PUBLISH_STATE.format(slug=slug)):
+        if kind == "decide":
+            num, dec = str(extra.get("num")), extra.get("decision")
+            if dec not in ("auto", "exclude", "accept") or not num.isdigit():
+                self._send(400, '{"error": "decision must be auto/exclude/accept"}')
+                return
+            d = _decisions(slug)
+            if dec == "auto":
+                d["tracks"].pop(num, None)
+            else:
+                d["tracks"][num] = dec
+            d["fingerprint"] = (_publish_state(slug) or {}).get("fingerprint")
+            os.makedirs(os.path.join(WORK, slug), exist_ok=True)
+            json.dump(d, open(_decisions_path(slug), "w"), indent=1)
+            self._send(200, json.dumps(d))
+            return
+        if kind == "publish" and not os.path.exists(
+                PUBLISH_STATE.format(slug=slug)):
             self._send(409, '{"error": "no publish.json — run prepare first"}')
             return
         job, err = start_job(slug, kind, extra)
