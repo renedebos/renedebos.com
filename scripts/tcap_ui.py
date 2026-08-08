@@ -219,19 +219,31 @@ def narrative(slug, results, target, side, source_label):
             continue
         modes[e["mode"]] = modes.get(e["mode"], 0) + 1
         proj[num_s] = e.get("target")
+        pub = side.get(num_s, {}).get("lufs")
+        # the listener-facing number is the change vs what's LIVE now, not the
+        # gain applied to the canonical source (those differ whenever the
+        # published version was itself gained)
+        vs_live = (f", {e['target'] - pub:+.1f} dB vs live"
+                   if pub is not None and e.get("target") is not None else "")
         if e["mode"] == "sparse-transient-cap":
             t = e["tcap"]
-            capped.append(f"#{num_s} +{t['gain_db']:.1f} dB (shave ≤{t['gr_db']:.1f}, "
+            capped.append(f"#{num_s} → {e['target']:g} LUFS{vs_live} "
+                          f"(shave ≤{t['gr_db']:.1f} dB, "
                           f"{t['engaged_pct']:.1f}% engaged)")
         else:
             gap = target - e["target"]
             if gap >= 1.0:
-                reason = next((f for f in e.get("flags", [])
-                               if "declined" in f), "")
-                short = ("over the 6 dB cap" if "hard" in reason
-                         else "not sparse (dense/loud)" if "regime" in reason
-                         else "quieter linear target")
-                declined.append(f"#{num_s} stays {e['target']:g} LUFS ({short})")
+                # authoritative mode, never inferred from flag text
+                if e["mode"] == "applause-limiter":
+                    why = "applause limited, music's own peak sets the ceiling"
+                else:
+                    reason = next((f for f in e.get("flags", [])
+                                   if "declined" in f), "")
+                    why = ("over the 6 dB cap" if "hard cap" in reason
+                           else "not sparse (dense/repeated)" if "repeat" in reason
+                           else "honest quieter linear target")
+                declined.append(f"#{num_s} {e['mode']} → {e['target']:g} "
+                                f"LUFS{vs_live} ({why})")
         if any("listen before shipping" in f for f in e.get("flags", [])):
             flagged.append(num_s)
     # projected spread over the whole show: analyzed tracks at their plan
