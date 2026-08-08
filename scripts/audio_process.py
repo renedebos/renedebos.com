@@ -301,9 +301,13 @@ WORKFLOW_VERSIONS = {
                 "<= 1% and longest event <= 0.2 s; REVIEW (capped but the "
                 "listen-before-shipping hard-block fires) up to 5% density / 2% "
                 "engagement / 0.5 s; beyond that DECLINED to linear-reduced — "
-                "'Truck', the repeatedly-loud counterexample at 12.3% density, stays "
-                "far out of scope (see the codex-notes drum-control proposal, "
-                "deliberately NOT built); "
+                "'Truck', the repeatedly-loud counterexample, stays out of scope "
+                "(its oft-quoted 12.3% density was measured on the applause-LIMITED "
+                "published copy; the raw source reads 1.6% because the un-limited "
+                "applause is the peak reference — the density screen is "
+                "reference-dependent, which is exactly why ENGAGEMENT at the real "
+                "threshold is the deciding gate; see the codex-notes drum-control "
+                "proposal, deliberately NOT built); "
                 "(d) applause-limiter takes precedence when applause is what eats the "
                 "headroom, since it leaves the music strictly linear. Post-render, the "
                 "ACTUAL output true peak is measured against the STRICT -1.00 dBTP "
@@ -949,6 +953,29 @@ def plan_track(path, target, pre="", transient_cap=False, tcap_partial=False,
     plan.update(mode="applause-limiter", gain_db=gain, limit_db=APPLAUSE_LIMIT_DB,
                 music_peak_db=music_peak, applause_windows=applause, dur=dur)
     limiter_finalize(plan)
+    # Transparency (2026-08-08, codex-notes suggestion): when the cap was
+    # requested but applause-limiter took precedence AND the track still lands
+    # >= 1 dB short of nominal, measure the near-peak density fresh from THIS
+    # source and report it as context — it answers "why not cap the rest?"
+    # without anyone having to know the precedence rule. Informational only;
+    # never changes the treatment.
+    if transient_cap and target - plan["target"] >= TCAP_MIN_BENEFIT:
+        fpeaks = [p for _, p, _ in window_stats(path, pre=pre,
+                                                win_s=TCAP_FRAME_MS / 1000)]
+        if fpeaks:
+            top = max(fpeaks)
+            near_pct = 100.0 * sum(1 for p in fpeaks
+                                   if p >= top - TCAP_NEAR_PEAK_DB) / len(fpeaks)
+            plan["near_peak_pct"] = round(near_pct, 2)
+            plan["flags"].append(
+                f"context: {near_pct:.1f}% of 50 ms frames within 3 dB of this "
+                f"source's overall peak (informational — applause-limiter takes "
+                f"precedence; the music stays strictly linear). Caveat: when "
+                f"applause tops the file, this screen understates the music's "
+                f"own density — measurements against a processed/limited copy "
+                f"read much higher (Truck: 1.6% source vs 12.3% published), so "
+                f"any future stacked-cap question must be decided by engagement "
+                f"stats at a real threshold, not this number")
     return plan
 
 
