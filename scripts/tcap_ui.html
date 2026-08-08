@@ -164,11 +164,12 @@ function body(s){
     const a = an[String(t.num)];
     let verdict = "";
     if (a){
-      if (a.tcap) verdict = `<span class="v-cap">cap ${fmt(a.tcap.gr_db)} dB → ${fmt(a.target)} LUFS</span>` +
+      if (a.tcap) verdict = `<span class="v-cap">WILL CAP → ${fmt(a.target)} LUFS (shave ≤ ${fmt(a.tcap.gr_db)} dB)</span>` +
         `<span class="hint"> ${fmt(a.tcap.engaged_pct)}% engaged · ${a.tcap.events} ev · longest ${fmt(a.tcap.longest_s,2)} s · near-peak ${fmt(a.tcap.near_peak_pct)}%</span>`;
       else if (a.skip) verdict = `<span class="c-unknown">${esc(a.skip)}</span>`;
       else if (a.error) verdict = `<span class="c-over">${esc(a.error)}</span>`;
-      else verdict = `<span class="v-declined">${esc(a.mode)} @ ${fmt(a.target)} LUFS</span>`;
+      else if (a.mode === "linear") verdict = `<span class="c-at">NO CAP — plain linear → ${fmt(a.target)} LUFS</span>`;
+      else verdict = `<span class="v-declined">NO CAP — ${esc(a.mode)} → ${fmt(a.target)} LUFS</span>`;
       for (const f of (a.flags||[])) verdict += `<span class="flag">⚠ ${esc(f)}</span>`;
       if (a.approx) verdict += `<span class="hint">pre-v5 source — approximate</span>`;
     }
@@ -208,7 +209,7 @@ function body(s){
     </div>
     <div class="hint">R2 analysis = preliminary estimate on published audio (candidates only, MD5-verified, deleted after). Canonical analysis runs on the exact prepared Drive sources and is what supports publishing. Decisions persist and are passed to publish as --transient-cap-exclude/-accept; a flagged track with no decision makes the engine abort before upload.</div>
     <table><tr><th class="num">#</th><th>Title</th><th class="num">LUFS</th><th class="num">gap dB</th>
-      <th>status</th><th>current mode</th><th>decision</th><th>analysis</th></tr>${rows}</table>
+      <th>status</th><th>current mode</th><th>decision</th><th>what publish will do</th></tr>${rows}</table>
     <div class="nag">After a publish: review draft_tracks FLAGs, write the description + updates note + /history/ entry, then <code>python3 scripts/build.py</code>, commit, push, and spot-check the live page. This panel does none of that for you.</div>`;
 }
 
