@@ -187,11 +187,12 @@ def _log(msg, logf):
     logf.flush()
 
 
-def _analyze_one(path, target, logf, partial=False, force=False):
-    """Run the engine's own decision on one file and reduce it to the entry
-    the page renders."""
-    plan = ap.plan_track(path, target, transient_cap=True, tcap_partial=partial,
-                         tcap_force=force)
+def _analyze_one(path, target, logf, enabled=True, partial=False, force=False):
+    """Run the engine's own decision on one file — honoring the same per-track
+    decisions publish will apply — and reduce it to the entry the page
+    renders."""
+    plan = ap.plan_track(path, target, transient_cap=enabled,
+                         tcap_partial=partial, tcap_force=force)
     entry = {"mode": plan["mode"], "target": plan["target"],
              "flags": plan["flags"]}
     if plan["mode"] == "sparse-transient-cap":
@@ -291,6 +292,7 @@ def analyze_worker(slug, nums, source, logpath):
     decs = _decisions(slug)["tracks"]
     partial_nums = {int(n) for n, v in decs.items() if v == "partial"}
     force_nums = {int(n) for n, v in decs.items() if v == "force"}
+    excl_nums = {int(n) for n, v in decs.items() if v == "exclude"}
 
     def is_candidate(t):
         if t["num"] in partial_nums or t["num"] in force_nums:
@@ -320,6 +322,7 @@ def analyze_worker(slug, nums, source, logpath):
                     num = int(m.group(1)) if m else None
                     _log(f"[{i}/{len(files)}] {f}", logf)
                     entry = _analyze_one(os.path.join(tdir, f), target, logf,
+                                         enabled=num not in excl_nums,
                                          partial=num in partial_nums,
                                          force=num in force_nums)
                     if num is not None:
@@ -369,6 +372,7 @@ def analyze_worker(slug, nums, source, logpath):
                         os.remove(dest)
                         continue
                     entry = _analyze_one(dest, target, logf,
+                                         enabled=t["num"] not in excl_nums,
                                          partial=t["num"] in partial_nums,
                                          force=t["num"] in force_nums)
                     entry["approx"] = d.get("ver") in (1, 2, 3) or "ver" not in d
@@ -380,6 +384,7 @@ def analyze_worker(slug, nums, source, logpath):
                              else "r2-estimate")
                 summary = narrative(slug, results, target, side, src_label)
                 payload = {"tracks": results, "source": src_label,
+                           "decisions": dict(decs),
                            "ts": datetime.datetime.now().isoformat(timespec="seconds"),
                            "engine_ver": ap.WORKFLOW_VERSION, "target": target,
                            "fingerprint": fp, "summary": summary}

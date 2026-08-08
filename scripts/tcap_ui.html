@@ -190,8 +190,20 @@ function body(s){
         <option value="auto"${cur==="auto"?" selected":""}>auto (stay quiet)</option>
         <option value="partial"${cur==="partial"?" selected":""}>partial (cap 6 dB, lands short)</option>
       </select>`;
+    // projected output loudness under the CURRENT decisions: the analysis
+    // target when the decision it was computed under still matches; a
+    // re-analyze marker when a decision changed afterwards (accept doesn't
+    // change the plan, only unblocks, so it counts as auto here)
+    const eff = v => (v === "accept" ? "auto" : (v || "auto"));
+    const assumed = eff(((s.analysis && s.analysis.decisions) || {})[String(t.num)]);
+    let will = "—";
+    if (a && !a.skip && !a.error)
+      will = (eff(cur) === assumed)
+        ? `<b>${fmt(a.target,2)}</b>`
+        : `<span class="c-over" title="decision changed since the analysis — re-run Analyze">re-analyze</span>`;
     rows += `<tr><td class="num">${t.num}</td><td>${esc(t.title)}</td>
       <td class="num">${fmt(t.lufs,2)}</td><td class="num">${fmt(t.gap)}</td>
+      <td class="num">${will}</td>
       <td class="c-${t.cls}">${CLS[t.cls]}</td>
       <td>${esc(t.mode||"—")}${t.ver?` <span class="hint">v${t.ver}</span>`:""}</td>
       <td>${sel}</td><td>${verdict}</td></tr>`;
@@ -214,6 +226,7 @@ function body(s){
     </div>
     <div class="hint">R2 analysis = preliminary estimate on published audio (candidates only, MD5-verified, deleted after). Canonical analysis runs on the exact prepared Drive sources and is what supports publishing. Decisions persist and are passed to publish as --transient-cap-exclude/-accept; a flagged track with no decision makes the engine abort before upload.</div>
     <table><tr><th class="num">#</th><th>Title</th><th class="num">LUFS</th><th class="num">gap dB</th>
+      <th class="num">publish → LUFS</th>
       <th>status</th><th>current mode</th><th>decision</th><th>what publish will do</th></tr>${rows}</table>
     <div class="nag">After a publish: review draft_tracks FLAGs, write the description + updates note + /history/ entry, then <code>python3 scripts/build.py</code>, commit, push, and spot-check the live page. This panel does none of that for you.</div>`;
 }
