@@ -11,6 +11,9 @@ R2_FLAGS    := --s3-no-check-bucket
 edit:
 	python3 scripts/edit_metadata.py
 
+tcap:
+	python3 scripts/tcap_ui.py
+
 build:
 	python3 scripts/build.py
 
