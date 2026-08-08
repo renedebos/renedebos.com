@@ -208,6 +208,7 @@ function body(s){
       <button onclick="startJob('analyze','${s.slug}',{source:'r2'})">Analyze (R2 estimate)</button>
       <button class="primary" ${canonDisabled} onclick="startJob('analyze','${s.slug}',{source:'prepared'})">Analyze prepared (canonical)</button>
       <button onclick="startJob('prepare','${s.slug}')">Prepare (Drive → diagnose)</button>
+      <button ${canonDisabled} onclick="window.open('/report/${s.slug}','_blank')">Diagnose report</button>
       <label class="ck"><input type="checkbox" id="tc-${s.slug}" checked> --transient-cap</label>
       <button ${pubDisabled} onclick="startPublish('${s.slug}')">Publish</button>
     </div>
@@ -275,8 +276,10 @@ async function poll(){
   }
   if (j.done){
     clearInterval(polling); polling = null;
-    document.getElementById("jobspin").textContent =
-      j.rc === 0 ? "done ✓" : `exited ${j.rc} — read the log`;
+    let doneMsg = j.rc === 0 ? "done ✓" : `exited ${j.rc} — read the log`;
+    if (j.rc === 0 && j.kind === "prepare")
+      doneMsg = `done ✓ — open the Diagnose report, review the verdicts, then Analyze prepared / Publish`;
+    document.getElementById("jobspin").textContent = doneMsg;
     document.getElementById("jobcancel").style.display = "none";
     SCAN.forEach(s=>delete s.tracksSorted);
     load();  // refresh scan (analysis/prepared/decision state changed)

@@ -513,6 +513,21 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self._send(200, html, "text/html; charset=utf-8")
         elif url.path == "/api/scan":
             self._send(200, json.dumps(scan()))
+        elif url.path.startswith("/report/"):
+            slug = url.path[len("/report/"):]
+            if (re.fullmatch(r"[a-z0-9-]+", slug)
+                    and slug in {s["slug"] for s in _shows()}):
+                p = os.path.join(os.path.expanduser(f"~/work/{slug}"),
+                                 "tracks", "diagnostic_report.txt")
+                try:
+                    self._send(200, open(p).read(), "text/plain; charset=utf-8")
+                except OSError:
+                    self._send(404, "no diagnose report on disk — run Prepare "
+                                    "first (the report lives in the prepared "
+                                    "tracks/ folder and is cleaned up after a "
+                                    "publish)", "text/plain; charset=utf-8")
+            else:
+                self._send(404, '{"error": "unknown slug"}')
         elif url.path == "/api/job":
             q = urllib.parse.parse_qs(url.query)
             try:
