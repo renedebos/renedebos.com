@@ -333,6 +333,8 @@ def cmd_publish(args):
         cmd += ["--transient-cap-exclude", args.tcap_exclude]
     if args.tcap_accept:
         cmd += ["--transient-cap-accept", args.tcap_accept]
+    if args.tcap_partial:
+        cmd += ["--transient-cap-partial", args.tcap_partial]
     r = run(cmd)
     if r.returncode not in (0, 2):  # 2 = processed with non-fatal warnings, see report
         raise SystemExit("processing failed")
@@ -453,6 +455,10 @@ def main():
                      help="publish: comma-separated track numbers whose listen-flags "
                           "were reviewed by ear and accepted (without this, a flagged "
                           "track aborts the publish before upload)")
+    ap.add_argument("--transient-cap-partial", dest="tcap_partial", default="",
+                     help="publish: comma-separated track numbers allowed partial "
+                          "capping (full 6 dB attenuation, lands short of target) — "
+                          "Rene's explicit per-track opt-in for over-cap tracks")
     args = ap.parse_args()
     DRY = args.dry_run
     {"prepare": cmd_prepare, "publish": cmd_publish,

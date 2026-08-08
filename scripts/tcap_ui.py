@@ -101,6 +101,25 @@ def _analysis(slug):
         return None
 
 
+def _history_path(slug):
+    return os.path.join(WORK, slug, "history.json")
+
+
+def _history(slug):
+    try:
+        return json.load(open(_history_path(slug)))
+    except Exception:
+        return []
+
+
+def _record_history(slug, kind, rc):
+    h = _history(slug)
+    h.append({"kind": kind, "rc": rc,
+              "ts": datetime.datetime.now().isoformat(timespec="seconds")})
+    os.makedirs(os.path.join(WORK, slug), exist_ok=True)
+    json.dump(h[-50:], open(_history_path(slug), "w"), indent=1)
+
+
 def _decisions_path(slug):
     return os.path.join(WORK, slug, "decisions.json")
 
@@ -145,6 +164,9 @@ def scan():
         spread = (round(max(lufs_vals) - min(lufs_vals), 1)
                   if len(lufs_vals) > 1 else 0.0)
         pstate = _publish_state(s["slug"])
+        last = {}
+        for h in _history(s["slug"]):
+            last[h["kind"]] = h  # newest wins (list is chronological)
         out.append({"slug": s["slug"], "artist": s["artist"],
                     "venue": s.get("venue_short") or s.get("venue") or "",
                     "date": s.get("date") or "", "target": target,
@@ -152,6 +174,7 @@ def scan():
                     "tracks": rows,
                     "analysis": _analysis(s["slug"]),
                     "decisions": _decisions(s["slug"]),
+                    "history": last,
                     "prepared": bool(pstate),
                     "preparedAt": (pstate or {}).get("prepared"),
                     "fingerprint": (pstate or {}).get("fingerprint")})
@@ -164,10 +187,10 @@ def _log(msg, logf):
     logf.flush()
 
 
-def _analyze_one(path, target, logf):
+def _analyze_one(path, target, logf, partial=False):
     """Run the engine's own decision on one file and reduce it to the entry
     the page renders."""
-    plan = ap.plan_track(path, target, transient_cap=True)
+    plan = ap.plan_track(path, target, transient_cap=True, tcap_partial=partial)
     entry = {"mode": plan["mode"], "target": plan["target"],
              "flags": plan["flags"]}
     if plan["mode"] == "sparse-transient-cap":
@@ -183,6 +206,67 @@ def _analyze_one(path, target, logf):
     return entry
 
 
+def narrative(slug, results, target, side, source_label):
+    """Deterministic prose summary of an analysis run — the 'what does this
+    mean and what's left to decide' paragraph, generated from the numbers."""
+    modes = {}
+    capped, declined, flagged, errors = [], [], [], []
+    proj = {}
+    for num_s, e in sorted(results.items(), key=lambda kv: int(kv[0])):
+        if e.get("skip") or e.get("error"):
+            errors.append((num_s, e.get("skip") or e.get("error")))
+            continue
+        modes[e["mode"]] = modes.get(e["mode"], 0) + 1
+        proj[num_s] = e.get("target")
+        if e["mode"] == "sparse-transient-cap":
+            t = e["tcap"]
+            capped.append(f"#{num_s} +{t['gain_db']:.1f} dB (shave ≤{t['gr_db']:.1f}, "
+                          f"{t['engaged_pct']:.1f}% engaged)")
+        else:
+            gap = target - e["target"]
+            if gap >= 1.0:
+                reason = next((f for f in e.get("flags", [])
+                               if "declined" in f), "")
+                short = ("over the 6 dB cap" if "hard" in reason
+                         else "not sparse (dense/loud)" if "regime" in reason
+                         else "quieter linear target")
+                declined.append(f"#{num_s} stays {e['target']:g} LUFS ({short})")
+        if any("listen before shipping" in f for f in e.get("flags", [])):
+            flagged.append(num_s)
+    # projected spread over the whole show: analyzed tracks at their plan
+    # target, the rest at their currently-published loudness
+    lufs = []
+    for n, d in side.items():
+        if n in proj and proj[n] is not None:
+            lufs.append(proj[n])
+        elif d.get("lufs") is not None:
+            lufs.append(d["lufs"])
+    spread = f"{max(lufs) - min(lufs):.1f} dB" if len(lufs) > 1 else "n/a"
+    L = [f"SUMMARY — {slug} ({source_label}, engine v{ap.WORKFLOW_VERSION})",
+         "Treatments: " + (", ".join(f"{v} {k}" for k, v in sorted(modes.items()))
+                           or "none analyzed"),
+         f"Projected show spread after publish: {spread} "
+         f"(worst analyzed track: {min(lufs):.1f} LUFS)" if lufs else ""]
+    if capped:
+        L.append("Capped: " + "; ".join(capped))
+    if declined:
+        L.append("Left quieter: " + "; ".join(declined)
+                 + " — over-cap tracks can be upgraded per-track with the "
+                   "'partial (cap 6 dB)' decision")
+    if errors:
+        L.append("Not analyzed: " + "; ".join(f"#{n} ({r})" for n, r in errors))
+    if flagged:
+        L.append("⚠ NEEDS EARS before publish: track(s) "
+                 + ", ".join(flagged)
+                 + " — listen (ab_compare), then set accept or exclude; "
+                   "publish hard-blocks until decided.")
+        L.append("Next: resolve the flagged track(s), then Publish.")
+    else:
+        L.append("No listening flags — ready to Publish once decisions "
+                 "(if any) are set.")
+    return "\n".join(x for x in L if x)
+
+
 def analyze_worker(slug, nums, source, logpath):
     global _job
     shows = {s["slug"]: s for s in _shows()}
@@ -191,8 +275,12 @@ def analyze_worker(slug, nums, source, logpath):
     side = _sidecar(slug)
     audio_dir = os.path.join(WORK, slug, "audio")
     results = {}
+    partial_nums = {int(n) for n, v in _decisions(slug)["tracks"].items()
+                    if v == "partial"}
 
     def is_candidate(t):
+        if t["num"] in partial_nums:
+            return True  # over-cap track Rene opted into partial capping
         d = side.get(str(t["num"]), {})
         if d.get("lufs") is None:
             return False
@@ -217,7 +305,8 @@ def analyze_worker(slug, nums, source, logpath):
                     m = re.match(r"^(\d+)\s", f)
                     num = int(m.group(1)) if m else None
                     _log(f"[{i}/{len(files)}] {f}", logf)
-                    entry = _analyze_one(os.path.join(tdir, f), target, logf)
+                    entry = _analyze_one(os.path.join(tdir, f), target, logf,
+                                         partial=num in partial_nums)
                     if num is not None:
                         results[str(num)] = entry
                 fp = (_publish_state(slug) or {}).get("fingerprint")
@@ -264,26 +353,31 @@ def analyze_worker(slug, nums, source, logpath):
                              "file that isn't what we shipped", logf)
                         os.remove(dest)
                         continue
-                    entry = _analyze_one(dest, target, logf)
+                    entry = _analyze_one(dest, target, logf,
+                                         partial=t["num"] in partial_nums)
                     entry["approx"] = d.get("ver") in (1, 2, 3) or "ver" not in d
                     results[str(t["num"])] = entry
                     os.remove(dest)
                 fp = None
             if not _cancel.is_set():
-                payload = {"tracks": results, "source":
-                           "drive-canonical" if source == "prepared" else "r2-estimate",
+                src_label = ("drive-canonical" if source == "prepared"
+                             else "r2-estimate")
+                summary = narrative(slug, results, target, side, src_label)
+                payload = {"tracks": results, "source": src_label,
                            "ts": datetime.datetime.now().isoformat(timespec="seconds"),
                            "engine_ver": ap.WORKFLOW_VERSION, "target": target,
-                           "fingerprint": fp}
+                           "fingerprint": fp, "summary": summary}
                 os.makedirs(os.path.dirname(_analysis_path(slug)), exist_ok=True)
                 json.dump(payload, open(_analysis_path(slug), "w"), indent=1)
-                _log("analysis saved.", logf)
+                _log("\n" + summary, logf)
+                _log("\nanalysis saved.", logf)
             _job["rc"] = 0
         except Exception as e:  # surface, don't vanish — the page shows the log
             _log(f"ANALYZE FAILED: {e!r}", logf)
             _job["rc"] = 1
         finally:
             shutil.rmtree(audio_dir, ignore_errors=True)
+            _record_history(slug, f"analyze-{source}", _job["rc"])
             _job["done"] = True
 
 
@@ -324,12 +418,17 @@ def start_job(slug, kind, extra):
                 acc = ",".join(n for n, v in sorted(dec["tracks"].items(),
                                                     key=lambda kv: int(kv[0]))
                                if v == "accept")
+                part = ",".join(n for n, v in sorted(dec["tracks"].items(),
+                                                     key=lambda kv: int(kv[0]))
+                                if v == "partial")
                 if extra.get("transient_cap"):
                     cmd.append("--transient-cap")
                 if excl:
                     cmd += ["--transient-cap-exclude", excl]
                 if acc:
                     cmd += ["--transient-cap-accept", acc]
+                if part:
+                    cmd += ["--transient-cap-partial", part]
             if kind == "prepare" and extra.get("folder"):
                 cmd += ["--folder", extra["folder"]]
             logf = open(logpath, "w")
@@ -340,6 +439,7 @@ def start_job(slug, kind, extra):
 
             def reap():
                 _job["rc"] = proc.wait()
+                _record_history(slug, kind, _job["rc"])
                 _job["done"] = True
                 logf.close()
             threading.Thread(target=reap, daemon=True).start()
@@ -430,8 +530,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return
         if kind == "decide":
             num, dec = str(extra.get("num")), extra.get("decision")
-            if dec not in ("auto", "exclude", "accept") or not num.isdigit():
-                self._send(400, '{"error": "decision must be auto/exclude/accept"}')
+            if dec not in ("auto", "exclude", "accept", "partial") or not num.isdigit():
+                self._send(400, '{"error": "decision must be '
+                                'auto/exclude/accept/partial"}')
                 return
             d = _decisions(slug)
             if dec == "auto":

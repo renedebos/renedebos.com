@@ -59,6 +59,13 @@
   #jobclose { margin-left:auto; background:transparent; color:#94a3b8; border-color:#334155; }
   .nag { background:#fefce8; border:1px solid #fde68a; color:#713f12; border-radius:6px;
          padding:8px 12px; font-size:12.5px; margin:8px 0; }
+  .summary { background:#eff6ff; border:1px solid #bfdbfe; color:#1e3a5f; border-radius:6px;
+             padding:10px 14px; font:12.5px/1.5 ui-monospace,monospace; white-space:pre-wrap; margin:8px 0; }
+  .steps { display:flex; gap:6px; margin:2px 0 8px; flex-wrap:wrap; }
+  .step { font-size:12px; padding:2px 10px; border-radius:99px; border:1px solid #d1d5db;
+          color:var(--mut); background:#f9fafb; }
+  .step.done { background:#dcfce7; border-color:#86efac; color:#166534; }
+  .step.fail { background:#fee2e2; border-color:#fca5a5; color:#991b1b; }
 </style>
 </head>
 <body>
@@ -131,6 +138,22 @@ function render(){
   }
 }
 
+function steps(s){
+  const h = s.history || {};
+  const canonical = s.analysis && s.analysis.source === "drive-canonical" &&
+                    (!s.fingerprint || s.analysis.fingerprint === s.fingerprint);
+  const nDec = Object.keys((s.decisions&&s.decisions.tracks)||{}).length;
+  const pub = h.publish;
+  const step = (label, state, extra) =>
+    `<span class="step ${state}">${state==="done"?"✓ ":state==="fail"?"✗ ":"○ "}${label}${extra||""}</span>`;
+  return `<div class="steps">
+    ${step("1 Prepare", s.prepared?"done":"", s.prepared?` ${esc((s.preparedAt||"").slice(5,16))}`:"")}
+    ${step("2 Canonical analysis", canonical?"done":(s.analysis?"":""), canonical?` ${esc((s.analysis.ts||"").slice(5,16))}`:"")}
+    ${step("3 Decisions", nDec?"done":"", nDec?` (${nDec})`:" (optional)")}
+    ${step("4 Publish", pub ? (pub.rc===0?"done":"fail") : "", pub?` ${esc((pub.ts||"").slice(5,16))}`:"")}
+  </div>`;
+}
+
 function body(s){
   const an = (s.analysis && s.analysis.tracks) || {};
   const dec = (s.decisions && s.decisions.tracks) || {};
@@ -149,13 +172,19 @@ function body(s){
       for (const f of (a.flags||[])) verdict += `<span class="flag">⚠ ${esc(f)}</span>`;
       if (a.approx) verdict += `<span class="hint">pre-v5 source — approximate</span>`;
     }
-    const decidable = t.cls === "candidate";
     const cur = dec[String(t.num)] || "auto";
-    const sel = decidable ? `<select class="dec" onchange="decide('${s.slug}',${t.num},this.value)">
+    let sel = "—";
+    if (t.cls === "candidate")
+      sel = `<select class="dec" onchange="decide('${s.slug}',${t.num},this.value)">
         <option value="auto"${cur==="auto"?" selected":""}>auto</option>
         <option value="exclude"${cur==="exclude"?" selected":""}>exclude (veto)</option>
         <option value="accept"${cur==="accept"?" selected":""}>accept (listened)</option>
-      </select>` : "—";
+      </select>`;
+    else if (t.cls === "over")
+      sel = `<select class="dec" onchange="decide('${s.slug}',${t.num},this.value)">
+        <option value="auto"${cur==="auto"?" selected":""}>auto (stay quiet)</option>
+        <option value="partial"${cur==="partial"?" selected":""}>partial (cap 6 dB, lands short)</option>
+      </select>`;
     rows += `<tr><td class="num">${t.num}</td><td>${esc(t.title)}</td>
       <td class="num">${fmt(t.lufs,2)}</td><td class="num">${fmt(t.gap)}</td>
       <td class="c-${t.cls}">${CLS[t.cls]}</td>
@@ -164,7 +193,11 @@ function body(s){
   }
   const pubDisabled = s.prepared && !decStale ? "" : "disabled";
   const canonDisabled = s.prepared ? "" : "disabled title='run Prepare first'";
+  const summary = (s.analysis && s.analysis.summary)
+    ? `<div class="summary">${esc(s.analysis.summary)}</div>` : "";
   return `
+    ${steps(s)}
+    ${summary}
     ${decStale ? `<div class="nag">⚠ Decisions were made against a different prepared source (fingerprint changed). Re-review them — Publish is blocked until then.</div>` : ""}
     <div class="btns">
       <button onclick="startJob('analyze','${s.slug}',{source:'r2'})">Analyze (R2 estimate)</button>
@@ -210,7 +243,8 @@ function startPublish(slug){
   const dec = (s.decisions && s.decisions.tracks) || {};
   const ex = Object.keys(dec).filter(k=>dec[k]==="exclude").join(",") || "none";
   const ac = Object.keys(dec).filter(k=>dec[k]==="accept").join(",") || "none";
-  if (!confirm(`Publish ${slug}${tc?" with --transient-cap":""}?\nExcluded tracks: ${ex}\nAccepted (listened): ${ac}\nRenders, uploads to R2, verifies MD5s, backs up to Drive (~30–40 min). The engine verifies the source fingerprint and aborts on unresolved listen-flags. Only proceed if the diagnose output was clean.`)) return;
+  const pa = Object.keys(dec).filter(k=>dec[k]==="partial").join(",") || "none";
+  if (!confirm(`Publish ${slug}${tc?" with --transient-cap":""}?\nExcluded tracks: ${ex}\nAccepted (listened): ${ac}\nPartial cap (lands short): ${pa}\nRenders, uploads to R2, verifies MD5s, backs up to Drive (~30–40 min). The engine verifies the source fingerprint and aborts on unresolved listen-flags. Only proceed if the diagnose output was clean.`)) return;
   startJob("publish", slug, {transient_cap: tc});
 }
 
