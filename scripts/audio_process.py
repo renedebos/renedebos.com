@@ -92,11 +92,24 @@ TCAP_MAX_GR = 6.0             # hard cap on the limiter's ACTUAL instantaneous a
                               # linear-reduced entirely, never forced
 TCAP_FRAME_MS = 50            # frame size for the sparsity/engagement scan
 TCAP_NEAR_PEAK_DB = 3.0       # "near peak" = within this of the track's own frame-peak max
-TCAP_MAX_NEAR_PEAK_PCT = 1.0  # sparsity gate: reject when more of the track sits near its
-                              # peak. Calibrated 2026-08-08: the five A/B-transparent tracks
-                              # measured 0.1-0.3%; 'Truck' (mad-cafe-java-1999-09-09), the
-                              # known repeatedly-loud counterexample with NO listening
-                              # evidence, measures 12.3% — an order of magnitude of margin.
+# ── tiered eligibility (2026-08-08, second revision the same day) ─────────────
+# The original single gate (near-peak density <= 1%) was calibrated on the five
+# A/B-transparent tracks (0.1-0.3%) vs Truck (12.3%). The Hear Me case showed
+# density and actual limiter ENGAGEMENT are different measurements — 1.7%
+# near-peak but only 0.7% engagement with 50 ms events — and the listening
+# evidence was really sampling engagement (passed tracks: 0.1-0.8% engaged,
+# events <= 0.15 s). Rene approved a tiered scheme: an AUTO envelope matching
+# the evidence, a REVIEW band where the track is capped but hard-blocked until
+# his ears rule (the listen-before-shipping mechanism), and a REJECT band that
+# declines to linear-reduced (force still available).
+TCAP_MAX_NEAR_PEAK_PCT = 2.0     # auto tier: density above this needs ears
+TCAP_REJECT_NEAR_PEAK_PCT = 5.0  # beyond the review band: declined (12+ s of a
+                                 # 4-min song near peak is different content)
+TCAP_AUTO_ENGAGE_PCT = 1.0       # auto tier: engagement above this needs ears
+TCAP_REJECT_ENGAGE_PCT = 2.0     # beyond: repeated-compression territory, declined
+TCAP_AUTO_EVENT_S = 0.2          # auto tier: longest continuous event above this
+                                 # needs ears
+TCAP_REJECT_EVENT_S = 0.5        # beyond: sustained limiting, declined
 TCAP_TP_MAX_ATTEMPTS = 5      # same measure-and-correct pattern as the applause loop, but
                               # exhausting it ABORTS the run (removes the output) instead of
                               # warning — this mode's whole job is touching music transients,
@@ -280,12 +293,17 @@ WORKFLOW_VERSIONS = {
                 "track into PARTIAL capping (--transient-cap-partial, added at his "
                 "request 2026-08-08 with the Rocky Road case in view: full 6 dB "
                 "attenuation, lands honestly short of target — never automatic); "
-                "(c) a 50 ms frame-peak scan must show the "
-                "track is SPARSE — at most 1% of frames within 3 dB of the track's own "
-                "peak (the five A/B-transparent tracks measured 0.1-0.3%; 'Truck', the "
-                "known repeatedly-loud counterexample, measures 12.3% and has NO "
-                "listening evidence — that regime is explicitly out of scope, see the "
-                "codex-notes drum-control proposal, deliberately NOT built); "
+                "(c) a 50 ms frame-peak scan gates eligibility in three TIERS "
+                "(2026-08-08 second revision, after the Hear Me case showed near-peak "
+                "density and actual limiter engagement are different measurements and "
+                "the listening evidence sampled ENGAGEMENT — passed tracks 0.1-0.8% "
+                "engaged, events <= 0.15 s): AUTO when density <= 2%, engagement "
+                "<= 1% and longest event <= 0.2 s; REVIEW (capped but the "
+                "listen-before-shipping hard-block fires) up to 5% density / 2% "
+                "engagement / 0.5 s; beyond that DECLINED to linear-reduced — "
+                "'Truck', the repeatedly-loud counterexample at 12.3% density, stays "
+                "far out of scope (see the codex-notes drum-control proposal, "
+                "deliberately NOT built); "
                 "(d) applause-limiter takes precedence when applause is what eats the "
                 "headroom, since it leaves the music strictly linear. Post-render, the "
                 "ACTUAL output true peak is measured against the STRICT -1.00 dBTP "
@@ -1003,13 +1021,13 @@ def try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=False,
         return None
     top = max(peaks)
     near_pct = 100.0 * sum(1 for p in peaks if p >= top - TCAP_NEAR_PEAK_DB) / len(peaks)
-    if near_pct > TCAP_MAX_NEAR_PEAK_PCT and not force:
+    if near_pct > TCAP_REJECT_NEAR_PEAK_PCT and not force:
         plan["flags"].append(
             f"transient-cap declined: {near_pct:.1f}% of the track sits within "
-            f"{TCAP_NEAR_PEAK_DB:g} dB of its own peak (> {TCAP_MAX_NEAR_PEAK_PCT:g}% "
-            f"— repeatedly loud, not a sparse transient; the A/B evidence does not "
-            f"cover this regime) — reduced linear target instead (Rene can override "
-            f"per track after listening: --transient-cap-force)")
+            f"{TCAP_NEAR_PEAK_DB:g} dB of its own peak (> "
+            f"{TCAP_REJECT_NEAR_PEAK_PCT:g}% — repeatedly loud, not a sparse "
+            f"transient; Truck-territory content) — reduced linear target instead "
+            f"(Rene can override per track after listening: --transient-cap-force)")
         return None
     # Size the gain against the ATTENUATION cap, not just the target: the
     # shave at the loudest instant is in_TP + gain - limit, and the written
@@ -1020,6 +1038,22 @@ def try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=False,
     excess = round(in_TP + gain - TCAP_LIMIT_DB - TCAP_MAX_GR, 2)
     if excess > 0:
         gain = round(gain - excess, 2)
+    # Reject band on PREDICTED ENGAGEMENT — the measurement the listening
+    # evidence actually sampled (passed tracks: 0.1-0.8% engaged, events
+    # <= 0.15 s). Beyond the review band the limiter would behave like
+    # repeated compression, which no evidence covers.
+    reds, events, longest_s = _tcap_engagement(peaks, gain, TCAP_LIMIT_DB)
+    engaged_pct = 100.0 * len(reds) / len(peaks)
+    if not force and (engaged_pct > TCAP_REJECT_ENGAGE_PCT
+                      or longest_s > TCAP_REJECT_EVENT_S):
+        plan["flags"].append(
+            f"transient-cap declined: the limiter would engage on "
+            f"{engaged_pct:.1f}% of the track (longest event {longest_s:.2f} s) "
+            f"— beyond the review band ({TCAP_REJECT_ENGAGE_PCT:g}% / "
+            f"{TCAP_REJECT_EVENT_S:g} s); repeated-compression territory, no "
+            f"listening evidence — reduced linear target instead "
+            f"(--transient-cap-force after listening to override)")
+        return None
     plan.update(mode="sparse-transient-cap", target=round(in_I + gain, 2),
                 gain_db=gain, limit_db=TCAP_LIMIT_DB,
                 sr=int(probe(path)["sr"]), tcap_peaks=peaks,
@@ -1029,7 +1063,7 @@ def try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=False,
         # recorded, not blocking: force means Rene already listened — his
         # ears outrank the calibrated gate, and the provenance says so
         plan["flags"].append(
-            f"sparsity gate ({near_pct:.1f}% near-peak > "
+            f"sparsity screen ({near_pct:.1f}% near-peak > "
             f"{TCAP_MAX_NEAR_PEAK_PCT:g}%) overridden by Rene after listening "
             f"(--transient-cap-force)")
     if excess > 0:
@@ -1038,6 +1072,23 @@ def try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=False,
             f"attenuation cap — lands at {plan['target']:g} LUFS instead of "
             f"{target:g} (inaudible; the cap is the policy, the target is not)")
     return plan
+
+
+def _tcap_engagement(peaks, gain, limit):
+    """Predicted limiter engagement from the 50 ms frame-peak scan: sorted
+    per-frame reductions where the gained signal exceeds the threshold, event
+    count, and the longest continuous engagement in seconds."""
+    reds = sorted(p + gain - limit for p in peaks if p + gain > limit)
+    events = longest = run = 0
+    for p in peaks:
+        if p + gain > limit:
+            run += 1
+            longest = max(longest, run)
+            if run == 1:
+                events += 1
+        else:
+            run = 0
+    return reds, events, longest * (TCAP_FRAME_MS / 1000)
 
 
 def tcap_finalize(plan):
@@ -1053,23 +1104,13 @@ def tcap_finalize(plan):
     # the projected output loudness follows the gain — authoritative here so
     # a lockstep gain backoff in the retry loop updates it too
     plan["target"] = round(float(plan["measure"]["input_i"]) + gain, 2)
-    frame_s = TCAP_FRAME_MS / 1000
-    reds = sorted(p + gain - limit for p in peaks if p + gain > limit)
-    events = longest = run = 0
-    for p in peaks:
-        if p + gain > limit:
-            run += 1
-            longest = max(longest, run)
-            if run == 1:
-                events += 1
-        else:
-            run = 0
+    reds, events, longest_s = _tcap_engagement(peaks, gain, limit)
     gr = round(in_TP + gain - limit, 2)  # reduction at the loudest instant (true-peak based)
     plan["tcap"] = {
         "gain_db": gain, "limit_db": limit, "gr_db": gr,
         "near_peak_pct": plan["near_peak_pct"],
         "engaged_pct": round(100.0 * len(reds) / len(peaks), 2),
-        "events": events, "longest_s": round(longest * frame_s, 2),
+        "events": events, "longest_s": round(longest_s, 2),
         "p95_gr_db": round(reds[int(0.95 * (len(reds) - 1))], 2) if reds else 0.0,
         # source LRA, so the preservation claim is auditable from the sidecar
         # alone (entry-level `lra` is the OUTPUT measurement)
@@ -1082,20 +1123,26 @@ def tcap_finalize(plan):
         f"1 ms/50 ms true-peak cap shaving up to {gr:.1f} dB off the transients "
         f"(~{t['engaged_pct']:.1f}% of the track, {events} event(s), longest "
         f"{t['longest_s']:.2f} s; {t['near_peak_pct']:.1f}% near-peak density)")
-    # Ears-required conditions, per the 2026-08-08 review: engagement duration,
-    # not just depth, is what predicts audibility — the A/B evidence covers deep
-    # (5.9 dB) but BRIEF capping, so sustained or frequent engagement gets
-    # flagged even though it passed the density gate.
-    if t["longest_s"] > 0.5:
-        # the A/B-transparent tracks' longest events were 0.10-0.15 s; ten
-        # consecutive engaged frames is a roll being ridden, not a hit
-        note = (f"transient cap engages continuously for {t['longest_s']:.2f} s — "
-                "sustained limiting, listen before shipping")
+    # REVIEW tier (tiered gates, 2026-08-08): anything beyond the auto envelope
+    # the A/B evidence covers (engagement <= 1%, events <= 0.2 s, density
+    # <= 2%) is capped but hard-blocks publish until Rene's ears rule via
+    # accept/exclude/force. The reject band was already handled at sizing.
+    if t["longest_s"] > TCAP_AUTO_EVENT_S:
+        note = (f"transient cap engages continuously for {t['longest_s']:.2f} s "
+                f"(auto envelope {TCAP_AUTO_EVENT_S:g} s) — review tier, "
+                "listen before shipping")
         if note not in plan["flags"]:
             plan["flags"].append(note)
-    if t["engaged_pct"] > 2.0:
-        note = (f"transient cap engages on {t['engaged_pct']:.1f}% of the track — "
-                "beyond the A/B-tested range, listen before shipping")
+    if t["engaged_pct"] > TCAP_AUTO_ENGAGE_PCT:
+        note = (f"transient cap engages on {t['engaged_pct']:.1f}% of the track "
+                f"(auto envelope {TCAP_AUTO_ENGAGE_PCT:g}%) — review tier, "
+                "listen before shipping")
+        if note not in plan["flags"]:
+            plan["flags"].append(note)
+    if t["near_peak_pct"] > TCAP_MAX_NEAR_PEAK_PCT:
+        note = (f"near-peak density {t['near_peak_pct']:.1f}% (auto envelope "
+                f"{TCAP_MAX_NEAR_PEAK_PCT:g}%) — review tier, "
+                "listen before shipping")
         if note not in plan["flags"]:
             plan["flags"].append(note)
     if gr > TCAP_MAX_GR + 0.01:
