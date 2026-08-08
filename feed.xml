@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Re-normalized this Mad Hannans set at Cafe Java to −20 LUFS on the current audio engineer…</title>
+    <link>https://renedebos.com/shows/mad-cafe-java-1999-09-09/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-08-mad-cafe-java-1999-09-09</guid>
+    <pubDate>Sat, 08 Aug 2026 02:40:00 +0000</pubDate>
+    <description>Re-normalized this Mad Hannans set at Cafe Java to −20 LUFS on the current audio engineering workflow (v7), replacing the show's original v1 pass — the last v1 show in the archive. The fresh hand-edit pass applied noise reduction across the show and corrected the song list: what was catalogued as a single 5:39 track, “Everything Reminds Me of You,” is in fact two songs, now split into separate tracks with the second restored as “Hear Me” — so the show runs 22 tracks rather than 21. “My Dear” has been identified as the song the archive lists elsewhere as “Ride On” and retitled to match, and “Plastic Melons” corrected to “Plastic Lemons.” Elsewhere in the archive, two tracks catalogued as “I Need a Lover” have been corrected to “Hear Me,” the song's real title.</description>
+  </item>
+  <item>
     <title>Re-normalized all 21 tracks of this Mad Hannans set at the Sweetwater to −20 LUFS on the …</title>
     <link>https://renedebos.com/shows/mad-sweetwater-2000-02-17/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-23-mad-sweetwater-2000-02-17</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-29-mad-sweetwater-2001-01-06</guid>
     <pubDate>Mon, 29 Jun 2026 12:00:00 +0000</pubDate>
     <description>Re-restored this muddy recording from the raw tape: corrective EQ (de-mud + presence + air to bring the vocals forward) and re-normalized all 24 tracks to −20 LUFS, replacing the earlier −16 pass — using the automated audio engineering workflow with ffmpeg</description>
-  </item>
-  <item>
-    <title>Re-normalized all 11 tracks to −20 LUFS from the raw masters (replacing the earlier −16 p…</title>
-    <link>https://renedebos.com/shows/sean-19-broadway-2000-02-21/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-29-sean-19-broadway-2000-02-21</guid>
-    <pubDate>Mon, 29 Jun 2026 09:30:00 +0000</pubDate>
-    <description>Re-normalized all 11 tracks to −20 LUFS from the raw masters (replacing the earlier −16 pass) for an even, comfortable listening level consistent with the rest of the archive, using the automated audio engineering workflow with ffmpeg</description>
   </item>
 </channel>
 </rss>
