@@ -286,11 +286,14 @@ def cmd_publish(args):
     tracks = os.path.join(WORK_ROOT, args.slug, "tracks")
     out = os.path.join(WORK_ROOT, args.slug, "out")
 
-    print(f"[1/7] loudness-normalize {n} tracks to {TARGET_LUFS} LUFS")
+    print(f"[1/7] loudness-normalize {n} tracks to {TARGET_LUFS} LUFS"
+          + (" (transient cap OPTED IN)" if args.transient_cap else ""))
     cmd = [sys.executable, os.path.join(ROOT, "scripts", "audio_process.py"),
            "process", tracks, out, "--target", str(TARGET_LUFS), "--slug", args.slug]
     if st.get("pre_edits"):
         cmd += ["--pre-edits", st["pre_edits"]]
+    if args.transient_cap:
+        cmd += ["--transient-cap"]
     r = run(cmd)
     if r.returncode not in (0, 2):  # 2 = processed with non-fatal warnings, see report
         raise SystemExit("processing failed")
@@ -400,6 +403,10 @@ def main():
                           "far shorter than the currently-published version — "
                           "only for a genuine intentional re-edit, not a suspected "
                           "bad export")
+    ap.add_argument("--transient-cap", dest="transient_cap", action="store_true",
+                     help="publish: opt this show in to the v8 sparse-transient cap "
+                          "(audio_process.py --transient-cap) — per-track eligibility "
+                          "gates still apply; Rene's per-show call, never assume it")
     args = ap.parse_args()
     DRY = args.dry_run
     {"prepare": cmd_prepare, "publish": cmd_publish,

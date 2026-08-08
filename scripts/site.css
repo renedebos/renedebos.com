@@ -1005,6 +1005,7 @@ main {
 .treat-linear { color: #5cc98a; }
 .treat-linear-reduced { color: #6ea3d8; }
 .treat-applause-limiter { color: #9d85c9; }
+.treat-sparse-transient-cap { color: #c9a05c; }
 .treat-review { text-decoration: underline dotted; }
 
 /* processing status badge (in the technical-data summary) */

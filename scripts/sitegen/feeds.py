@@ -166,6 +166,9 @@ def build_track_spec_catalog():
                 "maxS": p.get("max_s"),
                 "treatment": p.get("mode"),
                 "chain": p.get("chain"),
+                # v8 transient-cap guardrail record (None for other modes):
+                # cap depth + engagement stats for auditing capped tracks
+                "tcap": p.get("transient_cap"),
             })
     return rows
 

@@ -16,7 +16,8 @@
   var ARTIST_NAMES = { jerry: "Jerry Hannan", sean: "Sean Hannan",
                        mad: "Mad Hannans", seanjerry: "Sean & Jerry Hannan" };
   var TREAT_LABEL = { linear: "Linear", "linear-reduced": "Linear ↓",
-                      "applause-limiter": "Applause-limited" };
+                      "applause-limiter": "Applause-limited",
+                      "sparse-transient-cap": "Transient-capped" };
 
   // Every multi-select facet: empty array = no filter, OR'd within a facet,
   // AND'd across facets — same convention as playlist.js's `filters`.
@@ -89,7 +90,16 @@
       render: function (t) {
         if (!t.treatment) return "—";
         var label = TREAT_LABEL[t.treatment] || t.treatment;
-        var note = t.chain ? ' title="' + esc(t.chain) + '"' : "";
+        // transient-capped tracks carry their guardrail record (v8): show the
+        // cap depth + engagement stats in the tooltip, ahead of the raw chain
+        var tip = t.chain || "";
+        if (t.tcap) {
+          tip = "cap " + t.tcap.gr_db + " dB max (p95 " + t.tcap.p95_gr_db +
+                "), engaged " + t.tcap.engaged_pct + "% (" + t.tcap.events +
+                " event(s), longest " + t.tcap.longest_s + " s), near-peak " +
+                t.tcap.near_peak_pct + "%" + (tip ? " — " + tip : "");
+        }
+        var note = tip ? ' title="' + esc(tip) + '"' : "";
         return '<span class="treat treat-' + esc(t.treatment) + '"' + note + ">" + esc(label) + "</span>";
       } },
     { key: "procVer", label: "Ver", numeric: true, cls: "tver",

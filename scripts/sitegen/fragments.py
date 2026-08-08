@@ -439,7 +439,8 @@ def tech_data_section(show, proc):
         # "linear" for them would be dishonest (some were silently dynamic).
         mode = d.get("mode")
         label = {"linear": "linear", "linear-reduced": "linear&nbsp;&darr;",
-                 "applause-limiter": "applause&#8209;limited"}.get(mode)
+                 "applause-limiter": "applause&#8209;limited",
+                 "sparse-transient-cap": "transient&#8209;capped"}.get(mode)
         if label:
             note = d.get("note", "")
             flagged = " treat-review" if "[review:" in note else ""
