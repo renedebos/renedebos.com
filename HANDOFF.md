@@ -1,177 +1,175 @@
 # Session Handoff — Hannan Recordings (renedebos.com)
-**Date:** 2026-08-08 · **Branch:** `main` — everything below is committed & pushed, deploy verified live on renedebos.com itself (not just green Action).
+**Date:** 2026-08-08 · **Branch:** `main` — everything below is committed & pushed
+(`086ab8b`…`7adbf55`), deploys green and spot-checked live where anything
+public changed (only inert surfaces: track-spec `tcap` field, treatment
+labels/CSS — no audio shipped this session).
 
-> Reprocessed `mad-cafe-java-1999-09-09` to workflow v7 — **v1 is now extinct
-> archive-wide**. It turned out to be a setlist correction as much as a
-> re-master: a song was hiding inside another track. Then, separately, Rene
-> raised the "some shows are just too quiet" problem and **approved a real
-> policy change** — a new `transient-cap` mode using true-peak limiting, backed
-> by two blind-ish A/B tests. That is designed and evidenced but **not yet
-> built**; it is tomorrow's work.
+> Built, hardened, and shipped **workflow v8 — `sparse-transient-cap`** — plus
+> a local control panel (`make tcap`) that drives the whole reprocess flow.
+> Evidence base: a second blind A/B (Sweetwater 1999-05-18, clean pass on all
+> three tracks) on top of yesterday's Cafe Java pair. Two codex-notes review
+> rounds converged into the hardening; five explicit policy decisions were
+> made by Rene along the way (all recorded below). **The Cafe Java reprocess
+> is mid-flight: prepared and diagnose-cleared, NOT yet published** — that's
+> the next session's first task.
 
 ## ✅ Done this session
 
-### `mad-cafe-java-1999-09-09` reprocessed to v7 (commit `71fe39d`)
-Mad Hannans at Cafe Java, Sept 9 1999. The last show in the archive still on
-v1. Workflow totals now `v2: 126, v4: 23, v5: 254, v6: 62, v7: 215` — **no v1
-anywhere**.
+### Second A/B round — mad-sweetwater-1999-05-18 (morning)
+Loudness-matched blind A/B on Blahana (−6.0 gap), Smoke in Heaven (−5.5, two
+close transients), The Kiss / Da Da Da (−3.0, LRA 14.5). **Rene heard no
+difference on any of the three** at up to 5.9 dB of recovery. Sparsity was
+verified *before* listening (0.1–0.3% near-peak vs Truck's then-believed
+12.3%). This made two independent shows of evidence and green-lit the build.
+(Also: yesterday's open item — 38 stale v1 files in Cafe Java Drive
+`Processed/` — turned out already clean; 45/45 files correct, nothing to
+delete.)
 
-**Noise reduction is recorded for the first time.** Rene applied NR (6 dB,
-sensitivity 5) in the hand edit. The Drive folder was named `Tracks/`, not
-`Tracks Noise Reduction/`, so `find_tracks_source()` would have set
-`pre_edits: None` and lost the provenance entirely. Fixed by writing a
-`notes.txt` into the tracks folder — that populates `pre_edits` regardless of
-folder name. **No other show in the archive has `pre_edits` set**; this is the
-first.
+### Workflow v8 — sparse-transient-cap (built, then hardened same day)
+In `audio_process.py`, strictly opt-in (`--transient-cap`), recorded in
+provenance as mode **`sparse-transient-cap`**. Final state after the codex
+convergence + Rene's decisions:
 
-**Setlist corrections, not just a re-master:**
-- `Everything Reminds Me of You` (5:39) was **two songs**. Rene re-split it;
-  the second is `Hear Me`. Show went 21 → 22 tracks.
-- `My Dear` is the song catalogued elsewhere as `Ride On` (Rene's call; he's
-  not certain of the true title but wants `Ride On` for now). Retitled, and
-  `My Dear (Ride On)` on `jerry-19-broadway-1999-07-19` normalized to match.
-- Two tracks catalogued as `I Need a Lover` (`jerry-19-broadway-1999-06-21`,
-  `mad-sweetwater-2000-02-17`) are **also `Hear Me`** — Rene confirmed. Merged;
-  `songs/i-need-a-lover/` deleted; Hear Me now collects all 10 performances.
-  Note the chain: *I Need a Dream → I Need a Lover → Hear Me*; July's session
-  did the middle step.
-- `Plastic Melons` → `Plastic Lemons`; `I Thought I Was You` casing normalized
-  (this show + `jerry-19-broadway-1999-11-15`).
-- Rene's instruction on all of these: **do not preserve the old titles**
-  anywhere — no alternate-title notes, no "formerly known as".
+- **Chain:** `volume` gain → 4× oversample → `alimiter` 1 ms/50 ms at −1.5 dB
+  internal → back to source rate. Applause-limiter takes precedence (music
+  strictly linear beats capped music).
+- **6 dB cap = the limiter's actual instantaneous ATTENUATION** (Rene's
+  disambiguation of "gain reduction hard-capped at 6 dB"): sizing trims gain
+  when full target would over-shave (lands ≤ ~0.5 dB shy, `target_lufs`
+  recorded); true-peak retries move limit first, gain in lockstep once the
+  cap is reached.
+- **Tiered eligibility (second same-day revision, after the Hear Me case):**
+  density and *engagement* are different measurements and the A/B evidence
+  sampled engagement (passed tracks 0.1–0.8% engaged, events ≤ 0.15 s).
+  AUTO: ≤ 2% near-peak, ≤ 1% engaged, ≤ 0.2 s longest event. REVIEW
+  (capped but hard-blocked): to 5% / 2% / 0.5 s. Beyond: declined. Hear Me
+  (1.7% density, 0.7% engaged) is auto-tier now.
+- **Guardrails:** strict **−1.00 dBTP** post-render assertion for this mode
+  (no QA tolerance) — deletes output and aborts on failure; `.v8state.json`
+  beside each render so a resume proves its chain or re-renders; LRA gate
+  unchanged; full stats in provenance (`transient_cap` dict incl. `in_lra`),
+  surfaced in /archive-data/ tooltips + a "Transient-capped" filter chip.
+- **Per-track decisions (all Rene's, never automatic):**
+  `--transient-cap-exclude` (veto) · `--transient-cap-accept` (unblock
+  listen-flags after ears) · `--transient-cap-partial` (over-6-dB-recovery
+  track takes the full 6 dB shave and lands short — Rocky Road: −27.1 →
+  −21.6 if chosen) · `--transient-cap-force` (ears override the gates; also
+  implies accept). A tcap track with unresolved listen-flags **aborts the
+  run before upload**.
+- `publish_show.py`: passes all four through; **prepare now fingerprints the
+  fetched sources** (per-file audio MD5 manifest → one hash in publish.json)
+  and **publish aborts on mismatch** — same-count-different-bytes no longer
+  passes.
 
-R2 verified 22/22 MD5s against provenance, 0 mismatches. `build.py --check`
-clean. Live pages spot-checked including the merged song page.
+### Control panel — `make tcap` → http://127.0.0.1:8769/ (scripts/tcap_ui.py + .html)
+Follows the `edit_metadata.py` local-server pattern; scripts/ is
+.assetsignore'd, never deployed. Layers: offline scan (gap-based candidacy,
+ranked); per-show **Analyze** (R2 preliminary estimate — candidates only,
+MD5-verified, audio deleted after — or **canonical** on the prepared Drive
+sources, the one that supports publishing); persisted per-track decision
+dropdowns (auto/exclude/accept/force; over-cap tracks get auto/partial),
+fingerprint-bound; **Prepare / Publish** buttons driving publish_show with
+live logs; generated **narrative summary** after each analysis; step tracker
+(1 Prepare → 2 Canonical analysis → 3 Decisions → 4 Publish); **Diagnose
+report** viewer (`/report/<slug>`); **"publish → LUFS" column** showing the
+projected output under current decisions (flips to "re-analyze" when a
+decision changed after the analysis — and the analyzer honors
+exclude/partial/force exactly as publish does); CSRF token + Host/Origin
+checks on POSTs; one job at a time; Analyze cancellable.
 
-### Approved but NOT built: `transient-cap` mode
-Rene raised that some shows are pathologically quiet and asked to discuss
-breaking the linear-only rule. Investigated, tested, and **he approved it.**
+### CLAUDE.md amended (the wording Rene approved)
+The linear-normalization section now distinguishes banned seconds-scale gain
+riding from the sanctioned millisecond cap, records the two-show evidence,
+tiers, attenuation cap, and override vocabulary. The "sanctioned exception"
+paragraph covers both applause-limiter (v5) and transient-cap (v8).
 
-**The problem, measured on this show:** tracks sit 4–7 dB below −20 because
-brief drum transients (close mic position — Rene confirmed by ear that they're
-drums, not audience) set the ceiling. Show spread is 7.1 dB (−20.0 to −27.1),
-which is a worse listening problem than the absolute quietness.
+## 🔜 Next session — finish the Cafe Java reprocess (mid-flight!)
 
-**The evidence:** built loudness-matched A/B comparisons of true-peak limiting
-on two tracks — Rocky Road (LRA 12.7) and The Kiss / Da Da Da (LRA 16.8, with a
-hand-drawn fade, deliberately chosen as the hard case). **Rene could not hear
-the limiting in either**, at up to 5.9 dB of gain reduction, including on the
-fade and sparse passages. Measured LRA moved only 0.2–0.3 LU.
+State right now: **Prepared** today 15:17, fingerprint `66d9f3a405654e23`,
+tracks/ on disk. Diagnose reviewed — **Rene cleared both items by ear**
+(Blind Man 3:01 = musical transient; Clear Headed's minor clipping
+inaudible). Canonical analysis has been run but **predates the last panel
+changes** (tiered gates + decision snapshots), so:
 
-**The technical argument:** CLAUDE.md's ban was written against `loudnorm`'s
-*dynamic mode* — frame-adaptive gain riding over **seconds**, which is what
-flattens a hand-drawn fade. A 1 ms attack / 50 ms release true-peak limiter
-acts three orders of magnitude below that timescale. The existing policy text
-conflates the two.
-
-**Impact if built:** a 3 dB cap takes 15 of 22 tracks to −20 and cuts the
-spread to 4.1 dB; allowing up to 6 dB takes 21 of 22 to −20.
-
-## 🔜 Tomorrow — the plan Rene approved
-
-1. **Implement `transient-cap`** in `audio_process.py`: gain to −20 with 4×
-   oversampled true-peak limiting, ceiling −1 dBTP, **gain reduction hard-capped
-   at 6 dB**; over that, fall back to reduced-linear so the track stays quiet
-   rather than being forced. Opt-in per show via a `publish_show.py` flag,
-   **never default**. Existing `linear` / `linear-reduced` / `applause-limiter`
-   paths untouched.
-2. **Guardrails (non-negotiable, see gotcha below):** post-render true-peak
-   assertion that *aborts*; record max GR and engagement rate per track in
-   provenance, surfaced in `/archive-data/` and the show spec table.
-3. **Reprocess `mad-cafe-java-1999-09-09`** with it. Exclude `Truck` for now.
-4. **A/B test `Truck` separately** — it's a different regime (12.3% of the track
-   is within 3 dB of peak, i.e. consistently loud rather than spiky), so the
-   limiter would engage repeatedly. **We have no listening evidence for that
-   case.** If transparent, drop the isolation gate and include it.
-5. **Amend `CLAUDE.md`'s linear-normalization section** with the distinction,
-   the date, and the test results.
+1. **Analyze prepared (canonical)** once more — fresh verdicts under the
+   tiered gates, decision-aware projections, honest Truck context line.
+2. Expected shape (from the runs so far): tracks 1/3 plain linear to −20;
+   most candidates WILL CAP to ~−20; 4/15/20 stay just under (<1 dB benefit);
+   **Truck + Anna May applause-limited to ≈ −22.4/−22.3** (accepted outcome —
+   don't chase −20 by stacking modes); **Rocky Road needs Rene's dropdown
+   call: auto (stays −27.1) or partial (≈ −21.6)** — evidence-wise partial is
+   within what he A/B'd; policy default is auto.
+3. **Publish** from the panel (checkbox on). Engine enforces fingerprint,
+   listen-flag blocks, strict ceiling regardless of the UI.
+4. Then the human tail per runbook: draft_tracks FLAG review (reprocess
+   re-derives titles — diff against archive spellings, the 2026-08-07 lesson),
+   description/updates/history, build, commit, push, live spot-check. R2
+   stale-file check after rename-y reprocesses.
+5. After shipping the first capped show: add the caveat sentence to
+   `/process/`'s "linear gain only" claim (public page must not contradict
+   provenance), and consider `build_archive_zip.py` refresh later.
 
 ## ⚠️ Open items
-
-- **Rene must run this** (agent is blocked on `rclone delete` by the auto-mode
-  classifier — note this is *not* the deny list; `Bash(rclone delete:*)` was
-  already un-denied in July, and the classifier also refused to let the agent
-  add itself a permission rule, correctly). 38 stale v1-era files in Drive
-  `Processed/`, verified zero overlap with the current 44:
-  ```
-  rclone delete "gdrive:DAT Tapes/Work Folder/MadHannans - Cafe Java 1999-09-09/Processed" \
-    --files-from "<scratchpad>/stale_drive.txt" -v
-  ```
-  The scratchpad list is session-scoped and may be gone tomorrow — regenerate by
-  diffing Drive `Processed/` against `~/work/mad-cafe-java-1999-09-09/out/`.
-  Target state: 45 files (22 FLAC + 22 MP3 + `processing_report.txt`).
-- **Never listened to:** track 20 `Model Family Man` (−25s vs the old version,
-  under the duration-check threshold) and the suspected click in track 18
-  `Blind Man` at **3:01.024**. Both shipped.
-- **Carried from 2026-07-25, still unverified:** `/search/`'s index preload
-  needs a browser check for a double fetch (DevTools → Network, exactly one
-  `search-index.json` request). If two, drop the preload.
-- Local A/B material left on disk: `~/work/rocky-road-ab/`, `~/work/kiss-ab/`,
-  `~/work/cafe-java-spikes/`. Safe to delete (agent is denied `rm -rf`).
-  `~/work/mad-cafe-java-1999-09-09/out/` should be **kept** until the planned
-  reprocess is done.
+- **Version-bump discipline becomes binding at first v8 publish:** today's
+  within-v8 revisions were safe only because zero v8 tracks exist. From the
+  Cafe Java publish onward, ANY change to cap thresholds/semantics = v9.
+- **"Truck = 12.3% near-peak" carries an asterisk (found today):** that was
+  measured on the applause-LIMITED published copy; the raw source reads 1.6%
+  (un-limited applause is the peak reference). The density screen is
+  reference-dependent — engagement at the real threshold is the deciding
+  gate. Registry, context flags, and memory updated; don't re-quote 12.3%
+  as a source property.
+- Local A/B material: `~/work/hearme-ab/` (server was on :8770),
+  `~/work/sweetwater-transient-ab/`, `~/work/tcap-test/` — all deletable by
+  Rene (agent denied rm -rf). Yesterday's `~/work/rocky-road-ab`, `kiss-ab`,
+  `cafe-java-spikes` likewise. **Keep** `~/work/mad-cafe-java-1999-09-09/`
+  (prepared state + tracks) until published.
+- Carried, still unverified: `/search/` index preload double-fetch check
+  (DevTools → Network, exactly one `search-index.json` request).
+- Carried, still true: publish_show's local `out/` resume-skip can resurrect
+  stale files on multi-attempt publishes (tracks/ side is now
+  fingerprint-guarded; out/ side relies on mtime + the tcap `.v8state.json`);
+  every publish re-invokes draft_tracks and clobbers manual title fixes;
+  CSP `unsafe-inline` known/unscoped; don't re-open caching/JSON-size.
 
 ## Gotchas learned this session
-- **A naive `alimiter` reports success while shipping clipping.** First
-  prototype produced **+1.2 dBFS** true peak because `alimiter` is sample-peak
-  only. Needs 4× oversampling (`aresample=176400 … aresample=44100`) *and*
-  ~0.5 dB extra ceiling margin, because downsampling reintroduces overshoot
-  (−1.0 target → measured −0.7 until the ceiling was moved to −1.5). This is
-  why the post-render true-peak assertion is mandatory, not optional.
-- **An unmatched title in `draft_tracks.py` is not a silent failure — it's a
-  confident wrong answer.** The `/`→`_` filename substitution made three
-  existing songs look NEW, and for the Rocky Road medley it *invented* metadata,
-  crediting two traditional Irish tunes as a Hannan original
-  (`Jerry Hannan & Sean Hannan`, `[original, medley]`). Always diff a
-  reprocessed show's titles *and* songwriter/tags against the archive-dominant
-  spelling before committing.
-- **`publish_show.py`'s R2 completeness check counts the whole folder**, so a
-  reprocess that renames tracks aborts at step 2 with e.g. `R2 FLAC incomplete:
-  41/22` — *after* uploading. The new files are fine; the old-named ones must be
-  deleted before the run can continue.
-- **`fetch_tracks()` only uses the local gdrive-mount when its file count
-  matches Drive's.** The mount had the new 22-track export while Drive still had
-  the old 21 — so `prepare` would have silently downloaded and processed the
-  **stale** export. Always diff mount vs Drive before a reprocess.
-- **A deliberate re-split trips `check_duration_regression()`** (track 5, 5:39 →
-  2:35). `--allow-duration-drift` is the intended escape hatch, but only after
-  confirming the shrink is intentional.
-- **`pgrep -af "ab_server"` self-matches** the shell running the pgrep — the
-  documented trap, hit again. Verify a server is down by curling it, not by
-  process listing.
+- **Near-peak density is reference-dependent** (see Truck above). Engagement
+  stats at the actual limiter threshold are the robust measurement.
+- **A published linear/linear-reduced FLAC is a valid analysis proxy** (linear
+  transform of the source) but applause-limited tracks are NOT — the panel
+  skips them in R2 mode and marks pre-v5 tracks approximate.
+- **`alimiter` needs the gain, not just the threshold, to respect a cap** —
+  the retry loop moves limit first (v7 lesson) but must move gain in lockstep
+  once attenuation hits the cap, or the cap silently grows.
+- **The panel's "+X dB" almost lied:** gain applied to the canonical source ≠
+  improvement vs the live file (Luxury of Murder: +0.9 vs +2.2). Every
+  user-facing number now says "vs live".
+- **codex-notes.md review rounds were genuinely productive** — mode-string
+  rename, in_lra provenance, strict ceiling, resume state, CSRF, fingerprint,
+  the density/engagement distinction, and both summary-reporting bugs came
+  from there. Push back where evidence says otherwise (3–6 dB forced review
+  was rejected; the approval-ledger apparatus was rejected).
+- **`/model` switching needs the interactive picker** for first-time Fable
+  consent; `/model fable` as a typed command fails outside it.
 
 ## Durable facts (don't undo)
-- **v1 processing no longer exists in the archive.** `mad-cafe-java-1999-09-09`
-  was the last one.
-- `mad-cafe-java-1999-09-09` is the **only show with `pre_edits` set** — via
-  `notes.txt` in its Drive `Tracks/` folder. Don't delete that file.
-- **The `transient-cap` decision is Rene's, made with evidence.** If you read
-  CLAUDE.md's "never reintroduce a … limiter/compressor on the music" and
-  conclude this work is a mistake, read this handoff first — the wording is
-  scheduled to be amended, not the decision reversed. Dynamic-mode gain riding
-  remains banned.
-- The remaining v1/v2 reprocess candidates, all with populated `Tracks/`
-  folders and verified counts: `mad-4th-street-tavern-1999-05-01` (24),
-  `mad-new-georges-1999-10-13` (14), `seanjerry-19-broadway-1999-12` (30).
-  **`jerry-19-broadway-1999-03-29`** (34) is blocked: its
-  `Tracks Noise Reduction/` holds **two complete export runs** (68 files, same
-  names, both 2026-07-09) — Rene must delete the superseded run first, never
-  guess. **`mad-sweetwater-2001-01-06`** has no `Tracks/` at all — needs fades
-  in Audacity before it can be reprocessed.
-- Carried forward, still true and **not** addressed this session:
-  - `publish_show.py`'s local `out/` resume-skip still resurrects stale files on
-    multi-attempt publishes — not patched.
-  - Every `publish` re-invokes `draft_tracks.py`, which re-derives titles from
-    export filenames and clobbers manual fixes. Re-check before final commit.
-  - `Bash(rclone delete:*)` stays out of `.claude/settings.local.json`'s deny
-    list; `purge`/`sync`/`move` remain denied.
-  - Cloudflare already serves `max-age=0, must-revalidate` + ETags on everything
-    and Brotli is on — don't re-open "add caching" or "the JSON is too big".
-  - CSP `script-src 'unsafe-inline'` is still open and known; not scoped.
+- **v8 exists but no published track carries it yet.** The archive's audio is
+  unchanged since yesterday's Cafe Java v7 publish.
+- **Five Rene decisions today:** (1) cap approved on two-show evidence;
+  (2) 6 dB = actual attenuation; (3) partial capping = per-track opt-in only;
+  (4) tiered gates (2%/1%/0.2 s auto · 5%/2%/0.5 s review); (5) force =
+  after-listening override. All encoded in engine + CLAUDE.md +
+  WORKFLOW_VERSIONS[8].
+- **drum-control is deliberately NOT built** (codex proposal on file). Needs
+  its own decision + A/B if ever. Truck/Anna May stay applause-limited.
+- Modes stay exclusive — no stacking applause-limiter + cap without a new
+  decision and listening evidence.
+- The panel is the intended flow for cap-era reprocesses, but the engine's
+  gates are the safety barrier; terminal and panel are equivalent.
 
 ## Reference
-Full runbook: `CLAUDE.md` → "Publishing a Split Show". Owner's manual:
-`PUBLISHING.md` (also at `/manual/`). Phase-by-phase technical detail:
-`AUDIO_PROCESSING.md`. Tag vocabulary: `TAGS.md`. A/B tooling:
-`scripts/ab_compare.py` + `scripts/ab_server.py` (Range-capable; stdlib
-`http.server` breaks `<audio>` seeking).
+Runbook: `CLAUDE.md` → "Publishing a Split Show" (+ the amended
+linear-normalization section). Panel: `make tcap` (8769). A/B tooling:
+`scripts/ab_compare.py` / `ab_server.py`. Technical record:
+`WORKFLOW_VERSIONS[8]` in `audio_process.py`. External review scratchpad:
+`codex-notes.md` (untracked, not Rene's notes — verify before acting).
