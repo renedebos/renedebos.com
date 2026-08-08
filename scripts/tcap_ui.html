@@ -169,6 +169,7 @@ function body(s){
       else if (a.skip) verdict = `<span class="c-unknown">${esc(a.skip)}</span>`;
       else if (a.error) verdict = `<span class="c-over">${esc(a.error)}</span>`;
       else if (a.mode === "linear") verdict = `<span class="c-at">NO CAP — plain linear → ${fmt(a.target)} LUFS</span>`;
+      else if (a.mode === "applause-limiter") verdict = `<span class="v-cap">APPLAUSE-LIMITED → ${fmt(a.target)} LUFS</span><span class="hint"> music untouched (pure linear); only head/tail applause limited — takes precedence over the cap</span>`;
       else verdict = `<span class="v-declined">NO CAP — ${esc(a.mode)} → ${fmt(a.target)} LUFS</span>`;
       for (const f of (a.flags||[])) verdict += `<span class="flag">⚠ ${esc(f)}</span>`;
       if (a.approx) verdict += `<span class="hint">pre-v5 source — approximate</span>`;
