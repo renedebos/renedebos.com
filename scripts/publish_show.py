@@ -202,6 +202,53 @@ def source_manifest(dest):
     return rows, fp
 
 
+def catalog_title_lookup():
+    """title (lowercased) -> set of show slugs it's known to appear under,
+    across the whole archive — used to sanity-check a fresh export's
+    filename-derived titles against established usage."""
+    M = json.load(open(os.path.join(ROOT, "data", "recordings.json")))
+    seen = {}
+    for s in M["shows"]:
+        for t in (s.get("tracks") or []):
+            seen.setdefault(t["title"].strip().lower(), set()).add(s["slug"])
+    return seen
+
+
+def preflight_catalog_titles(show, files):
+    """Flag tracks whose fresh-export filename title differs from the
+    already-published catalog title for that track number — the exact
+    mechanical-filename-guess trap that produced 4 wrong titles on
+    2026-08-09 (a fresh hand-edit export used different filenames than the
+    catalog's established titles for those tracks). Informational only,
+    never blocks — this is Rene's judgment call, same as a clipping verdict."""
+    old_tracks = show.get("tracks") or []
+    if not old_tracks:
+        return  # first-time publish for this show — nothing to compare against
+    old_by_num = {t["num"]: t["title"].strip() for t in old_tracks}
+    known = catalog_title_lookup()
+    changes = []
+    for f in sorted(files):
+        m = re.match(r"^(\d+)\s+(.+)$", os.path.splitext(f)[0])
+        if not m:
+            continue
+        num, guess = int(m.group(1)), m.group(2).strip()
+        old = old_by_num.get(num)
+        if old and guess.lower() != old.lower():
+            elsewhere = known.get(guess.lower())
+            note = (f"matches an established title used in {sorted(elsewhere)}"
+                     if elsewhere else "NOT used as a title anywhere else in the "
+                     "archive — double-check this isn't a mechanical filename guess")
+            changes.append((num, old, guess, note))
+    if changes:
+        print("\n⚠ TITLE CHANGED vs. the published catalog — the fresh export's "
+              "filename differs from the title currently on file for that track "
+              "number. Confirm each is a real correction before publishing "
+              "(cross-reference every prior appearance across the archive, not "
+              "just this filename):")
+        for num, old, guess, note in changes:
+            print(f"  track {num}: {old!r} -> {guess!r} ({note})")
+
+
 def cmd_prepare(args):
     show = load_show(args.slug)
     folder = find_work_folder(show, args.folder)
@@ -230,6 +277,8 @@ def cmd_prepare(args):
                     "\nrefusing to proceed — re-export the track(s) above at full "
                     "length, or pass --allow-duration-drift if this is a genuine "
                     "intentional change (e.g. a real re-edit that trims the song)")
+
+    preflight_catalog_titles(show, files)
 
     print("\nrunning full diagnose …")
     run([sys.executable, os.path.join(ROOT, "scripts", "audio_process.py"),
@@ -302,7 +351,75 @@ def drive_backup(folder, out, manual_first=False):
                      "(local out/ still doesn't match Drive Processed/ content)")
 
 
+def clean_stale_out(tracks_dir, out_dir):
+    """Remove out/ renders (flac/wav/mp3/.v8state.json) with no matching file
+    in tracks/ — leftovers from a since-renamed or since-removed source that
+    would otherwise get silently re-uploaded to R2/Drive alongside the
+    correct new render. This is the direct structural fix for the
+    2026-08-09 bug: a filename correction left the old-named outputs in
+    place, and every subsequent `rclone copy` re-uploaded them, resurrecting
+    'deleted' R2 duplicates every time."""
+    if not os.path.isdir(tracks_dir) or not os.path.isdir(out_dir):
+        return
+    source_stems = {os.path.splitext(f)[0] for f in audio_files(os.listdir(tracks_dir))}
+    stale = []
+    for name in os.listdir(out_dir):
+        if name.endswith(".v8state.json"):
+            stem = os.path.splitext(name[:-len(".v8state.json")])[0]
+        elif name.lower().endswith((".flac", ".wav", ".mp3")):
+            stem = os.path.splitext(name)[0]
+        else:
+            continue  # not a per-track render (e.g. processing_report.txt)
+        if stem not in source_stems:
+            stale.append(name)
+    if stale:
+        print(f"[stale out/ cleanup] removing {len(stale)} leftover render(s) with no "
+              f"matching source in tracks/ (renamed/removed since a prior attempt):")
+        for name in sorted(stale):
+            print(f"  - {name}")
+            if not DRY:
+                os.remove(os.path.join(out_dir, name))
+
+
+def reconcile_r2(out_dir, dest, ext, label):
+    """Exact-named diff instead of a bare count. A `35/31` mismatch says
+    something's wrong but not what — three separate manual `rclone lsl`
+    comparisons were needed to find the actual 4 extra files on 2026-08-09.
+    Missing/obsolete names say exactly what to fix, and obsolete entries are
+    handed back as ready-to-run `rclone delete` commands since the agent is
+    hard-blocked from running deletes itself. Returns problem lines instead
+    of raising directly — a stale leftover is typically a mirrored FLAC+MP3
+    pair, and checking only one extension before aborting means fixing FLAC
+    just to hit the identical MP3 problem next run (2026-08-09: exactly this,
+    twice in a row)."""
+    expected = {f for f in os.listdir(out_dir) if f.lower().endswith(ext)}
+    have = set(rclone_lsf(dest))
+    missing = sorted(expected - have)
+    obsolete = sorted(have - expected)
+    if not missing and not obsolete:
+        return []
+    lines = [f"R2 {label} mismatch at {dest}: {len(have)} present, "
+             f"{len(expected)} expected"]
+    if missing:
+        lines.append(f"  missing ({len(missing)}): " + ", ".join(missing))
+    if obsolete:
+        lines.append(f"  obsolete ({len(obsolete)}) — present in R2 but not the "
+                      "current source (likely renamed-away leftovers). rclone "
+                      "delete is blocked for the agent — run these by hand:")
+        for name in obsolete:
+            lines.append(f'    rclone delete "{dest}/{name}"')
+    return lines
+
+
 def cmd_publish(args):
+    if args.manual_drive_backup is None:
+        if sys.stdin.isatty():
+            ans = input("Handle the Drive Processed/ backup yourself, or let "
+                         "rclone do it? [manual/rclone] (default rclone): ").strip().lower()
+            args.manual_drive_backup = ans.startswith("m")
+        else:
+            args.manual_drive_backup = False
+
     if not os.path.exists(state_path(args.slug)):
         raise SystemExit(f"no publish.json for {args.slug} — run prepare first")
     st = json.load(open(state_path(args.slug)))
@@ -321,12 +438,16 @@ def cmd_publish(args):
                 f"tracks/ now {fp_now} — the local sources changed since "
                 "prepare. Re-run prepare (and re-review the diagnose) first.")
 
+    clean_stale_out(tracks, out)
+
     print(f"[1/7] loudness-normalize {n} tracks to {TARGET_LUFS} LUFS"
           + (" (transient cap OPTED IN)" if args.transient_cap else ""))
     cmd = [sys.executable, os.path.join(ROOT, "scripts", "audio_process.py"),
            "process", tracks, out, "--target", str(TARGET_LUFS), "--slug", args.slug]
     if st.get("pre_edits"):
         cmd += ["--pre-edits", st["pre_edits"]]
+    if args.eq:
+        cmd += ["--eq", args.eq]
     if args.transient_cap:
         cmd += ["--transient-cap"]
     if args.tcap_exclude:
@@ -340,14 +461,18 @@ def cmd_publish(args):
     r = run(cmd)
     if r.returncode not in (0, 2):  # 2 = processed with non-fatal warnings, see report
         raise SystemExit("processing failed")
+    if r.returncode == 2:
+        print("⚠ processed with non-fatal warnings (see report above) — continuing")
 
     print(f"[2/7] upload FLAC+MP3 to R2 ({folder})")
+    problems = []
     for ext, top in (("*.flac", "FLAC"), ("*.mp3", "MP3")):
         run(["rclone", "copy", out, f"{R2}/{top}/{folder}",
              "--include", ext, "--s3-no-check-bucket", "--transfers", "8"])
-        have = len(rclone_lsf(f"{R2}/{top}/{folder}")) if not DRY else n
-        if have != n:
-            raise SystemExit(f"R2 {top} incomplete: {have}/{n}")
+        if not DRY:
+            problems += reconcile_r2(out, f"{R2}/{top}/{folder}", ext.lstrip("*"), top)
+    if problems:
+        raise SystemExit("\n".join(problems))
 
     print("[3/7] draft tracks[] into recordings.json (needed before peaks/verify can map "
           "track num -> R2 key)")
@@ -437,15 +562,26 @@ def main():
     ap.add_argument("slug")
     ap.add_argument("--folder", help="Drive Work Folder name (when date search is ambiguous)")
     ap.add_argument("--dry-run", action="store_true")
-    ap.add_argument("--manual-drive-backup", action="store_true",
+    ap.add_argument("--manual-drive-backup", action="store_true", default=None,
                      help="publish: give a few minutes to manually copy out/ to "
                           "Drive Processed/ (often faster than rclone) before "
-                          "falling back to the automated rclone copy")
+                          "falling back to the automated rclone copy. If omitted "
+                          "and running interactively, you'll be asked; "
+                          "non-interactively this defaults to rclone.")
+    ap.add_argument("--no-manual-drive-backup", dest="manual_drive_backup",
+                     action="store_false",
+                     help="publish: skip the manual-copy prompt/window, go "
+                          "straight to rclone")
     ap.add_argument("--allow-duration-drift", action="store_true",
                      help="prepare: proceed even though a fresh track export is "
                           "far shorter than the currently-published version — "
                           "only for a genuine intentional re-edit, not a suspected "
                           "bad export")
+    ap.add_argument("--eq", default="",
+                     help="publish: literal corrective-EQ filter chain applied before "
+                          "loudnorm (passed through to audio_process.py process --eq) "
+                          "— for restoration shows like mad-sweetwater-2001-01-06 that "
+                          "need mud-cut/presence-lift EQ, not the default")
     ap.add_argument("--transient-cap", dest="transient_cap", action="store_true",
                      help="publish: opt this show in to the v8 sparse-transient cap "
                           "(audio_process.py --transient-cap) — per-track eligibility "

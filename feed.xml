@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Reprocessed this Mad Hannans set at Sweetwater under the new workflow (v8), replacing the…</title>
+    <link>https://renedebos.com/shows/mad-sweetwater-2001-01-06/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-09-mad-sweetwater-2001-01-06</guid>
+    <pubDate>Sun, 09 Aug 2026 12:12:25 +0000</pubDate>
+    <description>Reprocessed this Mad Hannans set at Sweetwater under the new workflow (v8), replacing the show's v2 corrective-EQ pass — the same restoration EQ, cutting low-mid mud and lifting presence and air on this muddled tape, carries over unchanged. Two songs, “Hear Me” and “Rocky Road to Dublin,” now reach the archive's full −20 LUFS target this way instead of landing several dB quieter; “Far Away Eyes” needed more recovery than the policy's 6 dB ceiling allows, so it lands at −23 LUFS instead of −20 — inaudibly quieter, never over-shaved. The fresh hand-edit export used different track names than the archive's established titles for two songs — “I Need a Lover” and “The Kiss - Da Da Da” — restored to “Hear Me” and “The Kiss / Da Da Da (Slave to an Angel)” rather than overwritten.</description>
+  </item>
+  <item>
     <title>Reprocessed Jerry Hannan's solo show at 19 Broadway from January 15, 2001 under the new w…</title>
     <link>https://renedebos.com/shows/jerry-19-broadway-2001-01-15/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-09-jerry-19-broadway-2001-01-15</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-05-mad-new-georges-1999-10-13</guid>
     <pubDate>Sun, 05 Jul 2026 00:00:00 +0000</pubDate>
     <description>Added the full show as 14 individual tracks, split from the audience DAT and normalized to −20 LUFS for an even, comfortable listening level, with the applause gently faded at the end of each song for easier streaming — using the automated audio engineering workflow with ffmpeg</description>
-  </item>
-  <item>
-    <title>Normalized all 18 tracks to −20 LUFS for an even, comfortable listening level consistent …</title>
-    <link>https://renedebos.com/shows/sean-19-broadway-unknown/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-30-sean-19-broadway-unknown</guid>
-    <pubDate>Tue, 30 Jun 2026 08:00:00 +0000</pubDate>
-    <description>Normalized all 18 tracks to −20 LUFS for an even, comfortable listening level consistent with the rest of the archive, replacing an earlier −16 LUFS Audacity pass — using the automated audio engineering workflow with ffmpeg</description>
   </item>
 </channel>
 </rss>
