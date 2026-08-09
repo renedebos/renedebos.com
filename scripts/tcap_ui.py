@@ -290,7 +290,7 @@ def analyze_worker(slug, nums, source, logpath):
     audio_dir = os.path.join(WORK, slug, "audio")
     results = {}
     decs = _decisions(slug)["tracks"]
-    partial_nums = {int(n) for n, v in decs.items() if v == "partial"}
+    partial_nums = {int(n) for n, v in decs.items() if v in ("partial", "partial-accept")}
     force_nums = {int(n) for n, v in decs.items() if v == "force"}
     excl_nums = {int(n) for n, v in decs.items() if v == "exclude"}
 
@@ -443,10 +443,10 @@ def start_job(slug, kind, extra):
                                 if v == "exclude")
                 acc = ",".join(n for n, v in sorted(dec["tracks"].items(),
                                                     key=lambda kv: int(kv[0]))
-                               if v == "accept")
+                               if v in ("accept", "partial-accept"))
                 part = ",".join(n for n, v in sorted(dec["tracks"].items(),
                                                      key=lambda kv: int(kv[0]))
-                                if v == "partial")
+                                if v in ("partial", "partial-accept"))
                 if extra.get("transient_cap"):
                     cmd.append("--transient-cap")
                 if excl:
@@ -577,9 +577,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if kind == "decide":
             num, dec = str(extra.get("num")), extra.get("decision")
             if dec not in ("auto", "exclude", "accept", "partial",
-                           "force") or not num.isdigit():
-                self._send(400, '{"error": "decision must be '
-                                'auto/exclude/accept/partial/force"}')
+                           "partial-accept", "force") or not num.isdigit():
+                self._send(400, '{"error": "decision must be auto/exclude/'
+                                'accept/partial/partial-accept/force"}')
                 return
             d = _decisions(slug)
             if dec == "auto":

@@ -191,13 +191,14 @@ function body(s){
     else if (t.cls === "over")
       sel = `<select class="dec" onchange="decide('${s.slug}',${t.num},this.value)">
         <option value="auto"${cur==="auto"?" selected":""} title="stay at the reduced linear target">auto</option>
-        <option value="partial"${cur==="partial"?" selected":""} title="take the full 6 dB shave, lands short of target">partial cap</option>
+        <option value="partial"${cur==="partial"?" selected":""} title="take the full 6 dB shave, lands short of target — still blocks on a review-tier listen-flag if the track has one">partial cap</option>
+        <option value="partial-accept"${cur==="partial-accept"?" selected":""} title="partial cap AND listened — clears the review-tier listen-flag too">partial cap (listened)</option>
       </select>`;
     // projected output loudness under the CURRENT decisions: the analysis
     // target when the decision it was computed under still matches; a
-    // re-analyze marker when a decision changed afterwards (accept doesn't
-    // change the plan, only unblocks, so it counts as auto here)
-    const eff = v => (v === "accept" ? "auto" : (v || "auto"));
+    // re-analyze marker when a decision changed afterwards (accept/
+    // partial-accept don't change the plan vs their base mode, only unblock)
+    const eff = v => (v === "accept" ? "auto" : v === "partial-accept" ? "partial" : (v || "auto"));
     const assumed = eff(((s.analysis && s.analysis.decisions) || {})[String(t.num)]);
     let will = "—";
     if (a && !a.skip && !a.error){
