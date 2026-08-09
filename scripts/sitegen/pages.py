@@ -345,7 +345,7 @@ def build_history():
 # Hand-bumped whenever scripts/content/process.html's substance changes
 # (facts, figures, pipeline steps) — not on every build, so it reflects
 # actual content freshness, matching PUBLISHING.md's "Last updated" convention.
-PROCESS_UPDATED = "2026-07-17"
+PROCESS_UPDATED = "2026-08-08"
 
 def build_process():
     """Like /manual/, a standalone document — not the site's visual system.
