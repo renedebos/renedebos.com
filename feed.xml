@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Reprocessed this Mad Hannans set at Cafe Java again, this time under a new workflow (v8) …</title>
+    <link>https://renedebos.com/shows/mad-cafe-java-1999-09-09/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-08-mad-cafe-java-1999-09-09</guid>
+    <pubDate>Sat, 08 Aug 2026 17:52:34 +0000</pubDate>
+    <description>Reprocessed this Mad Hannans set at Cafe Java again, this time under a new workflow (v8) built for tapes where the mic sat close to the drums: a millisecond-scale true-peak limiter now catches only the sharpest instant of an isolated musical transient — a snare hit, a strum — while the surrounding performance keeps its full, untouched gain, letting more tracks reach the archive's −20 LUFS standard instead of landing several dB quieter. Fifteen of the twenty-two tracks qualified and are now capped this way; “Rocky Road to Dublin / Star of County Down” needed more recovery than the policy's 6 dB ceiling allows, so it lands at −21.6 LUFS instead of −20 — inaudibly quieter, never over-shaved. “Truck” and “Anna May” are untouched by this change: both were already correctly handled by an earlier, unrelated fix that limits only audience applause at a track's edges, not the music. Two titles also picked up small spelling corrections back to the archive's established convention: “ABC (alt version)” and “The Kiss / Da Da Da (Slave to an Angel).”</description>
+  </item>
+  <item>
     <title>Re-normalized this Mad Hannans set at Cafe Java to −20 LUFS on the current audio engineer…</title>
     <link>https://renedebos.com/shows/mad-cafe-java-1999-09-09/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-08-mad-cafe-java-1999-09-09</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-30-sean-19-broadway-2000-01-24</guid>
     <pubDate>Tue, 30 Jun 2026 00:00:00 +0000</pubDate>
     <description>Normalized all 31 tracks to −20 LUFS for an even, comfortable listening level consistent with the rest of the archive; nine tracks (7, 9, 14, 17, 19, 22, 23, 24 and 31) were hand-edited in Audacity first to repair clipped applause and tame loud audience peaks before normalizing, using the automated audio engineering workflow with ffmpeg</description>
-  </item>
-  <item>
-    <title>Re-restored this muddy recording from the raw tape: corrective EQ (de-mud + presence + ai…</title>
-    <link>https://renedebos.com/shows/mad-sweetwater-2001-01-06/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-06-29-mad-sweetwater-2001-01-06</guid>
-    <pubDate>Mon, 29 Jun 2026 12:00:00 +0000</pubDate>
-    <description>Re-restored this muddy recording from the raw tape: corrective EQ (de-mud + presence + air to bring the vocals forward) and re-normalized all 24 tracks to −20 LUFS, replacing the earlier −16 pass — using the automated audio engineering workflow with ffmpeg</description>
   </item>
 </channel>
 </rss>

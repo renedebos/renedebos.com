@@ -9140,7 +9140,7 @@
           "size_mb": 7,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/02 Smoke in Heaven.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/02 Smoke in Heaven.flac",
-          "flac_size_mb": 33,
+          "flac_size_mb": 34,
           "processed": true,
           "tags": [
             "original",
@@ -9149,7 +9149,7 @@
         },
         {
           "num": 3,
-          "title": "I Thought I Was You",
+          "title": "I Thought I was You",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:41",
           "size_mb": 9,
@@ -9184,7 +9184,7 @@
           "size_mb": 6,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/05 Everything Reminds Me of You.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/05 Everything Reminds Me of You.flac",
-          "flac_size_mb": 30,
+          "flac_size_mb": 31,
           "processed": true,
           "tags": [
             "original"
@@ -9198,7 +9198,7 @@
           "size_mb": 7,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/06 Hear Me.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/06 Hear Me.flac",
-          "flac_size_mb": 35,
+          "flac_size_mb": 36,
           "processed": true,
           "tags": [
             "original"
@@ -9242,7 +9242,7 @@
           "size_mb": 11,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/09 Blahana.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/09 Blahana.flac",
-          "flac_size_mb": 53,
+          "flac_size_mb": 54,
           "processed": true,
           "tags": [
             "original"
@@ -9256,7 +9256,7 @@
           "size_mb": 7,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/10 Ride On.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/10 Ride On.flac",
-          "flac_size_mb": 34,
+          "flac_size_mb": 35,
           "processed": true,
           "tags": [
             "original"
@@ -9270,7 +9270,7 @@
           "size_mb": 14,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/11 Recycle.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/11 Recycle.flac",
-          "flac_size_mb": 65,
+          "flac_size_mb": 68,
           "processed": true,
           "tags": [
             "original",
@@ -9299,7 +9299,7 @@
           "size_mb": 11,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/13 Clear Headed.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/13 Clear Headed.flac",
-          "flac_size_mb": 55,
+          "flac_size_mb": 58,
           "processed": true,
           "tags": [
             "original"
@@ -9357,7 +9357,7 @@
           "size_mb": 7,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/17 Long Black Veil.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/17 Long Black Veil.flac",
-          "flac_size_mb": 31,
+          "flac_size_mb": 32,
           "processed": true,
           "tags": [
             "cover",
@@ -9373,7 +9373,7 @@
           "size_mb": 8,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/18 Blind Man.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/18 Blind Man.flac",
-          "flac_size_mb": 38,
+          "flac_size_mb": 39,
           "processed": true,
           "tags": [
             "original"
@@ -9387,7 +9387,7 @@
           "size_mb": 9,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/19 Tougher Than the Rest.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/19 Tougher Than the Rest.flac",
-          "flac_size_mb": 46,
+          "flac_size_mb": 47,
           "processed": true,
           "tags": [
             "cover",
@@ -9416,7 +9416,7 @@
           "size_mb": 13,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/21 Rocky Road to Dublin _ Star of County Down.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/21 Rocky Road to Dublin _ Star of County Down.flac",
-          "flac_size_mb": 60,
+          "flac_size_mb": 63,
           "processed": true,
           "tags": [
             "irish",
@@ -9430,7 +9430,7 @@
           "size_mb": 15,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/22 The Kiss _ Da Da Da (Slave to An Angel).mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/22 The Kiss _ Da Da Da (Slave to An Angel).flac",
-          "flac_size_mb": 72,
+          "flac_size_mb": 75,
           "processed": true,
           "tags": [
             "original",
@@ -11752,6 +11752,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-08",
+      "ts": "2026-08-08T17:52:34.304244",
+      "slug": "mad-cafe-java-1999-09-09",
+      "report": true,
+      "text": "Reprocessed this Mad Hannans set at Cafe Java again, this time under a new workflow (v8) built for tapes where the mic sat close to the drums: a millisecond-scale true-peak limiter now catches only the sharpest instant of an isolated musical transient — a snare hit, a strum — while the surrounding performance keeps its full, untouched gain, letting more tracks reach the archive's −20 LUFS standard instead of landing several dB quieter. Fifteen of the twenty-two tracks qualified and are now capped this way; “Rocky Road to Dublin / Star of County Down” needed more recovery than the policy's 6 dB ceiling allows, so it lands at −21.6 LUFS instead of −20 — inaudibly quieter, never over-shaved. “Truck” and “Anna May” are untouched by this change: both were already correctly handled by an earlier, unrelated fix that limits only audience applause at a track's edges, not the music. Two titles also picked up small spelling corrections back to the archive's established convention: “ABC (alt version)” and “The Kiss / Da Da Da (Slave to an Angel).”"
+    },
     {
       "date": "2026-08-08",
       "ts": "2026-08-08T02:40:00",

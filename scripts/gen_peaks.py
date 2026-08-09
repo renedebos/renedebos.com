@@ -47,6 +47,29 @@ def pcm_from_r2(key):
     return a
 
 
+def pcm_from_file(path):
+    """Decode a local audio file straight to mono 8 kHz s16 samples (no R2 round trip)."""
+    ff = subprocess.run(
+        ["ffmpeg", "-v", "error", "-i", path, "-ac", "1", "-ar", str(SR),
+         "-f", "s16le", "pipe:1"],
+        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    if ff.returncode != 0 or not ff.stdout:
+        raise SystemExit(f"decode failed for: {path}")
+    a = array.array("h")
+    a.frombytes(ff.stdout)
+    return a
+
+
+def local_mp3_for(local_dir, num):
+    """Find the just-rendered MP3 for track `num` in a publish out/ dir (files are
+    named '<NN> <title>.mp3', matching draft_tracks.py's num = int(f[:2]) convention)."""
+    prefix = f"{num:02d} "
+    for f in os.listdir(local_dir):
+        if f.startswith(prefix) and f.lower().endswith(".mp3"):
+            return os.path.join(local_dir, f)
+    return None
+
+
 def peaks(samples, n=N_PEAKS):
     total = len(samples)
     if total == 0:
@@ -62,13 +85,15 @@ def peaks(samples, n=N_PEAKS):
     return out
 
 
-def gen_show(show):
+def gen_show(show, local_dir=None):
     data = {}
     for t in show["tracks"]:
-        a = pcm_from_r2(t["file"])
+        local = local_mp3_for(local_dir, t["num"]) if local_dir else None
+        a = pcm_from_file(local) if local else pcm_from_r2(t["file"])
         d = round(len(a) / SR)
         data[str(t["num"])] = {"d": d, "p": peaks(a)}
-        print(f"  [{t['num']:02d}] {t['title']}  d={d}s  peaks={len(data[str(t['num'])]['p'])}",
+        src = "local" if local else "r2"
+        print(f"  [{t['num']:02d}] {t['title']}  d={d}s  peaks={len(data[str(t['num'])]['p'])}  ({src})",
               flush=True)
     os.makedirs(PEAKS_DIR, exist_ok=True)
     out = os.path.join(PEAKS_DIR, f"{show['slug']}.json")
@@ -79,7 +104,13 @@ def gen_show(show):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--slug", help="limit to one show slug")
+    ap.add_argument("--local", metavar="DIR",
+                     help="read MP3s from this local out/ dir instead of R2 "
+                          "(publish_show.py's freshly-rendered files, pre-cleanup) "
+                          "— requires --slug")
     args = ap.parse_args()
+    if args.local and not args.slug:
+        raise SystemExit("--local requires --slug")
 
     M = json.load(open(os.path.join(ROOT, "data", "recordings.json")))
     shows = [s for s in M["shows"] if s.get("tracks")]
@@ -90,7 +121,7 @@ def main():
 
     for show in shows:
         print(f"{show['slug']} ({len(show['tracks'])} tracks)")
-        gen_show(show)
+        gen_show(show, local_dir=args.local)
 
 
 if __name__ == "__main__":

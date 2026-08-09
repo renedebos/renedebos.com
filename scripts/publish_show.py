@@ -355,9 +355,9 @@ def cmd_publish(args):
     if not DRY and r.returncode != 0:
         raise SystemExit("draft_tracks failed")
 
-    print("[4/7] waveform peaks")
+    print("[4/7] waveform peaks (from local out/, no R2 round trip)")
     run([sys.executable, os.path.join(ROOT, "scripts", "gen_peaks.py"),
-         "--slug", args.slug])
+         "--slug", args.slug, "--local", out])
 
     print("[5/7] verify R2 MD5s against provenance")
     r = run([sys.executable, os.path.join(ROOT, "scripts", "audio_process.py"),
