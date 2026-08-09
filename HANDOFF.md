@@ -7,10 +7,10 @@ renedebos.com itself.
 > first real show: **`mad-cafe-java-1999-09-09`**. Also fixed a real
 > performance bug in the publish pipeline (waveform peaks were re-downloading
 > every track from R2 instead of reading the local render), and worked around
-> a bad home-network stretch that stalled two separate steps. One thing is
-> still genuinely unfinished: **the R2 MD5 verify for this show was still
-> running in the background when this session ended** — check it before
-> trusting the show is fully confirmed end-to-end (see below).
+> a bad home-network stretch that stalled two separate steps. **The R2 MD5
+> verify was re-run and passed clean the following session (22/22, 0
+> mismatches) — the show is now fully confirmed end-to-end, nothing
+> outstanding on it.** `~/work/mad-cafe-java-1999-09-09/` has been deleted.
 
 ## ✅ Done this session
 
@@ -65,11 +65,11 @@ resolved and authenticated fine throughout). Handled by:
    `processing_report.txt` into Drive). Confirmed content-correct afterward
    with the pipeline's own check (`drive_backup_matches()` — `rclone check`
    hashes, not just a file count) — **matched, step 6 is done.**
-4. **R2 MD5 verify (step 5) was restarted and left running in the
-   background** (`python3 scripts/audio_process.py verify
-   mad-cafe-java-1999-09-09`) — still in progress, several tracks confirmed
-   clean, not finished as of end of session. **First thing to check next
-   session**: `0 mismatch(es)` in the output means done and clean.
+4. **R2 MD5 verify (step 5)** was left running in the background at
+   shutdown, got killed with the machine, and was **re-run clean the
+   following session**: `python3 scripts/audio_process.py verify
+   mad-cafe-java-1999-09-09` → 22 track(s) checked, 0 mismatch(es). Show
+   fully confirmed.
 
 ### Local cleanup
 - `git gc` on `renedebos.com`: `.git` was 215M (mostly loose, unpacked
@@ -82,27 +82,19 @@ resolved and authenticated fine throughout). Handled by:
 - Rene deleted the 8 one-off A/B scratch folders from `~/work/`
   (`sweetwater-transient-ab`, `tcap-test`, `kiss-ab`, `rocky-road-ab`, `ab`,
   `hearme-ab`, `plastic-lemons-ab`, `cafe-java-spikes` — ~3.5G). **Kept**:
-  `~/work/mad-cafe-java-1999-09-09/` (2.0G, wait for verify to finish before
-  clearing — see next session), `~/work/tcap-ui/` (56K, the control panel's
-  real persisted decision/analysis state, not scratch), `~/work/
-  song-concordance/` (56K, unrelated small tool, left alone).
+  `~/work/tcap-ui/` (56K, the control panel's real persisted decision/
+  analysis state, not scratch), `~/work/song-concordance/` (56K, unrelated
+  small tool, left alone). `~/work/mad-cafe-java-1999-09-09/` (2.0G) was
+  deleted the following session once verify passed clean — `~/work/` is now
+  just 112K.
 
 ## 🔜 Next session
-1. **Check the R2 verify result first.** If it finished clean
-   (`0 mismatch(es)`), the show is fully confirmed end-to-end. If it's still
-   running or the connection was bad again, just re-run
-   `python3 scripts/audio_process.py verify mad-cafe-java-1999-09-09` —
-   nothing else needs to happen first, Drive backup is already independently
-   confirmed.
-2. Once verify is clean: `~/work/mad-cafe-java-1999-09-09/` (`out/` +
-   `publish.json` + fingerprint state) can be deleted — nothing downstream
-   needs it anymore.
-3. **Add the caveat sentence to `/process/`'s "linear gain only" claim** —
+1. **Add the caveat sentence to `/process/`'s "linear gain only" claim** —
    now genuinely overdue, since a capped show is live and the public page
    currently doesn't mention it.
-4. Consider a `build_archive_zip.py` refresh (optional, unrelated, whenever
+2. Consider a `build_archive_zip.py` refresh (optional, unrelated, whenever
    there's a batch of shipped shows to fold in).
-5. **Version-bump discipline is now binding** — v8 has a published track.
+3. **Version-bump discipline is now binding** — v8 has a published track.
    Any further change to cap thresholds/semantics from here is v9, not a
    revision of v8.
 
