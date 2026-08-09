@@ -1,141 +1,186 @@
 # Session Handoff — Hannan Recordings (renedebos.com)
-**Date:** 2026-08-08 · **Branch:** `main` — everything below is committed,
-pushed, and **live** (`086ab8b`…`7c4d5f3`), deploy green and spot-checked on
+**Date:** 2026-08-09 · **Branch:** `main` — everything below is committed,
+pushed, and **live** (`086ab8b`…`ceb5ab8`), deploys green and spot-checked on
 renedebos.com itself.
 
-> Built, hardened, and **shipped workflow v8 — `sparse-transient-cap`** on its
-> first real show: **`mad-cafe-java-1999-09-09`**. Also fixed a real
-> performance bug in the publish pipeline (waveform peaks were re-downloading
-> every track from R2 instead of reading the local render), and worked around
-> a bad home-network stretch that stalled two separate steps. **The R2 MD5
-> verify was re-run and passed clean the following session (22/22, 0
-> mismatches) — the show is now fully confirmed end-to-end, nothing
-> outstanding on it.** `~/work/mad-cafe-java-1999-09-09/` has been deleted.
+> **Two shows now carry workflow v8 (`sparse-transient-cap`)**:
+> `mad-cafe-java-1999-09-09` and `jerry-19-broadway-2001-01-15`. The second
+> show's publish turned into a multi-hour saga — not because the audio engine
+> is unreliable, but because of a real bug in the publish *plumbing*
+> (stale local files silently resurrecting "deleted" R2 objects) compounded
+> by several dead-end diagnoses before finding it. Root cause is now
+> understood and documented below, plus a prioritized list of fixes for next
+> time. The `/process/` public page also got the caveat sentence it was
+> owed since Cafe Java shipped. **Nothing is outstanding — both shows are
+> fully confirmed end-to-end** (R2 verified 0 mismatches, Drive backed up
+> and checksum-matched, live and spot-checked).
 
 ## ✅ Done this session
 
-### Workflow v8 — sparse-transient-cap (built, hardened, then shipped)
-Same overall design as before (see prior HANDOFF text / `WORKFLOW_VERSIONS[8]`
-in `audio_process.py` for the full technical record: chain, 6 dB
-attenuation-based cap, tiered eligibility gates, guardrails, per-track
-override vocabulary). What's new this session is that it actually shipped:
+### `jerry-19-broadway-2001-01-15` shipped as the second v8 show
+21 of 31 tracks reached the full −20 LUFS target via the transient cap;
+**Woman** stayed on the applause-only limiter (v5), untouched by the new
+mode, same precedence rule as Cafe Java's Truck/Anna May. Four track titles
+were corrected — **State Trooper → Highway Patrolman**, **Everything →
+Everything Reminds Me of You**, **Four Leaf Clover Inn → The Barney Stone
+Blues**, **Never Knew a Woman → Woman** — after the fresh hand-edit export
+used different filenames than the catalog's established titles for those
+four; each was verified by cross-referencing every prior appearance of the
+title across the whole archive (`recordings.json`), not just accepted from
+`draft_tracks`' mechanical filename-derived guess. `updates[]` entry +
+folded into the existing "Week fourteen" `history.html` section (not a new
+week — same feature, second show). Committed `ceb5ab8`.
 
-- **`mad-cafe-java-1999-09-09` is now the first show carrying v8 in
-  production.** 15 of 22 tracks reached the full −20 LUFS target via the
-  transient cap; **Rocky Road to Dublin / Star of County Down** hit the 6 dB
-  attenuation ceiling and landed at −21.6 (Rene's explicit
-  `--transient-cap-partial` call); **Truck** and **Anna May** are unaffected —
-  both correctly stayed on the applause-limiter (v5), which still takes
-  precedence over the cap.
-- Three track titles corrected to the archive's established spelling on the
-  way through draft_tracks' FLAG review: "ABC (alt version)" (was drafted as
-  "ABC (Alt Versions)"), "Rocky Road to Dublin / Star of County Down" and
-  "The Kiss / Da Da Da (Slave to an Angel)" (both were drafted with `_`
-  instead of `/`, an artifact of `/` not being legal in a filename).
-- `updates[]` entry + a new `history.html` week ("Week fourteen") written for
-  this pass; `/process/`'s public "linear gain only" claim still needs the
-  caveat sentence for the cap mode — **not done yet, next session**.
+### `/process/`'s public claim caught up to reality
+The page previously said an in-performance loud moment is *never* capped —
+true through v7, false since Cafe Java shipped v8. Added a paragraph
+explaining the millisecond-scale cap alongside the existing applause-only
+case, keeping the core "dynamics never squashed" claim intact (a cap is
+categorically different from the seconds-scale riding the ban exists to
+stop). Committed `9318d1d`.
 
-### Real bug fix: waveform peaks were re-downloading from R2 every publish
-`gen_peaks.py` always streamed each track fresh from R2 via `rclone cat`,
-even though `publish_show.py` still has the just-rendered files sitting
-locally in `out/` at that point in the pipeline. That made the peaks step
-(step 4/7) the slowest part of every publish for no reason. Fixed:
-`gen_peaks.py --local DIR` decodes straight from local files, and
-`publish_show.py` now passes `--local out` automatically. Confirmed on this
-run: all 22 tracks' peaks generated from local files in seconds, vs. the
-original run that was still crawling through R2 downloads after several
-minutes.
+### The real bug: stale local `out/` files kept resurrecting "deleted" R2 duplicates
+This is the one worth understanding in full, because the symptom (`R2 FLAC
+incomplete: 35/31`, identical every time, files reappearing with their
+*exact original timestamps* after confirmed-successful `rclone delete`
+runs) looked like R2 platform flakiness or human error, and wasn't either.
 
-### A bad network stretch stalled two unrelated steps — diagnosed, not a code bug
-Partway through publish, `rclone cat` throughput to R2 collapsed to
-15–30 KB/s (confirmed via `rclone -vv --stats`, a plain `curl` against an
-unrelated OVH test file showing the identical pattern, clean pings, no
-competing local processes) — a real network/link problem, not an R2 or
-rclone issue, and **not a Cloudflare permissions issue** (permissions
-failures are instant 403s, not slow-but-real data flow; `rclone lsl`
-resolved and authenticated fine throughout). Handled by:
-1. Killing and relaunching the publish twice — the resume logic (mtime-based
-   skip in `audio_process.py`, MD5-matched) made each restart cheap since
-   nothing actually needed re-rendering.
-2. **Skipping R2 verify and Drive backup for this run rather than waiting on
-   a degraded link** (Rene's call) — nothing about the live site depends on
-   either step; both are integrity/backup-only.
-3. **Rene did the Drive `Processed/` backup by hand** (dragged FLAC + MP3 +
-   `processing_report.txt` into Drive). Confirmed content-correct afterward
-   with the pipeline's own check (`drive_backup_matches()` — `rclone check`
-   hashes, not just a file count) — **matched, step 6 is done.**
-4. **R2 MD5 verify (step 5)** was left running in the background at
-   shutdown, got killed with the machine, and was **re-run clean the
-   following session**: `python3 scripts/audio_process.py verify
-   mad-cafe-java-1999-09-09` → 22 track(s) checked, 0 mismatch(es). Show
-   fully confirmed.
+**What actually happened:** the fresh Drive export had 4 wrong filenames
+(caught by cross-referencing the catalog, see above). Fixing that meant
+renaming the local *source* files in `~/work/<slug>/tracks/` — correct
+move. But the **already-rendered outputs** under the old wrong names were
+still sitting in `~/work/<slug>/out/`, untouched, because nothing in the
+pipeline validates that `out/` only contains files matching the current
+source manifest. Every subsequent `rclone copy out/ → R2` faithfully
+re-uploaded *everything* present locally — the correct new files **and**
+the stale wrong-named leftovers — so deleting the wrong ones from R2 only
+ever "fixed" it until the next publish attempt recreated them from local
+disk. Four back-to-back publish attempts hit the identical count mismatch
+before this was actually understood, each one burning a full resume-render
+cycle (~5 min) plus upload before failing at the same check. `rclone delete`
+is hard-blocked for the agent by the permission classifier — confirmed by
+directly testing it, not assumed — so every deletion required Rene, which
+added round-trips and, legitimately, frustration.
 
-### Local cleanup
-- `git gc` on `renedebos.com`: `.git` was 215M (mostly loose, unpacked
-  objects — normal accumulation, nothing wrong), now 5.6M packed. No history
-  lost, purely a repack. Repo total 236M → ~26M.
-- Rene cleared `~/gdrive-mount/MadHannans - Cafe Java 1999-09-09/` (4.3G) by
-  hand — confirmed that path was a plain local directory, **not** a live
-  Drive mount (nothing in `mount`, no `rclone mount` process), so this only
-  freed local disk, no Drive risk.
-- Rene deleted the 8 one-off A/B scratch folders from `~/work/`
-  (`sweetwater-transient-ab`, `tcap-test`, `kiss-ab`, `rocky-road-ab`, `ab`,
-  `hearme-ab`, `plastic-lemons-ab`, `cafe-java-spikes` — ~3.5G). **Kept**:
-  `~/work/tcap-ui/` (56K, the control panel's real persisted decision/
-  analysis state, not scratch), `~/work/song-concordance/` (56K, unrelated
-  small tool, left alone). `~/work/mad-cafe-java-1999-09-09/` (2.0G) was
-  deleted the following session once verify passed clean — `~/work/` is now
-  just 112K.
+**Fix applied this session:** manually removed the stale local
+`out/` files (flac+mp3+`.v8state.json` for the 4 affected tracks) once the
+pattern was understood; deletions on R2 then actually stuck. **Fix NOT yet
+built:** the pipeline still has no automatic guard against this — see the
+hardening list below, item 3, which is the direct structural fix.
+
+**Bonus confusion, now resolved:** after that, the Drive `Processed/`
+backup appeared to "vanish" the local `out/` audio files entirely (only the
+tiny `.v8state.json` sidecars survived). Root cause: Rene used **cut**, not
+copy, in the Files app — cut removes the source after paste. Not a bug.
+Recovered instantly by re-downloading the already-verified files back from
+R2 into `out/` (faster and safer than re-rendering), confirmed 3 spot-check
+MD5s against provenance, then the Drive backup check passed clean
+(62/62 matching, 0 differences).
+
+### Control panel (`scripts/tcap_ui.py` / `.html`) — five real fixes
+All committed, none yet causing a problem in production use:
+1. **Button order fixed** to match the actual pipeline sequence
+   (1 Prepare → 2 Diagnose report → 3 Analyze prepared → 4 Publish, with the
+   R2-estimate scouting tool moved to the end as the optional extra it is).
+   It previously read top-to-bottom as if canonical analysis came before
+   Prepare.
+2. **Decision column narrowed** — verbose `<select>` option text was
+   blowing out the column width and starving the adjacent verdict column.
+   Shortened labels, moved detail to hover `title`.
+3. **New `partial-accept` decision value.** `partial` and `accept` were
+   mutually exclusive in the data model, but the engine needs both signals
+   independently (opt into the 6 dB shave vs. "I listened, unblock the
+   flag"). A track set to `partial` alone still aborted Publish on its
+   review-tier flag — this bit State Trooper/Highway Patrolman directly.
+   Also added a "re-analyze changed-only" button wired to the canonical
+   analyzer's existing (but previously unexposed) `nums` filter — caught and
+   fixed a real backend bug along the way: the filtered branch didn't merge
+   with the prior analysis, so a partial re-analyze would have silently
+   dropped every other track's results from the saved payload.
+4. **Pre-flight warning banner + verdict fix.** Publish previously failed
+   silently-until-it-didn't: a review-tier-flagged track under `auto` showed
+   the exact same "WILL CAP" verdict as one that would actually ship. Now a
+   banner lists every track that will abort Publish *before* you click it,
+   Publish is disabled with an explanatory tooltip, and the per-row verdict
+   itself says "🛑 BLOCKS PUBLISH" instead of the misleading "WILL CAP".
+
+### A/B tooling used live for two review-tier tracks
+Built loudness-matched, click-free A/B comparisons (Web Audio API gain
+crossfade over ~15ms, not a hard `.muted` toggle — the naive version
+produced an audible click on every switch) for **Sam Hall** (0.60s
+continuous engagement, beyond the review band — declined by the gates,
+Rene forced it *without* a clean listen due to tooling friction, flagged in
+provenance as a weaker-evidence override than the validated tracks) and
+**Highway Patrolman** (0.45s, review tier — resolved via `partial-accept`
+after listening). Scratch dirs `~/work/samhall-ab/`, `~/work/statetrooper-ab/`
+— deletable.
 
 ## 🔜 Next session
-1. **Add the caveat sentence to `/process/`'s "linear gain only" claim** —
-   now genuinely overdue, since a capped show is live and the public page
-   currently doesn't mention it.
-2. Consider a `build_archive_zip.py` refresh (optional, unrelated, whenever
-   there's a batch of shipped shows to fold in).
-3. **Version-bump discipline is now binding** — v8 has a published track.
-   Any further change to cap thresholds/semantics from here is v9, not a
-   revision of v8.
+1. **Publish pipeline hardening — prioritized list saved to memory**
+   (`publish_pipeline_hardening_ideas.md`), not yet built, per Rene's
+   explicit request to fold into HANDOFF rather than implement immediately:
+   - **Build first (cheap, directly prevents tonight's failure mode):**
+     (a) pre-publish filename-vs-catalog check at Prepare time, before any
+     rendering; (b) exact-diff R2 reconciliation (named missing/obsolete/
+     mismatched objects, not a bare count); (c) validate/clean local `out/`
+     against the current source manifest before render+upload — this is the
+     direct structural fix for tonight's bug; (d) separate warnings from
+     failures in the log/UI output.
+   - **Build second:** structured `prepare --reuse-audio-decisions` instead
+     of the manual fingerprint-JSON surgery done tonight to route around a
+     stale decisions-binding after renaming sources; an end-of-run receipt.
+   - **Deliberately not building** unless this class of failure recurs
+     despite the above: full manifest-as-source-of-truth architecture,
+     staging-prefix/run-ID atomic uploads, full stage-checkpoint
+     resumability, an elaborate stale-object review/confirm workflow. All
+     real engineering for a problem that structurally can't recur once the
+     items above exist — same instinct as rejecting the codex-proposed
+     approval-ledger apparatus for transient-cap earlier this week.
+2. Version-bump discipline is binding for the cap mode itself — two
+   published tracks now. Any change to cap thresholds/semantics = v9.
+3. Consider a `build_archive_zip.py` refresh (optional, whenever there's a
+   batch of shipped shows to fold in).
 
 ## ⚠️ Open items (carried, still true)
 - `/search/` index preload double-fetch check, still unverified (DevTools →
   Network, exactly one `search-index.json` request).
-- `publish_show`'s local `out/` resume-skip can resurrect stale files on
-  multi-attempt publishes (`tracks/` is fingerprint-guarded; `out/` relies on
-  mtime + the tcap `.v8state.json`); every publish re-invokes draft_tracks
-  and clobbers manual title fixes (this session's title FLAGs had to be
-  re-checked/re-fixed after each resumed run, for exactly this reason); CSP
-  `unsafe-inline` known/unscoped; don't re-open caching/JSON-size.
+- The stale-local-`out/` bug above is real and **not yet fixed in code** —
+  only worked around by hand tonight. Don't assume it can't recur on the
+  next reprocess that involves a filename correction.
 - `drum-control` (codex-notes.md proposal, for repeatedly-loud material like
   a dominant snare) is deliberately **not built** — needs its own decision +
   A/B evidence if it ever happens. Truck stays applause-limited regardless.
+- Sam Hall's `force` decision rests on weaker evidence than the rest of the
+  validated tracks (A/B tooling friction meant no clean listen actually
+  happened before forcing) — worth a real listen if this is ever revisited.
 
 ## Gotchas learned this session
-- **`rclone` against R2 can genuinely stall/crawl**, same class of problem
-  CLAUDE.md already documents for `gdrive:`. Diagnose with `rclone -vv
-  --stats 3s` before assuming a code bug — check throughput against an
-  unrelated host too (rules out R2 specifically) and check for 403s (rules
-  out permissions; auth failures are instant, not slow).
-- **The publish pipeline's local `out/` dir is a legitimate source for
-  anything that would otherwise re-fetch from R2** right after upload — the
-  bytes are identical, and it's kept on disk until the show ships. Peaks
-  generation was the one place still ignoring this.
-- **Draft_tracks' title auto-derivation is trustworthy but not infallible**:
-  cross-checking its 4 FLAGs this run against every prior appearance of each
-  title in `recordings.json` confirmed 3 of 4 exactly, but caught a title
-  drift twice — filenames can't contain `/`, so multi-song medley titles
-  round-trip through local export as `_`-separated and need restoring by
-  hand; also caught an "Alt Versions" plural vs. the archive's established
-  singular "(alt version)".
-- **`~/gdrive-mount` on this Chromebook Linux (Crostini) environment is not
-  actually a live Drive mount most of the time** — check `mount` /
-  `rclone mount` process before assuming deleting from it touches real Drive
-  content.
+- **A count-only integrity check (`have != n`) is much less useful than a
+  named diff.** `35/31` told us nothing; three separate manual `rclone lsl`
+  comparisons were needed each time to find the actual 4 extra files.
+- **`rclone copy` re-uploads everything present in the source directory,
+  stale or not** — it has no concept of "this shouldn't be here anymore."
+  Any local working directory that accumulates outputs across multiple
+  attempts (renames, reprocesses) is a latent duplicate-upload risk until
+  something actively prunes it.
+- **`rclone delete` is hard-blocked for the agent by the permission
+  classifier** — confirmed by directly attempting it, not assumed. Every
+  R2 deletion this session had to go through Rene.
+- **Cut vs. copy in a file manager is a real, easy-to-hit footgun** when
+  moving processed audio into Drive by hand — cut removes the local source
+  after paste. Not a bug when it happens, but confusing in the moment
+  (looks identical to files vanishing).
+- **A hard `.muted` toggle between two `<audio>` elements produces an
+  audible click on switch** — enough to contaminate an A/B listening test.
+  Use a Web Audio API `GainNode` with a short (~15ms) linear ramp instead.
+- **Long-running background jobs should get a long check-in interval, not
+  frequent pings**, especially once a user has explicitly said so — this
+  session over-pinged status during the publish saga before dialing back.
 
 ## Durable facts (don't undo)
-- **v8 has a published track now** — `mad-cafe-java-1999-09-09`. Version-bump
-  discipline (any cap threshold/semantics change = v9) is binding from here.
+- **v8 has two published tracks now** (Cafe Java, 19 Broadway 2001-01-15).
+  Version-bump discipline (any cap threshold/semantics change = v9) is
+  binding from here.
 - **Five Rene decisions from the build (still policy):** (1) cap approved on
   two-show A/B evidence; (2) 6 dB = actual limiter attenuation, not loudness
   recovered; (3) partial capping = per-track opt-in only, never automatic;
@@ -146,11 +191,19 @@ resolved and authenticated fine throughout). Handled by:
   decision and listening evidence.
 - The control panel (`make tcap`, 8769) is the intended flow for cap-era
   reprocesses, but the engine's own gates are the real safety barrier —
-  terminal and panel are equivalent, panel is just more convenient.
+  terminal and panel are equivalent, panel is just more convenient. It is
+  **not currently running** — start it fresh next session
+  (`python3 scripts/tcap_ui.py --no-open --port 8769`), don't assume state
+  survived a shutdown.
+- `~/work/` is clean (only `tcap-ui/`, `song-concordance/`, empty
+  `archive-zip/` — the two A/B scratch dirs from tonight are still there,
+  deletable).
 
 ## Reference
 Runbook: `CLAUDE.md` → "Publishing a Split Show" (+ the amended
 linear-normalization section covering v8). Panel: `make tcap` (8769). A/B
 tooling: `scripts/ab_compare.py` / `ab_server.py`. Technical record:
-`WORKFLOW_VERSIONS[8]` in `audio_process.py`. External review scratchpad:
-`codex-notes.md` (untracked, not Rene's notes — verify before acting).
+`WORKFLOW_VERSIONS[8]` in `audio_process.py`. Pipeline hardening backlog:
+`publish_pipeline_hardening_ideas.md` in the memory store. External review
+scratchpad: `codex-notes.md` (untracked, not Rene's notes — verify before
+acting).
