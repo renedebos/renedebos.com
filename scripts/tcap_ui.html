@@ -217,12 +217,12 @@ function body(s){
     ${summary}
     ${decStale ? `<div class="nag">⚠ Decisions were made against a different prepared source (fingerprint changed). Re-review them — Publish is blocked until then.</div>` : ""}
     <div class="btns">
-      <button onclick="startJob('analyze','${s.slug}',{source:'r2'})">Analyze (R2 estimate)</button>
-      <button class="primary" ${canonDisabled} onclick="startJob('analyze','${s.slug}',{source:'prepared'})">Analyze prepared (canonical)</button>
-      <button onclick="startJob('prepare','${s.slug}')">Prepare (Drive → diagnose)</button>
-      <button ${canonDisabled} onclick="window.open('/report/${s.slug}','_blank')">Diagnose report</button>
+      <button onclick="startJob('prepare','${s.slug}')">1 · Prepare (Drive → diagnose)</button>
+      <button ${canonDisabled} onclick="window.open('/report/${s.slug}','_blank')">2 · Diagnose report</button>
+      <button class="primary" ${canonDisabled} onclick="startJob('analyze','${s.slug}',{source:'prepared'})">3 · Analyze prepared (canonical)</button>
       <label class="ck"><input type="checkbox" id="tc-${s.slug}" checked> --transient-cap</label>
-      <button ${pubDisabled} onclick="startPublish('${s.slug}')">Publish</button>
+      <button ${pubDisabled} onclick="startPublish('${s.slug}')">4 · Publish</button>
+      <button onclick="startJob('analyze','${s.slug}',{source:'r2'})">Analyze (R2 estimate) — optional scouting, no Prepare needed</button>
     </div>
     <div class="hint">R2 analysis = preliminary estimate on published audio (candidates only, MD5-verified, deleted after). Canonical analysis runs on the exact prepared Drive sources and is what supports publishing. Decisions persist and are passed to publish as --transient-cap-exclude/-accept; a flagged track with no decision makes the engine abort before upload.</div>
     <table><tr><th class="num">#</th><th>Title</th><th class="num">LUFS</th><th class="num">gap dB</th>
