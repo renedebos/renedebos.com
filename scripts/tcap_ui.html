@@ -166,11 +166,20 @@ function body(s){
   const blockingUnresolved = [];  // [num, title] — will abort Publish mid-run
   for (const t of sortTracks(s)){
     const a = an[String(t.num)];
+    const cur = dec[String(t.num)] || "auto";
+    // mirrors audio_process.py cmd_process's exact abort condition: a tcap
+    // track with a "listen before shipping" flag aborts the whole publish
+    // unless force, or accept/partial-accept resolved it
+    const blocked = !!(a && a.flags && a.flags.some(f => f.includes("listen before shipping"))
+        && !["accept", "force", "partial-accept"].includes(cur));
+    if (blocked) blockingUnresolved.push([t.num, t.title]);
     let verdict = "";
     if (a){
       const vsLive = (a.target!=null && t.lufs!=null)
         ? ` (${a.target-t.lufs>=0?"+":""}${(a.target-t.lufs).toFixed(1)} dB vs live)` : "";
-      if (a.tcap) verdict = `<span class="v-cap">WILL CAP → ${fmt(a.target)} LUFS${vsLive} · shave ≤ ${fmt(a.tcap.gr_db)} dB</span>` +
+      if (blocked) verdict = `<span class="v-declined">🛑 BLOCKS PUBLISH → set a decision (would cap to ${fmt(a.target)} LUFS${vsLive} once resolved) · shave ≤ ${fmt(a.tcap.gr_db)} dB</span>` +
+        `<span class="hint"> ${fmt(a.tcap.engaged_pct)}% engaged · ${a.tcap.events} ev · longest ${fmt(a.tcap.longest_s,2)} s · near-peak ${fmt(a.tcap.near_peak_pct)}%</span>`;
+      else if (a.tcap) verdict = `<span class="v-cap">WILL CAP → ${fmt(a.target)} LUFS${vsLive} · shave ≤ ${fmt(a.tcap.gr_db)} dB</span>` +
         `<span class="hint"> ${fmt(a.tcap.engaged_pct)}% engaged · ${a.tcap.events} ev · longest ${fmt(a.tcap.longest_s,2)} s · near-peak ${fmt(a.tcap.near_peak_pct)}%</span>`;
       else if (a.skip) verdict = `<span class="c-unknown">${esc(a.skip)}</span>`;
       else if (a.error) verdict = `<span class="c-over">${esc(a.error)}</span>`;
@@ -180,13 +189,6 @@ function body(s){
       for (const f of (a.flags||[])) verdict += `<span class="flag">⚠ ${esc(f)}</span>`;
       if (a.approx) verdict += `<span class="hint">pre-v5 source — approximate</span>`;
     }
-    const cur = dec[String(t.num)] || "auto";
-    // mirrors audio_process.py cmd_process's exact abort condition: a tcap
-    // track with a "listen before shipping" flag aborts the whole publish
-    // unless force, or accept/partial-accept resolved it
-    if (a && a.flags && a.flags.some(f => f.includes("listen before shipping"))
-        && !["accept", "force", "partial-accept"].includes(cur))
-      blockingUnresolved.push([t.num, t.title]);
     let sel = "—";
     if (t.cls === "candidate")
       sel = `<select class="dec" onchange="decide('${s.slug}',${t.num},this.value)">
