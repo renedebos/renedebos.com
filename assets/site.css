@@ -1028,6 +1028,7 @@ main {
 .proc-status.pre-edit { cursor: help; }
 .proc-status.pre-edit-nr { color: #6ea3d8; }
 .proc-status.pre-edit-pe { color: #9d85c9; }
+.proc-status.eq-badge { color: #5cc9c2; }
 .tech-table td.tver { font-family: var(--mono); text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
 
 /* highlight badge — Rene's editorial call on the performance itself,

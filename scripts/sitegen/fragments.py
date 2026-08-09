@@ -344,6 +344,18 @@ def _pre_edit_class(label):
     share a color with each other or with the "done" status badge."""
     return "pre-edit-nr" if label == "noise-reduced" else "pre-edit-pe"
 
+def _eq_badge(proc):
+    """Corrective-EQ badge for a show whose processing chain applies a
+    literal --eq filter before loudnorm (e.g. a muddy tape restored with
+    mud-cut/presence-lift EQ) — distinct from the pre_edits-driven pre-edited/
+    noise-reduced badges, since the EQ is an engine-applied filter, not
+    documented hand-edit provenance. Hover shows the literal filter chain."""
+    filters = proc.get("filters")
+    if not filters or filters == "none":
+        return ""
+    return (f' <span class="proc-status pre-edit eq-badge" '
+            f'title="{esc(filters)}">corrective-eq</span>')
+
 HIGHLIGHT_STAR_SVG = ('<svg width="12" height="12" viewBox="0 0 12 12">'
                       '<path d="M6 0l1.8 3.8L12 4.4l-3 3 .8 4.4L6 9.8 2.2 11.8 3 7.4 0 4.4l4.2-.6z" '
                       'fill="currentColor"/></svg>')
@@ -381,6 +393,8 @@ def status_line(show):
         label = _pre_edit_label(proc["pre_edits"])
         nr = (f'<span class="proc-status pre-edit {_pre_edit_class(label)}" '
               f'title="{esc(proc["pre_edits"])}">{label}</span>')
+    if proc:
+        nr += _eq_badge(proc)
     return (f'''
   <p class="proc-status-line">Audio processing'''
             f'<span class="proc-status status-{esc(st)}">{esc(st)}</span>{nr}'
@@ -417,6 +431,7 @@ def tech_data_section(show, proc):
         label = _pre_edit_label(proc["pre_edits"])
         badge += (f' <span class="proc-status pre-edit {_pre_edit_class(label)}" '
                   f'title="{esc(proc["pre_edits"])}">{label}</span>')
+    badge += _eq_badge(proc)
     pt = proc.get("tracks", {})
     rows = []
     for t in show["tracks"]:
