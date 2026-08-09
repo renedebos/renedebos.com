@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Reprocessed this Jerry &amp; Sean Hannan set at 19 Broadway under the new workflow (v8), …</title>
+    <link>https://renedebos.com/shows/seanjerry-19-broadway-1999-12/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-09-seanjerry-19-broadway-1999-12</guid>
+    <pubDate>Sun, 09 Aug 2026 15:31:07 +0000</pubDate>
+    <description>Reprocessed this Jerry &amp; Sean Hannan set at 19 Broadway under the new workflow (v8), replacing the show's v2 pass. Twenty-one of the thirty tracks needed help beyond plain linear gain: eight are handled by the applause-only limiter (crowd noise, not the music, sets the ceiling), and eleven qualify for the sparse-transient-cap mode, reaching the full −20 LUFS target instead of landing quieter. Four tracks' capped moments were confirmed by ear before shipping: “Soundcheck” at 1:50, “Black is the Color” at 1:30 and 2:15, “Good Life” at 2:57.6, and “I've Just Seen a Face” at 2:00 — all legitimate music, not defects. Four track titles were restored to the archive's established spelling after the fresh export drifted: “Never Knew a Woman” to “Woman,” “Seven Drunked Nights” to “Seven Drunken Nights,” “The Kiss - Da Da Da (Slave to an Angel)” to “The Kiss / Da Da Da (Slave to an Angel),” and a stray double space trimmed from “I've Just Seen a Face.”</description>
+  </item>
+  <item>
     <title>Reprocessed this Mad Hannans set at New George's under the new workflow (v8), replacing t…</title>
     <link>https://renedebos.com/shows/mad-new-georges-1999-10-13/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-09-mad-new-georges-1999-10-13</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-06-jerry-19-broadway-1999-07-19</guid>
     <pubDate>Mon, 06 Jul 2026 12:00:00 +0000</pubDate>
     <description>Added the full show as 26 individual tracks, split from the audience DAT and normalized to −20 LUFS for an even, comfortable listening level, with the applause gently faded at the end of each song for easier streaming — using the automated audio engineering workflow with ffmpeg</description>
-  </item>
-  <item>
-    <title>New “Songs” section: a cross-referenced matrix of every song against every show — see eac…</title>
-    <link>https://renedebos.com/updates/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-05-site</guid>
-    <pubDate>Sun, 05 Jul 2026 12:00:00 +0000</pubDate>
-    <description>New “Songs” section: a cross-referenced matrix of every song against every show — see each time a song was played across Jerry, the Mad Hannans, and Sean, browse it as a filterable list or a songs-by-shows grid, and search for any song by name. Every performance has its own player and a link to that show.</description>
   </item>
 </channel>
 </rss>
