@@ -310,6 +310,11 @@ def analyze_worker(slug, nums, source, logpath):
                 files = sorted(f for f in os.listdir(tdir)
                                if f.lower().endswith((".flac", ".wav")))
                 if nums:
+                    # partial re-analyze: keep the untouched tracks' prior
+                    # results instead of dropping them from the saved payload
+                    prev = _analysis(slug) or {}
+                    if prev.get("source") == "drive-canonical":
+                        results.update(prev.get("tracks", {}))
                     files = [f for f in files
                              if (m := re.match(r"^(\d+)\s", f))
                              and int(m.group(1)) in nums]

@@ -162,6 +162,7 @@ function body(s){
   const decStale = s.decisions && Object.keys(dec).length &&
                    s.fingerprint && s.decisions.fingerprint !== s.fingerprint;
   let rows = "";
+  const staleNums = [];
   for (const t of sortTracks(s)){
     const a = an[String(t.num)];
     let verdict = "";
@@ -199,10 +200,13 @@ function body(s){
     const eff = v => (v === "accept" ? "auto" : (v || "auto"));
     const assumed = eff(((s.analysis && s.analysis.decisions) || {})[String(t.num)]);
     let will = "—";
-    if (a && !a.skip && !a.error)
-      will = (eff(cur) === assumed)
-        ? `<b>${fmt(a.target,2)}</b>`
-        : `<span class="c-over" title="decision changed since the analysis — re-run Analyze">re-analyze</span>`;
+    if (a && !a.skip && !a.error){
+      if (eff(cur) === assumed) will = `<b>${fmt(a.target,2)}</b>`;
+      else {
+        will = `<span class="c-over" title="decision changed since the analysis — re-run Analyze">re-analyze</span>`;
+        staleNums.push(t.num);
+      }
+    }
     rows += `<tr><td class="num">${t.num}</td><td>${esc(t.title)}</td>
       <td class="num">${fmt(t.lufs,2)}</td><td class="num">${fmt(t.gap)}</td>
       <td class="num">${will}</td>
@@ -222,6 +226,7 @@ function body(s){
       <button onclick="startJob('prepare','${s.slug}')">1 · Prepare (Drive → diagnose)</button>
       <button ${canonDisabled} onclick="window.open('/report/${s.slug}','_blank')">2 · Diagnose report</button>
       <button class="primary" ${canonDisabled} onclick="startJob('analyze','${s.slug}',{source:'prepared'})">3 · Analyze prepared (canonical)</button>
+      <button ${staleNums.length ? "" : "disabled title='no decisions have changed since the last analysis'"} onclick="startJob('analyze','${s.slug}',{source:'prepared',nums:${JSON.stringify(staleNums)}})">3b · Re-analyze changed only (${staleNums.length})</button>
       <label class="ck"><input type="checkbox" id="tc-${s.slug}" checked> --transient-cap</label>
       <button ${pubDisabled} onclick="startPublish('${s.slug}')">4 · Publish</button>
       <button onclick="startJob('analyze','${s.slug}',{source:'r2'})">Analyze (R2 estimate) — optional scouting, no Prepare needed</button>
