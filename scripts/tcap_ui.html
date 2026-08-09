@@ -163,6 +163,7 @@ function body(s){
                    s.fingerprint && s.decisions.fingerprint !== s.fingerprint;
   let rows = "";
   const staleNums = [];
+  const blockingUnresolved = [];  // [num, title] — will abort Publish mid-run
   for (const t of sortTracks(s)){
     const a = an[String(t.num)];
     let verdict = "";
@@ -180,6 +181,12 @@ function body(s){
       if (a.approx) verdict += `<span class="hint">pre-v5 source — approximate</span>`;
     }
     const cur = dec[String(t.num)] || "auto";
+    // mirrors audio_process.py cmd_process's exact abort condition: a tcap
+    // track with a "listen before shipping" flag aborts the whole publish
+    // unless force, or accept/partial-accept resolved it
+    if (a && a.flags && a.flags.some(f => f.includes("listen before shipping"))
+        && !["accept", "force", "partial-accept"].includes(cur))
+      blockingUnresolved.push([t.num, t.title]);
     let sel = "—";
     if (t.cls === "candidate")
       sel = `<select class="dec" onchange="decide('${s.slug}',${t.num},this.value)">
@@ -215,14 +222,25 @@ function body(s){
       <td>${esc(t.mode||"—")}${t.ver?` <span class="hint">v${t.ver}</span>`:""}</td>
       <td>${sel}</td><td>${verdict}</td></tr>`;
   }
-  const pubDisabled = s.prepared && !decStale ? "" : "disabled";
+  const pubDisabled = !s.prepared ? "disabled title='run Prepare first'"
+    : decStale ? "disabled title='decisions are stale — re-review after the latest prepare'"
+    : blockingUnresolved.length ? "disabled title='unresolved review-tier flag(s) — see the warning above'"
+    : "";
   const canonDisabled = s.prepared ? "" : "disabled title='run Prepare first'";
   const summary = (s.analysis && s.analysis.summary)
     ? `<div class="summary">${esc(s.analysis.summary)}</div>` : "";
+  const blockNag = blockingUnresolved.length
+    ? `<div class="nag">⚠ ${blockingUnresolved.length} track(s) have an unresolved review-tier
+       "listen before shipping" flag — Publish (with --transient-cap checked) will render up to
+       the first one, then abort with nothing uploaded: ${blockingUnresolved.map(([n,t]) =>
+       `#${n} ${esc(t)}`).join(", ")}. Set accept / force cap / partial cap (listened) for each
+       before publishing.</div>`
+    : "";
   return `
     ${steps(s)}
     ${summary}
     ${decStale ? `<div class="nag">⚠ Decisions were made against a different prepared source (fingerprint changed). Re-review them — Publish is blocked until then.</div>` : ""}
+    ${blockNag}
     <div class="btns">
       <button onclick="startJob('prepare','${s.slug}')">1 · Prepare (Drive → diagnose)</button>
       <button ${canonDisabled} onclick="window.open('/report/${s.slug}','_blank')">2 · Diagnose report</button>
