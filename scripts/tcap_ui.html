@@ -45,7 +45,9 @@
   button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
   button.primary:hover { background:#1d4ed8; }
   button:disabled { opacity:.45; cursor:not-allowed; }
-  select.dec { font:12px system-ui; padding:1px 4px; border-radius:5px; border:1px solid #d1d5db; }
+  select.dec { font:12px system-ui; padding:1px 2px; border-radius:5px; border:1px solid #d1d5db;
+               width:88px; max-width:88px; }
+  table th:nth-child(8), table td:nth-child(8) { width:92px; }
   label.ck { font-size:13px; color:#374151; display:inline-flex; gap:5px; align-items:center; }
   .hint { font-size:12px; color:var(--mut); margin:6px 0; }
   #jobpane { position:fixed; left:0; right:0; bottom:0; max-height:42vh; background:#0f172a;
@@ -180,15 +182,15 @@ function body(s){
     let sel = "—";
     if (t.cls === "candidate")
       sel = `<select class="dec" onchange="decide('${s.slug}',${t.num},this.value)">
-        <option value="auto"${cur==="auto"?" selected":""}>auto</option>
-        <option value="exclude"${cur==="exclude"?" selected":""}>exclude (veto)</option>
-        <option value="accept"${cur==="accept"?" selected":""}>accept (listened)</option>
-        <option value="force"${cur==="force"?" selected":""}>force cap (listened — overrides sparsity gate)</option>
+        <option value="auto"${cur==="auto"?" selected":""} title="let the engine decide">auto</option>
+        <option value="exclude"${cur==="exclude"?" selected":""} title="veto — never cap this track">exclude</option>
+        <option value="accept"${cur==="accept"?" selected":""} title="listened, unblock the listen-flag">accept</option>
+        <option value="force"${cur==="force"?" selected":""} title="listened — override the sparsity/engagement gates">force cap</option>
       </select>`;
     else if (t.cls === "over")
       sel = `<select class="dec" onchange="decide('${s.slug}',${t.num},this.value)">
-        <option value="auto"${cur==="auto"?" selected":""}>auto (stay quiet)</option>
-        <option value="partial"${cur==="partial"?" selected":""}>partial (cap 6 dB, lands short)</option>
+        <option value="auto"${cur==="auto"?" selected":""} title="stay at the reduced linear target">auto</option>
+        <option value="partial"${cur==="partial"?" selected":""} title="take the full 6 dB shave, lands short of target">partial cap</option>
       </select>`;
     // projected output loudness under the CURRENT decisions: the analysis
     // target when the decision it was computed under still matches; a
