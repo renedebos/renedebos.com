@@ -1,33 +1,48 @@
 # Session Handoff — Hannan Recordings (renedebos.com)
-**Date:** 2026-08-09 · **Branch:** `main` — everything below is committed,
-pushed, and **live** (`227ea3b`), deploy green and spot-checked on
+**Date:** 2026-08-10 · **Branch:** `main` — everything below is committed,
+pushed, and **live** (`d32500d`), deploy green and spot-checked on
 renedebos.com itself.
 
 > **The archive-wide v2→v8 rollout is complete.** Every show that needed
 > reprocessing off an older workflow is done — `jerry-19-broadway-1999-03-29`
-> (shipped this session) was the last one still on the original engine. An
-> eighth show, `mad-sweetwater-1999-05-18`, was then reprocessed as a
-> voluntary opt-in (it was already on a modern-enough workflow, just not
-> transient-cap) — that's not part of the required rollout, just the first
-> of what might become an ongoing "does this show benefit from the cap?"
-> pass over the rest of the archive. **Nothing is outstanding — all eight
-> v8 shows are fully confirmed end-to-end.**
+> was the last one still on the original engine. Two shows have now been
+> reprocessed as voluntary opt-ins (already on a modern-enough workflow,
+> just not transient-cap) — `mad-sweetwater-1999-05-18` (v5→v8) and
+> `jerry-19-broadway-2001-01-08` (v7→v8) — the start of an ongoing "does
+> this show benefit from the cap?" pass over the rest of the archive.
+> **Nothing is outstanding — all nine v8 shows are fully confirmed
+> end-to-end**, including a by-hand Drive `Processed/` cleanup of 30 stale
+> old-named MP3s left over from `2001-01-08`'s original processing pass.
 
-## ✅ Done this session (long session, several distinct phases)
+## ✅ Done across the last two sessions
 
-### Eight shows now carry workflow v8 (`sparse-transient-cap`)
+### Nine shows now carry workflow v8 (`sparse-transient-cap`)
 In ship order: `mad-cafe-java-1999-09-09`, `jerry-19-broadway-2001-01-15`,
 `mad-sweetwater-2001-01-06`, `mad-new-georges-1999-10-13`,
 `seanjerry-19-broadway-1999-12`, `mad-4th-street-tavern-1999-05-01`,
-`jerry-19-broadway-1999-03-29`, `mad-sweetwater-1999-05-18`. Each got the
-same treatment: prepare → diagnose → cross-reference every title drift
-against the whole catalog before correcting it → transient-cap plan preview
-→ Rene confirms any review-tier tracks by ear (timestamps recorded in that
-show's `updates[]` note) → publish → R2 reconcile → Drive backup → metadata
-→ description/updates/`history.html` → build → commit → push → spot-check
+`jerry-19-broadway-1999-03-29`, `mad-sweetwater-1999-05-18`,
+`jerry-19-broadway-2001-01-08`. Each got the same treatment: prepare →
+diagnose → cross-reference every title drift against the whole catalog
+before correcting it → transient-cap plan preview → Rene confirms any
+review-tier tracks by ear (timestamps recorded in that show's `updates[]`
+note) → publish → R2 reconcile → Drive backup → metadata →
+description/updates/`history.html` → build → commit → push → spot-check
 live. `history.html`'s "Week fourteen" section has one bullet per show.
 
-### Publish-pipeline hardening — built and validated live across 5 real shows
+`jerry-19-broadway-2001-01-08` (v7→v8, 2026-08-10) was the largest
+review-tier batch yet — 9 of 30 tracks needed a listen before shipping, all
+confirmed as legitimate music, plus one (`The Wind`) opted into partial
+capping after confirming its loud moments are music too (needed 8.2 dB of
+recovery, over the 6 dB hard cap, so it lands honestly at −22.65 LUFS
+instead of −20). Its Drive `Processed/` folder also turned up 30 stale
+old-named MP3s (dated 2026-06-28, from a pre-v7 processing generation,
+prefixed `JerryHannan - 19 Broadway 2001-01-08 - `) sitting alongside the
+fresh output — **not caused by a title change this time**, just an old
+leftover that had never been cleaned up. Worth eyeballing Drive
+`Processed/` on every reprocess going forward, not only ones with a
+filename-driven title correction (see gotcha below).
+
+### Publish-pipeline hardening — built and validated live across 6 real shows
 All in `scripts/publish_show.py`, all proven against genuine production
 defects (never a false positive):
 1. **Title preflight at `prepare` time** — cross-references every track's
@@ -90,7 +105,7 @@ here). A second opinion (Codex) sharpened the diagnosis further — see below.
 
 ## 🔜 Next session
 
-### 1. Louder-playback derivative — researched, deliberately deferred to today
+### 1. Louder-playback derivative — researched 2026-08-09, still deferred
 Rene asked whether the archive should offer a louder stream (~−16 LUFS)
 alongside the current ~−20 LUFS masters, since −16 would clip on many
 tracks without real limiting. Ran a preliminary feasibility scan off
@@ -139,8 +154,15 @@ paths, not just one.
 
 ### 2. Everything else carried from before, still true
 - Consider a `build_archive_zip.py` refresh (optional, whenever there's a
-  batch of shipped shows to fold in) — now includes 8 v8 shows' worth of
+  batch of shipped shows to fold in) — now includes 9 v8 shows' worth of
   reprocessed audio since the last zip build.
+- **Drive `Processed/` hygiene check is worth doing on every reprocess, not
+  just ones with a title correction** — `jerry-19-broadway-2001-01-08`
+  turned up 30 stale old-named MP3s with no title-change trigger at all,
+  just an old pass that was never cleaned up. A quick `rclone lsf` count
+  check on both FLAC and MP3 right after the Drive backup step (same
+  pattern as the R2 reconciliation) would catch this without relying on
+  noticing it by chance.
 - `drum-control` (codex-notes.md proposal, for repeatedly-loud material like
   a dominant snare on every backbeat) is deliberately **not built** — needs
   its own decision + A/B evidence if it ever happens. The louder-playback
@@ -182,9 +204,16 @@ paths, not just one.
   background job** (Drive backup on a 22-track show ran past it) — that's
   a "re-arm and keep watching" situation, not a failure signal by itself;
   check the actual process before assuming anything went wrong.
+- **A single `curl` cache-status check right after a deploy purge can be
+  genuinely inconsistent, not just stale** — five checks on
+  `jerry-19-broadway-2001-01-08` flip-flopped between the correct new
+  content and stale pre-deploy content, all reporting `cf-cache-status:
+  HIT`, before settling. That's normal multi-POP purge-propagation lag, not
+  a broken deploy — confirm with several checks spaced ~30-45s apart before
+  concluding anything is wrong.
 
 ## Durable facts (don't undo)
-- **v8 now has eight published shows** (see list above). Version-bump
+- **v8 now has nine published shows** (see list above). Version-bump
   discipline (any cap threshold/semantics change = v9) is binding.
 - **Linear-normalization policy, as amended for v8** (see `CLAUDE.md`):
   loudnorm/ebur128 are measurement-only since workflow v6; gain is always
