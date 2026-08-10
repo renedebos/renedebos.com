@@ -464,6 +464,8 @@ def cmd_publish(args):
         cmd += ["--transient-cap-partial", args.tcap_partial]
     if args.tcap_force:
         cmd += ["--transient-cap-force", args.tcap_force]
+    if args.tcap_max_gr:
+        cmd += ["--transient-cap-max-gr", args.tcap_max_gr]
     r = run(cmd)
     if r.returncode not in (0, 2):  # 2 = processed with non-fatal warnings, see report
         raise SystemExit("processing failed")
@@ -606,6 +608,12 @@ def main():
     ap.add_argument("--transient-cap-force", dest="tcap_force", default="",
                      help="publish: comma-separated track numbers where Rene, after "
                           "listening, overrides the sparsity gate/listen-flags")
+    ap.add_argument("--transient-cap-max-gr", dest="tcap_max_gr", default="",
+                     help="publish: comma-separated track:dB pairs (e.g. '8:8.65') "
+                          "raising the 6 dB attenuation ceiling for ONE track — an "
+                          "explicit, recorded exception after a loudness-matched "
+                          "listening test, never an archive-wide policy change "
+                          "(passed through to audio_process.py)")
     args = ap.parse_args()
     DRY = args.dry_run
     {"prepare": cmd_prepare, "publish": cmd_publish,

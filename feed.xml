@@ -8,6 +8,20 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Reprocessed Sean Hannan's solo show at 19 Broadway from November 29, 1999 under the new w…</title>
+    <link>https://renedebos.com/shows/sean-19-broadway-1999-11-29/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-10-sean-19-broadway-1999-11-29</guid>
+    <pubDate>Mon, 10 Aug 2026 10:01:34 +0000</pubDate>
+    <description>Reprocessed Sean Hannan's solo show at 19 Broadway from November 29, 1999 under the new workflow (v8), replacing the show's v6 pass. Eleven of the twenty-one tracks qualify for the sparse-transient-cap mode, reaching the full −20 LUFS target instead of landing quieter. Two capped tracks needed a listen before shipping and both checked out as legitimate music, not defects: “Don't Think Twice It's All Right” and “Free Fallin'.” “The Kiss - Da Da Da (Slave to an Angel)” needed more recovery than the policy's 6 dB ceiling allows; opted into partial capping after confirming the loud moments are music, landing at −20.93 LUFS. One title was restored to the archive's established spelling — “The Kiss / Da Da Da (Slave to an Angel)” — and a stray trailing space trimmed from “Tied Up With a Black Velvet Band.”</description>
+  </item>
+  <item>
+    <title>Gave “The Wind” an explicit, one-off exception to the archive's standard 6 dB transient-c…</title>
+    <link>https://renedebos.com/shows/jerry-19-broadway-2001-01-08/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-10-jerry-19-broadway-2001-01-08</guid>
+    <pubDate>Mon, 10 Aug 2026 09:59:23 +0000</pubDate>
+    <description>Gave “The Wind” an explicit, one-off exception to the archive's standard 6 dB transient-cap ceiling, reaching the full −20 LUFS target instead of the −22.65 it landed at yesterday. The track's loudest moment (1:37.50, a vocal peak) needs 8.65 dB of recovery — over the usual limit — but a loudness-matched listening test at 6/8/10 dB of cut depth on that exact moment, plus the real full-target render, found no audible difference from the standard treatment. This is a per-track decision, not a policy change: the engine now records the exact ceiling used for every capped track (`policy_max_gr_db`) and flags any track exceeding the standard 6 dB as an explicit `override`, so this exception — and any future one — stays auditable without relying on memory or free-text notes. No other track in the archive is affected; the archive-wide ceiling remains 6 dB.</description>
+  </item>
+  <item>
     <title>Reprocessed Jerry Hannan's soundboard show at 19 Broadway from January 8, 2001 under the …</title>
     <link>https://renedebos.com/shows/jerry-19-broadway-2001-01-08/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-10-jerry-19-broadway-2001-01-08</guid>
@@ -272,20 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-10-sean-19-broadway-1999-11-29</guid>
     <pubDate>Fri, 10 Jul 2026 21:30:00 +0000</pubDate>
     <description>Added the November 29, 1999 solo show at 19 Broadway as 21 individual tracks, split from the audience DAT and normalized to −20 LUFS for an even, comfortable listening level.</description>
-  </item>
-  <item>
-    <title>MP3 downloads retired — every song and full show still streams in full; lossless FLAC/WAV…</title>
-    <link>https://renedebos.com/updates/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-10-site</guid>
-    <pubDate>Fri, 10 Jul 2026 12:00:00 +0000</pubDate>
-    <description>MP3 downloads retired — every song and full show still streams in full; lossless FLAC/WAV downloads remain available, password protected</description>
-  </item>
-  <item>
-    <title>Added the March 29, 1999 solo show at 19 Broadway as 34 individual tracks — the first sho…</title>
-    <link>https://renedebos.com/shows/jerry-19-broadway-1999-03-29/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-09-jerry-19-broadway-1999-03-29</guid>
-    <pubDate>Thu, 09 Jul 2026 20:21:59 +0000</pubDate>
-    <description>Added the March 29, 1999 solo show at 19 Broadway as 34 individual tracks — the first show treated with noise reduction across the whole tape before splitting, then normalized to −20 LUFS</description>
   </item>
 </channel>
 </rss>

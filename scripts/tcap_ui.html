@@ -126,11 +126,13 @@ function render(){
     }
     const prepPill = s.prepared
       ? `<span class="pill p-done" title="fingerprint ${esc(s.fingerprint||"—")}">prepared ${esc((s.preparedAt||"").slice(0,16))}</span>` : "";
+    const shipPill = s.shipped
+      ? `<span class="pill p-done" title="every track's sidecar ver already matches the current engine — published, possibly via CLI rather than this panel">shipped</span>` : "";
     div.innerHTML = `
       <div class="show-head" onclick="this.parentNode.classList.toggle('open')">
         <div class="t"><b>${esc(s.date)}</b> — ${esc(ARTISTS[s.artist]||s.artist)}, ${esc(s.venue)}
           <small>${s.slug}</small></div>
-        ${anPill}${prepPill}
+        ${anPill}${prepPill}${shipPill}
         <span class="pill p-cand">${c.candidate} candidate${c.candidate===1?"":"s"}</span>
         ${c.over ? `<span class="pill p-over">${c.over} over-cap</span>` : ""}
         <span class="pill p-spread">spread ${fmt(s.spread)} dB</span>
@@ -146,13 +148,20 @@ function steps(s){
                     (!s.fingerprint || s.analysis.fingerprint === s.fingerprint);
   const nDec = Object.keys((s.decisions&&s.decisions.tracks)||{}).length;
   const pub = h.publish;
+  // `shipped` (from scan(): every track's sidecar `ver` already matches the
+  // engine's current WORKFLOW_VERSION) catches a show published straight
+  // from the CLI, bypassing this panel's own Analyze/Publish buttons and the
+  // analysis.json/history.json files they write — without it, steps 2 and 4
+  // would show as perpetually undone for a show that's actually fully live.
   const step = (label, state, extra) =>
     `<span class="step ${state}">${state==="done"?"✓ ":state==="fail"?"✗ ":"○ "}${label}${extra||""}</span>`;
   return `<div class="steps">
     ${step("1 Prepare", s.prepared?"done":"", s.prepared?` ${esc((s.preparedAt||"").slice(5,16))}`:"")}
-    ${step("2 Canonical analysis", canonical?"done":(s.analysis?"":""), canonical?` ${esc((s.analysis.ts||"").slice(5,16))}`:"")}
+    ${step("2 Canonical analysis", (canonical||s.shipped)?"done":(s.analysis?"":""),
+      canonical?` ${esc((s.analysis.ts||"").slice(5,16))}` : (s.shipped?" (via shipped state)":""))}
     ${step("3 Decisions", nDec?"done":"", nDec?` (${nDec})`:" (optional)")}
-    ${step("4 Publish", pub ? (pub.rc===0?"done":"fail") : "", pub?` ${esc((pub.ts||"").slice(5,16))}`:"")}
+    ${step("4 Publish", (pub||s.shipped) ? (pub&&pub.rc!==0?"fail":"done") : "",
+      pub?` ${esc((pub.ts||"").slice(5,16))}` : (s.shipped?" (shipped outside this panel)":""))}
   </div>`;
 }
 

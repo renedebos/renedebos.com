@@ -841,7 +841,7 @@ def window_stats(path, pre="", win_s=APPLAUSE_WIN_S):
 
 
 def plan_track(path, target, pre="", transient_cap=False, tcap_partial=False,
-               tcap_force=False):
+               tcap_force=False, tcap_max_gr=None):
     """Decide how one track gets normalized (workflow v5; v8 adds the opt-in
     transient_cap flag). Returns a dict: mode ('linear' | 'linear-reduced' |
     'applause-limiter' | 'transient-cap'), target (projected output LUFS),
@@ -877,7 +877,7 @@ def plan_track(path, target, pre="", transient_cap=False, tcap_partial=False,
     if pred - TP_CEILING <= APPLAUSE_MIN_SHORTFALL:
         # applause-limiter never engages on overshoots this small (not worth a
         # limiter), so the cap doesn't need to defer to it here
-        if transient_cap and try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=tcap_partial, force=tcap_force):
+        if transient_cap and try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=tcap_partial, force=tcap_force, max_gr=tcap_max_gr):
             return plan
         plan.update(mode="linear-reduced", target=maxlin,
                     note=f"gain to {target:g} LUFS would overshoot the TP ceiling by "
@@ -924,7 +924,7 @@ def plan_track(path, target, pre="", transient_cap=False, tcap_partial=False,
     if not applause or not music:
         # the music itself sets the ceiling — exactly the case the opt-in
         # transient cap exists for (applause-limiter has nothing to act on)
-        if transient_cap and try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=tcap_partial, force=tcap_force):
+        if transient_cap and try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=tcap_partial, force=tcap_force, max_gr=tcap_max_gr):
             return plan
         plan.update(mode="linear-reduced", target=maxlin,
                     note=f"gain to {target:g} LUFS would overshoot the TP ceiling by "
@@ -939,7 +939,7 @@ def plan_track(path, target, pre="", transient_cap=False, tcap_partial=False,
     gain = round(min(target - in_I, APPLAUSE_LIMIT_DB - music_peak), 2)
     benefit = gain - (TP_CEILING - in_TP)  # dB recovered vs the v4 reduced target
     if benefit < APPLAUSE_MIN_BENEFIT:
-        if transient_cap and try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=tcap_partial, force=tcap_force):
+        if transient_cap and try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=tcap_partial, force=tcap_force, max_gr=tcap_max_gr):
             return plan
         plan.update(mode="linear-reduced", target=maxlin,
                     note=f"gain to {target:g} LUFS would overshoot the TP ceiling by "
@@ -1022,21 +1022,30 @@ def limiter_chain(plan, pre=""):
 # ── sparse-transient cap (workflow v8, opt-in) ───────────────────────────────
 
 def try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=False,
-                      force=False):
+                      force=False, max_gr=None):
     """Attempt to upgrade a would-be linear-reduced track to the opt-in
     transient-cap mode (workflow v8). Mutates and returns `plan` on success;
     returns None (leaving only flags behind) when any eligibility gate fails,
     in which case the caller proceeds to the linear-reduced fallback exactly
     as if the flag were off. Called only when --transient-cap was passed AND
     the applause classifier has already declined (applause-limiter is less
-    invasive — music strictly linear — so it keeps precedence)."""
+    invasive — music strictly linear — so it keeps precedence).
+
+    `max_gr`, when given, is an explicit per-track EXCEPTION to the standard
+    TCAP_MAX_GR policy ceiling (--transient-cap-max-gr) — e.g. after a
+    loudness-matched listening test showed a deeper cut is inaudible on one
+    specific track. Never a way to change the ceiling for the show or the
+    archive; recorded in provenance (policy_max_gr_db / override) precisely
+    so an exception is always distinguishable from standard-policy output."""
+    effective_max_gr = TCAP_MAX_GR if max_gr is None else max_gr
+    plan["max_gr"] = effective_max_gr
     overshoot = plan["pred"] - TP_CEILING  # dB of boost linear-only must forgo
     if overshoot < TCAP_MIN_BENEFIT:
         return None  # lands within 1 dB of target anyway — not worth a limiter
-    if overshoot > TCAP_MAX_GR and not partial:
+    if overshoot > effective_max_gr and not partial:
         plan["flags"].append(
             f"transient-cap declined: reaching {target:g} LUFS needs "
-            f"{overshoot:.1f} dB of capping, over the {TCAP_MAX_GR:g} dB hard "
+            f"{overshoot:.1f} dB of capping, over the {effective_max_gr:g} dB hard "
             f"cap — the track stays honestly quiet at its reduced linear "
             f"target (per-track partial capping is available as Rene's "
             f"explicit opt-in: --transient-cap-partial)")
@@ -1062,7 +1071,7 @@ def try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=False,
     # more gets the excess trimmed off its gain instead — it lands a hair shy
     # of nominal (recorded via target_lufs) rather than over-shaved.
     gain = round(target - in_I, 2)
-    excess = round(in_TP + gain - TCAP_LIMIT_DB - TCAP_MAX_GR, 2)
+    excess = round(in_TP + gain - TCAP_LIMIT_DB - effective_max_gr, 2)
     if excess > 0:
         gain = round(gain - excess, 2)
     # Reject band on PREDICTED ENGAGEMENT — the measurement the listening
@@ -1095,7 +1104,7 @@ def try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=False,
             f"(--transient-cap-force)")
     if excess > 0:
         plan["flags"].append(
-            f"gain trimmed {excess:.2f} dB to honor the {TCAP_MAX_GR:g} dB "
+            f"gain trimmed {excess:.2f} dB to honor the {effective_max_gr:g} dB "
             f"attenuation cap — lands at {plan['target']:g} LUFS instead of "
             f"{target:g} (inaudible; the cap is the policy, the target is not)")
     return plan
@@ -1172,11 +1181,14 @@ def tcap_finalize(plan):
                 "listen before shipping")
         if note not in plan["flags"]:
             plan["flags"].append(note)
-    if gr > TCAP_MAX_GR + 0.01:
+    effective_max_gr = plan.get("max_gr", TCAP_MAX_GR)
+    if gr > effective_max_gr + 0.01:
         # structurally impossible: sizing trims the gain to the cap and the
         # retry loop moves gain in lockstep once the cap is reached — if this
-        # fires, the invariant is broken, not merely a loud track
-        note = (f"attenuation {gr:.2f} dB EXCEEDS the {TCAP_MAX_GR:g} dB cap — "
+        # fires, the invariant is broken, not merely a loud track. Compared
+        # against whatever ceiling was actually in effect for this track
+        # (standard policy, or an explicit --transient-cap-max-gr exception).
+        note = (f"attenuation {gr:.2f} dB EXCEEDS the {effective_max_gr:g} dB cap — "
                 f"invariant broken; do not ship, listen before shipping")
         if note not in plan["flags"]:
             plan["flags"].append(note)
@@ -1217,6 +1229,21 @@ def _num_set(s):
     return {int(x) for x in s.split(",") if x.strip()} if s else set()
 
 
+def _num_map(s):
+    """Parse a comma-separated track:value list ('8:8.65,3:7') into a dict
+    {track_num: float}. Used for --transient-cap-max-gr, an explicit
+    per-track exception to the TCAP_MAX_GR policy ceiling — never a way to
+    change the ceiling globally."""
+    out = {}
+    for pair in (s.split(",") if s else []):
+        pair = pair.strip()
+        if not pair:
+            continue
+        num, _, val = pair.partition(":")
+        out[int(num)] = float(val)
+    return out
+
+
 def cmd_plan(args):
     """Dry run: the exact per-track decisions `process` would make, no audio
     written. Table + normalization_plan.txt in the input folder."""
@@ -1234,11 +1261,13 @@ def cmd_plan(args):
     tcap_excl = _num_set(getattr(args, "transient_cap_exclude", ""))
     tcap_part = _num_set(getattr(args, "transient_cap_partial", ""))
     tcap_frc = _num_set(getattr(args, "transient_cap_force", ""))
+    tcap_maxgr = _num_map(getattr(args, "transient_cap_max_gr", ""))
     for f in files:
         p = plan_track(os.path.join(folder, f), target, pre=pre,
                        transient_cap=tcap_on and lead_num(f) not in tcap_excl,
                        tcap_partial=lead_num(f) in tcap_part,
-                       tcap_force=lead_num(f) in tcap_frc)
+                       tcap_force=lead_num(f) in tcap_frc,
+                       tcap_max_gr=tcap_maxgr.get(lead_num(f)))
         counts[p["mode"]] += 1
         j = p["measure"]
         rows.append((f, float(j["input_i"]), float(j["input_tp"]), p))
@@ -1331,8 +1360,10 @@ def cmd_process(args):
                  and num not in _num_set(getattr(args, "transient_cap_exclude", "")))
         tc_partial = num in _num_set(getattr(args, "transient_cap_partial", ""))
         tc_force = num in _num_set(getattr(args, "transient_cap_force", ""))
+        tc_maxgr = _num_map(getattr(args, "transient_cap_max_gr", "")).get(num)
         plan = plan_track(src, target, pre=filt, transient_cap=tc_on,
-                          tcap_partial=tc_partial, tcap_force=tc_force)
+                          tcap_partial=tc_partial, tcap_force=tc_force,
+                          tcap_max_gr=tc_maxgr)
         used_target = plan["target"]
         limiter = plan["mode"] == "applause-limiter"
         tcap = plan["mode"] == "sparse-transient-cap"
@@ -1652,6 +1683,19 @@ def cmd_process(args):
                 # sparsity number that qualified the track — enough to audit
                 # any capped track later without re-running the frame scan
                 entry["transient_cap"] = dict(plan["tcap"])
+                # policy_max_gr_db is always recorded (standard ceiling by
+                # default) so a track is auditable even if TCAP_MAX_GR itself
+                # changes later; override/override_note only appear when a
+                # track's actual cut exceeds the STANDARD ceiling — i.e. an
+                # explicit --transient-cap-max-gr exception, never silent.
+                effective_max_gr = plan.get("max_gr", TCAP_MAX_GR)
+                entry["transient_cap"]["policy_max_gr_db"] = effective_max_gr
+                if plan["tcap"]["gr_db"] > TCAP_MAX_GR + 0.01:
+                    entry["transient_cap"]["override"] = True
+                    entry["transient_cap"]["override_note"] = (
+                        f"exceeds the standard {TCAP_MAX_GR:g} dB policy ceiling — "
+                        f"explicit per-track exception (--transient-cap-max-gr), "
+                        f"ceiling raised to {effective_max_gr:g} dB for this render")
             # audit trail: what treatment this track got and WHY — the chain says
             # what ran; mode+note record the decision so Butter ("applause set the
             # ceiling, tail limited") reads differently from a track whose music
@@ -2027,6 +2071,14 @@ def main():
                          "overrides the sparsity gate (and any listen-flags) for that "
                          "track — his ears outrank the calibrated gate; recorded in "
                          "provenance")
+    pl.add_argument("--transient-cap-max-gr", dest="transient_cap_max_gr", default="",
+                    help="comma-separated track:dB pairs (e.g. '8:8.65') raising the "
+                         "6 dB attenuation ceiling for ONE track — an explicit, "
+                         "recorded exception after a loudness-matched listening test, "
+                         "never a way to change the archive-wide policy; every capped "
+                         "track's provenance always records the ceiling that was in "
+                         "effect (policy_max_gr_db) and flags an override when this "
+                         "is used")
     pl.set_defaults(func=cmd_plan)
 
     p = sub.add_parser("process")
@@ -2067,6 +2119,14 @@ def main():
                          "overrides the sparsity gate (and any listen-flags) for that "
                          "track — his ears outrank the calibrated gate; recorded in "
                          "provenance")
+    p.add_argument("--transient-cap-max-gr", dest="transient_cap_max_gr", default="",
+                    help="comma-separated track:dB pairs (e.g. '8:8.65') raising the "
+                         "6 dB attenuation ceiling for ONE track — an explicit, "
+                         "recorded exception after a loudness-matched listening test, "
+                         "never a way to change the archive-wide policy; every capped "
+                         "track's provenance always records the ceiling that was in "
+                         "effect (policy_max_gr_db) and flags an override when this "
+                         "is used")
     p.set_defaults(func=cmd_process)
 
     v = sub.add_parser("verify")

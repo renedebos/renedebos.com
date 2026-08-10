@@ -167,6 +167,16 @@ def scan():
         last = {}
         for h in _history(s["slug"]):
             last[h["kind"]] = h  # newest wins (list is chronological)
+        # A show can reach the current engine version through publish_show.py
+        # run straight from the CLI, entirely bypassing this panel's own
+        # Analyze/Publish buttons (and the analysis.json/history.json files
+        # they write). Steps 2-4 below would otherwise show as perpetually
+        # undone for a show that's actually fully shipped. Detect that case
+        # from the one thing that's true either way — every track's sidecar
+        # `ver` already matches the engine's current WORKFLOW_VERSION — so
+        # the checklist reflects reality, not just "did a job run through me".
+        vers = [r["ver"] for r in rows]
+        shipped_current = bool(vers) and all(v == ap.WORKFLOW_VERSION for v in vers)
         out.append({"slug": s["slug"], "artist": s["artist"],
                     "venue": s.get("venue_short") or s.get("venue") or "",
                     "date": s.get("date") or "", "target": target,
@@ -177,7 +187,8 @@ def scan():
                     "history": last,
                     "prepared": bool(pstate),
                     "preparedAt": (pstate or {}).get("prepared"),
-                    "fingerprint": (pstate or {}).get("fingerprint")})
+                    "fingerprint": (pstate or {}).get("fingerprint"),
+                    "shipped": shipped_current})
     out.sort(key=lambda r: (-r["counts"]["candidate"], -r["spread"]))
     return out
 
