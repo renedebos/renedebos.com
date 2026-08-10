@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Reprocessed this Mad Hannans set at 4th Street Tavern under the new workflow (v8), replac…</title>
+    <link>https://renedebos.com/shows/mad-4th-street-tavern-1999-05-01/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-09-mad-4th-street-tavern-1999-05-01</guid>
+    <pubDate>Sun, 09 Aug 2026 17:01:08 +0000</pubDate>
+    <description>Reprocessed this Mad Hannans set at 4th Street Tavern under the new workflow (v8), replacing the show's v2 pass. Two songs, “Soundcheck” and “Rocky Road to Dublin,” qualify for the sparse-transient-cap mode and now reach the full −20 LUFS target this way — both cleared automatically, no listen required. Four track titles were restored to the archive's established spelling after the fresh export drifted: “I Need a Lover” to “Hear Me,” “The Kiss - Da Da Da (Slave to an Angel)” to “The Kiss / Da Da Da (Slave to an Angel),” “Shirt” to “Shirt - ABC,” and a dropped closing parenthesis fixed in “Soundcheck (Football Tonight).”</description>
+  </item>
+  <item>
     <title>Reprocessed this Jerry &amp; Sean Hannan set at 19 Broadway under the new workflow (v8), …</title>
     <link>https://renedebos.com/shows/seanjerry-19-broadway-1999-12/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-09-seanjerry-19-broadway-1999-12</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-06-jerry-19-broadway-1999-05-10</guid>
     <pubDate>Mon, 06 Jul 2026 12:00:00 +0000</pubDate>
     <description>Added the full show as 21 individual tracks, split from the audience DAT and normalized to −20 LUFS for an even, comfortable listening level, with the applause gently faded at the end of each song for easier streaming — using the automated audio engineering workflow with ffmpeg</description>
-  </item>
-  <item>
-    <title>Added the full show as 26 individual tracks, split from the audience DAT and normalized t…</title>
-    <link>https://renedebos.com/shows/jerry-19-broadway-1999-07-19/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-06-jerry-19-broadway-1999-07-19</guid>
-    <pubDate>Mon, 06 Jul 2026 12:00:00 +0000</pubDate>
-    <description>Added the full show as 26 individual tracks, split from the audience DAT and normalized to −20 LUFS for an even, comfortable listening level, with the applause gently faded at the end of each song for easier streaming — using the automated audio engineering workflow with ffmpeg</description>
   </item>
 </channel>
 </rss>

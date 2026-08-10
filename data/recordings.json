@@ -8723,7 +8723,7 @@
           "processed": true,
           "size_mb": 11,
           "duration": "4:41",
-          "flac_size_mb": 52,
+          "flac_size_mb": 51,
           "tags": [
             "banter"
           ],
@@ -8753,7 +8753,7 @@
           "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/03 Truck.flac",
           "processed": true,
           "size_mb": 10,
-          "duration": "3:57",
+          "duration": "3:58",
           "flac_size_mb": 48,
           "tags": [
             "original",
@@ -8768,7 +8768,7 @@
           "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/04 Blind Man.flac",
           "processed": true,
           "size_mb": 8,
-          "duration": "3:13",
+          "duration": "3:14",
           "flac_size_mb": 39,
           "tags": [
             "original"
@@ -8782,7 +8782,7 @@
           "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/05 Clear Headed.flac",
           "processed": true,
           "size_mb": 11,
-          "duration": "4:32",
+          "duration": "4:33",
           "flac_size_mb": 55,
           "tags": [
             "original"
@@ -8796,7 +8796,7 @@
           "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/06 Rocky Road to Dublin.flac",
           "processed": true,
           "size_mb": 13,
-          "duration": "5:14",
+          "duration": "5:15",
           "flac_size_mb": 63,
           "tags": [
             "irish",
@@ -8850,8 +8850,8 @@
           "num": 10,
           "title": "Hear Me",
           "songwriter": "Jerry Hannan & Sean Hannan",
-          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/10 Hear Me.mp3",
-          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/10 Hear Me.flac",
+          "file": "MP3/MadHannans - 4th Street Tavern 1999-05-01/10 I Need a Lover.mp3",
+          "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/10 I Need a Lover.flac",
           "processed": true,
           "size_mb": 7,
           "duration": "3:07",
@@ -8868,7 +8868,7 @@
           "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/11 Blahana.flac",
           "processed": true,
           "size_mb": 10,
-          "duration": "4:12",
+          "duration": "4:13",
           "flac_size_mb": 51,
           "tags": [
             "original"
@@ -8882,7 +8882,7 @@
           "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/12 Tougher Than the Rest.flac",
           "processed": true,
           "size_mb": 9,
-          "duration": "3:43",
+          "duration": "3:44",
           "flac_size_mb": 44,
           "tags": [
             "cover",
@@ -8927,8 +8927,8 @@
           "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/15 The Kiss - Da Da Da (Slave to an Angel).flac",
           "processed": true,
           "size_mb": 15,
-          "duration": "6:24",
-          "flac_size_mb": 74,
+          "duration": "6:25",
+          "flac_size_mb": 73,
           "tags": [
             "original",
             "medley"
@@ -8942,7 +8942,7 @@
           "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/16 Dysfunctional Guy.flac",
           "processed": true,
           "size_mb": 11,
-          "duration": "4:40",
+          "duration": "4:41",
           "flac_size_mb": 57,
           "tags": [
             "original",
@@ -9017,7 +9017,8 @@
           "size_mb": 8,
           "duration": "3:26",
           "flac_size_mb": 40,
-          "songwriter": "Jerry Hannan & Sean Hannan"
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "tags": []
         },
         {
           "num": 22,
@@ -9054,7 +9055,7 @@
           "flac": "FLAC/MadHannans - 4th Street Tavern 1999-05-01/24 The Rodeo Song.flac",
           "processed": true,
           "size_mb": 8,
-          "duration": "3:27",
+          "duration": "3:28",
           "flac_size_mb": 43,
           "songwriter": "Gary Lee and the Showdown",
           "tags": [
@@ -11752,6 +11753,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-09",
+      "ts": "2026-08-09T17:01:08.859006",
+      "slug": "mad-4th-street-tavern-1999-05-01",
+      "report": true,
+      "text": "Reprocessed this Mad Hannans set at 4th Street Tavern under the new workflow (v8), replacing the show's v2 pass. Two songs, “Soundcheck” and “Rocky Road to Dublin,” qualify for the sparse-transient-cap mode and now reach the full −20 LUFS target this way — both cleared automatically, no listen required. Four track titles were restored to the archive's established spelling after the fresh export drifted: “I Need a Lover” to “Hear Me,” “The Kiss - Da Da Da (Slave to an Angel)” to “The Kiss / Da Da Da (Slave to an Angel),” “Shirt” to “Shirt - ABC,” and a dropped closing parenthesis fixed in “Soundcheck (Football Tonight).”"
+    },
     {
       "date": "2026-08-09",
       "ts": "2026-08-09T15:31:07.049858",
