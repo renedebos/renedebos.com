@@ -111,7 +111,13 @@ def find_tracks_source(folder):
 
 def fetch_tracks(folder, sub, expected, dest):
     """Prefer a local ~/gdrive-mount copy when its audio matches Drive's file
-    count; otherwise download from Drive."""
+    count; otherwise download from Drive. Always starts from a clean dest —
+    a stale prior attempt's leftovers (e.g. tracks from before a Drive-side
+    duplicate cleanup) would otherwise sit alongside the fresh copy and
+    silently inflate the count, the same stale-local-directory bug class
+    fixed for out/ in publish (2026-08-09)."""
+    if not DRY:
+        shutil.rmtree(dest, ignore_errors=True)
     local = os.path.join(GDRIVE_MOUNT, folder, sub)
     if os.path.isdir(local) and len(audio_files(os.listdir(local))) == len(expected):
         print(f"copying from local gdrive-mount ({len(expected)} files)")

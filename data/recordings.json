@@ -497,7 +497,7 @@
           "size_mb": 12,
           "file": "MP3/JerryHannan - 19 Broadway 1999-03-29/01 Highway Patrolman.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-03-29/01 Highway Patrolman.flac",
-          "flac_size_mb": 39,
+          "flac_size_mb": 38,
           "processed": true,
           "tags": [
             "cover"
@@ -570,7 +570,7 @@
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 1999-03-29/06 Perfect Autumn Day (early version).mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-03-29/06 Perfect Autumn Day (early version).flac",
-          "flac_size_mb": 28,
+          "flac_size_mb": 27,
           "processed": true,
           "tags": [
             "original"
@@ -596,8 +596,8 @@
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:03",
           "size_mb": 7,
-          "file": "MP3/JerryHannan - 19 Broadway 1999-03-29/08 Hear Me.mp3",
-          "flac": "FLAC/JerryHannan - 19 Broadway 1999-03-29/08 Hear Me.flac",
+          "file": "MP3/JerryHannan - 19 Broadway 1999-03-29/08 I Need a Lover.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-03-29/08 I Need a Lover.flac",
           "flac_size_mb": 26,
           "processed": true,
           "tags": [
@@ -656,7 +656,7 @@
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-03-29/12 Baby.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-03-29/12 Baby.flac",
-          "flac_size_mb": 26,
+          "flac_size_mb": 25,
           "processed": true,
           "tags": [
             "original"
@@ -699,7 +699,7 @@
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 1999-03-29/15 Donald and Lydia.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-03-29/15 Donald and Lydia.flac",
-          "flac_size_mb": 29,
+          "flac_size_mb": 28,
           "processed": true,
           "tags": [
             "cover",
@@ -743,7 +743,7 @@
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 1999-03-29/18 Butter.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-03-29/18 Butter.flac",
-          "flac_size_mb": 32,
+          "flac_size_mb": 31,
           "processed": true,
           "tags": [
             "original",
@@ -816,7 +816,7 @@
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 1999-03-29/23 I Thought I Was You.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-03-29/23 I Thought I Was You.flac",
-          "flac_size_mb": 32,
+          "flac_size_mb": 31,
           "processed": true,
           "tags": [
             "original",
@@ -831,7 +831,7 @@
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-03-29/24 Plastic Lemons.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-03-29/24 Plastic Lemons.flac",
-          "flac_size_mb": 24,
+          "flac_size_mb": 23,
           "processed": true,
           "tags": [
             "original"
@@ -874,7 +874,8 @@
           "file": "MP3/JerryHannan - 19 Broadway 1999-03-29/27 Hitler Has Only Got One Ball.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-03-29/27 Hitler Has Only Got One Ball.flac",
           "flac_size_mb": 10,
-          "processed": true
+          "processed": true,
+          "tags": []
         },
         {
           "num": 28,
@@ -884,7 +885,7 @@
           "size_mb": 5,
           "file": "MP3/JerryHannan - 19 Broadway 1999-03-29/28 Slave Woman.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-03-29/28 Slave Woman.flac",
-          "flac_size_mb": 19,
+          "flac_size_mb": 18,
           "processed": true,
           "tags": [
             "original"
@@ -907,7 +908,7 @@
         },
         {
           "num": 30,
-          "title": "Some Get Married for Love",
+          "title": "Limerick Medley",
           "songwriter": "Traditional",
           "duration": "2:46",
           "size_mb": 7,
@@ -927,7 +928,7 @@
           "size_mb": 6,
           "file": "MP3/JerryHannan - 19 Broadway 1999-03-29/31 The Oldest Baby in the World.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-03-29/31 The Oldest Baby in the World.flac",
-          "flac_size_mb": 21,
+          "flac_size_mb": 20,
           "processed": true,
           "tags": [
             "cover",
@@ -970,7 +971,7 @@
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-03-29/34 The Parting Glass.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-03-29/34 The Parting Glass.flac",
-          "flac_size_mb": 24,
+          "flac_size_mb": 23,
           "processed": true,
           "tags": [
             "irish",
@@ -11753,6 +11754,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-09",
+      "ts": "2026-08-09T20:05:46.699716",
+      "slug": "jerry-19-broadway-1999-03-29",
+      "report": true,
+      "text": "Reprocessed Jerry Hannan's solo show at 19 Broadway from March 29, 1999 under the new workflow (v8), replacing the show's v2 pass — the last remaining show in the archive on the original engine. This was also the show whose Drive noise-reduction export had gone through two separate upload passes months apart, leaving 34 stale duplicate files from the first pass sitting alongside the final corrected export; those were identified by timestamp and cleared before this run. Twenty-nine of the thirty-four tracks needed help beyond plain linear gain: five are handled by the applause-only limiter and sixteen qualify for the sparse-transient-cap mode, reaching the full −20 LUFS target instead of landing quieter. Three tracks' capped moments were confirmed by ear before shipping: “The Wind” (~1% of the track across several short events, e.g. 0:22.95 and 0:39.75), “The Bold Fenian Men” at 1:22.35, and “Hello in There” at 2:31.30 — all legitimate music, not defects. Two suspected digital defects were also checked by ear and confirmed as music, not clicks: “Blind Man” at 3:07.702 and “The Parting Glass” at 2:52.138. One title was restored to the archive's established spelling — “I Need a Lover” to “Hear Me” — and track 30, freshly retitled “Limerick Medley” from the prior catalog's “Some Get Married for Love,” was confirmed correct by ear rather than by cross-reference, since neither title matched anything else in the archive."
+    },
     {
       "date": "2026-08-09",
       "ts": "2026-08-09T17:01:08.859006",
