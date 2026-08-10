@@ -48,11 +48,11 @@
 
 <main id="main">
 
-  <p class="proc-status-line">Audio processing<span class="proc-status status-done">done</span><span class="proc-status pre-edit pre-edit-nr" title="noise reduction (Audacity, whole show): 6 dB reduction, sensitivity 5 — fade-outs and clip fixes applied by hand per track">noise-reduced</span><span class="proc-status-blurb">All tracks loudness-normalized through the audio workflow.</span></p>
+  <p class="proc-status-line">Audio processing<span class="proc-status status-done">done</span><span class="proc-status pre-edit pre-edit-nr" title="noise reduction (Audacity, whole show): 6 dB reduction, sensitivity 5 — fade-outs and clip fixes applied by hand per track">noise-reduced</span><span class="proc-status-blurb">All tracks brought to the archive&#x27;s loudness target through the audio workflow.</span></p>
   <section class="about">
     <h2>About This Show</h2>
     <p>Recorded live at Cafe Java in Larkspur.</p>
-    <p><em>A note on the audio:</em> this is a difficult recording with some audio issues, mainly from the loud drums and the applause from the audience. Noise reduction has been applied across the show, and all tracks have been loudness-normalized to −20 LUFS to match the rest of the archive.</p>
+    <p><em>A note on the audio:</em> this is a difficult recording with some audio issues, mainly from the loud drums and the applause from the audience. Noise reduction has been applied across the show, and all tracks have been loudness-normalized to match the rest of the archive.</p>
   </section>
   <section id="tracks">
     <div class="tracks-head">
@@ -311,7 +311,7 @@
   <section>
     <details class="tech-details" id="technical-data">
       <summary>Technical data &mdash; loudness, peaks &amp; sizes <span class="proc-status status-done">done</span> <span class="proc-status pre-edit pre-edit-nr" title="noise reduction (Audacity, whole show): 6 dB reduction, sensitivity 5 — fade-outs and clip fixes applied by hand per track">noise-reduced</span></summary>
-      <p class="tech-head">Loudness-normalized to -20 LUFS / -1 dBTP &middot; Source: 24-bit / 48 kHz FLAC &middot; Pre-edits: noise reduction (Audacity, whole show): 6 dB reduction, sensitivity 5 — fade-outs and clip fixes applied by hand per track &middot; Filters: none &middot; ffmpeg loudnorm &middot; workflow&nbsp;v8 &middot; 2026-08-08 &middot; <a href="/process/">how these tracks were made</a></p>
+      <p class="tech-head">Target: -20 LUFS &middot; -1 dBTP true-peak ceiling &middot; fixed-gain (loudnorm/ebur128 measured; ffmpeg volume filter rendered) &middot; 15 track(s) transient-capped &middot; 2 track(s) applause-limited &middot; Source: 24-bit / 48 kHz FLAC &middot; Pre-edits: noise reduction (Audacity, whole show): 6 dB reduction, sensitivity 5 — fade-outs and clip fixes applied by hand per track &middot; workflow&nbsp;v8 &middot; 2026-08-08 &middot; <a href="/process/">how these tracks were made</a></p>
       <div class="tech-scroll">
       <table class="tech-table">
         <thead><tr><th>#</th><th>Song</th><th>Time</th><th>MP3</th><th>FLAC</th>

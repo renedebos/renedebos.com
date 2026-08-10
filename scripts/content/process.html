@@ -63,12 +63,22 @@
     <div class="flow-arrow" aria-hidden="true">&darr;</div>
 
     <div class="flow-stage">
-      <div class="flow-kind">automated &middot; ffmpeg loudnorm</div>
+      <div class="flow-kind">automated &middot; ffmpeg</div>
       <h2>4 &middot; Loudness normalization</h2>
-      <p>Each track is brought to the archive standard &mdash; <strong>&minus;20&nbsp;LUFS</strong>
+      <p>Each track is brought toward the archive standard &mdash; <strong>&minus;20&nbsp;LUFS</strong>
         integrated with a <strong>&minus;1&nbsp;dBTP</strong> true-peak ceiling &mdash; using
-        linear gain: one constant boost for the whole track, no compression, no EQ, so the
-        music&rsquo;s own dynamics stay intact. On some audience tapes the loudest thing on
+        linear gain: one constant boost for the whole track, no compression, so the
+        music&rsquo;s own dynamics stay intact. loudnorm/ebur128 only <em>measure</em> the
+        loudness; the gain itself is applied with a plain volume filter, never loudnorm&rsquo;s
+        own renderer, so the frame-adaptive fallback that tool can silently use elsewhere
+        never enters the chain. No EQ shapes a routine track &mdash; the one documented exception
+        is a small number of severely muddy tapes, where a corrective-EQ restoration pass
+        (cutting low-mid mud, lifting presence and air) runs before normalization, opt-in per
+        show and recorded in that show&rsquo;s provenance (shown as a &ldquo;corrective-eq&rdquo;
+        badge on its Technical Data table). &minus;20 LUFS is the target, not a guarantee every
+        track hits it exactly &mdash; a track landing a little quieter to protect its dynamics
+        or honor the true-peak ceiling is normal and expected; the achieved value is always in
+        the per-track table. On some audience tapes the loudest thing on
         the recording is a burst of applause rather than the music itself &mdash; when that
         happens, the track&rsquo;s music still gets a plain linear boost, sized to the music
         alone, and only the applause is gently capped so it can&rsquo;t overshoot. The same idea

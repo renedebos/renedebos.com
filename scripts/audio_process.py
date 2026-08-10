@@ -1705,7 +1705,7 @@ def cmd_process(args):
             "slug": args.slug, "target_lufs": whole(target), "tp_ceiling": whole(TP_CEILING),
             "source": f"{info0['bits']}-bit / {int(info0['sr'])//1000} kHz {cont}",
             **({"pre_edits": pre_edits} if pre_edits else {}),
-            "filters": filt or "none", "tool": "ffmpeg loudnorm",
+            "filters": filt or "none",
             # last-run context; the per-track `ver`/`chain` are the authoritative
             # record for mixed-version shows.
             "workflow_version": WORKFLOW_VERSION, "ffmpeg": ffmpeg_version(),

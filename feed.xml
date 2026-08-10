@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Reprocessed this Mad Hannans set at Sweetwater under the new workflow (v8), replacing the…</title>
+    <link>https://renedebos.com/shows/mad-sweetwater-1999-05-18/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-09-mad-sweetwater-1999-05-18</guid>
+    <pubDate>Sun, 09 Aug 2026 22:25:53 +0000</pubDate>
+    <description>Reprocessed this Mad Hannans set at Sweetwater under the new workflow (v8), replacing the show's v5 pass — the corrective EQ from that earlier restoration pass, brightening this tape's muddy room sound, carries over unchanged. Fifteen of the twenty-two tracks qualify for the sparse-transient-cap mode, reaching the full −20 LUFS target instead of landing quieter. One, “Rocky Road to Dublin,” crossed the auto-clear threshold (1.4% engagement) and needed a listen before shipping — confirmed as audience handclaps, not defects, around 0:25 and 0:35. “Smoke in Heaven” had two similar handclap moments flagged during diagnose, at 0:20.8 and 0:32.5, plus more around 0:35.5 — also confirmed legitimate. Three titles were restored to the archive's established spelling after the fresh export drifted: “I Need a Lover” to “Hear Me,” “Good Life” to “The Good Life,” and “The Kiss - Da Da Da (Slave to an Angel)” to “The Kiss / Da Da Da (Slave to an Angel).”</description>
+  </item>
+  <item>
     <title>Reprocessed Jerry Hannan's solo show at 19 Broadway from March 29, 1999 under the new wor…</title>
     <link>https://renedebos.com/shows/jerry-19-broadway-1999-03-29/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-09-jerry-19-broadway-1999-03-29</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-09-seanjerry-19-broadway-1999-12</guid>
     <pubDate>Thu, 09 Jul 2026 00:30:00 +0000</pubDate>
     <description>Added the full December 1999 19 Broadway show (Jerry &amp; Sean) as 30 individual tracks, split from the audience DAT and normalized to −20 LUFS for an even, comfortable listening level — using the automated audio engineering workflow with ffmpeg</description>
-  </item>
-  <item>
-    <title>Replaced track 14: it was listed as “There She Was,” but that’s the same song as “Butter”…</title>
-    <link>https://renedebos.com/shows/mad-sweetwater-2000-02-17/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-06-mad-sweetwater-2000-02-17</guid>
-    <pubDate>Mon, 06 Jul 2026 13:00:00 +0000</pubDate>
-    <description>Replaced track 14: it was listed as “There She Was,” but that’s the same song as “Butter” — and the original transfer was missing the opening chords. Swapped in a complete version, corrected the title, and re-normalized it to the archive’s −20 LUFS standard</description>
   </item>
 </channel>
 </rss>

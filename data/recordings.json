@@ -415,7 +415,7 @@
       "description": [
         "The first Jerry Hannan show recorded at 19 Broadway &mdash; the tape has some significant dropouts, affecting a couple of tracks (Candle in the Wind, Angel of Montgomery), with Sean Hannan sitting in for a few songs. Where possible the dropouts were cut from the song and hopefully do not cause too much of a nuisance.",
         "Perfect Autumn Day appears twice in the set, still a work in progress at this early stage.",
-        "Broadband noise reduction (noise reduction = 6dB, sensitivity = 5) was applied to the full recording in Audacity before the tracks were split, and the individual tracks were then loudness-normalized to −20 LUFS."
+        "Broadband noise reduction (noise reduction = 6dB, sensitivity = 5) was applied to the full recording in Audacity before the tracks were split, and the individual tracks were then loudness-normalized to the archive's standard listening level."
       ],
       "page": null,
       "processing_status": "done",
@@ -982,7 +982,7 @@
       "description": [
         "A marathon early solo night at 19 Broadway in Fairfax &mdash; 34 songs mixing Hannan originals with a run of John Prine covers, two Cat Stevens songs, and a closing stretch of Irish traditionals.",
         "Worthwhile note is the appearance yet again of Perfect Autumn Day.",
-        "Broadband noise reduction (noise reduction = 6dB, sensitivity = 5) was applied to the full recording in Audacity before the tracks were split, a first for the archive; and the individual tracks were then loudness-normalized to −20 LUFS. Fades and minor clip repairs were done by hand as usual."
+        "Broadband noise reduction (noise reduction = 6dB, sensitivity = 5) was applied to the full recording in Audacity before the tracks were split, a first for the archive; and the individual tracks were then loudness-normalized to the archive's standard listening level. Fades and minor clip repairs were done by hand as usual."
       ],
       "page": null,
       "processing_status": "done",
@@ -1813,7 +1813,7 @@
       "description": [
         "Recorded from the audience on DAT at 19 Broadway in Fairfax on June 7, 1999 &mdash; a 29-song solo set.",
         "The set pairs Hannan originals, with repeat outings for &ldquo;Luxury of Murder&rdquo; and &ldquo;Everything Reminds Me of You,&rdquo; alongside covers of John Prine, Steve Poltz, Peter Jones&rsquo;s &ldquo;Kilkelly Ireland,&rdquo; Lefty Frizzell&rsquo;s &ldquo;Long Black Veil,&rdquo; and Merle Haggard&rsquo;s &ldquo;Okie from Muskogee,&rdquo; plus three Irish traditionals &mdash; including &ldquo;A Bunch of Thyme&rdquo; &mdash; and a birthday singalong for an audience member named Marco.",
-        "The whole tape got a pass of broadband noise reduction in Audacity before the tracks were split (10dB on the opening three tracks, 6dB the rest of the way, sensitivity 5 throughout), then the usual &minus;20 LUFS normalization."
+        "The whole tape got a pass of broadband noise reduction in Audacity before the tracks were split (10dB on the opening three tracks, 6dB the rest of the way, sensitivity 5 throughout), then the usual loudness normalization to the archive standard."
       ],
       "page": null,
       "processing_status": "done",
@@ -2988,7 +2988,7 @@
         "Recorded from the audience on DAT at 19 Broadway in Fairfax on August 23, 1999. The two reels are mislabeled, so it isn&rsquo;t certain which is truly Part&nbsp;1 and which is Part&nbsp;2 &mdash; but one is clean and the other heavily distorted, and the archive keeps them separate here rather than guess.",
         "The main 14-song set comes from the clean tape. Mostly originals, including an early version of &ldquo;Rugburns&rdquo; before it found its familiar shape, alongside covers of Steve Poltz&rsquo;s &ldquo;Single Life,&rdquo; Bruce Springsteen&rsquo;s &ldquo;Highway Patrolman,&rdquo; Lefty Frizzell&rsquo;s &ldquo;Long Black Veil,&rdquo; and Paddy Nash&rsquo;s &ldquo;Model Family Man.&rdquo;",
         "A second batch of 7 songs was later recovered from the distorted reel and is kept separate below, labeled &ldquo;Part 1 (Distorted)&rdquo; &mdash; rough listening in places, but archived rather than lost. It includes an alternate version of &ldquo;ABC,&rdquo; another early take of &ldquo;Rugburns,&rdquo; and three songs that don&rsquo;t appear anywhere else in the archive: &ldquo;Troy,&rdquo; &ldquo;The Kiss,&rdquo; and &ldquo;Da Da Da (Slave to an Angel).&rdquo;",
-        "Straightforward hand-edits and the usual &minus;20 LUFS normalization throughout; no noise reduction or EQ needed on either tape."
+        "Straightforward hand-edits and the usual loudness normalization to the archive standard throughout; no noise reduction or EQ needed on either tape."
       ],
       "page": null,
       "processing_status": "done",
@@ -3410,7 +3410,7 @@
       "description": [
         "Recorded from the audience on DAT at 19 Broadway in Fairfax on October 25, 1999 &mdash; a long, twenty-six-song solo set.",
         "Kelly Peterson joins as a guest vocalist on two covers, John Prine&rsquo;s &ldquo;Angel of Montgomery&rdquo; and the Eagles&rsquo; &ldquo;Peaceful Easy Feeling&rdquo;; the set also includes an alternate take of &ldquo;ABC&rdquo; and an early version of &ldquo;Hollywood.&rdquo;",
-        "The whole tape got a pass of broadband noise reduction (6dB, sensitivity 5) in Audacity before the tracks were split, then the usual &minus;20 LUFS normalization."
+        "The whole tape got a pass of broadband noise reduction (6dB, sensitivity 5) in Audacity before the tracks were split, then the usual loudness normalization to the archive standard."
       ],
       "page": null,
       "processing_status": "done",
@@ -5028,7 +5028,7 @@
       "description": [
         "Recorded from the audience on DAT at Cafe Java in Larkspur on March 25, 1999 — a 21-song solo set of Hannan originals with covers of John Prine (including a rare “Angel of Montgomery”) and Paddy Nash, plus a pair of Irish traditionals. Kelly Peterson joins Jerry for “Daddy.”",
         "This tape also holds a second date (April 8, 1999), split out as its own show.",
-        "Broadband noise reduction (noise reduction = 8dB, sensitivity = 5) was applied to the full recording in Audacity before the tracks were split, then the usual −20 LUFS normalization."
+        "Broadband noise reduction (noise reduction = 8dB, sensitivity = 5) was applied to the full recording in Audacity before the tracks were split, then the usual loudness normalization to the archive standard."
       ],
       "page": null,
       "processing_status": "done",
@@ -9443,7 +9443,7 @@
       ],
       "description": [
         "Recorded live at Cafe Java in Larkspur.",
-        "<em>A note on the audio:</em> this is a difficult recording with some audio issues, mainly from the loud drums and the applause from the audience. Noise reduction has been applied across the show, and all tracks have been loudness-normalized to −20 LUFS to match the rest of the archive."
+        "<em>A note on the audio:</em> this is a difficult recording with some audio issues, mainly from the loud drums and the applause from the audience. Noise reduction has been applied across the show, and all tracks have been loudness-normalized to match the rest of the archive."
       ],
       "page": null,
       "added": "2026-06-24",
@@ -9707,7 +9707,7 @@
       ],
       "description": [
         "The Mad Hannans back at Marin Brewing Co. in Larkspur exactly one year after their first show there, on the venue's 10th anniversary. Two audience transfers of the tape survive; the tracks here are split from the cleaner of the two, with the other kept below as an alternate full-show download. “Da Da Da (Slave to an Angel)” now opens with its “The Kiss” intro, missing a year earlier.",
-        "Individual tracks were loudness-normalized to −20 LUFS; fades and clip fixes were done by hand as usual."
+        "Individual tracks were loudness-normalized to the archive standard; fades and clip fixes were done by hand as usual."
       ],
       "page": null,
       "processing_status": "done",
@@ -10003,7 +10003,7 @@
           "size_mb": 6,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/01 Smoke in Heaven.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/01 Smoke in Heaven.flac",
-          "flac_size_mb": 30,
+          "flac_size_mb": 31,
           "processed": true,
           "tags": [
             "original",
@@ -10018,7 +10018,7 @@
           "size_mb": 9,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/02 Truck.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/02 Truck.flac",
-          "flac_size_mb": 46,
+          "flac_size_mb": 47,
           "processed": true,
           "tags": [
             "original",
@@ -10033,7 +10033,7 @@
           "size_mb": 8,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/03 Blind Man.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/03 Blind Man.flac",
-          "flac_size_mb": 40,
+          "flac_size_mb": 41,
           "processed": true,
           "tags": [
             "original"
@@ -10047,7 +10047,7 @@
           "size_mb": 11,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/04 Clear Headed.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/04 Clear Headed.flac",
-          "flac_size_mb": 56,
+          "flac_size_mb": 57,
           "processed": true,
           "tags": [
             "original"
@@ -10061,7 +10061,7 @@
           "size_mb": 9,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/05 Hard Drinkin'.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/05 Hard Drinkin'.flac",
-          "flac_size_mb": 46,
+          "flac_size_mb": 48,
           "processed": true,
           "tags": [
             "original",
@@ -10076,7 +10076,7 @@
           "size_mb": 7,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/06 Luxury of Murder.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/06 Luxury of Murder.flac",
-          "flac_size_mb": 35,
+          "flac_size_mb": 36,
           "processed": true,
           "tags": [
             "original"
@@ -10090,7 +10090,7 @@
           "size_mb": 13,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/07 Recycle.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/07 Recycle.flac",
-          "flac_size_mb": 64,
+          "flac_size_mb": 66,
           "processed": true,
           "tags": [
             "original",
@@ -10105,7 +10105,7 @@
           "size_mb": 10,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/08 Blahana.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/08 Blahana.flac",
-          "flac_size_mb": 50,
+          "flac_size_mb": 53,
           "processed": true,
           "tags": [
             "original"
@@ -10162,7 +10162,7 @@
           "size_mb": 11,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/12 ABC - Sesame Street.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/12 ABC - Sesame Street.flac",
-          "flac_size_mb": 59,
+          "flac_size_mb": 60,
           "processed": true,
           "tags": [
             "original",
@@ -10177,7 +10177,7 @@
           "size_mb": 6,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/13 Long Black Veil.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/13 Long Black Veil.flac",
-          "flac_size_mb": 30,
+          "flac_size_mb": 31,
           "processed": true,
           "tags": [
             "cover",
@@ -10193,7 +10193,7 @@
           "size_mb": 6,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/14 Rocky Road to Dublin.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/14 Rocky Road to Dublin.flac",
-          "flac_size_mb": 28,
+          "flac_size_mb": 29,
           "processed": true,
           "tags": [
             "irish",
@@ -10208,7 +10208,7 @@
           "size_mb": 11,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/15 Dysfunctional Guy.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/15 Dysfunctional Guy.flac",
-          "flac_size_mb": 57,
+          "flac_size_mb": 58,
           "processed": true,
           "tags": [
             "original",
@@ -10223,7 +10223,7 @@
           "size_mb": 8,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/16 Baby.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/16 Baby.flac",
-          "flac_size_mb": 41,
+          "flac_size_mb": 40,
           "processed": true,
           "tags": [
             "original"
@@ -10267,7 +10267,7 @@
           "size_mb": 6,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/19 Everything Reminds Me of You.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/19 Everything Reminds Me of You.flac",
-          "flac_size_mb": 30,
+          "flac_size_mb": 31,
           "processed": true,
           "tags": [
             "original"
@@ -10279,8 +10279,8 @@
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:04",
           "size_mb": 7,
-          "file": "MP3/MadHannans - Sweetwater 1999-05-18/20 Hear Me.mp3",
-          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/20 Hear Me.flac",
+          "file": "MP3/MadHannans - Sweetwater 1999-05-18/20 I Need a Lover.mp3",
+          "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/20 I Need a Lover.flac",
           "flac_size_mb": 38,
           "processed": true,
           "tags": [
@@ -10295,7 +10295,7 @@
           "size_mb": 9,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/21 Good Life.mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/21 Good Life.flac",
-          "flac_size_mb": 43,
+          "flac_size_mb": 44,
           "processed": true,
           "tags": [
             "original",
@@ -10310,7 +10310,7 @@
           "size_mb": 15,
           "file": "MP3/MadHannans - Sweetwater 1999-05-18/22 The Kiss - Da Da Da (Slave to an Angel).mp3",
           "flac": "FLAC/MadHannans - Sweetwater 1999-05-18/22 The Kiss - Da Da Da (Slave to an Angel).flac",
-          "flac_size_mb": 73,
+          "flac_size_mb": 74,
           "processed": true,
           "tags": [
             "original",
@@ -10320,7 +10320,7 @@
       ],
       "description": [
         "A great and lively Mad Hannans set at the Sweetwater in Mill Valley, almost entirely original material apart from covers of Gary Lee and the Showdown’s “The Rodeo Song,” Lefty Frizzell’s “Long Black Veil,” and a singalong run through the traditional “Rocky Road to Dublin.”",
-        "The room sound on this tape ran muddy; EQ was applied across the whole recording in Audacity to brighten it up before the tracks were split, then each track was loudness-normalized to −20 LUFS."
+        "The room sound on this tape ran muddy; EQ was applied across the whole recording in Audacity to brighten it up before the tracks were split, then each track was loudness-normalized to the archive standard."
       ],
       "page": null,
       "processing_status": "done",
@@ -10712,7 +10712,7 @@
         }
       ],
       "description": [
-        "This show was a very muddled-sounding recording. The tracks have been restored with corrective EQ — cutting the low-mid mud and lifting presence and air to bring the vocals forward — and loudness-normalized to −20 LUFS to match the rest of the archive. Still not pristine, but a clear improvement over the raw tape transfer."
+        "This show was a very muddled-sounding recording. The tracks have been restored with corrective EQ — cutting the low-mid mud and lifting presence and air to bring the vocals forward — and loudness-normalized to match the rest of the archive. Still not pristine, but a clear improvement over the raw tape transfer."
       ],
       "page": null,
       "added": "2026-06-25",
@@ -10730,7 +10730,7 @@
       "source": "AUD",
       "recordings": [
         {
-          "label": "Part 1 <span style=\"font-size:11px;color:var(--muted);font-weight:300;\">(48KHz)</span>",
+          "label": "Part 1 (48KHz)",
           "alt_label": null,
           "alternate": false,
           "source": "AUD",
@@ -10741,7 +10741,7 @@
           "stream": "MP3/Full/JerrySeanHannan - 19 Broadway 1999-12 pt1 (48KHz).mp3"
         },
         {
-          "label": "Part 2 <span style=\"font-size:11px;color:var(--muted);font-weight:300;\">(32KHz)</span>",
+          "label": "Part 2 (32KHz)",
           "alt_label": null,
           "alternate": false,
           "source": "AUD",
@@ -11479,7 +11479,7 @@
       ],
       "description": [
         "The earliest Mad Hannans show in the archive, recorded April 1, 1998 at Marin Brewing Co. in Larkspur, with Troy on bass. It's an audience recording and the sound is rough; no EQ or noise reduction was applied, so the room sound is left as captured. “Da Da Da (Slave to an Angel)” appears here without the “The Kiss” intro that it later picked up.",
-        "The set includes covers of Steve Miller's “Space Cowboy,” a staple during these early Mad Hannans years, the Rolling Stones' “Far Away Eyes,” and the novelty “The Rodeo Song.” Individual tracks were loudness-normalized to −20 LUFS; fades and clip fixes were done by hand as usual."
+        "The set includes covers of Steve Miller's “Space Cowboy,” a staple during these early Mad Hannans years, the Rolling Stones' “Far Away Eyes,” and the novelty “The Rodeo Song.” Individual tracks were loudness-normalized to the archive standard; fades and clip fixes were done by hand as usual."
       ],
       "page": null,
       "processing_status": "done",
@@ -11754,6 +11754,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-09",
+      "ts": "2026-08-09T22:25:53.784015",
+      "slug": "mad-sweetwater-1999-05-18",
+      "report": true,
+      "text": "Reprocessed this Mad Hannans set at Sweetwater under the new workflow (v8), replacing the show's v5 pass — the corrective EQ from that earlier restoration pass, brightening this tape's muddy room sound, carries over unchanged. Fifteen of the twenty-two tracks qualify for the sparse-transient-cap mode, reaching the full −20 LUFS target instead of landing quieter. One, “Rocky Road to Dublin,” crossed the auto-clear threshold (1.4% engagement) and needed a listen before shipping — confirmed as audience handclaps, not defects, around 0:25 and 0:35. “Smoke in Heaven” had two similar handclap moments flagged during diagnose, at 0:20.8 and 0:32.5, plus more around 0:35.5 — also confirmed legitimate. Three titles were restored to the archive's established spelling after the fresh export drifted: “I Need a Lover” to “Hear Me,” “Good Life” to “The Good Life,” and “The Kiss - Da Da Da (Slave to an Angel)” to “The Kiss / Da Da Da (Slave to an Angel).”"
+    },
     {
       "date": "2026-08-09",
       "ts": "2026-08-09T20:05:46.699716",

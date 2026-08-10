@@ -48,12 +48,12 @@
 
 <main id="main">
 
-  <p class="proc-status-line">Audio processing<span class="proc-status status-done">done</span><span class="proc-status pre-edit pre-edit-nr" title="noise reduction (Audacity, whole show)">noise-reduced</span><span class="proc-status-blurb">All tracks loudness-normalized through the audio workflow.</span></p>
+  <p class="proc-status-line">Audio processing<span class="proc-status status-done">done</span><span class="proc-status pre-edit pre-edit-nr" title="noise reduction (Audacity, whole show)">noise-reduced</span><span class="proc-status-blurb">All tracks brought to the archive&#x27;s loudness target through the audio workflow.</span></p>
   <section class="about">
     <h2>About This Show</h2>
     <p>Recorded from the audience on DAT at 19 Broadway in Fairfax on June 7, 1999 &mdash; a 29-song solo set.</p>
     <p>The set pairs Hannan originals, with repeat outings for &ldquo;Luxury of Murder&rdquo; and &ldquo;Everything Reminds Me of You,&rdquo; alongside covers of John Prine, Steve Poltz, Peter Jones&rsquo;s &ldquo;Kilkelly Ireland,&rdquo; Lefty Frizzell&rsquo;s &ldquo;Long Black Veil,&rdquo; and Merle Haggard&rsquo;s &ldquo;Okie from Muskogee,&rdquo; plus three Irish traditionals &mdash; including &ldquo;A Bunch of Thyme&rdquo; &mdash; and a birthday singalong for an audience member named Marco.</p>
-    <p>The whole tape got a pass of broadband noise reduction in Audacity before the tracks were split (10dB on the opening three tracks, 6dB the rest of the way, sensitivity 5 throughout), then the usual &minus;20 LUFS normalization.</p>
+    <p>The whole tape got a pass of broadband noise reduction in Audacity before the tracks were split (10dB on the opening three tracks, 6dB the rest of the way, sensitivity 5 throughout), then the usual loudness normalization to the archive standard.</p>
   </section>
   <section id="tracks">
     <div class="tracks-head">
@@ -389,7 +389,7 @@
   <section>
     <details class="tech-details" id="technical-data">
       <summary>Technical data &mdash; loudness, peaks &amp; sizes <span class="proc-status status-done">done</span> <span class="proc-status pre-edit pre-edit-nr" title="noise reduction (Audacity, whole show)">noise-reduced</span></summary>
-      <p class="tech-head">Loudness-normalized to -20 LUFS / -1 dBTP &middot; Source: 24-bit / 48 kHz FLAC &middot; Pre-edits: noise reduction (Audacity, whole show) &middot; Filters: none &middot; ffmpeg loudnorm &middot; workflow&nbsp;v5 &middot; 2026-07-14 &middot; <a href="/process/">how these tracks were made</a></p>
+      <p class="tech-head">Target: -20 LUFS &middot; -1 dBTP true-peak ceiling &middot; mixed rendering — 1 track(s) fixed-gain volume filter, 28 track(s) ffmpeg loudnorm (older workflow) &middot; 1 track(s) applause-limited &middot; Source: 24-bit / 48 kHz FLAC &middot; Pre-edits: noise reduction (Audacity, whole show) &middot; workflow&nbsp;v5 &middot; 2026-07-14 &middot; <a href="/process/">how these tracks were made</a></p>
       <div class="tech-scroll">
       <table class="tech-table">
         <thead><tr><th>#</th><th>Song</th><th>Time</th><th>MP3</th><th>FLAC</th>

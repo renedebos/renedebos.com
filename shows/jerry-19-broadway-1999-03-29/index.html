@@ -48,12 +48,12 @@
 
 <main id="main">
 
-  <p class="proc-status-line">Audio processing<span class="proc-status status-done">done</span><span class="proc-status pre-edit pre-edit-nr" title="noise reduction (Audacity, whole show)">noise-reduced</span><span class="proc-status-blurb">All tracks loudness-normalized through the audio workflow.</span></p>
+  <p class="proc-status-line">Audio processing<span class="proc-status status-done">done</span><span class="proc-status pre-edit pre-edit-nr" title="noise reduction (Audacity, whole show)">noise-reduced</span><span class="proc-status-blurb">All tracks brought to the archive&#x27;s loudness target through the audio workflow.</span></p>
   <section class="about">
     <h2>About This Show</h2>
     <p>A marathon early solo night at 19 Broadway in Fairfax &mdash; 34 songs mixing Hannan originals with a run of John Prine covers, two Cat Stevens songs, and a closing stretch of Irish traditionals.</p>
     <p>Worthwhile note is the appearance yet again of Perfect Autumn Day.</p>
-    <p>Broadband noise reduction (noise reduction = 6dB, sensitivity = 5) was applied to the full recording in Audacity before the tracks were split, a first for the archive; and the individual tracks were then loudness-normalized to −20 LUFS. Fades and minor clip repairs were done by hand as usual.</p>
+    <p>Broadband noise reduction (noise reduction = 6dB, sensitivity = 5) was applied to the full recording in Audacity before the tracks were split, a first for the archive; and the individual tracks were then loudness-normalized to the archive's standard listening level. Fades and minor clip repairs were done by hand as usual.</p>
   </section>
   <section id="tracks">
     <div class="tracks-head">
@@ -444,7 +444,7 @@
   <section>
     <details class="tech-details" id="technical-data">
       <summary>Technical data &mdash; loudness, peaks &amp; sizes <span class="proc-status status-done">done</span> <span class="proc-status pre-edit pre-edit-nr" title="noise reduction (Audacity, whole show)">noise-reduced</span></summary>
-      <p class="tech-head">Loudness-normalized to -20 LUFS / -1 dBTP &middot; Source: 24-bit / 32 kHz FLAC &middot; Pre-edits: noise reduction (Audacity, whole show) &middot; Filters: none &middot; ffmpeg loudnorm &middot; workflow&nbsp;v8 &middot; 2026-08-09 &middot; <a href="/process/">how these tracks were made</a></p>
+      <p class="tech-head">Target: -20 LUFS &middot; -1 dBTP true-peak ceiling &middot; fixed-gain (loudnorm/ebur128 measured; ffmpeg volume filter rendered) &middot; 16 track(s) transient-capped &middot; 5 track(s) applause-limited &middot; Source: 24-bit / 32 kHz FLAC &middot; Pre-edits: noise reduction (Audacity, whole show) &middot; workflow&nbsp;v8 &middot; 2026-08-09 &middot; <a href="/process/">how these tracks were made</a></p>
       <div class="tech-scroll">
       <table class="tech-table">
         <thead><tr><th>#</th><th>Song</th><th>Time</th><th>MP3</th><th>FLAC</th>

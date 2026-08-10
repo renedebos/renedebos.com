@@ -370,10 +370,10 @@ def highlight_badge(show):
             f'{HIGHLIGHT_STAR_SVG}</span>')
 
 STATUS_BLURB = {
-    "done": "All tracks loudness-normalized through the audio workflow.",
-    "partial": "Some tracks loudness-normalized; the rest are pending.",
-    "redo": "Previously normalized outside the current workflow — queued to be re-processed to standard.",
-    "needs-processing": "Not yet loudness-normalized.",
+    "done": "All tracks brought to the archive's loudness target through the audio workflow.",
+    "partial": "Some tracks brought to the archive's loudness target; the rest are pending.",
+    "redo": "Previously processed outside the current workflow — queued to be re-processed to standard.",
+    "needs-processing": "Not yet processed.",
 }
 
 def status_line(show):
@@ -400,21 +400,50 @@ def status_line(show):
             f'<span class="proc-status status-{esc(st)}">{esc(st)}</span>{nr}'
             f'<span class="proc-status-blurb">{esc(blurb)}</span></p>''')
 
+def _render_summary(pt):
+    """Derive, from each track's own recorded filter chain (never from a single
+    blanket label), how loudness was actually rendered. v6+ tracks apply gain
+    with a plain `volume` filter — loudnorm/ebur128 only measured it; pre-v6
+    tracks had loudnorm itself render (its linear=true mode, so still a single
+    constant gain, just a different tool). A show can mix both if only some
+    tracks were reprocessed, so this counts per track rather than trusting the
+    sidecar's own last-run-only workflow_version."""
+    fixed_gain = sum(1 for d in pt.values() if d.get("chain") and "volume=" in d["chain"])
+    loudnorm_render = sum(1 for d in pt.values()
+                           if d.get("chain") and "loudnorm=" in d["chain"] and "volume=" not in d["chain"])
+    if fixed_gain and not loudnorm_render:
+        return "fixed-gain (loudnorm/ebur128 measured; ffmpeg volume filter rendered)"
+    if loudnorm_render and not fixed_gain:
+        return "ffmpeg loudnorm (linear mode, one constant gain)"
+    if fixed_gain and loudnorm_render:
+        return (f"mixed rendering — {fixed_gain} track(s) fixed-gain volume filter, "
+                f"{loudnorm_render} track(s) ffmpeg loudnorm (older workflow)")
+    return ""
+
 def tech_data_section(show, proc):
     """Render a collapsible "Technical data" table for a processed show: every
     track's duration + sizes (from recordings.json) merged with its input/achieved
     loudness, true peak, LRA, and gain applied (from the processing provenance,
     where measured). The per-track audio MD5 is carried in the sidecar for
     integrity/drift checks but is not displayed."""
-    head_bits = [f'Loudness-normalized to {proc["target_lufs"]} LUFS / '
-                 f'{proc["tp_ceiling"]} dBTP']
+    pt = proc.get("tracks", {})
+    tcap_n = sum(1 for d in pt.values() if d.get("mode") == "sparse-transient-cap")
+    limiter_n = sum(1 for d in pt.values() if d.get("mode") == "applause-limiter")
+    head_bits = [f'Target: {proc["target_lufs"]} LUFS &middot; '
+                 f'{proc["tp_ceiling"]} dBTP true-peak ceiling']
+    render = _render_summary(pt)
+    if render:
+        head_bits.append(render)
+    if tcap_n:
+        head_bits.append(f'{tcap_n} track(s) transient-capped')
+    if limiter_n:
+        head_bits.append(f'{limiter_n} track(s) applause-limited')
     if proc.get("source"):
         head_bits.append(f'Source: {esc(proc["source"])}')
     if proc.get("pre_edits"):
         head_bits.append(f'Pre-edits: {esc(proc["pre_edits"])}')
-    if proc.get("filters"):
+    if proc.get("filters") and proc["filters"] != "none":
         head_bits.append(f'Filters: {esc(proc["filters"])}')
-    head_bits.append(esc(proc.get("tool", "ffmpeg loudnorm")))
     if proc.get("workflow_version") is not None:
         head_bits.append(f'workflow&nbsp;v{esc(proc["workflow_version"])}')
     if proc.get("date"):
@@ -432,7 +461,6 @@ def tech_data_section(show, proc):
         badge += (f' <span class="proc-status pre-edit {_pre_edit_class(label)}" '
                   f'title="{esc(proc["pre_edits"])}">{label}</span>')
     badge += _eq_badge(proc)
-    pt = proc.get("tracks", {})
     rows = []
     for t in show["tracks"]:
         d = pt.get(str(t["num"]), {})
