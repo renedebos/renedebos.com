@@ -2,9 +2,9 @@
 
 *How a show gets from a whole-show WAV to renedebos.com, what you do
 by hand, what Claude runs, and what every tool in `scripts/` is for.*
-*Last updated: 2026-07-17 (matches workflow v7 — fixed the applause-limiter
-true-peak safety loop so its retry actually moves the peak it's supposed to
-fix; see Part 5 for the full version history).*
+*Last updated: 2026-08-10 (matches workflow v8 — added the opt-in
+sparse-transient-cap mode for tapes where a close-mic'd musical transient,
+not applause, sets the ceiling; see Part 5 for the full version history).*
 
 ---
 
@@ -87,12 +87,16 @@ fix; see Part 5 for the full version history).*
 
 ### Loudness normalization
 
-**Policy: linear gain only, never dynamic (compressor-style) processing —
-no exceptions.** These are acoustic live recordings with wide, intentional
-dynamics (quiet fingerpicked verses next to loud strummed choruses,
-hand-drawn fade-outs); the −20 LUFS target is chosen for comfortable
-listening, not competitive loudness, so there's never a reason to squash a
-track's dynamics to hit it exactly. `process` decides per track, in order:
+**Policy: linear gain only, never dynamic (compressor-style) processing that
+follows the music over a timescale of seconds — no exceptions.** These are
+acoustic live recordings with wide, intentional dynamics (quiet fingerpicked
+verses next to loud strummed choruses, hand-drawn fade-outs); the −20 LUFS
+target is chosen for comfortable listening, not competitive loudness, so
+there's never a reason to squash a track's dynamics to hit it exactly. The
+one narrow, evidence-backed exception (workflow v8, opt-in only) is a
+millisecond-scale true-peak cap on isolated sparse transients — three orders
+of magnitude below the fade-flattening timescale the ban exists to prevent;
+see option 5 below. `process` decides per track, in order:
 
 1. **Plain linear** — the show's nominal target (−20 LUFS for every artist)
    fits under the −1 dBTP ceiling with a single constant gain. Most tracks.
@@ -138,6 +142,24 @@ track's dynamics to hit it exactly. `process` decides per track, in order:
    regardless of pre-gain, so a gain-only retry could measure the identical
    overshoot on every attempt and exhaust its retries still over ceiling —
    fixed in v7, see below.)
+5. **Sparse-transient cap** (workflow v8, opt-in per show via
+   `--transient-cap`, never default) — for tapes where the loudest peaks
+   aren't applause but the music itself: a close-mic'd snare hit, a strummed
+   accent. The v5 applause classifier correctly leaves these alone (they
+   don't live at a track's head/tail), so under options 1–4 alone the track
+   sits several dB below target because a millisecond-scale transient sets
+   the ceiling for the whole performance. With the flag on, an eligible
+   track takes one constant gain to the *full* target plus a true-peak cap
+   (1 ms attack / 50 ms release, 4x oversampled) on just the transients —
+   the rest of the performance keeps its full, untouched gain. Strict
+   per-track gates (a hard 6 dB ceiling on actual attenuation, a three-tier
+   eligibility scan based on measured limiter engagement, a strict −1.00
+   dBTP post-render check with no tolerance) mean a track that doesn't
+   clearly qualify falls back to option 2 unchanged, never to something
+   worse. See [v8 — the sparse-transient cap](#v8--the-sparse-transient-cap)
+   in Part 5 for the complete picture, including the per-track override
+   flags (`--transient-cap-exclude`/`-accept`/`-force`/`-partial`/`-max-gr`)
+   and the listening evidence behind the 6 dB ceiling.
 
 Every track's processing sidecar (`data/processing/<slug>.json`) records
 which of the above it got and *why*, in plain language — that's the
@@ -393,6 +415,7 @@ directly.
 | v5 | 2026-07-13 | Added applause-aware headroom recovery for audience tapes where a clap peaks louder than the music itself. Peaks are classified by *behavior* (position near a track's head/tail + crest factor), never loudness alone; if applause is what's eating the headroom, the music gets one constant gain sized to the music's own peaks, with a lookahead limiter that only applause transients can reach. A measure-and-correct loop verifies the actual rendered true peak and re-renders (up to 5 attempts) if it overshoots — the limiter's own threshold is never trusted blind. Ambiguous cases fall back to the v4 reduced target. | Linear, or applause-limiter mode (music untouched, only applause capped) |
 | v6 | 2026-07-16 | Linear/linear-reduced tracks now render with an explicit `volume=<gain>dB` gain instead of asking `loudnorm` for the target — the gain is computed once from a measurement pass and applied unconditionally, so a silent dynamic-mode render is no longer possible in principle, not just avoided by construction. The output LRA-preservation QA gate now runs on every track (previously applause-limiter tracks only). Provenance gains `plr` and `max_m`/`max_s` per track. The MP3 derivative gets its own independent gain trim (never touching the FLAC master) if lossy encoding would clip its true peak, iterated like the applause safety loop. | Linear only via `volume`; applause-limiter mode unchanged from v5 |
 | v7 | 2026-07-17 | Fixed the applause-limiter true-peak safety loop: on overshoot it only backed off `gain_db`, but when applause (not music) sets the ceiling, `alimiter` clamps to a fixed `limit_db` threshold regardless of pre-gain, so the retry never moved the actual overshoot and could exhaust all 5 attempts still over the −1 dBTP ceiling. Caught live on `sean-19-broadway-1999-11-29` track 21 ("Houses of the Holy") — every attempt measured the identical −0.78 dBTP. Now backs off `limit_db` and `gain_db` together, preserving the invariant that the limiter never reaches anything classified as music. Only affects applause-limiter tracks whose first render attempt already overshot the ceiling; everything else is unchanged from v6. | Linear unchanged from v6; applause-limiter retry now moves the true peak |
+| v8 | 2026-08-08 | Added an **opt-in sparse-transient-cap** mode (`--transient-cap`) for tapes where the loudest peaks are brief, close-mic'd musical transients — a snare hit, a strum — rather than sustained loud music or applause. Those tracks can now reach the full show target with a millisecond-scale true-peak cap on just the transients, instead of sitting several dB quieter under linear-only rules. Strict per-track eligibility gates (auto-clear / review-required / declined, based on measured limiter *engagement*, not just peak proximity), a hard 6 dB ceiling on the limiter's actual attenuation, and a strict post-render −1.00 dBTP re-check that deletes and aborts on failure. Never on by default; per-track `--transient-cap-exclude`/`-accept`/`-force`/`-partial`/`-max-gr` overrides give full manual control on top of the automatic gates. | Linear unchanged from v7; new opt-in mode: `volume=<gain>dB` → 4x oversample → `alimiter` (1 ms attack / 50 ms release, −1.5 dBTP internal ceiling) → downsample |
 
 ### v1 — the linear baseline
 
@@ -541,3 +564,61 @@ go through this loop), and any applause-limiter track whose first attempt
 already met the ceiling never enters the retry path either — this only
 changes the outcome for a track that previously entered the loop and never
 actually got fixed by it.
+
+### v8 — the sparse-transient cap
+
+As v7, plus an **opt-in** sparse-transient-cap mode (`--transient-cap` on
+`process`/`plan`; `--transient-cap` on `publish_show.py`). On some tapes the
+loudest peaks aren't applause but the music itself — a close-mic'd snare hit,
+a strummed accent — and the v5 applause classifier correctly leaves those
+alone (they don't live at a track's head/tail, or don't have applause's crest
+signature). Under linear-only rules that leaves the whole track 4–7 dB below
+the show target, because a few-millisecond transient sets the ceiling for the
+entire performance.
+
+With the flag on, an eligible track takes one constant gain to the *full*
+nominal target, plus a millisecond-scale true-peak cap on just the
+transients: a lookahead limiter (1 ms attack / 50 ms release) running on a
+4x-oversampled signal at an internal −1.5 dBTP ceiling — 0.5 dB under the
+archive's −1 dBTP standard, since downsampling back to the source rate can
+reconstruct inter-sample overshoot the oversampled limiter didn't see.
+
+Eligibility is strict and per-track; every failed gate falls back to the
+existing linear-reduced path, never silently to a worse result:
+
+- **Never on by default** — `--transient-cap-exclude` gives a per-track veto
+  even when the show opts in.
+- **Recovery must land between 1 dB and 6 dB.** Below 1 dB isn't worth a
+  limiter; above 6 dB the track stays honestly quiet at its reduced linear
+  target. The 6 dB ceiling is enforced on the limiter's *actual instantaneous
+  attenuation*, not just the gap to target — a track needing more shave gets
+  its gain trimmed to land up to ~0.5 dB short of nominal rather than
+  over-shaved. `--transient-cap-partial` (explicit per-track opt-in) allows
+  the full 6 dB shave instead of declining outright, landing honestly short;
+  `--transient-cap-max-gr` raises the ceiling for one specific track as an
+  explicit, provenance-recorded policy exception (never a way to change the
+  archive-wide 6 dB standard).
+- **A 50 ms frame-peak scan gates eligibility in three tiers** — auto-clear,
+  review-required (hard-blocks publishing until the track is confirmed by
+  ear), and declined — based on measured limiter *engagement*, not just how
+  close a track sits to its own peak. Those turned out to be different
+  measurements: a real case showed high near-peak density with low actual
+  engagement, so the gate now keys on the number the listening evidence
+  actually covers.
+- **A post-render true-peak assertion is strict −1.00 dBTP with no
+  tolerance** — failure deletes the output and aborts the run rather than
+  shipping an over-ceiling file.
+- **`--transient-cap-force`** lets a track that failed an automatic gate ship
+  capped anyway, after a human has listened and judged the gate too
+  conservative for that specific case — recorded as an explicit override in
+  provenance, never silent.
+
+Approved 2026-08-08 after loudness-matched blind A/B listening on five
+tracks across two independent shows found no audible difference at up to
+5.9 dB of engaged attenuation. See `WORKFLOW_VERSIONS[8]` in
+`audio_process.py` for the complete technical record (the literal source of
+truth this section summarizes), and `CLAUDE.md`'s linear-normalization
+policy section for the full decision history, guardrails, and what's still
+explicitly out of scope (e.g. the separate, not-yet-built `drum-control`
+proposal for repeatedly-loud material like a dominant snare on every
+backbeat).

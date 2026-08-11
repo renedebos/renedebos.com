@@ -16,6 +16,19 @@ two commands, with a human gate between them.
       the processed files up to Drive Processed/ (stall-aware retry loop),
       and clean up the local tracks copy.
 
+  python3 scripts/publish_show.py rename-track <slug> --track-num N --new-title "Correct Title"
+      When prepare's title preflight flags a fresh export's filename as
+      drifted from the catalog and cross-referencing confirms it's a
+      mechanical typo (not a real correction): rename that track's file in
+      tracks/ (and out/ + any .v8state.json sidecar, if already rendered)
+      to the established title, and update publish.json's manifest +
+      fingerprint to match -- the supported alternative to hand-editing
+      publish.json. Never touches audio bytes, Drive, or R2. Run this
+      immediately after deciding the correction, BEFORE the first publish
+      attempt -- not as recovery after a failed one (a first publish under
+      the wrong name still uploads under that name and leaves a stray R2
+      object only a human can delete).
+
 Still human afterwards: draft_tracks.py for metadata, description/updates,
 build, commit. State between the two phases lives in ~/work/<slug>/publish.json.
 
@@ -516,6 +529,86 @@ done — still human:
         print("\n" + LABELS_NAG)
 
 
+def cmd_rename_track(args):
+    """Rename one track's local file(s) to a corrected title and update
+    publish.json's manifest + fingerprint to match, without touching audio
+    bytes. This is the supported path for the exact scenario that used to
+    require hand-editing publish.json directly: prepare's title preflight
+    flags a fresh export's filename as drifted, cross-referencing confirms
+    it's a mechanical typo, and the file needs renaming to the established
+    title before publish will accept it. Renaming without this command
+    (bare `mv`) leaves publish.json's stored fingerprint pointing at the old
+    filename, so the very next `publish` aborts with "source fingerprint
+    mismatch" -- correct, since the local sources genuinely did change from
+    what prepare fingerprinted, but tedious to resolve by hand every time."""
+    st_path = state_path(args.slug)
+    if not os.path.exists(st_path):
+        raise SystemExit(f"no publish.json for {args.slug} — run prepare first")
+    if not args.track_num or not args.new_title:
+        raise SystemExit("rename-track needs --track-num N --new-title \"Correct Title\"")
+    st = json.load(open(st_path))
+
+    tracks_dir = os.path.join(WORK_ROOT, args.slug, "tracks")
+    out_dir = os.path.join(WORK_ROOT, args.slug, "out")
+    prefix = f"{args.track_num:02d} "
+
+    old_in_tracks = next(
+        (f for f in os.listdir(tracks_dir) if f.startswith(prefix)
+         and f.lower().endswith((".flac", ".wav"))),
+        None) if os.path.isdir(tracks_dir) else None
+    if not old_in_tracks:
+        raise SystemExit(f"no track {args.track_num} file found in {tracks_dir!r}")
+
+    ext = os.path.splitext(old_in_tracks)[1]
+    old_stem = os.path.splitext(old_in_tracks)[0]
+    new_stem = f"{prefix}{args.new_title}"
+    new_in_tracks = new_stem + ext
+
+    if old_in_tracks == new_in_tracks:
+        print(f"track {args.track_num} is already named {new_in_tracks!r} — nothing to do")
+        return
+
+    renamed = []
+
+    def do_rename(d, old_name, new_name):
+        old_p, new_p = os.path.join(d, old_name), os.path.join(d, new_name)
+        if os.path.exists(old_p):
+            if not DRY:
+                os.rename(old_p, new_p)
+            renamed.append((old_p, new_p))
+
+    do_rename(tracks_dir, old_in_tracks, new_in_tracks)
+    if os.path.isdir(out_dir):
+        for f in sorted(os.listdir(out_dir)):
+            if f == old_stem + ".flac" or f == old_stem + ".mp3" \
+                    or f == old_stem + ".flac.v8state.json":
+                do_rename(out_dir, f, new_stem + f[len(old_stem):])
+
+    changed = False
+    for row in st.get("manifest", []):
+        if row["file"] == old_in_tracks:
+            row["file"] = new_in_tracks
+            changed = True
+    fp = None
+    if changed:
+        import hashlib
+        fp = hashlib.sha256(
+            json.dumps(st["manifest"], sort_keys=True).encode()).hexdigest()[:16]
+        st["fingerprint"] = fp
+        if not DRY:
+            json.dump(st, open(st_path, "w"), indent=2, ensure_ascii=False)
+
+    for old_p, new_p in renamed:
+        print(f"  renamed: {old_p} -> {new_p}")
+    if changed:
+        print(f"publish.json manifest + fingerprint updated"
+              + (f" -> {fp}" if not DRY else " (dry-run, not written)"))
+    else:
+        print("⚠ no matching manifest entry for the old filename — "
+              "publish.json left unchanged; the fingerprint check may still "
+              "fail, verify by hand")
+
+
 def cmd_cleanup(args):
     """Delete ~/work/<slug> once the show is provably safe everywhere else:
     live on the site, complete on R2, and backed up to Drive Processed/."""
@@ -566,9 +659,14 @@ def main():
     global DRY
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("phase", choices=["prepare", "publish", "cleanup"])
+    ap.add_argument("phase", choices=["prepare", "publish", "cleanup", "rename-track"])
     ap.add_argument("slug")
     ap.add_argument("--folder", help="Drive Work Folder name (when date search is ambiguous)")
+    ap.add_argument("--track-num", type=int, default=None,
+                     help="rename-track: track number to rename")
+    ap.add_argument("--new-title", default=None,
+                     help="rename-track: corrected title (no leading track number, "
+                          "no extension — e.g. \"Angel from Montgomery\")")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--manual-drive-backup", action="store_true", default=None,
                      help="publish: give a few minutes to manually copy out/ to "
@@ -617,7 +715,7 @@ def main():
     args = ap.parse_args()
     DRY = args.dry_run
     {"prepare": cmd_prepare, "publish": cmd_publish,
-     "cleanup": cmd_cleanup}[args.phase](args)
+     "cleanup": cmd_cleanup, "rename-track": cmd_rename_track}[args.phase](args)
 
 
 if __name__ == "__main__":
