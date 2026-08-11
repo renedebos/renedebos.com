@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Reprocessed Jerry Hannan's solo show at Cafe Java from April 8, 1999 under the new workfl…</title>
+    <link>https://renedebos.com/shows/jerry-cafe-java-1999-04-08/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-10-jerry-cafe-java-1999-04-08</guid>
+    <pubDate>Mon, 10 Aug 2026 17:05:00 +0000</pubDate>
+    <description>Reprocessed Jerry Hannan's solo show at Cafe Java from April 8, 1999 under the new workflow (v8), replacing the show's v4 pass. Five of the twenty-three tracks qualify for the sparse-transient-cap mode, reaching the full −20 LUFS target instead of landing quieter: “Father and Son,” “Anna May,” “Everything Reminds Me of You,” “Getaway Blues,” and “The Parting Glass.” Two capped tracks needed a listen before shipping and both checked out as legitimate louder musical passages, not defects: “Anna May” at 2:07.7 and “Everything Reminds Me of You” at 2:05.2. One title was corrected — the fresh export's filename read “Angel of Montgomery,” a mechanical typo not used anywhere else in the archive; kept the established spelling “Angel from Montgomery” (also fixed in the show's own description text, which had picked up the same typo).</description>
+  </item>
+  <item>
     <title>Reprocessed Sean Hannan's solo show at 19 Broadway from November 29, 1999 under the new w…</title>
     <link>https://renedebos.com/shows/sean-19-broadway-1999-11-29/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-10-sean-19-broadway-1999-11-29</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-11-jerry-19-broadway-1999-02-01</guid>
     <pubDate>Sat, 11 Jul 2026 12:30:00 +0000</pubDate>
     <description>Added the February 1, 1999 solo show at 19 Broadway as 21 individual tracks, treated with light noise reduction across the whole tape before splitting, then normalized to −20 LUFS.</description>
-  </item>
-  <item>
-    <title>Added the November 29, 1999 solo show at 19 Broadway as 21 individual tracks, split from …</title>
-    <link>https://renedebos.com/shows/sean-19-broadway-1999-11-29/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-10-sean-19-broadway-1999-11-29</guid>
-    <pubDate>Fri, 10 Jul 2026 21:30:00 +0000</pubDate>
-    <description>Added the November 29, 1999 solo show at 19 Broadway as 21 individual tracks, split from the audience DAT and normalized to −20 LUFS for an even, comfortable listening level.</description>
   </item>
 </channel>
 </rss>

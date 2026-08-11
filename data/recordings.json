@@ -5077,7 +5077,7 @@
           "size_mb": 7,
           "file": "MP3/Jerry Hannan - Cafe Java 1999-04-08/01 Plastic Lemons.mp3",
           "flac": "FLAC/Jerry Hannan - Cafe Java 1999-04-08/01 Plastic Lemons.flac",
-          "flac_size_mb": 24,
+          "flac_size_mb": 23,
           "processed": true,
           "tags": [
             "original"
@@ -5149,7 +5149,7 @@
           "size_mb": 9,
           "file": "MP3/Jerry Hannan - Cafe Java 1999-04-08/06 Father and Son.mp3",
           "flac": "FLAC/Jerry Hannan - Cafe Java 1999-04-08/06 Father and Son.flac",
-          "flac_size_mb": 30,
+          "flac_size_mb": 31,
           "processed": true,
           "tags": [
             "cover",
@@ -5416,7 +5416,7 @@
       "description": [
         "Recorded from the audience on DAT at Cafe Java in Larkspur on April 8, 1999 — a 23-song solo set of Hannan originals with covers of Cat Stevens, Bruce Springsteen, Lefty Frizzell, John Prine, and Van Morrison, closing with the Irish traditional “The Parting Glass.” Kelly Peterson joins Jerry for “Daddy.”",
         "This is the second date on the March 25 tape, split out as its own show; a separate digital transfer of the April 8 set is also available as a full-recording download.",
-        "The Eagles' “Peaceful Easy Feeling” makes its first appearance in the archive and has Kelly Peterson on main vocals. Kelly is also on Angel of Montgomery and her own song Daddy.",
+        "The Eagles' “Peaceful Easy Feeling” makes its first appearance in the archive and has Kelly Peterson on main vocals. Kelly is also on Angel from Montgomery and her own song Daddy.",
         "The show has been split into individual songs and loudness-normalized to an even listening level."
       ],
       "page": null,
@@ -11755,6 +11755,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-10",
+      "ts": "2026-08-10T17:05:00.000000",
+      "slug": "jerry-cafe-java-1999-04-08",
+      "report": true,
+      "text": "Reprocessed Jerry Hannan's solo show at Cafe Java from April 8, 1999 under the new workflow (v8), replacing the show's v4 pass. Five of the twenty-three tracks qualify for the sparse-transient-cap mode, reaching the full −20 LUFS target instead of landing quieter: “Father and Son,” “Anna May,” “Everything Reminds Me of You,” “Getaway Blues,” and “The Parting Glass.” Two capped tracks needed a listen before shipping and both checked out as legitimate louder musical passages, not defects: “Anna May” at 2:07.7 and “Everything Reminds Me of You” at 2:05.2. One title was corrected — the fresh export's filename read “Angel of Montgomery,” a mechanical typo not used anywhere else in the archive; kept the established spelling “Angel from Montgomery” (also fixed in the show's own description text, which had picked up the same typo)."
+    },
     {
       "date": "2026-08-10",
       "ts": "2026-08-10T10:01:34.213320",
