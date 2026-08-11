@@ -1050,8 +1050,9 @@ def try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=False,
             f"target (per-track partial capping is available as Rene's "
             f"explicit opt-in: --transient-cap-partial)")
         return None
-    peaks = [p for _, p, _ in window_stats(path, pre=pre,
-                                           win_s=TCAP_FRAME_MS / 1000)]
+    wins = window_stats(path, pre=pre, win_s=TCAP_FRAME_MS / 1000)
+    peaks = [p for _, p, _ in wins]
+    times = [t for t, _, _ in wins]
     if not peaks:
         plan["flags"].append("transient-cap declined: frame scan produced no data")
         return None
@@ -1078,13 +1079,14 @@ def try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=False,
     # evidence actually sampled (passed tracks: 0.1-0.8% engaged, events
     # <= 0.15 s). Beyond the review band the limiter would behave like
     # repeated compression, which no evidence covers.
-    reds, events, longest_s = _tcap_engagement(peaks, gain, TCAP_LIMIT_DB)
+    reds, events, longest_s, longest_t = _tcap_engagement(peaks, gain, TCAP_LIMIT_DB, times)
     engaged_pct = 100.0 * len(reds) / len(peaks)
     if not force and (engaged_pct > TCAP_REJECT_ENGAGE_PCT
                       or longest_s > TCAP_REJECT_EVENT_S):
+        where = f" at {int(longest_t // 60)}:{longest_t % 60:04.1f}" if longest_t is not None else ""
         plan["flags"].append(
             f"transient-cap declined: the limiter would engage on "
-            f"{engaged_pct:.1f}% of the track (longest event {longest_s:.2f} s) "
+            f"{engaged_pct:.1f}% of the track (longest event {longest_s:.2f} s{where}) "
             f"— beyond the review band ({TCAP_REJECT_ENGAGE_PCT:g}% / "
             f"{TCAP_REJECT_EVENT_S:g} s); repeated-compression territory, no "
             f"listening evidence — reduced linear target instead "
@@ -1092,7 +1094,7 @@ def try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=False,
         return None
     plan.update(mode="sparse-transient-cap", target=round(in_I + gain, 2),
                 gain_db=gain, limit_db=TCAP_LIMIT_DB,
-                sr=int(probe(path)["sr"]), tcap_peaks=peaks,
+                sr=int(probe(path)["sr"]), tcap_peaks=peaks, tcap_times=times,
                 near_peak_pct=round(near_pct, 2))
     tcap_finalize(plan)
     if force and near_pct > TCAP_MAX_NEAR_PEAK_PCT:
@@ -1110,21 +1112,30 @@ def try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=False,
     return plan
 
 
-def _tcap_engagement(peaks, gain, limit):
+def _tcap_engagement(peaks, gain, limit, times=None):
     """Predicted limiter engagement from the 50 ms frame-peak scan: sorted
     per-frame reductions where the gained signal exceeds the threshold, event
-    count, and the longest continuous engagement in seconds."""
+    count, the longest continuous engagement in seconds, and (when `times` is
+    given) that longest run's own start time in seconds -- the single
+    timestamp most worth a human ear, surfaced in review-tier flags so
+    listening doesn't require scrubbing the whole track."""
     reds = sorted(p + gain - limit for p in peaks if p + gain > limit)
     events = longest = run = 0
-    for p in peaks:
+    run_start = longest_start = None
+    for i, p in enumerate(peaks):
         if p + gain > limit:
+            if run == 0:
+                run_start = i
             run += 1
-            longest = max(longest, run)
+            if run > longest:
+                longest = run
+                longest_start = run_start
             if run == 1:
                 events += 1
         else:
             run = 0
-    return reds, events, longest * (TCAP_FRAME_MS / 1000)
+    longest_t = times[longest_start] if times and longest_start is not None else None
+    return reds, events, longest * (TCAP_FRAME_MS / 1000), longest_t
 
 
 def tcap_finalize(plan):
@@ -1136,17 +1147,19 @@ def tcap_finalize(plan):
     domain); the render loop separately verifies the output's true peak."""
     gain, limit = plan["gain_db"], plan["limit_db"]
     peaks = plan["tcap_peaks"]
+    times = plan.get("tcap_times")
     in_TP = float(plan["measure"]["input_tp"])
     # the projected output loudness follows the gain — authoritative here so
     # a lockstep gain backoff in the retry loop updates it too
     plan["target"] = round(float(plan["measure"]["input_i"]) + gain, 2)
-    reds, events, longest_s = _tcap_engagement(peaks, gain, limit)
+    reds, events, longest_s, longest_t = _tcap_engagement(peaks, gain, limit, times)
     gr = round(in_TP + gain - limit, 2)  # reduction at the loudest instant (true-peak based)
     plan["tcap"] = {
         "gain_db": gain, "limit_db": limit, "gr_db": gr,
         "near_peak_pct": plan["near_peak_pct"],
         "engaged_pct": round(100.0 * len(reds) / len(peaks), 2),
         "events": events, "longest_s": round(longest_s, 2),
+        "longest_at_s": round(longest_t, 2) if longest_t is not None else None,
         "p95_gr_db": round(reds[int(0.95 * (len(reds) - 1))], 2) if reds else 0.0,
         # source LRA, so the preservation claim is auditable from the sidecar
         # alone (entry-level `lra` is the OUTPUT measurement)
@@ -1163,8 +1176,11 @@ def tcap_finalize(plan):
     # the A/B evidence covers (engagement <= 1%, events <= 0.2 s, density
     # <= 2%) is capped but hard-blocks publish until Rene's ears rule via
     # accept/exclude/force. The reject band was already handled at sizing.
+    # The flagged event's own start time is included so listening doesn't
+    # require scrubbing the whole track for the moment in question.
+    where = f" at {int(longest_t // 60)}:{longest_t % 60:04.1f}" if longest_t is not None else ""
     if t["longest_s"] > TCAP_AUTO_EVENT_S:
-        note = (f"transient cap engages continuously for {t['longest_s']:.2f} s "
+        note = (f"transient cap engages continuously for {t['longest_s']:.2f} s{where} "
                 f"(auto envelope {TCAP_AUTO_EVENT_S:g} s) — review tier, "
                 "listen before shipping")
         if note not in plan["flags"]:
