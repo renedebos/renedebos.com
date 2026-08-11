@@ -1,33 +1,46 @@
 # Session Handoff — Hannan Recordings (renedebos.com)
 **Date:** 2026-08-10 · **Branch:** `main` — everything below is committed,
-pushed, and **live** (`d32500d`), deploy green and spot-checked on
+pushed, and **live** (`73eb716`), deploy green and spot-checked on
 renedebos.com itself.
 
 > **The archive-wide v2→v8 rollout is complete.** Every show that needed
 > reprocessing off an older workflow is done — `jerry-19-broadway-1999-03-29`
-> was the last one still on the original engine. Two shows have now been
+> was the last one still on the original engine. Four shows have now been
 > reprocessed as voluntary opt-ins (already on a modern-enough workflow,
-> just not transient-cap) — `mad-sweetwater-1999-05-18` (v5→v8) and
-> `jerry-19-broadway-2001-01-08` (v7→v8) — the start of an ongoing "does
+> just not transient-cap) — `mad-sweetwater-1999-05-18` (v5→v8),
+> `jerry-19-broadway-2001-01-08` (v7→v8), `jerry-cafe-java-1999-04-08`
+> (v4→v8), and `jerry-19-broadway-1999-02-01` (v5→v8) — an ongoing "does
 > this show benefit from the cap?" pass over the rest of the archive.
-> **Nothing is outstanding — all nine v8 shows are fully confirmed
-> end-to-end**, including a by-hand Drive `Processed/` cleanup of 30 stale
-> old-named MP3s left over from `2001-01-08`'s original processing pass.
+> **Nothing is outstanding except two stray Drive/R2 hygiene leftovers
+> (see below) that need Rene's `rclone delete` by hand** — everything
+> else is fully confirmed end-to-end.
 
-## ✅ Done across the last two sessions
+## ✅ Done across the last three sessions
 
-### Nine shows now carry workflow v8 (`sparse-transient-cap`)
+### Eleven shows now carry workflow v8 (`sparse-transient-cap`)
 In ship order: `mad-cafe-java-1999-09-09`, `jerry-19-broadway-2001-01-15`,
 `mad-sweetwater-2001-01-06`, `mad-new-georges-1999-10-13`,
 `seanjerry-19-broadway-1999-12`, `mad-4th-street-tavern-1999-05-01`,
 `jerry-19-broadway-1999-03-29`, `mad-sweetwater-1999-05-18`,
-`jerry-19-broadway-2001-01-08`. Each got the same treatment: prepare →
+`jerry-19-broadway-2001-01-08`, `jerry-cafe-java-1999-04-08`,
+`jerry-19-broadway-1999-02-01`. Each got the same treatment: prepare →
 diagnose → cross-reference every title drift against the whole catalog
 before correcting it → transient-cap plan preview → Rene confirms any
 review-tier tracks by ear (timestamps recorded in that show's `updates[]`
 note) → publish → R2 reconcile → Drive backup → metadata →
 description/updates/`history.html` → build → commit → push → spot-check
 live. `history.html`'s "Week fourteen" section has one bullet per show.
+
+`jerry-cafe-java-1999-04-08` (v4→v8) and `jerry-19-broadway-1999-02-01`
+(v5→v8, whole-show NR carried over) shipped this session. The Broadway
+show also picked up: an explicit `--transient-cap-max-gr` exception on
+"Hello in There" (6.2 dB, just over the standard 6 dB ceiling, reaching
+−20.9 instead of −26.2); two flagged moments confirmed as non-defects by
+Rene ("Daddy"'s mid-song high-crest window is mic contact noise, capped
+along with the track; "Everything Reminds Me of You"'s suspected click is
+an audience clap); and a genuine unresolved dropout on "Blind Man" (real
+gap in the tape, can't be fixed by processing) — tagged `dropouts: true`
+and documented on the show page rather than silently shipped.
 
 `jerry-19-broadway-2001-01-08` (v7→v8, 2026-08-10) was the largest
 review-tier batch yet — 9 of 30 tracks needed a listen before shipping, all
@@ -152,9 +165,30 @@ paths, not just one.
    its own explicit decision + listening evidence, same gate transient-cap
    and `drum-control` are both held to.
 
-### 2. Everything else carried from before, still true
+### 2. Pending hand-cleanup: two stray "Angel of Montgomery" leftovers
+Both from this session's title-typo fix (see gotcha below) — Rene still
+needs to run these when convenient (not live-facing, no rush):
+```
+rclone delete "gdrive:DAT Tapes/Work Folder/Jerry Hannan - Cafe Java 1999-04-08/Processed/15 Angel of Montgomery.flac"
+rclone delete "gdrive:DAT Tapes/Work Folder/Jerry Hannan - Cafe Java 1999-04-08/Processed/15 Angel of Montgomery.mp3"
+rclone delete "gdrive:DAT Tapes/Work Folder/JerryHannan - 19 Broadway 1999-02-01/Processed/18 Angel of Montgomery.flac"
+rclone delete "gdrive:DAT Tapes/Work Folder/JerryHannan - 19 Broadway 1999-02-01/Processed/18 Angel of Montgomery.mp3"
+```
+(The matching R2 stray copies were already cleaned up live during this
+session — this is Drive `Processed/` only.)
+
+### 3. "Blind Man" gap on jerry-19-broadway-1999-02-01 — needs a future Audacity look
+Track 10 has a real gap in the tape around 3:10 that processing can't
+repair (confirmed by Rene, not treated as a diagnose false-positive).
+Currently shipped as-is with `dropouts: true` and a show-page note. If
+Rene wants to attempt a manual fix later (e.g. a crossfade/patch in
+Audacity), that's a fresh hand-edit + re-export + reprocess, same as any
+other post-publish audio correction — not something to attempt from raw
+DSP.
+
+### 4. Everything else carried from before, still true
 - Consider a `build_archive_zip.py` refresh (optional, whenever there's a
-  batch of shipped shows to fold in) — now includes 9 v8 shows' worth of
+  batch of shipped shows to fold in) — now includes 11 v8 shows' worth of
   reprocessed audio since the last zip build.
 - **Drive `Processed/` hygiene check is worth doing on every reprocess, not
   just ones with a title correction** — `jerry-19-broadway-2001-01-08`
@@ -173,6 +207,7 @@ paths, not just one.
   sessions now, low priority.
 
 ## Gotchas learned this session
+- **Rename a corrected title's local file BEFORE the first `publish` call, not after it fails** — hit this twice in one session (`jerry-cafe-java-1999-04-08` and `jerry-19-broadway-1999-02-01`, both the same "Angel of/from Montgomery" typo). The `prepare`-time title preflight correctly flags a fresh export's filename drift; cross-referencing correctly identifies it as a typo vs. a real correction — but if the local `tracks/`/`out/` file isn't renamed to the established title right then, the first `publish` uploads under the wrong name, the R2 reconcile check aborts, and fixing it costs a full extra render-or-resume cycle plus a stray R2 duplicate that only Rene can delete (`rclone delete` is agent-blocked). The fix: the moment a title flag resolves to "keep the established spelling," rename the file immediately, before ever calling `publish` — not as cleanup afterward.
 - **A count-only integrity check is much less useful than a named diff, and
   checking one extension at a time instead of both is the same mistake in a
   different shape** — `reconcile_r2()` had exactly this bug on its first
@@ -213,7 +248,7 @@ paths, not just one.
   concluding anything is wrong.
 
 ## Durable facts (don't undo)
-- **v8 now has nine published shows** (see list above). Version-bump
+- **v8 now has eleven published shows** (see list above). Version-bump
   discipline (any cap threshold/semantics change = v9) is binding.
 - **Linear-normalization policy, as amended for v8** (see `CLAUDE.md`):
   loudnorm/ebur128 are measurement-only since workflow v6; gain is always
