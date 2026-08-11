@@ -11,9 +11,9 @@ renedebos.com itself.
 > `jerry-19-broadway-2001-01-08` (v7→v8), `jerry-cafe-java-1999-04-08`
 > (v4→v8), and `jerry-19-broadway-1999-02-01` (v5→v8) — an ongoing "does
 > this show benefit from the cap?" pass over the rest of the archive.
-> **Nothing is outstanding except two stray Drive/R2 hygiene leftovers
-> (see below) that need Rene's `rclone delete` by hand** — everything
-> else is fully confirmed end-to-end.
+> **Nothing is outstanding — all eleven v8 shows are fully confirmed
+> end-to-end**, including the two stray Drive `Processed/` "Angel of
+> Montgomery" leftovers, which Rene has since cleaned up by hand.
 
 ## ✅ Done across the last three sessions
 
@@ -165,19 +165,7 @@ paths, not just one.
    its own explicit decision + listening evidence, same gate transient-cap
    and `drum-control` are both held to.
 
-### 2. Pending hand-cleanup: two stray "Angel of Montgomery" leftovers
-Both from this session's title-typo fix (see gotcha below) — Rene still
-needs to run these when convenient (not live-facing, no rush):
-```
-rclone delete "gdrive:DAT Tapes/Work Folder/Jerry Hannan - Cafe Java 1999-04-08/Processed/15 Angel of Montgomery.flac"
-rclone delete "gdrive:DAT Tapes/Work Folder/Jerry Hannan - Cafe Java 1999-04-08/Processed/15 Angel of Montgomery.mp3"
-rclone delete "gdrive:DAT Tapes/Work Folder/JerryHannan - 19 Broadway 1999-02-01/Processed/18 Angel of Montgomery.flac"
-rclone delete "gdrive:DAT Tapes/Work Folder/JerryHannan - 19 Broadway 1999-02-01/Processed/18 Angel of Montgomery.mp3"
-```
-(The matching R2 stray copies were already cleaned up live during this
-session — this is Drive `Processed/` only.)
-
-### 3. "Blind Man" gap on jerry-19-broadway-1999-02-01 — needs a future Audacity look
+### 2. "Blind Man" gap on jerry-19-broadway-1999-02-01 — needs a future Audacity look
 Track 10 has a real gap in the tape around 3:10 that processing can't
 repair (confirmed by Rene, not treated as a diagnose false-positive).
 Currently shipped as-is with `dropouts: true` and a show-page note. If
@@ -186,7 +174,7 @@ Audacity), that's a fresh hand-edit + re-export + reprocess, same as any
 other post-publish audio correction — not something to attempt from raw
 DSP.
 
-### 4. Everything else carried from before, still true
+### 3. Everything else carried from before, still true
 - Consider a `build_archive_zip.py` refresh (optional, whenever there's a
   batch of shipped shows to fold in) — now includes 11 v8 shows' worth of
   reprocessed audio since the last zip build.
