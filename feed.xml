@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Reprocessed Jerry Hannan's solo show at 19 Broadway from February 1, 1999 under the new w…</title>
+    <link>https://renedebos.com/shows/jerry-19-broadway-1999-02-01/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-10-jerry-19-broadway-1999-02-01</guid>
+    <pubDate>Mon, 10 Aug 2026 19:40:00 +0000</pubDate>
+    <description>Reprocessed Jerry Hannan's solo show at 19 Broadway from February 1, 1999 under the new workflow (v8), replacing the show's v5 pass — the whole-show noise reduction from that earlier pass (6dB, sensitivity 5) carries over unchanged. Five of the twenty-one tracks qualify for the sparse-transient-cap mode, reaching the full −20 LUFS target instead of landing quieter; a sixth, “The Grey Funnel Line,” stays on the existing applause-only limiter. “Perfect Autumn Day” needed a listen before shipping and checked out as legitimate music. “Hello in There” needed 6.2 dB of recovery, just over the archive's standard 6 dB ceiling; a loudness-matched review of the gap found no meaningful risk at that size, so it was given an explicit one-track exception and now reaches −20.9 instead of the −26.2 it would have landed at otherwise. Two other flagged moments were checked and aren't defects: “Daddy”'s mid-song high-crest window at 1:15 is mic handling noise, not applause or clipping, and is capped along with the rest of the track's transients; “Everything Reminds Me of You”'s suspected click at 2:50.6 is an audience clap, not a digital defect. “Blind Man” has a real gap in the tape around 3:10 that noise reduction and splitting can't repair — flagged on the show page and left for a future Audacity pass rather than papered over. Three track titles carry a guest performer's name in their filename only, matching the archive's existing convention for this show (title stays clean, credit goes in the artist field): “Long Black Veil,” “The Grey Funnel Line” (both with Sean Hannan), and “Drift Away” (with Demir). One title was corrected — the fresh export's filename read “Angel of Montgomery,” the same mechanical typo already caught on another show; kept the established spelling “Angel from Montgomery.”</description>
+  </item>
+  <item>
     <title>Reprocessed Jerry Hannan's solo show at Cafe Java from April 8, 1999 under the new workfl…</title>
     <link>https://renedebos.com/shows/jerry-cafe-java-1999-04-08/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-10-jerry-cafe-java-1999-04-08</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-11-mad-sweetwater-1999-05-18</guid>
     <pubDate>Sat, 11 Jul 2026 21:50:00 +0000</pubDate>
     <description>Added the May 18, 1999 Mad Hannans show at the Sweetwater as 22 individual tracks, EQ-brightened across the whole tape to tame a muddy room sound, then normalized to −20 LUFS.</description>
-  </item>
-  <item>
-    <title>Added the February 1, 1999 solo show at 19 Broadway as 21 individual tracks, treated with…</title>
-    <link>https://renedebos.com/shows/jerry-19-broadway-1999-02-01/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-11-jerry-19-broadway-1999-02-01</guid>
-    <pubDate>Sat, 11 Jul 2026 12:30:00 +0000</pubDate>
-    <description>Added the February 1, 1999 solo show at 19 Broadway as 21 individual tracks, treated with light noise reduction across the whole tape before splitting, then normalized to −20 LUFS.</description>
   </item>
 </channel>
 </rss>

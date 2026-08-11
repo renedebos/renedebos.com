@@ -98,7 +98,7 @@
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 1999-02-01/01 I Thought I Was You (incomplete).mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-02-01/01 I Thought I Was You (incomplete).flac",
-          "flac_size_mb": 30,
+          "flac_size_mb": 29,
           "processed": true,
           "tags": [
             "original",
@@ -143,7 +143,7 @@
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 1999-02-01/04 Hello in There.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-02-01/04 Hello in There.flac",
-          "flac_size_mb": 27,
+          "flac_size_mb": 28,
           "processed": true,
           "tags": [
             "cover",
@@ -196,13 +196,13 @@
         },
         {
           "num": 8,
-          "title": "Everything Reminds Me of You",
+          "title": "Everything Reminds Me of You ",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "2:58",
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-02-01/08 Everything Reminds Me of You .mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-02-01/08 Everything Reminds Me of You .flac",
-          "flac_size_mb": 24,
+          "flac_size_mb": 23,
           "processed": true,
           "tags": [
             "original"
@@ -238,7 +238,8 @@
           "tags": [
             "original"
           ],
-          "artist": "Jerry Hannan"
+          "artist": "Jerry Hannan",
+          "dropouts": true
         },
         {
           "num": 11,
@@ -248,7 +249,7 @@
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-02-01/11 Friend.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-02-01/11 Friend.flac",
-          "flac_size_mb": 23,
+          "flac_size_mb": 22,
           "processed": true,
           "tags": [
             "original",
@@ -280,7 +281,7 @@
           "size_mb": 11,
           "file": "MP3/JerryHannan - 19 Broadway 1999-02-01/13 Recycle.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-02-01/13 Recycle.flac",
-          "flac_size_mb": 36,
+          "flac_size_mb": 35,
           "processed": true,
           "tags": [
             "original",
@@ -325,7 +326,7 @@
           "size_mb": 10,
           "file": "MP3/JerryHannan - 19 Broadway 1999-02-01/16 Candle in the Wind.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-02-01/16 Candle in the Wind.flac",
-          "flac_size_mb": 33,
+          "flac_size_mb": 32,
           "processed": true,
           "tags": [
             "cover"
@@ -366,7 +367,8 @@
             "country",
             "guest"
           ],
-          "artist": "Kelly Peterson"
+          "artist": "Kelly Peterson",
+          "dropouts": true
         },
         {
           "num": 19,
@@ -376,7 +378,7 @@
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 1999-02-01/19 Perfect Autumn Day (early version).mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-02-01/19 Perfect Autumn Day (early version).flac",
-          "flac_size_mb": 26,
+          "flac_size_mb": 25,
           "processed": true,
           "tags": [
             "original"
@@ -413,7 +415,7 @@
         }
       ],
       "description": [
-        "The first Jerry Hannan show recorded at 19 Broadway &mdash; the tape has some significant dropouts, affecting a couple of tracks (Candle in the Wind, Angel of Montgomery), with Sean Hannan sitting in for a few songs. Where possible the dropouts were cut from the song and hopefully do not cause too much of a nuisance.",
+        "The first Jerry Hannan show recorded at 19 Broadway &mdash; the tape has quite a few significant dropouts that can&rsquo;t be fully fixed, affecting Candle in the Wind, Angel from Montgomery, and Blind Man, with Sean Hannan sitting in for a few songs. Where possible the dropouts were cut from the song and hopefully do not cause too much of a nuisance; Blind Man&rsquo;s gap (around 3:10) is still rough and flagged for a closer look.",
         "Perfect Autumn Day appears twice in the set, still a work in progress at this early stage.",
         "Broadband noise reduction (noise reduction = 6dB, sensitivity = 5) was applied to the full recording in Audacity before the tracks were split, and the individual tracks were then loudness-normalized to the archive's standard listening level."
       ],
@@ -11755,6 +11757,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-10",
+      "ts": "2026-08-10T19:40:00.000000",
+      "slug": "jerry-19-broadway-1999-02-01",
+      "report": true,
+      "text": "Reprocessed Jerry Hannan's solo show at 19 Broadway from February 1, 1999 under the new workflow (v8), replacing the show's v5 pass — the whole-show noise reduction from that earlier pass (6dB, sensitivity 5) carries over unchanged. Five of the twenty-one tracks qualify for the sparse-transient-cap mode, reaching the full −20 LUFS target instead of landing quieter; a sixth, “The Grey Funnel Line,” stays on the existing applause-only limiter. “Perfect Autumn Day” needed a listen before shipping and checked out as legitimate music. “Hello in There” needed 6.2 dB of recovery, just over the archive's standard 6 dB ceiling; a loudness-matched review of the gap found no meaningful risk at that size, so it was given an explicit one-track exception and now reaches −20.9 instead of the −26.2 it would have landed at otherwise. Two other flagged moments were checked and aren't defects: “Daddy”'s mid-song high-crest window at 1:15 is mic handling noise, not applause or clipping, and is capped along with the rest of the track's transients; “Everything Reminds Me of You”'s suspected click at 2:50.6 is an audience clap, not a digital defect. “Blind Man” has a real gap in the tape around 3:10 that noise reduction and splitting can't repair — flagged on the show page and left for a future Audacity pass rather than papered over. Three track titles carry a guest performer's name in their filename only, matching the archive's existing convention for this show (title stays clean, credit goes in the artist field): “Long Black Veil,” “The Grey Funnel Line” (both with Sean Hannan), and “Drift Away” (with Demir). One title was corrected — the fresh export's filename read “Angel of Montgomery,” the same mechanical typo already caught on another show; kept the established spelling “Angel from Montgomery.”"
+    },
     {
       "date": "2026-08-10",
       "ts": "2026-08-10T17:05:00.000000",
