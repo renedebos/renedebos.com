@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Reprocessed Jerry Hannan's solo show at 19 Broadway from October 25, 1999 under the new w…</title>
+    <link>https://renedebos.com/shows/jerry-19-broadway-1999-10-25/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-11-jerry-19-broadway-1999-10-25</guid>
+    <pubDate>Tue, 11 Aug 2026 15:41:25 +0000</pubDate>
+    <description>Reprocessed Jerry Hannan's solo show at 19 Broadway from October 25, 1999 under the new workflow (v8), replacing the show's v5 pass — the whole-show noise reduction from that earlier pass (6dB, sensitivity 5) carries over unchanged. Seven of the twenty-six tracks qualify for the sparse-transient-cap mode, reaching the full −20 LUFS target instead of landing quieter: “The Blarney Stone Blues,” “Learn About Love,” “Peaceful Easy Feeling,” “I Thought I Was You” (the set's second play of the song), “Model Family Man,” “El Paso,” and “Okie from Muskogee.” Two more, “Johnny McEldoo” and “Frosty Weather,” are handled by the applause-only limiter. Five tracks landed a little short of the full target rather than over-shaved: “My Father's House” (−20.3), “Black is the Color” (−21.2), “Anna May” (−20.4), “Angel from Montgomery” (−21.0), and “Hollywood (early version)” (−23.3).</description>
+  </item>
+  <item>
     <title>Reprocessed 12 of the 29 tracks on Jerry Hannan's solo show at 19 Broadway from June 7, 1…</title>
     <link>https://renedebos.com/shows/jerry-19-broadway-1999-06-07/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-10-jerry-19-broadway-1999-06-07</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-12-jerry-cafe-java-1999-03-25</guid>
     <pubDate>Sun, 12 Jul 2026 20:08:55 +0000</pubDate>
     <description>Added the March 25, 1999 solo show at Cafe Java as 21 individual tracks, treated with broadband noise reduction (8dB, sensitivity 5) across the whole tape before splitting, then normalized to −20 LUFS.</description>
-  </item>
-  <item>
-    <title>Added the April 29, 1999 solo show at Cafe Java as 21 individual tracks, normalized to −2…</title>
-    <link>https://renedebos.com/shows/jerry-cafe-java-1999-04-29/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-12-jerry-cafe-java-1999-04-29</guid>
-    <pubDate>Sun, 12 Jul 2026 15:40:00 +0000</pubDate>
-    <description>Added the April 29, 1999 solo show at Cafe Java as 21 individual tracks, normalized to −20 LUFS.</description>
   </item>
 </channel>
 </rss>

@@ -3075,7 +3075,7 @@
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/04 Black is the Color.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/04 Black is the Color.flac",
-          "flac_size_mb": 40,
+          "flac_size_mb": 39,
           "processed": true,
           "tags": [
             "irish",
@@ -3238,7 +3238,7 @@
           "size_mb": 6,
           "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/15 Scallywag.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/15 Scallywag.flac",
-          "flac_size_mb": 28,
+          "flac_size_mb": 27,
           "processed": true,
           "tags": [
             "original"
@@ -3266,7 +3266,7 @@
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/17 Ride On.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/17 Ride On.flac",
-          "flac_size_mb": 36,
+          "flac_size_mb": 35,
           "processed": true,
           "tags": [
             "original"
@@ -3281,7 +3281,7 @@
           "size_mb": 11,
           "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/18 Angel from Montgomery.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/18 Angel from Montgomery.flac",
-          "flac_size_mb": 52,
+          "flac_size_mb": 51,
           "processed": true,
           "tags": [
             "cover",
@@ -3298,8 +3298,8 @@
           "performer": "Kelly Peterson",
           "duration": "3:35",
           "size_mb": 9,
-          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/19 Peacful Easy Feeling.mp3",
-          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/19 Peacful Easy Feeling.flac",
+          "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/19 Peaceful Easy Feeling.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/19 Peaceful Easy Feeling.flac",
           "flac_size_mb": 40,
           "processed": true,
           "tags": [
@@ -3330,7 +3330,7 @@
           "size_mb": 10,
           "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/21 I Thought I Was You.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/21 I Thought I Was You.flac",
-          "flac_size_mb": 46,
+          "flac_size_mb": 48,
           "processed": true,
           "tags": [
             "original",
@@ -3389,7 +3389,7 @@
           "size_mb": 16,
           "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/25 Hollywood (early version).mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/25 Hollywood (early version).flac",
-          "flac_size_mb": 72,
+          "flac_size_mb": 68,
           "processed": true,
           "tags": [
             "original"
@@ -8062,12 +8062,12 @@
         },
         {
           "num": 7,
-          "title": "Good Life",
+          "title": "The Good Life",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:37",
-          "file": "MP3/MadHannans - Sweetwater 2000-02-17 SBD/07 Good Life.mp3",
+          "file": "MP3/MadHannans - Sweetwater 2000-02-17 SBD/07 The Good Life.mp3",
           "size_mb": 9,
-          "flac": "FLAC/MadHannans - Sweetwater 2000-02-17 SBD/07 Good Life.flac",
+          "flac": "FLAC/MadHannans - Sweetwater 2000-02-17 SBD/07 The Good Life.flac",
           "flac_size_mb": 40,
           "processed": true,
           "tags": [
@@ -8414,12 +8414,12 @@
         },
         {
           "num": 7,
-          "title": "Good Life",
+          "title": "The Good Life",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:19",
-          "file": "MP3/MadHannans - Sweetwater 2000-10-17 SBD/07 Good Life.mp3",
+          "file": "MP3/MadHannans - Sweetwater 2000-10-17 SBD/07 The Good Life.mp3",
           "size_mb": 8,
-          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17 SBD/07 Good Life.flac",
+          "flac": "FLAC/MadHannans - Sweetwater 2000-10-17 SBD/07 The Good Life.flac",
           "flac_size_mb": 38,
           "processed": true,
           "tags": [
@@ -11113,12 +11113,12 @@
         },
         {
           "num": 25,
-          "title": "Good Life",
+          "title": "The Good Life",
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:27",
           "size_mb": 8,
-          "file": "MP3/JerrySeanHannan - 19 Broadway 1999-12/25 Good Life.mp3",
-          "flac": "FLAC/JerrySeanHannan - 19 Broadway 1999-12/25 Good Life.flac",
+          "file": "MP3/JerrySeanHannan - 19 Broadway 1999-12/25 The Good Life.mp3",
+          "flac": "FLAC/JerrySeanHannan - 19 Broadway 1999-12/25 The Good Life.flac",
           "flac_size_mb": 29,
           "processed": true,
           "tags": [
@@ -11758,6 +11758,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-11",
+      "ts": "2026-08-11T15:41:25.000000",
+      "slug": "jerry-19-broadway-1999-10-25",
+      "report": true,
+      "text": "Reprocessed Jerry Hannan's solo show at 19 Broadway from October 25, 1999 under the new workflow (v8), replacing the show's v5 pass — the whole-show noise reduction from that earlier pass (6dB, sensitivity 5) carries over unchanged. Seven of the twenty-six tracks qualify for the sparse-transient-cap mode, reaching the full −20 LUFS target instead of landing quieter: “The Blarney Stone Blues,” “Learn About Love,” “Peaceful Easy Feeling,” “I Thought I Was You” (the set's second play of the song), “Model Family Man,” “El Paso,” and “Okie from Muskogee.” Two more, “Johnny McEldoo” and “Frosty Weather,” are handled by the applause-only limiter. Five tracks landed a little short of the full target rather than over-shaved: “My Father's House” (−20.3), “Black is the Color” (−21.2), “Anna May” (−20.4), “Angel from Montgomery” (−21.0), and “Hollywood (early version)” (−23.3)."
+    },
     {
       "date": "2026-08-10",
       "ts": "2026-08-10T23:15:00.000000",
