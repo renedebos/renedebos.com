@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Reprocessed 12 of the 29 tracks on Jerry Hannan's solo show at 19 Broadway from June 7, 1…</title>
+    <link>https://renedebos.com/shows/jerry-19-broadway-1999-06-07/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-10-jerry-19-broadway-1999-06-07</guid>
+    <pubDate>Mon, 10 Aug 2026 23:15:00 +0000</pubDate>
+    <description>Reprocessed 12 of the 29 tracks on Jerry Hannan's solo show at 19 Broadway from June 7, 1999 to the sparse-transient-cap mode (v5→v8) — the archive's first scoped reprocess, touching only the tracks that actually needed it rather than the whole show. The other 17 tracks were already at their loudness target under the older workflow and gained nothing from a fresh render, so they were left untouched. Five capped tracks needed a listen before shipping and all checked out as legitimate music, not defects: “Kilkelly Ireland” (0:20.45), “Butter” (0:39.45), “Everything Reminds Me of You” (3:53.90 and 4:34.50), “Happy Birthday Marco” (0:38.05, overlapping a suspected click already confirmed as music), and “Ted Kennedy Song” (0:02.20). Two more — “Hello in There” and “Hollywood (alt verse)” — initially declined the cap automatically for exceeding the calibrated review band (longer or denser engagement than the original listening evidence covered); after listening, both were given an explicit per-track override (“Hello in There” now reaches the full −20 target instead of −23.7; “Hollywood” recovers to −20.3, just short of full target since it hit the 6 dB attenuation ceiling). One title was corrected: the fresh export's filename read “Come On All You Young Maidens” for track 27, a completely different phrase from the archive's established title “A Bunch of Thyme” (also used on another show, and already named in this show's own description) — kept the established spelling. That track's audio was already at its target from the original v5 pass, so only the local filename needed correcting, not a reprocess.</description>
+  </item>
+  <item>
     <title>Reprocessed Jerry Hannan's solo show at 19 Broadway from February 1, 1999 under the new w…</title>
     <link>https://renedebos.com/shows/jerry-19-broadway-1999-02-01/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-10-jerry-19-broadway-1999-02-01</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-12-jerry-cafe-java-1999-04-29</guid>
     <pubDate>Sun, 12 Jul 2026 15:40:00 +0000</pubDate>
     <description>Added the April 29, 1999 solo show at Cafe Java as 21 individual tracks, normalized to −20 LUFS.</description>
-  </item>
-  <item>
-    <title>Added the May 18, 1999 Mad Hannans show at the Sweetwater as 22 individual tracks, EQ-bri…</title>
-    <link>https://renedebos.com/shows/mad-sweetwater-1999-05-18/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-11-mad-sweetwater-1999-05-18</guid>
-    <pubDate>Sat, 11 Jul 2026 21:50:00 +0000</pubDate>
-    <description>Added the May 18, 1999 Mad Hannans show at the Sweetwater as 22 individual tracks, EQ-brightened across the whole tape to tame a muddy room sound, then normalized to −20 LUFS.</description>
   </item>
 </channel>
 </rss>
