@@ -33,6 +33,15 @@ Still human afterwards: draft_tracks.py for metadata, description/updates,
 build, commit. State between the two phases lives in ~/work/<slug>/publish.json.
 
   --dry-run   (either phase) print every action without executing it.
+
+  --tracks N,M,...   (publish) scoped mode: render/upload/draft/verify/
+      back-up ONLY these track numbers from an already-prepared show,
+      leaving every other track's existing entry and R2/Drive objects
+      completely untouched. For a show where most tracks already sit at
+      target under an older workflow version, this is the difference
+      between touching 3 tracks and touching all 30 for the same audible
+      benefit. Still requires prepare (and its diagnose review) to have
+      run first for the whole show.
 """
 import argparse
 import datetime
@@ -430,7 +439,169 @@ def reconcile_r2(out_dir, dest, ext, label):
     return lines
 
 
+def cmd_publish_scoped(args, track_nums):
+    """--tracks N,M,...: render/upload/draft/verify/back-up only these track
+    numbers, leaving the rest of the show's already-published tracks fully
+    untouched. For a show where most tracks already sit at their loudness
+    target under an older workflow version, this is the difference between
+    touching 3 tracks and touching all 30 to get the same audible benefit --
+    v8's linear/linear-reduced rendering is unchanged since v6/v7, so an
+    already-at-target track gains nothing from a whole-show reprocess.
+
+    Skips two things the whole-show path relies on, both because they assume
+    out/ represents the COMPLETE show: clean_stale_out() (would delete
+    other in-progress scoped runs' outputs) and reconcile_r2()'s "obsolete"
+    check (would flag every untouched track as a stray needing deletion).
+    Correctness for the touched tracks is instead guaranteed by the scoped
+    fingerprint check below plus the existing whole-show `verify` step,
+    which is already per-track (it walks the provenance sidecar, not a
+    file-count diff) and safe to run against a partial local out/."""
+    if not os.path.exists(state_path(args.slug)):
+        raise SystemExit(f"no publish.json for {args.slug} — run prepare first")
+    st = json.load(open(state_path(args.slug)))
+    folder = st["folder"]
+    tracks_dir = os.path.join(WORK_ROOT, args.slug, "tracks")
+    out = os.path.join(WORK_ROOT, args.slug, "out")
+    scoped_in = os.path.join(WORK_ROOT, args.slug, "tracks-scoped")
+
+    if not os.path.isdir(tracks_dir):
+        raise SystemExit(f"{tracks_dir} not found — run prepare first")
+
+    picked = {}
+    for f in audio_files(os.listdir(tracks_dir)):
+        try:
+            num = int(f[:2])
+        except ValueError:
+            continue
+        if num in track_nums:
+            picked[num] = f
+    missing = track_nums - picked.keys()
+    if missing:
+        raise SystemExit(f"--tracks asked for {sorted(missing)} but no matching "
+                         f"file exists in {tracks_dir!r} — check the track "
+                         "numbers, or run prepare first")
+
+    # Scoped fingerprint check: only the picked files' bytes must match what
+    # prepare fingerprinted — not the whole show's tracks/ dir (untouched
+    # tracks are expected to sit there unchanged from an old prepare run).
+    if not DRY and st.get("fingerprint") and st.get("manifest"):
+        stored = {row["file"]: row for row in st["manifest"]}
+        changed = []
+        for f in picked.values():
+            row = stored.get(f)
+            p = os.path.join(tracks_dir, f)
+            if row is None or os.path.getsize(p) != row.get("size"):
+                changed.append(f)
+                continue
+            md5 = subprocess.run(
+                ["ffmpeg", "-hide_banner", "-loglevel", "error", "-i", p,
+                 "-map", "0:a", "-f", "md5", "-"],
+                capture_output=True, text=True).stdout.strip().replace("MD5=", "")
+            if md5 != row.get("md5"):
+                changed.append(f)
+        if changed:
+            raise SystemExit(
+                f"source fingerprint mismatch for {changed} — the local "
+                "source(s) changed since prepare. Re-run prepare first, or "
+                "use rename-track if this is just a filename correction.")
+
+    if not DRY:
+        if os.path.isdir(scoped_in):
+            shutil.rmtree(scoped_in)
+        os.makedirs(scoped_in)
+        for f in picked.values():
+            shutil.copy2(os.path.join(tracks_dir, f), os.path.join(scoped_in, f))
+
+    print(f"[1/6] loudness-normalize {len(picked)} track(s) {sorted(picked)} to "
+          f"{TARGET_LUFS} LUFS"
+          + (" (transient cap OPTED IN)" if args.transient_cap else ""))
+    cmd = [sys.executable, os.path.join(ROOT, "scripts", "audio_process.py"),
+           "process", scoped_in, out, "--target", str(TARGET_LUFS), "--slug", args.slug]
+    if st.get("pre_edits"):
+        cmd += ["--pre-edits", st["pre_edits"]]
+    if args.eq:
+        cmd += ["--eq", args.eq]
+    if args.transient_cap:
+        cmd += ["--transient-cap"]
+    if args.tcap_exclude:
+        cmd += ["--transient-cap-exclude", args.tcap_exclude]
+    if args.tcap_accept:
+        cmd += ["--transient-cap-accept", args.tcap_accept]
+    if args.tcap_partial:
+        cmd += ["--transient-cap-partial", args.tcap_partial]
+    if args.tcap_force:
+        cmd += ["--transient-cap-force", args.tcap_force]
+    if args.tcap_max_gr:
+        cmd += ["--transient-cap-max-gr", args.tcap_max_gr]
+    r = run(cmd)
+    if r.returncode not in (0, 2):
+        raise SystemExit("processing failed")
+    if r.returncode == 2:
+        print("⚠ processed with non-fatal warnings (see report above) — continuing")
+
+    touched_stems = {os.path.splitext(f)[0] for f in picked.values()}
+    upload_names = []
+    if not DRY:
+        for stem in touched_stems:
+            for ext in (".flac", ".mp3"):
+                if os.path.exists(os.path.join(out, stem + ext)):
+                    upload_names.append(stem + ext)
+
+    print(f"[2/6] upload {len(upload_names)} file(s) to R2 ({folder})")
+    for ext, top in ((".flac", "FLAC"), (".mp3", "MP3")):
+        names = [n for n in upload_names if n.endswith(ext)]
+        if not names:
+            continue
+        cmd = ["rclone", "copy", out, f"{R2}/{top}/{folder}",
+               "--s3-no-check-bucket", "--transfers", "8"]
+        for n in names:
+            cmd += ["--include", n]
+        r = run(cmd)
+        if not DRY and r.returncode != 0:
+            raise SystemExit(f"rclone upload failed for {top} — aborting before "
+                             "metadata/Drive steps")
+
+    print("[3/6] draft tracks[] into recordings.json (scoped)")
+    r = run([sys.executable, os.path.join(ROOT, "scripts", "draft_tracks.py"),
+             args.slug, "--tracks", ",".join(str(n) for n in sorted(picked))])
+    if not DRY and r.returncode != 0:
+        raise SystemExit("draft_tracks failed")
+
+    print("[4/6] waveform peaks (whole show; R2 fallback for untouched tracks)")
+    run([sys.executable, os.path.join(ROOT, "scripts", "gen_peaks.py"),
+         "--slug", args.slug, "--local", out])
+
+    print("[5/6] verify R2 MD5s against provenance (whole show — cheap, per-track)")
+    r = run([sys.executable, os.path.join(ROOT, "scripts", "audio_process.py"),
+             "verify", args.slug], capture_output=True)
+    print(r.stdout[-400:] if r.stdout else "")
+    if not DRY and "0 mismatch(es)" not in (r.stdout or ""):
+        raise SystemExit("MD5 verify FAILED — do not ship")
+
+    print("[6/6] Drive backup of the touched files only")
+    if not DRY and upload_names:
+        dst = f"{DRIVE_WORK}/{folder}/Processed"
+        cmd = ["rclone", "copy", out, dst, "--transfers", "4"]
+        for n in upload_names:
+            cmd += ["--include", n]
+        r = run(cmd)
+        if r.returncode != 0:
+            print(f"⚠ Drive backup rclone copy exited {r.returncode} — check by hand")
+
+    print(f"""
+done (scoped: tracks {sorted(picked)}) — still human:
+  review any FLAGs draft_tracks printed above (new/ambiguous titles), write
+  description + updates note, history.html if this changes the show's story
+  python3 scripts/build.py && commit + push, then spot-check the live page
+
+Note: tracks/ was NOT cleaned up — other candidate tracks in this show may
+still need a scoped run. Run cleanup manually once every track is on the
+current workflow version, or leave it for a future --tracks pass.""")
+
+
 def cmd_publish(args):
+    if args.tracks:
+        return cmd_publish_scoped(args, {int(x) for x in args.tracks.split(",") if x.strip()})
     if args.manual_drive_backup is None:
         if sys.stdin.isatty():
             ans = input("Handle the Drive Processed/ backup yourself, or let "
@@ -667,6 +838,13 @@ def main():
     ap.add_argument("--new-title", default=None,
                      help="rename-track: corrected title (no leading track number, "
                           "no extension — e.g. \"Angel from Montgomery\")")
+    ap.add_argument("--tracks", default="",
+                     help="publish: comma-separated track numbers — render/upload/"
+                          "draft/verify/back-up ONLY these tracks, leaving the rest "
+                          "of the show's already-published tracks untouched. For a "
+                          "show where most tracks already sit at target under an "
+                          "older workflow version, this avoids re-touching tracks "
+                          "that would render bit-for-bit identical under v8.")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--manual-drive-backup", action="store_true", default=None,
                      help="publish: give a few minutes to manually copy out/ to "

@@ -11,7 +11,15 @@ appearances disagree with each other.
 Deliberately NOT touched: description, updates notes, history — those are
 written by a person. added/added_ts/processing_status are set (mechanical).
 
-  python3 scripts/draft_tracks.py <slug> [--dry-run]
+  python3 scripts/draft_tracks.py <slug> [--dry-run] [--tracks 3,7,14]
+
+  --tracks   Scoped mode: only merge these track numbers from out/ into the
+             show's existing tracks[] array; every other track's current
+             entry is left exactly as-is. Without this flag, ALL tracks in
+             out/ replace the show's full tracks[] list (the original
+             whole-show behavior, unchanged) -- pointing that at a partial
+             out/ WOULD silently drop every other track's metadata, which is
+             exactly what --tracks exists to prevent.
 """
 import argparse
 import datetime
@@ -57,7 +65,11 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("slug")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--tracks", default="",
+                     help="comma-separated track numbers: scoped merge mode "
+                          "(see module docstring)")
     args = ap.parse_args()
+    scoped = {int(x) for x in args.tracks.split(",") if x.strip()}
 
     out = os.path.join(WORK_ROOT, args.slug, "out")
     if not os.path.isdir(out):
@@ -76,9 +88,11 @@ def main():
 
     old = {t["num"]: t for t in show.get("tracks") or []}
 
-    flags, tracks = [], []
+    flags, touched = [], {}
     for f in sorted(x for x in os.listdir(out) if x.endswith(".flac")):
         num, title = int(f[:2]), f[3:-5]
+        if scoped and num not in scoped:
+            continue
         mp3 = f[:-5] + ".mp3"
         if not os.path.exists(os.path.join(out, mp3)):
             raise SystemExit(f"missing MP3 twin for {f}")
@@ -108,7 +122,17 @@ def main():
         derived = {k: t[k] for k in order if k in t}
         merged = {**old.get(num, {}), **derived}
         merged.setdefault("tags", [])
-        tracks.append(merged)
+        touched[num] = merged
+
+    if scoped:
+        missing = scoped - touched.keys()
+        if missing:
+            raise SystemExit(f"--tracks asked for {sorted(missing)} but no matching "
+                             f"file was found in {out} — nothing written")
+        old.update(touched)
+        tracks = [old[n] for n in sorted(old)]
+    else:
+        tracks = [touched[n] for n in sorted(touched)]
 
     now = datetime.datetime.now()
     show["tracks"] = tracks
@@ -117,8 +141,10 @@ def main():
         show["added_ts"] = now.isoformat()
     show["processing_status"] = "done"
 
-    print(f"{args.slug}: drafted {len(tracks)} tracks "
-          f"({len(tracks) - len(flags)} matched from catalog)")
+    scope_note = f" (scoped: {sorted(touched)}, {len(tracks)} total in show)" if scoped else ""
+    print(f"{args.slug}: drafted {len(touched) if scoped else len(tracks)} track(s)"
+          f"{scope_note} "
+          f"({len(touched if scoped else tracks) - len(flags)} matched from catalog)")
     for fl in flags:
         print(f"  FLAG {fl}")
     if args.dry_run:
