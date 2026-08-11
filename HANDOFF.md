@@ -1,262 +1,202 @@
 # Session Handoff — Hannan Recordings (renedebos.com)
 **Date:** 2026-08-10 · **Branch:** `main` — everything below is committed,
-pushed, and **live** (`73eb716`), deploy green and spot-checked on
+pushed, and **live** (`fc244d8`), deploy green and spot-checked on
 renedebos.com itself.
 
-> **The archive-wide v2→v8 rollout is complete.** Every show that needed
-> reprocessing off an older workflow is done — `jerry-19-broadway-1999-03-29`
-> was the last one still on the original engine. Four shows have now been
-> reprocessed as voluntary opt-ins (already on a modern-enough workflow,
-> just not transient-cap) — `mad-sweetwater-1999-05-18` (v5→v8),
-> `jerry-19-broadway-2001-01-08` (v7→v8), `jerry-cafe-java-1999-04-08`
-> (v4→v8), and `jerry-19-broadway-1999-02-01` (v5→v8) — an ongoing "does
-> this show benefit from the cap?" pass over the rest of the archive.
-> **Nothing is outstanding — all eleven v8 shows are fully confirmed
-> end-to-end**, including the two stray Drive `Processed/` "Angel of
-> Montgomery" leftovers, which Rene has since cleaned up by hand.
+> **The archive-wide v2→v8 rollout is complete**, and this session added a
+> faster mechanism for the remaining opt-in work: **scoped, per-track
+> publishing**. Twelve shows now carry v8 in some form; the twelfth
+> (`jerry-19-broadway-1999-06-07`) is the first ever processed with
+> `--tracks`, touching only the 12 of 29 songs that actually needed the cap
+> and leaving the other 17 completely untouched. An archive-wide scan
+> (`tcap_ui.py`'s `/api/scan`) found **98 candidate tracks across 17 shows**
+> total — this session shipped the first show; 16 remain on the worklist,
+> not yet started.
 
-## ✅ Done across the last three sessions
+## ✅ Done this session
 
-### Eleven shows now carry workflow v8 (`sparse-transient-cap`)
-In ship order: `mad-cafe-java-1999-09-09`, `jerry-19-broadway-2001-01-15`,
-`mad-sweetwater-2001-01-06`, `mad-new-georges-1999-10-13`,
-`seanjerry-19-broadway-1999-12`, `mad-4th-street-tavern-1999-05-01`,
-`jerry-19-broadway-1999-03-29`, `mad-sweetwater-1999-05-18`,
-`jerry-19-broadway-2001-01-08`, `jerry-cafe-java-1999-04-08`,
-`jerry-19-broadway-1999-02-01`. Each got the same treatment: prepare →
-diagnose → cross-reference every title drift against the whole catalog
-before correcting it → transient-cap plan preview → Rene confirms any
-review-tier tracks by ear (timestamps recorded in that show's `updates[]`
-note) → publish → R2 reconcile → Drive backup → metadata →
-description/updates/`history.html` → build → commit → push → spot-check
-live. `history.html`'s "Week fourteen" section has one bullet per show.
+### New: `rename-track` command — replaces manual fingerprint surgery
+`python3 scripts/publish_show.py rename-track <slug> --track-num N --new-title
+"..."` renames a track's file across `tracks/`, `out/`, and the
+`.flac.v8state.json` sidecar, then updates `publish.json`'s manifest and
+recomputes its fingerprint using the exact same hash `publish`'s own check
+uses. Previously a `TITLE CHANGED` correction meant hand-editing
+`publish.json`'s JSON via the Edit tool as a workaround — fragile, and the
+direct cause of the "wrong filename → aborted publish → wasted render cycle"
+pattern flagged repeatedly last session. Worked flawlessly on its first real
+production use (`jerry-19-broadway-1999-06-07` track 27, "A Bunch of Thyme").
 
-`jerry-cafe-java-1999-04-08` (v4→v8) and `jerry-19-broadway-1999-02-01`
-(v5→v8, whole-show NR carried over) shipped this session. The Broadway
-show also picked up: an explicit `--transient-cap-max-gr` exception on
-"Hello in There" (6.2 dB, just over the standard 6 dB ceiling, reaching
-−20.9 instead of −26.2); two flagged moments confirmed as non-defects by
-Rene ("Daddy"'s mid-song high-crest window is mic contact noise, capped
-along with the track; "Everything Reminds Me of You"'s suspected click is
-an audience clap); and a genuine unresolved dropout on "Blind Man" (real
-gap in the tape, can't be fixed by processing) — tagged `dropouts: true`
-and documented on the show page rather than silently shipped.
+### New: `--tracks` scoped publishing — proven on real production data
+`python3 scripts/publish_show.py publish <slug> --tracks 3,7,14` renders,
+uploads, verifies, and Drive-backs-up **only** the listed track numbers,
+leaving every other track's R2 object, catalog entry, and Drive backup
+untouched. Still requires a full `prepare` (and its diagnose review) first —
+only the render/upload/draft/backup stage is scoped. Built because most
+shows on the worklist have only a handful of genuine transient-cap
+candidates; reprocessing all 29+ tracks for the sake of 12 was pure waste.
 
-`jerry-19-broadway-2001-01-08` (v7→v8, 2026-08-10) was the largest
-review-tier batch yet — 9 of 30 tracks needed a listen before shipping, all
-confirmed as legitimate music, plus one (`The Wind`) opted into partial
-capping after confirming its loud moments are music too (needed 8.2 dB of
-recovery, over the 6 dB hard cap, so it lands honestly at −22.65 LUFS
-instead of −20). Its Drive `Processed/` folder also turned up 30 stale
-old-named MP3s (dated 2026-06-28, from a pre-v7 processing generation,
-prefixed `JerryHannan - 19 Broadway 2001-01-08 - `) sitting alongside the
-fresh output — **not caused by a title change this time**, just an old
-leftover that had never been cleaned up. Worth eyeballing Drive
-`Processed/` on every reprocess going forward, not only ones with a
-filename-driven title correction (see gotcha below).
+Companion change in `draft_tracks.py --tracks N,M,...`: scoped merge mode
+that only touches the specified track numbers in the existing `tracks[]`
+array (errors loudly if a requested track has no matching output file,
+rather than silently dropping it).
 
-### Publish-pipeline hardening — built and validated live across 6 real shows
-All in `scripts/publish_show.py`, all proven against genuine production
-defects (never a false positive):
-1. **Title preflight at `prepare` time** — cross-references every track's
-   fresh export filename against every prior appearance of that title
-   anywhere in the archive before flagging a mismatch, so "is this a real
-   correction or a mechanical filename guess" has an answer before Rene
-   even looks at the diagnose report.
-2. **Exact R2 reconciliation, not a bare count** — named missing/obsolete
-   diffs for both FLAC and MP3, collected across *both* extensions before
-   raising once (fixed after the first live test raised on FLAC, got
-   "fixed", then immediately hit the MP3 mismatch it could have caught in
-   the same pass — see `reconcile_r2()`).
-3. **Stale-`out/` cleanup** before every render+upload — the direct fix for
-   last session's "deleted R2 files keep coming back" bug class.
-4. **Stale-`tracks/`-destination cleanup** (`fetch_tracks()` now always
-   `rmtree`s its destination first) — same bug class, found again on
-   `jerry-19-broadway-1999-03-29` (a stray `prepare` retry left 2 old-named
-   files sitting in the local tracks dir, silently inflating the count).
+**First real-world run — `jerry-19-broadway-1999-06-07` (v5→v8, scoped):**
+12 of 29 tracks reprocessed (1, 6, 11, 12, 15, 16, 17, 18, 22, 23, 26, 29);
+17 left completely untouched, verified independently via `git diff` (only 7
+minimal hunks) and via `gen_peaks.py`'s own log (`(local)` for touched
+tracks, `(r2)` for the rest). R2 verify passed 29/29 with zero mismatches.
+Tracks 6 and 15 were forced past their automatic decline (`--transient-cap-
+force`) at Rene's request; 5 review-tier tracks (12, 17, 22, 26, 29)
+confirmed by ear before shipping. Track 27's title corrected to "A Bunch of
+Thyme" via the new `rename-track` command — no reprocess needed, it was
+already at target.
 
-### New corrective-EQ badge
-Traced a real gap: the docstring for `pre_edits` provenance anticipated an
-EQ badge, but `fragments.py` never actually rendered one — a `--eq`-treated
-show (`mad-sweetwater-2001-01-06`) had no visible marker distinguishing it
-from a plain reprocess. Added `_eq_badge()`, wired into both the status
-line and the Technical Data table, scanned the whole archive first to
-confirm only that one show was affected before shipping.
+### Fixed a genuine pre-existing bug found during spot-check
+Live-checking the `jerry-19-broadway-1999-06-07` ship turned up that track
+27's download links still read "Come On All You Young Maidens" despite the
+page correctly showing "A Bunch of Thyme." Traced via `git show
+81c2631:data/recordings.json` to the *original* v5 publish (R2 objects dated
+2026-07-14) — the `title` field was always right, only the underlying
+`file`/`flac` R2 object paths were wrong, unrelated to anything from this
+session. Fixed: `rclone copyto` on both R2 and Drive `Processed/` to the
+correct filename (FLAC + MP3), `recordings.json` updated, rebuilt, shipped
+as `fc244d8`, verified live (`download="27 A Bunch of Thyme.flac"`, zero
+hits for the old title).
 
-### Sitewide loudness-normalization text cleanup
-Rene caught mismatched/misleading text across the site (prompted by the
-1999-12 show's tracks showing raw `<span style=...>` HTML literally instead
-of rendering — that specific bug got fixed, then the broader question led
-here). A second opinion (Codex) sharpened the diagnosis further — see below.
-- **`fragments.py`**: the Technical Data head line and the status blurb now
-  *derive* their claims from each track's own recorded filter chain, never
-  from a blanket string — fixes a real bug where the sidecar's `"tool"`
-  field said `"ffmpeg loudnorm"` even for workflow v6+ tracks, which
-  actually render gain with a plain `volume` filter (loudnorm/ebur128 are
-  measurement-only since v6) — the exact dynamic-sounding attribution the
-  archive's own linear-normalization policy exists to avoid. Also: LUFS is
-  now labeled explicitly as a *target*, not an achieved guarantee (some
-  tracks land under it by design — the whole point of the 6 dB cap), and
-  transient-cap/applause-limiter counts are tallied live, not hand-typed.
-  Correctly handles a mixed-version show (per-track `chain`/`ver` is
-  authoritative, never the sidecar's last-run-only `workflow_version`) —
-  no such show exists yet, but the derivation is correct by construction
-  either way, unlike the backfill approach originally considered.
-- **`audio_process.py`**: stopped writing the misleading `"tool"` field
-  going forward (nothing else read it once the generator derives instead).
-- **`data/recordings.json`**: stripped the redundant, occasionally-stale
-  "−20 LUFS" number out of 11 show `description` fields (the generated
-  tech-data table is the single source of truth for achieved values now);
-  **`updates[]` changelog entries deliberately left untouched** — they're a
-  dated historical record of what was said/done at the time, not living
-  documentation, so rewriting them to a new phrasing standard would make
-  them less honest, not more.
-- **`scripts/content/process.html`**: the public explainer no longer claims
-  "no EQ" (false since corrective-EQ restoration shows exist), explains
-  loudnorm's measure-only role since v6, and labels −20 LUFS as a target.
-- Committed together with the `mad-sweetwater-1999-05-18` ship in `227ea3b`.
+**Still outstanding — Rene's manual cleanup** (agent-blocked, `rclone
+delete`):
+```
+rclone delete "r2:hannan-audio/FLAC/JerryHannan - 19 Broadway 1999-06-07/27 Come On All You Young Maidens.flac"
+rclone delete "r2:hannan-audio/MP3/JerryHannan - 19 Broadway 1999-06-07/27 Come On All You Young Maidens.mp3"
+rclone delete "gdrive:DAT Tapes/Work Folder/JerryHannan - 19 Broadway 1999-06-07/Processed/27 Come On All You Young Maidens.flac"
+rclone delete "gdrive:DAT Tapes/Work Folder/JerryHannan - 19 Broadway 1999-06-07/Processed/27 Come On All You Young Maidens.mp3"
+```
+
+### PUBLISHING.md brought current with workflow v8
+Was still describing v7 as current. Added the v8 row to the version table,
+a full "sparse-transient cap" prose section mirroring
+`WORKFLOW_VERSIONS[8]`, and the previously-missing "Sparse-transient cap"
+option in the loudness-normalization walkthrough. **Caused a real deploy
+outage while fixing this** — see gotcha below.
+
+### CLAUDE.md corrections
+- Documented `scripts/tcap_ui.py` (port 8769) as the real local control
+  panel for the v8 runbook — see the "wrong claim" gotcha below for why
+  this was overdue.
+- Documented `--tracks` scoped publishing.
+- Added the "cross-reference every `TITLE CHANGED` flag, then run
+  `rename-track` immediately, before the first `publish` call" rule,
+  replacing the old "rename the file by hand" workaround note.
 
 ## 🔜 Next session
 
-### 1. Louder-playback derivative — researched 2026-08-09, still deferred
-Rene asked whether the archive should offer a louder stream (~−16 LUFS)
-alongside the current ~−20 LUFS masters, since −16 would clip on many
-tracks without real limiting. Ran a preliminary feasibility scan off
-existing provenance (no audio touched, no files rendered):
+### 1. Sixteen shows still on the transient-cap worklist
+The archive-wide scan found 98 candidate tracks across 17 shows total; only
+`jerry-19-broadway-1999-06-07` (12 tracks) has shipped via the new
+`--tracks` workflow. Highest-priority remaining, per the last scan:
+`sean-19-broadway-2000-01-24` (v6, 10 candidates, worst gap −25.04),
+`jerry-19-broadway-1999-10-25` (v5, 10 candidates, worst −25.01),
+`jerry-cafe-java-1999-03-25` (v5, 10 candidates, worst −24.76), plus others
+not yet re-enumerated since today's ship changed the totals. Same runbook:
+`prepare` → diagnose review → `tcap_ui.py` analyze or manual plan preview →
+Rene confirms review-tier tracks by ear → `publish --tracks ...` → metadata
+→ build → ship. Not started — no explicit request yet to continue down the
+list.
 
-| Peak reduction needed for −16 @ −2 dBTP | Tracks | Share |
-|---|---|---|
-| Fixed gain only | 4 | 0.6% |
-| ≤1 dB | 12 | 1.8% |
-| 1–3 dB | 79 | 11.6% |
-| 3–6 dB | 453 | 66.6% |
-| >6 dB | 132 | 19.4% |
+### 2. `jerry-19-broadway-1999-06-07`'s stray R2/Drive objects
+See the exact `rclone delete` commands above — Rene's manual step whenever
+convenient, not urgent (not live-facing).
 
-Median required peak reduction: 4.70 dB. **Conclusion: a stored −16 LUFS
-derivative would require sustained (not just isolated-transient) limiting
-on the large majority of the archive — that's functionally the same
-unproven territory as the `drum-control` proposal below, just reached from
-a different direction, and it doesn't have the two-show blind-A/B evidence
-that justified transient-cap.**
+### 3. Louder-playback derivative — researched 2026-08-09, still deferred
+Carried unchanged from prior sessions. A stored −16 LUFS derivative would
+need sustained limiting on ~87% of the archive's tracks (median 4.7 dB
+reduction needed) — same unproven territory as `drum-control`, no A/B
+evidence. Recommended direction instead: a client-side Web Audio
+gain+compressor "Louder playback" toggle applied only at playback time,
+nothing written back to any file. Not started; see prior HANDOFF revisions
+for the full three-step plan if picked up.
 
-**Recommended direction instead: client-side "Louder playback" toggle**,
-not a second stored master. A Web Audio gain+compressor chain applied only
-at playback time — nothing written back to any file, downloads stay the
-honest archival versions, fully reversible, doesn't reopen the sustained-
-limiting policy question at all. Checked the actual codebase: playback
-currently runs through plain `<audio>` elements (`scripts/player.js`), with
-`wavesurfer.js` as a separate layer for the waveform track rows — a full
-implementation would need to wire the gain/compressor chain into *both*
-paths, not just one.
+### 4. "Blind Man" gap on jerry-19-broadway-1999-02-01 — needs a future Audacity look
+Track 10 has a real, un-fixable-by-processing gap around 3:10. Shipped
+as-is with `dropouts: true` and a show-page note. A manual Audacity
+patch/crossfade would be a fresh hand-edit + re-export + reprocess if Rene
+ever wants to attempt it.
 
-**Plan, if/when picked back up:**
-1. Prototype (few hours, one sitting): `MediaElementSource → GainNode →
-   DynamicsCompressorNode → destination` on the plain-`<audio>` path only,
-   toggle UI, tested by ear on ~5 of the archive's most dynamic tracks
-   (quiet solo acoustic, applause-heavy, sparse-transient, hand-drawn fade).
-2. If that sounds good: wire into the `wavesurfer.js` path too, handle
-   mobile Safari's AudioContext-unlock-needs-a-gesture quirk, seek/track-
-   switch reconnection, saved preference, honest labeling ("Louder
-   playback," never a specific LUFS claim since a browser can't guarantee
-   that at the listener's ears). Coding is maybe a day and a half total;
-   the real pacing constraint is Rene actually testing it on real devices
-   (phone speaker, Bluetooth, AirPlay), not build time.
-3. **Do not build a stored −16 derivative** unless this gets revisited with
-   its own explicit decision + listening evidence, same gate transient-cap
-   and `drum-control` are both held to.
-
-### 2. "Blind Man" gap on jerry-19-broadway-1999-02-01 — needs a future Audacity look
-Track 10 has a real gap in the tape around 3:10 that processing can't
-repair (confirmed by Rene, not treated as a diagnose false-positive).
-Currently shipped as-is with `dropouts: true` and a show-page note. If
-Rene wants to attempt a manual fix later (e.g. a crossfade/patch in
-Audacity), that's a fresh hand-edit + re-export + reprocess, same as any
-other post-publish audio correction — not something to attempt from raw
-DSP.
-
-### 3. Everything else carried from before, still true
-- Consider a `build_archive_zip.py` refresh (optional, whenever there's a
-  batch of shipped shows to fold in) — now includes 11 v8 shows' worth of
-  reprocessed audio since the last zip build.
-- **Drive `Processed/` hygiene check is worth doing on every reprocess, not
-  just ones with a title correction** — `jerry-19-broadway-2001-01-08`
-  turned up 30 stale old-named MP3s with no title-change trigger at all,
-  just an old pass that was never cleaned up. A quick `rclone lsf` count
-  check on both FLAC and MP3 right after the Drive backup step (same
-  pattern as the R2 reconciliation) would catch this without relying on
-  noticing it by chance.
-- `drum-control` (codex-notes.md proposal, for repeatedly-loud material like
-  a dominant snare on every backbeat) is deliberately **not built** — needs
-  its own decision + A/B evidence if it ever happens. The louder-playback
-  feasibility scan above is more evidence *against* attempting it archive-
-  wide, not for it.
-- `/search/` index preload double-fetch check, still unverified (DevTools →
-  Network, exactly one `search-index.json` request) — carried for several
-  sessions now, low priority.
+### 5. Everything else carried from before, still true
+- Consider a `build_archive_zip.py` refresh once a batch of shows accumulates.
+- Drive `Processed/` hygiene worth checking on every reprocess (not just
+  title-correction ones) — a prior show turned up 30 stale old-named MP3s
+  with no title-change trigger at all.
+- `drum-control` (codex-notes.md proposal) deliberately **not built** —
+  needs its own decision + A/B evidence.
+- `/search/` index preload double-fetch check, still unverified, low priority.
 
 ## Gotchas learned this session
-- **Rename a corrected title's local file BEFORE the first `publish` call, not after it fails** — hit this twice in one session (`jerry-cafe-java-1999-04-08` and `jerry-19-broadway-1999-02-01`, both the same "Angel of/from Montgomery" typo). The `prepare`-time title preflight correctly flags a fresh export's filename drift; cross-referencing correctly identifies it as a typo vs. a real correction — but if the local `tracks/`/`out/` file isn't renamed to the established title right then, the first `publish` uploads under the wrong name, the R2 reconcile check aborts, and fixing it costs a full extra render-or-resume cycle plus a stray R2 duplicate that only Rene can delete (`rclone delete` is agent-blocked). The fix: the moment a title flag resolves to "keep the established spelling," rename the file immediately, before ever calling `publish` — not as cleanup afterward.
-- **A count-only integrity check is much less useful than a named diff, and
-  checking one extension at a time instead of both is the same mistake in a
-  different shape** — `reconcile_r2()` had exactly this bug on its first
-  live test (FLAC flagged, "fixed", then MP3 immediately flagged separately
-  when both could've been caught in one pass). Fixed by collecting problems
-  across both extensions before raising once.
-- **Any local working directory that accumulates outputs across multiple
-  attempts is a latent stale-file risk until something actively prunes
-  it** — hit this twice more this session in a new shape: `fetch_tracks()`
-  never cleared its destination before copying, so a failed/retried
-  `prepare` could leave old-named stray files sitting alongside a fresh,
-  correct download, silently inflating the expected count on the next run.
-- **`pgrep -f` process-name matching can produce false negatives** — a
-  grep-quoting/glob-expansion glitch showed "not running" twice this
-  session while the process (and a child `rclone`) was actually alive.
-  Prefer `ps aux | grep ... | grep -v grep` or `kill -0 <pid>` for a
-  definitive check, or just trust the background-task completion
-  notification instead of polling at all.
-- **Python's stdout is block-buffered when redirected to a file** — a
-  long-running `publish_show.py` process's own `print()` steps can sit
-  unflushed in memory while a subprocess it launches (`draft_tracks.py`)
-  writes straight through, making the log file's line order misleading
-  about what's actually finished. Check the process is still alive
-  (`ps`/`kill -0`), don't trust apparent step order in a still-running log.
-- **`rclone delete` is hard-blocked for the agent by the permission
-  classifier** — every R2 deletion this session had to go through Rene by
-  exact copy-paste command.
-- **A monitor's 30-minute timeout can fire on a genuinely-still-running
-  background job** (Drive backup on a 22-track show ran past it) — that's
-  a "re-arm and keep watching" situation, not a failure signal by itself;
-  check the actual process before assuming anything went wrong.
-- **A single `curl` cache-status check right after a deploy purge can be
-  genuinely inconsistent, not just stale** — five checks on
-  `jerry-19-broadway-2001-01-08` flip-flopped between the correct new
-  content and stale pre-deploy content, all reporting `cf-cache-status:
-  HIT`, before settling. That's normal multi-POP purge-propagation lag, not
-  a broken deploy — confirm with several checks spaced ~30-45s apart before
-  concluding anything is wrong.
+- **Editing `PUBLISHING.md` without rebuilding breaks the deploy gate, and
+  the breakage can hide for hours.** `PUBLISHING.md` is a *source* file
+  rendered into the public `/manual/` page by `build_manual()` — CI's
+  "Verify committed site is current" check fails if the generated HTML in
+  the repo doesn't match a fresh `build.py` run. My edit (`5c7f93d`) skipped
+  the rebuild, which broke deploys for 5 consecutive commits (including one
+  of Rene's own unrelated pushes) across ~1.5 hours, until Rene's own commit
+  (`81c2631`) fixed it. Root cause fully owned; going forward, run
+  `build.py` and check `gh run list` after every push, not just ones that
+  look content-related.
+- **A wrong claim about tooling should be caught by searching before
+  asserting, not corrected after Rene pushes back.** Told Rene "no UI exists
+  for transient-cap processing" and started the wrong server (`ab_server.py`
+  instead of `tcap_ui.py`) — a real control panel Rene had specifically
+  described building. CLAUDE.md never mentioned `tcap_ui.py` at all, which
+  is why the search missed it; documented it there now so this can't repeat
+  the same way twice.
+- **A concurrent `make edit` session can land changes mid-task that look
+  like scope creep but aren't.** Found an unexpected uncommitted edit to a
+  *different* show's track while a scoped publish was running; traced it to
+  an active `edit_metadata.py --no-open` process via `ps aux`, confirmed
+  with Rene before committing anything, then separated his edit from mine
+  with `git add -p` rather than bundling them.
+- **Sandbox tests of repo-relative scripts can still write into the real
+  repo.** `publish_show.py`/`draft_tracks.py` respect `HOME` overrides for
+  `~/work`, but `audio_process.py`'s `ROOT` resolves from the script's own
+  file location, not `HOME` — a test run stubbing `rclone` still wrote a
+  stray `data/processing/testshow.json` into the actual repo. Caught via
+  `git status --short` immediately; removed before proceeding. Any future
+  sandboxed test of these scripts needs to check for this class of leak
+  explicitly, not just trust the `HOME` override.
 
 ## Durable facts (don't undo)
-- **v8 now has eleven published shows** (see list above). Version-bump
-  discipline (any cap threshold/semantics change = v9) is binding.
+- **v8 now covers twelve shows** (eleven whole-show ships plus
+  `jerry-19-broadway-1999-06-07`'s scoped ship). Version-bump discipline
+  (any cap threshold/semantics change = v9) is binding.
+- **`--tracks` scoped publishing is now a first-class path**, not a
+  one-off experiment — use it by default when a show's candidate list is a
+  small fraction of its total tracks. Still requires the full unscoped
+  `prepare`/diagnose gate; only the render/upload/draft/backup stage scopes.
+- **`rename-track` replaces all manual `publish.json` fingerprint editing.**
+  Never hand-edit that file's manifest/fingerprint again — use the command.
 - **Linear-normalization policy, as amended for v8** (see `CLAUDE.md`):
   loudnorm/ebur128 are measurement-only since workflow v6; gain is always
   applied via a plain `volume` filter; a millisecond-scale transient cap is
   sanctioned (opt-in, tiered gates, 6 dB hard ceiling on actual attenuation,
   full listening-evidence trail); sustained/dense limiting of repeatedly-
   loud material is still banned with no exceptions and no evidence exists
-  for it — see the louder-playback feasibility scan above, which is a
-  fresh data point *against* ever attempting that without a real A/B pass.
+  for it.
 - Modes stay exclusive — no stacking applause-limiter + cap without a new
   decision and listening evidence.
 - `updates[]` is a dated changelog and should read as historically accurate
   to what was true *at the time* — don't retroactively rewrite entries to
-  match a later wording standard, even when the wording genuinely improved
-  (see the loudness-text cleanup above, which deliberately left `updates[]`
-  alone and only touched the live `description` fields).
+  match a later wording standard.
+- **Any edit to `PUBLISHING.md` requires `python3 scripts/build.py` before
+  commit** — it's a source file for the generated `/manual/` page, not
+  documentation-only.
+- **`rclone delete` is hard-blocked for the agent** — every deletion must
+  go to Rene as exact copy-paste commands.
 
 ## Reference
 Runbook: `CLAUDE.md` → "Publishing a Split Show" (+ the amended
-linear-normalization section covering v8). Technical record:
+linear-normalization section covering v8, and the new `rename-track`/
+`--tracks` documentation). Full prose walkthrough: `PUBLISHING.md` (rendered
+to `/manual/` — rebuild after editing). Technical record:
 `WORKFLOW_VERSIONS[8]` in `audio_process.py`. External review scratchpad:
 `codex-notes.md` (untracked, not Rene's notes — verify before acting; also
 where the `drum-control` proposal lives).
