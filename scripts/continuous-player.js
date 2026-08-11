@@ -155,7 +155,7 @@
     if (range && !seeking) {
       range.value = Math.round(pct * RANGE_MAX / 100);
       range.style.background = "linear-gradient(to right, var(--accent) " + pct + "%, var(--border) " + pct + "%)";
-      range.setAttribute("aria-valuetext", formatTime(audio.currentTime));
+      range.setAttribute("aria-valuetext", formatTime(audio.currentTime) + " of " + formatTime(queue[idx].durationSec));
     }
     if (cur) cur.textContent = formatTime(audio.currentTime);
     if ("mediaSession" in navigator && audio.duration) {
@@ -235,7 +235,7 @@
       + "</div>"
       + '<div class="pl-progress"><span class="pl-time-current">0:00</span>'
       + '<input type="range" class="progress-range" min="0" max="' + RANGE_MAX + '" value="0" step="1" '
-      + 'aria-label="Seek ' + esc(t.title) + '" aria-valuetext="0:00">'
+      + 'aria-label="Seek ' + esc(t.title) + '" aria-valuetext="0:00 of ' + formatTime(t.durationSec) + '">'
       + "<span>" + formatTime(t.durationSec) + "</span></div>";
     syncPlayBtn();
   }

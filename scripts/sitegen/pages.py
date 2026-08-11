@@ -779,7 +779,7 @@ def build_show(show):
         <span class="track-num">{t["num"]:02d}</span>
         {title_html}
         <div class="ws-wave"></div>
-        <span class="time-label current" data-duration="{esc(t["duration"])}">{esc(t["duration"])}</span>{dl}
+        <span class="time-label current" data-duration="{esc(t["duration"])}">0:00 / {esc(t["duration"])}</span>{dl}
         {add_btn}
       </div>''')
             else:
@@ -788,8 +788,8 @@ def build_show(show):
         <button class="play-btn" aria-label="Play {play_label}" data-play-label="{play_label}">{PLAY_SVG}</button>
         <span class="track-num">{t["num"]:02d}</span>
         {title_html}
-        <span class="time-label current" data-duration="{esc(t["duration"])}">{esc(t["duration"])}</span>{dl}
-        <input type="range" class="progress-range" min="0" max="1000" value="0" step="1" aria-label="Seek {play_label}" aria-valuetext="0:00">
+        <span class="time-label current" data-duration="{esc(t["duration"])}">0:00 / {esc(t["duration"])}</span>{dl}
+        <input type="range" class="progress-range" min="0" max="1000" value="0" step="1" aria-label="Seek {play_label}" aria-valuetext="0:00 of {esc(t["duration"])}">
         {add_btn}
       </div>''')
         hint = ("Every song streams in full &middot; lossless FLAC downloads are password protected"
@@ -921,7 +921,7 @@ def build_wavesurfer_lab():
         <span class="track-num">{t["num"]:02d}</span>
         <span class="track-title" data-info="{info}">{esc(t["title"])}</span>
         <div class="ws-wave"></div>
-        <span class="time-label current" data-duration="{esc(t["duration"])}">{esc(t["duration"])}</span>{dl}
+        <span class="time-label current" data-duration="{esc(t["duration"])}">0:00 / {esc(t["duration"])}</span>{dl}
       </div>''')
 
     main = f'''

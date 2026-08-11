@@ -67,6 +67,11 @@ function initCustomPlayers(root) {
     const btn = player.querySelector('.play-btn');
     const range = player.querySelector('.progress-range');
     const currentEl = player.querySelector('.current');
+    // Compact track rows store their catalog duration on the one available
+    // time label. Larger players render elapsed and total in separate labels.
+    const compactDuration = currentEl.dataset.duration || '';
+    const separateDurationEl = player.querySelector('.time-row .time-label:not(.current)');
+    const totalDuration = compactDuration || (separateDurationEl ? separateDurationEl.textContent.trim() : '');
 
     let loaded = false;
     let seeking = false;
@@ -83,14 +88,19 @@ function initCustomPlayers(root) {
       range.style.background = `linear-gradient(to right, var(--accent) ${pct}%, var(--border) ${pct}%)`;
     }
 
+    function setTime(seconds) {
+      const elapsed = formatTime(seconds);
+      currentEl.textContent = compactDuration ? `${elapsed} / ${compactDuration}` : elapsed;
+      range.setAttribute('aria-valuetext', totalDuration ? `${elapsed} of ${totalDuration}` : elapsed);
+    }
+
     audio.addEventListener('timeupdate', () => {
       const pct = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
       if (!seeking) {
         range.value = Math.round(pct * RANGE_MAX / 100);
         setFill(pct);
       }
-      currentEl.textContent = formatTime(audio.currentTime);
-      range.setAttribute('aria-valuetext', formatTime(audio.currentTime));
+      setTime(audio.currentTime);
     });
 
     audio.addEventListener('waiting', () => {
@@ -115,7 +125,7 @@ function initCustomPlayers(root) {
       setPlayState(btn, false, playIcon);
       range.value = 0;
       setFill(0);
-      currentEl.textContent = currentEl.dataset.duration || '0:00';
+      setTime(0);
       player.classList.remove('playing');
       if (activePlayer === player) activePlayer = null;
       // Auto-advance within lists that opt in (the curated track lists)

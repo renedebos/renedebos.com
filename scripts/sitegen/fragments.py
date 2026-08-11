@@ -101,7 +101,7 @@ def player(file, duration=None, download_file=None, version=None, label=None):
     return f'''<div class="custom-player" data-src="{esc(stream)}">
           <button class="play-btn" aria-label="Play{play_label}"{play_data}>{PLAY_SVG}</button>
           <div class="progress-wrap">
-            <input type="range" class="progress-range" min="0" max="1000" value="0" step="1" aria-label="{seek_label}" aria-valuetext="0:00">
+            <input type="range" class="progress-range" min="0" max="1000" value="0" step="1" aria-label="{seek_label}" aria-valuetext="0:00{f' of {esc(duration)}' if duration else ''}">
             <div class="time-row"><span class="time-label current">0:00</span>{end_label}</div>
           </div>
           {downloads}

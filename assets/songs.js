@@ -54,7 +54,7 @@
       + '<div class="custom-player" data-src="' + escOcc(stream) + '">'
       + '<button class="play-btn" aria-label="Play ' + escOcc(label) + '" data-play-label="' + escOcc(label) + '">' + playIcon + "</button>"
       + '<div class="progress-wrap">'
-      + '<input type="range" class="progress-range" min="0" max="' + RANGE_MAX + '" value="0" step="1" aria-label="Seek ' + escOcc(label) + '" aria-valuetext="0:00">'
+      + '<input type="range" class="progress-range" min="0" max="' + RANGE_MAX + '" value="0" step="1" aria-label="Seek ' + escOcc(label) + '" aria-valuetext="0:00' + (o.duration ? ' of ' + escOcc(o.duration) : '') + '">'
       + '<div class="time-row"><span class="time-label current">0:00</span>' + dur + "</div>"
       + "</div>"
       + "</div>"

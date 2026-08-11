@@ -47,6 +47,10 @@ function build(PEAKS) {
     const btn = row.querySelector('.play-btn');
     const time = row.querySelector('.time-label.current');
     const durLabel = time.dataset.duration;
+    const setTime = (seconds) => {
+      const elapsed = fmt(seconds);
+      time.textContent = durLabel ? `${elapsed} / ${durLabel}` : elapsed;
+    };
 
     const ws = WaveSurfer.create({
       container: row.querySelector('.ws-wave'),
@@ -103,11 +107,11 @@ function build(PEAKS) {
       row.classList.remove('playing');
       setPlayState(btn, false, PLAY);
     });
-    ws.on('timeupdate', (t) => { time.textContent = fmt(t); });
+    ws.on('timeupdate', setTime);
     ws.on('finish', () => {
       row.classList.remove('playing');
       setPlayState(btn, false, PLAY);
-      time.textContent = durLabel;
+      setTime(0);
       // Natural end fires 'finish' twice (reactive duration check + media 'ended'),
       // so advance with an idempotent play() — never the play/pause toggle, which a
       // second finish would use to pause the next track right after starting it.
