@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Reprocessed all 27 tracks on Jerry Hannan's solo show at Cafe Java from June 17, 1999 (v5…</title>
+    <link>https://renedebos.com/shows/jerry-cafe-java-1999-06-17/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-12-jerry-cafe-java-1999-06-17</guid>
+    <pubDate>Wed, 12 Aug 2026 21:54:20 +0000</pubDate>
+    <description>Reprocessed all 27 tracks on Jerry Hannan's solo show at Cafe Java from June 17, 1999 (v5→v8), following a full fade-edit re-do — the earlier edit pass was lost to a prepare mishap and has now been redone from scratch, clearing every one of the 14 tracks that previously had clipping verdicts. Opted into the v8 sparse-transient-cap mode from the start; none of the three PRED_TP tracks ("Black Is the Color," "Anna May," "Learn About Love") needed more than a fraction of a dB of recovery, under the threshold where capping is worth attempting, so all three land at their honest linear-reduced targets instead. Three titles restored to the archive's established spelling after the fresh export drifted: "I Need a Lover" to "Hear Me," "I Want to Lean About Love" to "Learn About Love," and the recurring slash/hyphen filename convention on "The Kiss / Da Da Da (Slave to an Angel)." A typo in track 27's filename ("Barney" for "Blarney") was also corrected.</description>
+  </item>
+  <item>
     <title>Reprocessed all 20 tracks on Jerry Hannan's solo show at Cafe Java from May 27, 1999 (v5→…</title>
     <link>https://renedebos.com/shows/jerry-cafe-java-1999-05-27/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-12-jerry-cafe-java-1999-05-27</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-14-jerry-19-broadway-1999-10-25</guid>
     <pubDate>Tue, 14 Jul 2026 16:33:14 +0000</pubDate>
     <description>Added the October 25, 1999 solo show at 19 Broadway as 26 individual tracks, treated with broadband noise reduction (6dB, sensitivity 5) across the whole tape before splitting, then normalized to −20 LUFS. Kelly Peterson guests on "Angel of Montgomery" and "Peaceful Easy Feeling."</description>
-  </item>
-  <item>
-    <title>Added the November 15, 1999 solo show at 19 Broadway as 14 individual tracks, normalized …</title>
-    <link>https://renedebos.com/shows/jerry-19-broadway-1999-11-15/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-14-jerry-19-broadway-1999-11-15</guid>
-    <pubDate>Tue, 14 Jul 2026 12:10:15 +0000</pubDate>
-    <description>Added the November 15, 1999 solo show at 19 Broadway as 14 individual tracks, normalized to −20 LUFS, including an early version of "Burning Man" and an alternate-verse take of "Hollywood."</description>
   </item>
 </channel>
 </rss>

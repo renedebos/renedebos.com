@@ -6156,7 +6156,7 @@
           "num": 2,
           "title": "I Thought I Was You",
           "songwriter": "Jerry Hannan & Sean Hannan",
-          "duration": "3:45",
+          "duration": "3:46",
           "size_mb": 9,
           "file": "MP3/JerryHannan - Cafe Java 1999-06-17/02 I Thought I Was You.mp3",
           "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/02 I Thought I Was You.flac",
@@ -6216,8 +6216,8 @@
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:09",
           "size_mb": 8,
-          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/06 Hear Me.mp3",
-          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/06 Hear Me.flac",
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/06 I Need a Lover.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/06 I Need a Lover.flac",
           "flac_size_mb": 37,
           "processed": true,
           "tags": [
@@ -6380,7 +6380,7 @@
           "size_mb": 9,
           "file": "MP3/JerryHannan - Cafe Java 1999-06-17/17 The Good Life.mp3",
           "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/17 The Good Life.flac",
-          "flac_size_mb": 43,
+          "flac_size_mb": 42,
           "processed": true,
           "tags": [
             "original",
@@ -6528,10 +6528,10 @@
           "num": 27,
           "title": "The Blarney Stone Blues",
           "songwriter": "Steve Poltz",
-          "duration": "3:52",
+          "duration": "3:53",
           "size_mb": 9,
-          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/27 The Barney Stone Blues.mp3",
-          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/27 The Barney Stone Blues.flac",
+          "file": "MP3/JerryHannan - Cafe Java 1999-06-17/27 The Blarney Stone Blues.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-06-17/27 The Blarney Stone Blues.flac",
           "flac_size_mb": 44,
           "processed": true,
           "tags": [
@@ -11759,6 +11759,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-12",
+      "ts": "2026-08-12T21:54:20.000000",
+      "slug": "jerry-cafe-java-1999-06-17",
+      "report": true,
+      "text": "Reprocessed all 27 tracks on Jerry Hannan's solo show at Cafe Java from June 17, 1999 (v5→v8), following a full fade-edit re-do — the earlier edit pass was lost to a prepare mishap and has now been redone from scratch, clearing every one of the 14 tracks that previously had clipping verdicts. Opted into the v8 sparse-transient-cap mode from the start; none of the three PRED_TP tracks (\"Black Is the Color,\" \"Anna May,\" \"Learn About Love\") needed more than a fraction of a dB of recovery, under the threshold where capping is worth attempting, so all three land at their honest linear-reduced targets instead. Three titles restored to the archive's established spelling after the fresh export drifted: \"I Need a Lover\" to \"Hear Me,\" \"I Want to Lean About Love\" to \"Learn About Love,\" and the recurring slash/hyphen filename convention on \"The Kiss / Da Da Da (Slave to an Angel).\" A typo in track 27's filename (\"Barney\" for \"Blarney\") was also corrected."
+    },
     {
       "date": "2026-08-12",
       "ts": "2026-08-12T20:56:03.000000",
