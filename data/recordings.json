@@ -1538,12 +1538,12 @@
         },
         {
           "num": 11,
-          "title": "The Barney Stone Blues",
+          "title": "The Blarney Stone Blues",
           "songwriter": "Steve Poltz",
           "duration": "4:17",
           "size_mb": 10,
-          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/11 The Barney Stone Blues.mp3",
-          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/11 The Barney Stone Blues.flac",
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/11 The Blarney Stone Blues.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/11 The Blarney Stone Blues.flac",
           "flac_size_mb": 50,
           "processed": true,
           "tags": [
@@ -2544,7 +2544,7 @@
         {
           "num": 22,
           "title": "The Blarney Stone Blues",
-          "songwriter": "Jerry Hannan & Sean Hannan",
+          "songwriter": "Steve Poltz",
           "duration": "4:34",
           "size_mb": 11,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/22 Leprechaun.mp3",
@@ -2552,8 +2552,8 @@
           "flac_size_mb": 51,
           "processed": true,
           "tags": [
-            "original",
-            "irish"
+            "cover",
+            "blues"
           ]
         },
         {
@@ -3055,7 +3055,7 @@
         {
           "num": 3,
           "title": "The Blarney Stone Blues",
-          "songwriter": "Jerry Hannan & Sean Hannan",
+          "songwriter": "Steve Poltz",
           "duration": "4:37",
           "size_mb": 11,
           "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/03 The Blarney Stone Blues.mp3",
@@ -3063,8 +3063,8 @@
           "flac_size_mb": 52,
           "processed": true,
           "tags": [
-            "original",
-            "irish"
+            "cover",
+            "blues"
           ]
         },
         {
@@ -3543,12 +3543,12 @@
         },
         {
           "num": 7,
-          "title": "The Barney Stone Blues",
+          "title": "The Blarney Stone Blues",
           "songwriter": "Steve Poltz",
           "duration": "4:52",
           "size_mb": 12,
-          "file": "MP3/JerryHannan - 19 Broadway 1999-11-15/07 The Barney Stone Blues.mp3",
-          "flac": "FLAC/JerryHannan - 19 Broadway 1999-11-15/07 The Barney Stone Blues.flac",
+          "file": "MP3/JerryHannan - 19 Broadway 1999-11-15/07 The Blarney Stone Blues.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-11-15/07 The Blarney Stone Blues.flac",
           "flac_size_mb": 55,
           "processed": true,
           "tags": [
@@ -4498,12 +4498,12 @@
         },
         {
           "num": 20,
-          "title": "The Barney Stone Blues",
+          "title": "The Blarney Stone Blues",
           "songwriter": "Steve Poltz",
           "duration": "5:11",
           "size_mb": 12,
-          "file": "MP3/JerryHannan - 19 Broadway 2001-01-15 SBD/20 The Barney Stone Blues.mp3",
-          "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15 SBD/20 The Barney Stone Blues.flac",
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-15 SBD/20 The Blarney Stone Blues.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15 SBD/20 The Blarney Stone Blues.flac",
           "flac_size_mb": 56,
           "processed": true,
           "tags": [
@@ -5762,7 +5762,7 @@
         {
           "num": 21,
           "title": "The Blarney Stone Blues",
-          "songwriter": "Jerry Hannan & Sean Hannan",
+          "songwriter": "Steve Poltz",
           "duration": "5:06",
           "size_mb": 12,
           "file": "MP3/JerryHannan - Cafe Java 1999-04-29/21 The Blarney Stone Blues.mp3",
@@ -5770,8 +5770,8 @@
           "flac_size_mb": 59,
           "processed": true,
           "tags": [
-            "original",
-            "irish"
+            "cover",
+            "blues"
           ]
         }
       ],
@@ -5900,7 +5900,7 @@
         {
           "num": 7,
           "title": "The Blarney Stone Blues",
-          "songwriter": "Jerry Hannan & Sean Hannan",
+          "songwriter": "Steve Poltz",
           "duration": "3:10",
           "size_mb": 8,
           "file": "MP3/JerryHannan - Cafe Java 1999-05-27/07 The Blarney Stone Blues.mp3",
@@ -5908,8 +5908,8 @@
           "flac_size_mb": 36,
           "processed": true,
           "tags": [
-            "original",
-            "irish"
+            "cover",
+            "blues"
           ]
         },
         {
@@ -6527,7 +6527,7 @@
         {
           "num": 27,
           "title": "The Blarney Stone Blues",
-          "songwriter": "Jerry Hannan & Sean Hannan",
+          "songwriter": "Steve Poltz",
           "duration": "3:52",
           "size_mb": 9,
           "file": "MP3/JerryHannan - Cafe Java 1999-06-17/27 The Barney Stone Blues.mp3",
@@ -6535,8 +6535,8 @@
           "flac_size_mb": 44,
           "processed": true,
           "tags": [
-            "original",
-            "irish"
+            "cover",
+            "blues"
           ]
         }
       ],
