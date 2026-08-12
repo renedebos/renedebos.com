@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Opted this show into the v8 sparse-transient-cap mode for the three tracks that landed sh…</title>
+    <link>https://renedebos.com/shows/mad-marin-brewing-co-1999-04-01/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-12-mad-marin-brewing-co-1999-04-01</guid>
+    <pubDate>Wed, 12 Aug 2026 20:16:16 +0000</pubDate>
+    <description>Opted this show into the v8 sparse-transient-cap mode for the three tracks that landed short of −20 LUFS in tonight's earlier reprocess. "Recycle" and "Getaway Blues" now reach the full target this way, both cleared automatically, no listen required. "Clear Headed" didn't qualify for capping and stays at −20.6. Also re-trimmed a stray trailing space that crept back into "Recycle"'s title when this track was re-drafted.</description>
+  </item>
+  <item>
     <title>Opted this show into the v8 sparse-transient-cap mode for the five tracks that landed sho…</title>
     <link>https://renedebos.com/shows/mad-marin-brewing-co-1998-04-01/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-12-mad-marin-brewing-co-1998-04-01</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-13-jerry-cafe-java-1999-06-17</guid>
     <pubDate>Mon, 13 Jul 2026 22:45:00 +0000</pubDate>
     <description>Added the full show as 27 individual tracks, split from the audience DAT and normalized to −20 LUFS for an even, comfortable listening level, using the automated audio engineering workflow with ffmpeg</description>
-  </item>
-  <item>
-    <title>Added the full show as 20 individual tracks, split from the audience DAT and normalized t…</title>
-    <link>https://renedebos.com/shows/jerry-cafe-java-1999-05-27/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-13-jerry-cafe-java-1999-05-27</guid>
-    <pubDate>Mon, 13 Jul 2026 16:35:00 +0000</pubDate>
-    <description>Added the full show as 20 individual tracks, split from the audience DAT and normalized to −20 LUFS for an even, comfortable listening level, using the automated audio engineering workflow with ffmpeg</description>
   </item>
 </channel>
 </rss>

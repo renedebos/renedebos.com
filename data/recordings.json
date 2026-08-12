@@ -9642,7 +9642,7 @@
           "size_mb": 8,
           "file": "MP3/MadHannnans - Marin Brewing Co 1999-04-01/11 Getaway Blues.mp3",
           "flac": "FLAC/MadHannnans - Marin Brewing Co 1999-04-01/11 Getaway Blues.flac",
-          "flac_size_mb": 27,
+          "flac_size_mb": 28,
           "processed": true,
           "tags": [
             "original",
@@ -11759,6 +11759,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-12",
+      "ts": "2026-08-12T20:16:16.000000",
+      "slug": "mad-marin-brewing-co-1999-04-01",
+      "report": true,
+      "text": "Opted this show into the v8 sparse-transient-cap mode for the three tracks that landed short of −20 LUFS in tonight's earlier reprocess. \"Recycle\" and \"Getaway Blues\" now reach the full target this way, both cleared automatically, no listen required. \"Clear Headed\" didn't qualify for capping and stays at −20.6. Also re-trimmed a stray trailing space that crept back into \"Recycle\"'s title when this track was re-drafted."
+    },
     {
       "date": "2026-08-12",
       "ts": "2026-08-12T19:55:09.000000",
