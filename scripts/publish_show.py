@@ -166,6 +166,85 @@ LABELS_NAG = ("⚠ labels.txt is MISSING from the Work Folder — the raw archiv
               "incomplete without it.\n  In Audacity: File > Export > Labels → save "
               "as labels.txt next to the whole-show WAV, then copy to Drive.")
 
+# Diagnostic FLAGS categories serious enough to block publishing until a human
+# explicitly reviews and accepts them (or the source is fixed and re-prepared).
+# Reuses audio_process.py diagnose's own flag vocabulary verbatim — no new
+# severity categories invented here. Left as informational-only (never
+# blocking), same as always: PRED_TP (governed separately by the linear-
+# normalization policy — audio_process.py handles it automatically), HIGH_LRA
+# (explicitly informational per policy), DC, CLICK, BANDWIDTH (judgment calls,
+# not confirmed defects the way a CLIPPING/DROPOUT/BALANCE/PHASE verdict is).
+DIAGNOSTIC_HARD_BLOCK = {"CLIPPING", "DROPOUT", "BALANCE", "PHASE"}
+
+
+def parse_diagnostic_findings(report_path):
+    """Pull the hard-block-relevant FLAGS lines out of diagnose's
+    diagnostic_report.txt into structured per-track findings. Previously
+    `prepare` ran the full diagnostic and always created publish state
+    regardless of what it found, and `publish` verified the source
+    fingerprint but never checked that the diagnostic was clean or had been
+    explicitly reviewed — so a track with confirmed sustained clipping or a
+    mid-track dropout could ship without anyone having to look at it. This is
+    the structured record `publish` checks against."""
+    findings = []
+    if not os.path.exists(report_path):
+        return findings
+    for line in open(report_path):
+        line = line.strip()
+        if not line.startswith("⚠ "):
+            continue
+        m = re.match(r"⚠ ([A-Z_]+): (.+?) — (.*)$", line)
+        if not m:
+            continue
+        cat, fname, detail = m.group(1), m.group(2).strip(), m.group(3).strip()
+        if cat not in DIAGNOSTIC_HARD_BLOCK:
+            continue
+        tm = re.match(r"^(\d+)", fname)
+        findings.append({"track": int(tm.group(1)) if tm else None,
+                         "file": fname, "category": cat, "detail": detail})
+    return findings
+
+
+def check_diagnostic_gate(st, args):
+    """Hard-block publish on any unresolved hard-block-category finding from
+    prepare's diagnose. `--accept-diagnostic 'TRACK:CATEGORY,...'` is the
+    documented per-finding override (a human reviewed that specific finding
+    on that specific track and accepts it) — never a global bypass. Accepted
+    findings are persisted in publish.json as an audit trail so a later
+    publish attempt for the same prepared state doesn't need the flag
+    repeated."""
+    findings = st.get("diagnostic_findings") or []
+    if not findings:
+        return
+    accepted = set()
+    for pair in (getattr(args, "accept_diagnostic", "") or "").split(","):
+        pair = pair.strip()
+        if not pair:
+            continue
+        tnum, _, cat = pair.partition(":")
+        try:
+            accepted.add((int(tnum), cat.strip().upper()))
+        except ValueError:
+            raise SystemExit(f"--accept-diagnostic: can't parse {pair!r} "
+                             "(expected TRACK:CATEGORY, e.g. '12:CLIPPING')")
+    prev_accepted = {(a["track"], a["category"]) for a in st.get("accepted_findings", [])}
+    accepted |= prev_accepted
+    unresolved = [f for f in findings if (f["track"], f["category"]) not in accepted]
+    if unresolved:
+        lines = [f"  track {f['track']} {f['file']!r}: {f['category']} — {f['detail']}"
+                 for f in unresolved]
+        ex_track, ex_cat = unresolved[0]["track"], unresolved[0]["category"]
+        raise SystemExit(
+            "prepare's diagnose flagged finding(s) that block publishing until "
+            "reviewed:\n" + "\n".join(lines) +
+            "\n\nListen (scripts/ab_compare.py or Audacity), then either fix the "
+            "source and re-run prepare, or accept each reviewed finding with "
+            "--accept-diagnostic 'TRACK:CATEGORY,...' (e.g. --accept-diagnostic "
+            f"'{ex_track}:{ex_cat}')")
+    if not DRY and accepted - prev_accepted:
+        st["accepted_findings"] = [{"track": t, "category": c} for t, c in sorted(accepted)]
+        json.dump(st, open(state_path(args.slug), "w"), indent=2, ensure_ascii=False)
+
 
 def parse_duration(s):
     parts = [int(p) for p in s.split(":")]
@@ -309,8 +388,24 @@ def cmd_prepare(args):
     preflight_catalog_titles(show, files)
 
     print("\nrunning full diagnose …")
-    run([sys.executable, os.path.join(ROOT, "scripts", "audio_process.py"),
-         "diagnose", dest, "--target", str(TARGET_LUFS)])
+    r = run([sys.executable, os.path.join(ROOT, "scripts", "audio_process.py"),
+             "diagnose", dest, "--target", str(TARGET_LUFS)])
+    if not DRY and r.returncode != 0:
+        raise SystemExit(
+            "\ndiagnose did not finish cleanly (decode error or crash — see "
+            "output above) — refusing to create publish state from an "
+            "incomplete diagnostic. Fix the failing file and re-run prepare.")
+
+    diagnostic_findings = []
+    if not DRY:
+        diagnostic_findings = parse_diagnostic_findings(
+            os.path.join(dest, "diagnostic_report.txt"))
+        if diagnostic_findings:
+            print(f"\n⚠ {len(diagnostic_findings)} diagnostic finding(s) will BLOCK "
+                  "publish until reviewed — accept per-finding with "
+                  "--accept-diagnostic, or fix the source and re-run prepare:")
+            for f in diagnostic_findings:
+                print(f"  track {f['track']} {f['file']!r}: {f['category']} — {f['detail']}")
 
     if not DRY:
         print("\nfingerprinting sources …")
@@ -319,7 +414,8 @@ def cmd_prepare(args):
         json.dump({"slug": args.slug, "folder": folder, "source_sub": sub,
                    "pre_edits": pre_edits, "n_tracks": len(files),
                    "prepared": datetime.datetime.now().isoformat(),
-                   "manifest": manifest, "fingerprint": fp},
+                   "manifest": manifest, "fingerprint": fp,
+                   "diagnostic_findings": diagnostic_findings},
                   open(state_path(args.slug), "w"), indent=2, ensure_ascii=False)
         print(f"source fingerprint: {fp}")
     print(f"\nSTOP — review the diagnose verdicts above (report in {dest}).")
@@ -459,6 +555,7 @@ def cmd_publish_scoped(args, track_nums):
     if not os.path.exists(state_path(args.slug)):
         raise SystemExit(f"no publish.json for {args.slug} — run prepare first")
     st = json.load(open(state_path(args.slug)))
+    check_diagnostic_gate(st, args)
     folder = st["folder"]
     tracks_dir = os.path.join(WORK_ROOT, args.slug, "tracks")
     out = os.path.join(WORK_ROOT, args.slug, "out")
@@ -613,6 +710,7 @@ def cmd_publish(args):
     if not os.path.exists(state_path(args.slug)):
         raise SystemExit(f"no publish.json for {args.slug} — run prepare first")
     st = json.load(open(state_path(args.slug)))
+    check_diagnostic_gate(st, args)
     folder, n = st["folder"], st["n_tracks"]
     tracks = os.path.join(WORK_ROOT, args.slug, "tracks")
     out = os.path.join(WORK_ROOT, args.slug, "out")
@@ -890,6 +988,16 @@ def main():
                           "explicit, recorded exception after a loudness-matched "
                           "listening test, never an archive-wide policy change "
                           "(passed through to audio_process.py)")
+    ap.add_argument("--accept-diagnostic", dest="accept_diagnostic", default="",
+                     help="publish: comma-separated track:CATEGORY pairs (e.g. "
+                          "'12:CLIPPING') marking a specific prepare-time diagnostic "
+                          "finding as reviewed and accepted for publishing — the "
+                          "documented per-finding override, never a global bypass. "
+                          "Hard-block categories: CLIPPING, DROPOUT, BALANCE, PHASE. "
+                          "Without this, any unresolved finding aborts publish before "
+                          "anything renders or uploads; accepted findings are recorded "
+                          "in publish.json so a later publish for the same prepared "
+                          "state doesn't need the flag repeated")
     args = ap.parse_args()
     DRY = args.dry_run
     {"prepare": cmd_prepare, "publish": cmd_publish,

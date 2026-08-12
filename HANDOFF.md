@@ -1,8 +1,11 @@
 # Session Handoff — Hannan Recordings (renedebos.com)
 **Date:** 2026-08-11 → 2026-08-12 · **Branch:** `main` — everything through
 `9594b9e` is committed, pushed, and **live**, deploy green and spot-checked
-on renedebos.com itself. `git status` is clean except `codex-notes.md`
-(deliberately untracked — external review scratch, not Rene's notes).
+on renedebos.com itself. Since then, six audio-pipeline bug fixes have been
+made (see below) and are **uncommitted, sitting in the working tree for
+Rene's review** — `git status` currently shows `audio_process.py`,
+`make_stream_mp3.py`, `publish_show.py`, `PUBLISHING.md`, and this file
+modified, plus the always-untracked `codex-notes.md`.
 
 > ⚠️ **Data loss incident tonight — read this before touching
 > `jerry-cafe-java-1999-06-17` again.** Rene spent real time hand-editing
@@ -95,6 +98,67 @@ failure mode, `git add` with one bad path aborts the whole call).
 
 ## 🔧 In progress / blocked
 
+### Six audio-pipeline bug fixes — implemented, tested, uncommitted, awaiting Rene's review
+Rene asked to ship these ahead of any loudness-plan work (see the proposed
+plan below); they came from codex-notes.md's 23:05 PDT pipeline review.
+Code-only — nothing was reprocessed or republished, and no `--hpf`/`--lpf`/
+`--notch` flag was ever used on any published track (confirmed by grepping
+every `data/processing/*.json` sidecar), so no existing provenance is
+disturbed.
+
+1. **`--notch` was two-octave-wide cuts, not real notches** (build_filters()
+   in `audio_process.py`) — replaced with a genuinely narrow
+   `width_type=h:width=4` (Hz) cut; `--notch` now takes an optional
+   frequency (default 60, pass 50 for 50 Hz-mains recordings);
+   `--notch-harmonics N` adds harmonics only when explicitly requested
+   (default 0, was previously always-on for 120/180 Hz).
+2. **Resume didn't invalidate on recipe change** — new `recipe_signature()`
+   hashes target/filters/transient-cap opt-ins/`WORKFLOW_VERSION`; resume
+   now also compares `src_md5` and cross-checks the existing output's own
+   audio MD5 against its recorded provenance before trusting a skip. Only
+   enforced when a prior entry already has the new fields recorded, so it
+   doesn't force-reprocess the existing archive. Verified live: same-recipe
+   resume still skips; changing `--hpf` correctly forces a reprocess.
+3. **Diagnostic failures didn't block publishing** — `publish_show.py
+   prepare` now aborts on a nonzero diagnose exit (decode error/crash) and
+   records structured findings in `publish.json`; `publish` (both
+   whole-show and `--tracks`-scoped) hard-blocks on any unresolved
+   CLIPPING/DROPOUT/BALANCE/PHASE finding until reviewed via a new
+   `--accept-diagnostic 'TRACK:CATEGORY,...'` flag (persists as an audit
+   trail). BANDWIDTH/DC/CLICK/HIGH_LRA/PRED_TP stay informational-only.
+4. **`make_stream_mp3.py` (whole-show proxy) had none of the per-track QA**
+   — now reuses the same `encode_mp3_with_qa()` extracted from
+   `audio_process.py`'s per-track pipeline: true-peak trim, loudness
+   measurement, decode verification, `stream_md5` checksum, and retained
+   catalog metadata (previously stripped by `-map_metadata -1`). Also fixed
+   the 192k/320k docstring mismatch — 320k was the actually-encoded and
+   originally-intended rate; docstring and `PUBLISHING.md` corrected to
+   match, not the encode itself.
+5. **`--hpf` defaulted to 80 Hz**, dangerously close to the guitar's 82 Hz
+   low E — bare `--hpf` now defaults to 25 Hz (DC/subsonic rumble); 80 Hz
+   remains available via explicit `--hpf 80`. No other script called `--hpf`
+   with an assumption to break.
+6. **`--lpf` wasn't Nyquist-aware** — `cmd_process` now probes each track's
+   real sample rate before building its filter chain and clamps the 18 kHz
+   default to 90% of Nyquist with a printed note when it would otherwise be
+   a no-op (e.g. on a 32 kHz source).
+
+**Workflow version deliberately NOT bumped** — stays v8. The agent
+initially bumped to v9, then reverted on discovering this same document
+already reserves "workflow v9" for the separate, much larger, unapproved
+combined-treatment proposal below — exactly the collision the proposed
+plan's own sequencing (filter fixes ship as *their own* small change
+first) was written to avoid. A comment above `WORKFLOW_VERSIONS` in
+`audio_process.py` documents this for whoever builds the real v9.
+
+**Open questions for Rene before this ships:**
+- Confirm the chosen defaults: `--hpf` 25 Hz, `--notch` 60 Hz / 4 Hz-wide /
+  -20 dB depth, LPF clamp margin (90% of Nyquist).
+- Confirm the diagnostic hard-block category set (CLIPPING/DROPOUT/
+  BALANCE/PHASE) is the right line between "blocks publish" and
+  "informational."
+- Review the diff, then commit — nothing has been committed or pushed.
+
 ### `jerry-cafe-java-1999-06-17` — blocked on Rene redoing tonight's lost fade edits
 14 of 27 tracks had genuine `CLIPPING` verdicts (the worst clipping load of
 any show this session) — Rene chose to add fade in/out across **all 27**
@@ -131,15 +195,155 @@ work was lost tonight (see incident notice at top) and he's redoing it
    committing — this show is a strong candidate for it given how many
    tracks have cross-archive title matches.
 
+## 💡 Proposed: archive-wide audio quality & loudness plan (preliminary — separate chat, nothing built yet)
+
+Rene asked in a separate chat for a preliminary plan to improve audio
+quality and loudness consistency across the whole archive. That
+conversation lives in `codex-notes.md`'s four most recent sections (23:05
+PDT "Audio quality and processing-pipeline review" through 00:26 PDT
+"Decision note: combined-treatment eligibility") — **nothing here is
+built or scheduled, it's a proposal awaiting Rene's decisions.**
+
+**Two distinct problems found, not one:**
+- **Applause-limited tracks sit systematically under target.** The
+  "Butter" case (three performances of the same song at -21.65 / -20.00 /
+  -20.03 LUFS) turned out to be the applause-limiter mode working as
+  designed, not a one-off: a 12-track sample found 8/12 were
+  applause-limited, most 1–3.5 dB under -20 LUFS (one as low as -23.57).
+  When a clap/cheer out-peaks the music, gain gets capped to protect that
+  peak and the whole track lands quieter than it needs to.
+- **Sparse isolated high peaks anywhere in a track** — already what v8's
+  `sparse-transient-cap` targets, but (a) not yet applied to every
+  eligible track and (b) explicitly *not* currently combined with
+  applause-limiter (two stacked limiters was correctly banned — unpredictable
+  combined attenuation/provenance).
+- **Not a problem:** genuinely high-LRA performances (e.g. an early
+  Hollywood take integrating -23.25 LUFS but peaking -9.7 LUFS for 3s
+  stretches) — real dynamics, don't chase with more gain.
+
+**Core proposal — workflow v9, one coordinated render instead of two
+stacked limiters:** mask the applause region, compute one constant
+musical gain, apply region-aware applause control and sparse-transient
+control together from the original lossless source, one 6 dB ceiling
+across the whole track, one final true-peak assertion. New mode value
+`applause+sparse-transient-cap`. Simulated on Butter
+(`jerry-cafe-java-1999-03-25`): -20.01 LUFS, -1.49 dBTP, 0.2 LU LRA
+change — but this is a **simulation, not a listening test**; per existing
+policy (same bar as the applause-limiter and v8 itself), needs Rene
+A/B'ing loudness-matched renders across ≥2 independent shows before it
+becomes policy.
+
+**Amended sequencing after reviewing codex-notes' four newest sections plus
+a later 08:24 PDT note** (Rene's calls on all of this, nothing else
+started beyond the six filter fixes above):
+
+0. **Filter bug fixes** — done, see above, awaiting Rene's review/commit.
+1. **NEW — establish an all-v8 baseline before designing/validating v9.**
+   This was the biggest correction from reviewing codex's latest note: six
+   shows still carry v5 provenance (114 tracks) and must be fully
+   reprocessed through the current v8 engine *before* any v9 work starts,
+   because a v9 loudness study built on a population that might still
+   contain silently-dynamic v≤5 renders (the `dynamic_fallback_bug`) would
+   be measuring noise, not signal. One show's sidecar already shows the
+   danger concretely: `jerry-cafe-java-1999-03-25` has v5 entries whose
+   `mode` field says `sparse-transient-cap` — a mode that only exists in
+   v8 — proving version/treatment/bytes can't be trusted together without
+   a clean re-render. The six: `jerry-19-broadway-1999-06-07` (17v5/12v8),
+   `jerry-cafe-java-1999-03-25` (still mixed — only 10/21 tracks got v8
+   this session), `jerry-cafe-java-1999-05-27` (20v5),
+   `jerry-cafe-java-1999-06-17` (27v5, blocked on Rene's re-edit — see
+   above), `mad-marin-brewing-co-1998-04-01` (17v5), and
+   `mad-marin-brewing-co-1999-04-01` (15v5 — reprocess this one too even
+   though it showed no confirmed dynamic-fallback drift, for a clean
+   baseline). This subsumes and supersedes item 1 under "Next session"
+   below — same shows, now framed as a v9 prerequisite rather than an
+   independent worklist.
+2. **Phase 0 validation A/B for the combined mode** — gates everything
+   past it. Sharper candidate list than originally floated: codex's
+   12-track eligibility sample gives two *named* review-tier cases with
+   specific reasons (Anna May 2001-01-08 — 0.30s longest event, just over
+   the 0.20s automatic envelope; Luxury of Murder — 0.6 LU simulated LRA
+   change, just over the 0.5 LU gate) plus several confirmed-automatic
+   controls (Houses of the Holy, Anna May 1999-09-09, Woman, Grey Funnel
+   Line). Use those two review-tier tracks as the actual validation set,
+   not a generic sample — they're the ones the eligibility math itself
+   flagged as borderline.
+3. **Phase 1 — applause-limited tracks archive-wide**, most bounded/
+   best-characterized population. Decision gates now finalized (not just
+   drafted) with a fourth tier added: **auto** ≤1% engagement/≤0.20s
+   events/≤6dB reduction/≤0.5 LU LRA change; **review** 1–2%/0.20–0.50s/
+   borderline LRA (auto-generate loudness-matched A/B clips at the
+   flagged timestamps); **reject** >2%/>0.50s/>6dB/sustained loud passages;
+   **skip** — already within ~0.5 dB of target, not worth processing at
+   all. In the 12-track sample, 6/8 applause-limited tracks passed
+   automatic outright, 2 needed review, 0 were rejected — real evidence
+   this phase is worth doing, not proof every track should get it. First
+   step when this phase starts: a read-only scan of every
+   `mode: applause-limiter` track for an exact auto/review/reject/skip
+   split before touching any audio.
+4. **Phase 3 — cross-performance consistency scan** (cheap, read-only,
+   could run anytime/early): for every song with 2+ performances, diff
+   integrated LUFS across performances, flag gaps above ~1 dB (threshold
+   TBD by Rene) — the systematic version of how Butter was found by
+   accident.
+5. **Phase 2 — remaining non-applause sparse-transient stragglers**,
+   folds into the existing 16-show transient-cap-candidate worklist and
+   the (now superseded-by-item-1) dynamic-fallback worklist.
+
+**Explicitly excluded:** dense/repeated-peak tracks (Truck, 12.3%
+near-peak — that's the deferred `drum-control` proposal, needs its own
+A/B evidence/decision, not folded in here) and wide-dynamic performances
+like Hollywood — confirmed correct by codex's own 12-track sample: Hollywood
+was the one track it actually rejected, for 1.05s of continuous engagement
+and a genuine 3-second loudness spike to -9.7 LUFS, not a processing
+artifact. Better fit, if anything, for the client-side "louder playback"
+toggle than for reprocessing the master (see next point).
+
+**NEW — a way to address some of this without touching masters at all.**
+Codex's 23:48 PDT note proposes consolidating the site's four separate
+player implementations into one shared browser `AudioEngine` (one
+`HTMLAudioElement`, one gain+true-peak-limiter graph) that applies
+offline-computed per-track playback profiles (approved gain, applause
+regions, limiter constraints) at listen time — normalizing "Butter sounds
+quiet next to itself" at playback rather than by reprocessing and
+republishing the archival master. This doesn't replace the v9 master-level
+work, but it's a real alternative/complement, not just a footnote under
+"deferred louder playback" — it's the same architectural work the player
+already needs for its known engine-duplication problem. Added as an
+explicit open decision below rather than silently folded in.
+
+**Considered and rejected, not just unmentioned:** raising the archive-wide
+target to -16 LUFS. Codex ran the actual numbers on all 680 tracks' existing
+provenance: median predicted peak reduction 4.7 dB, 66.6% of tracks need
+3–6 dB, 19.4% need more than 6 dB — incompatible with the honesty policy
+that already governs -20. Staying at -20 LUFS for archival masters remains
+the recommendation; a separately-labeled "Louder playback" convenience
+path (see above) is the sanctioned way to make direct listening louder.
+
+**What's explicitly *not* proposed:** any blanket EQ/brightening/heavier-
+NR pass across the archive — codex-notes' review concluded that would be
+more likely to damage 20+ year old DAT/audience recordings than help,
+given how careful the existing pipeline already is. Noise
+reduction/restoration stays manual and per-tape (Audacity, Residue-mode
+listening), same as today — not batched.
+
+**Open decisions for Rene before anything past the filter fixes is
+built:** whether to proceed with the six-show v8-baseline prerequisite
+(item 1) before any v9 design work; Phase 0's validation set (Anna May
+2001-01-08 + Luxury of Murder, per above); the cross-performance scan's
+dB threshold; and whether the shared browser-engine "louder playback"
+path should be pursued in parallel with, instead of, or after the
+master-level v9 work.
+
 ## 🔜 Next session
 
-### 1. Five more dynamic-fallback shows remain on the worklist
-Now that `06-17`, `04-29`, `08-23`, and `03-25` are done: remaining —
-`jerry-19-broadway-1999-06-07` (17 v5 tracks still need a decision on full
-v8 vs. leave as-is), `jerry-cafe-java-1999-05-27` (4/20, mild),
-`mad-marin-brewing-co-1998-04-01` (2/16, mild). `06-17` itself is the
-worklist's remaining "not started" entry (14/27) but is blocked, see
-above. `mad-marin-brewing-co-1999-04-01` needs no action (0/16 drifted).
+### 1. Five more dynamic-fallback shows — now reframed as the v9 prerequisite
+See "NEW — establish an all-v8 baseline before designing/validating v9"
+under the proposed plan above — same six shows (this list plus
+`mad-marin-brewing-co-1999-04-01`, previously marked "no action needed"
+but now wanted for a clean v9 baseline regardless), now framed as blocking
+the loudness-plan work rather than an independent cleanup item. Don't
+track it in two places — that section is now authoritative.
 
 ### 2. `draft_tracks.py` silently drops a show's own correct tags — needs a real decision from Rene
 Confirmed twice this session (Father and Son's `guest` tag, Da Da Da's

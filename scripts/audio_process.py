@@ -12,8 +12,8 @@ Subcommands
       (clipcheck.py) on any file whose peak reaches full scale. MP3 sources are
       reported and skipped (lossless-only rule). Writes diagnostic_report.txt.
 
-  process <input-folder> <output-folder> --target LUFS [--hpf] [--lpf] [--notch]
-          [--slug SLUG]
+  process <input-folder> <output-folder> --target LUFS [--hpf [FREQ]] [--lpf]
+          [--notch [FREQ]] [--notch-harmonics N] [--slug SLUG]
       Phase 2. Two-pass loudnorm to target / -1 dBTP, output mirrors the input
       container, plus a derived 320k MP3 and an audio MD5 per track. Re-measures
       the output (Pass 3) and VERIFIES it (flags TP over ceiling or LUFS drift).
@@ -30,6 +30,7 @@ MP3 is always derived from the processed lossless master.
 """
 import argparse
 import datetime
+import hashlib
 import json
 import os
 import re
@@ -44,6 +45,21 @@ ARTIST_TARGET = {"jerry": -20, "sean": -20, "seanjerry": -20, "mad": -20}
 TP_CEILING = -1.0
 TP_TOL = 0.1      # warn if achieved TP exceeds the ceiling by more than this
 LUFS_TOL = 0.5    # warn if achieved LUFS drifts from target by more than this
+
+# ── optional corrective filters (--hpf / --lpf / --notch) ─────────────────────
+HPF_DEFAULT_HZ = 25.0    # bare --hpf: DC/subsonic rumble only, well clear of the
+                         # guitar's 82 Hz low E. 80 Hz (the old always-on default)
+                         # is still available via an explicit --hpf 80, a deliberate
+                         # per-recording choice, never the flag's own default.
+LPF_DEFAULT_HZ = 18000.0
+LPF_NYQUIST_MARGIN = 0.9  # if the requested cutoff is at/above a source's Nyquist
+                          # frequency (a no-op filter, false confidence), clamp to
+                          # this fraction of Nyquist instead of silently doing nothing
+NOTCH_DEFAULT_HZ = 60.0  # US mains hum; pass --notch 50 for 50 Hz-mains recordings
+NOTCH_WIDTH_HZ = 4.0     # genuinely narrow — width_type=h (literal Hz), not the old
+                         # width_type=o:width=2 (two OCTAVES, ~25 dB down at the
+                         # guitar's 82 Hz low E — that was never a "notch")
+NOTCH_DEPTH_DB = -20.0
 MP3_TP_MAX_ATTEMPTS = 3  # v6: lossy encoding can overshoot the FLAC's true peak; retry the
                          # MP3 encode alone (never the FLAC master) with a small extra trim
                          # instead of just flagging it, mirroring the applause true-peak loop
@@ -349,6 +365,39 @@ WORKFLOW_VERSIONS = {
                              "lowpass=f=18000", "60Hz notch"],
     },
 }
+# NOT bumped to v9 for the 2026-08-12 correctness-fix batch below (notch/hpf/lpf
+# option fixes + resume recipe-hash invalidation + shared MP3 QA) — HANDOFF.md's
+# separate archive-wide loudness-consistency proposal has already claimed
+# "workflow v9" for its own (much larger, unapproved) coordinated
+# applause+sparse-transient-cap render, and that same document explicitly
+# recommends shipping these exact filter/resume fixes as "their own small
+# change" ahead of it. Bumping here would collide with that reserved number.
+# Safe not to version: grep of every data/processing/*.json sidecar confirms
+# no published track was ever processed with --hpf, --lpf, or --notch (all
+# three were only ever exercised via the separate literal --eq chain, e.g.
+# mad-sweetwater-2001-01-06) — no existing provenance's `ver`/`chain` meaning
+# is disturbed. --notch is no longer two-octave-wide cuts (was ~25.5 dB down
+# at the guitar's own 82 Hz low E — a de facto bass cut, not a notch); it's
+# now a literal few-Hz-wide cut (width_type=h:width=4) at a configurable
+# frequency (--notch [FREQ], default 60 Hz; pass 50 for 50 Hz-mains
+# recordings), harmonics opt-in only (--notch-harmonics N, default 0). --hpf's
+# bare-flag default drops from 80 Hz (uncomfortably close to that same 82 Hz
+# low E) to 25 Hz (DC/subsonic rumble only); 80 Hz is still reachable via an
+# explicit --hpf 80. --lpf's 18 kHz cutoff is now checked per track against
+# that track's real sample rate and clamped below Nyquist (with a printed
+# note) instead of silently no-op'ing on a low-sample-rate source. Resume-skip
+# now records a `recipe_sig` (hash of target/filters/transient-cap opt-ins/
+# WORKFLOW_VERSION) and `src_md5` per track, and only trusts a resume when
+# both match the current run's request and the existing output's own audio
+# MD5 matches its recorded provenance — closing a bug where a later run
+# requesting a different recipe for an unchanged source could silently skip
+# rendering while writing provenance describing the newly-requested (never
+# actually rendered) chain. Only enforced when a track's provenance already
+# has `recipe_sig` recorded, so this doesn't force a reprocess of existing
+# shows. The per-track MP3 encode/trim/verify loop is now a shared
+# encode_mp3_with_qa() function (provenance gains an additive `mp3_md5`
+# field), also adopted by make_stream_mp3.py for whole-show stream proxies in
+# place of a weaker ad hoc encode with none of that QA.
 
 
 def show_tags(slug):
@@ -633,6 +682,57 @@ def audio_md5(path):
     return out.replace("MD5=", "")
 
 
+def encode_mp3_with_qa(src_path, mp3_path, target, tags, bitrate="320k",
+                       max_attempts=MP3_TP_MAX_ATTEMPTS, on_trim=None):
+    """Encode `src_path` (a lossless master) to an MP3 proxy at `mp3_path`
+    with the same QA the per-track pipeline has always used, factored out so
+    any other MP3-proxy encoder (e.g. make_stream_mp3.py's whole-show
+    proxies) can reuse it instead of a weaker ad hoc encode:
+
+    - lossy encoding can overshoot the source's own true peak even when the
+      source is clean (inter-sample reconstruction on decode) — measure the
+      encoded MP3's true peak and, if it would clip on decode, trim a small
+      extra MP3-ONLY gain and re-encode (never touching the source's own
+      gain — this is an MP3-only, listener-convenience-format concern), same
+      measure-and-correct pattern as the applause/transient-cap true-peak
+      loops (v6).
+    - `measure()` is ffmpeg's own loudnorm/ebur128 analysis pass, which must
+      fully decode the file to produce a result — a corrupt/truncated MP3
+      fails loudly there instead of shipping silently, so this doubles as
+      the decode-verification step.
+    - the encode's own checksum is returned so the caller can record it in
+      provenance, same as every lossless master already does.
+
+    Returns a dict: `ok` (encode succeeded at all), and on success `lufs`,
+    `tp`, `trim_db` (total MP3-only gain trim applied, 0.0 if none needed),
+    and `md5`. On failure, `ok` is False and `stderr` holds ffmpeg's error.
+    A persistently-over-ceiling MP3 after `max_attempts` still returns
+    `ok=True` (matches the existing per-track warn-don't-block behavior) —
+    the caller decides whether `tp` warrants a warning.
+    """
+    trim_db = 0.0
+    out_i = out_tp = None
+    for attempt in range(1, max_attempts + 1):
+        af = f"volume={trim_db}dB:precision=double" if trim_db else None
+        cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", src_path]
+        if af:
+            cmd += ["-af", af]
+        cmd += ["-b:a", bitrate, "-id3v2_version", "3"] + tags + [mp3_path]
+        r = subprocess.run(cmd, capture_output=True, text=True)
+        if r.returncode != 0:
+            return {"ok": False, "stderr": r.stderr, "trim_db": trim_db}
+        j = measure(mp3_path, target)
+        out_i, out_tp = float(j["input_i"]), float(j["input_tp"])
+        if out_tp <= TP_CEILING + TP_TOL or attempt == max_attempts:
+            break
+        new_trim = round(trim_db - (out_tp - TP_CEILING) - 0.1, 2)
+        if on_trim:
+            on_trim(attempt, out_tp, new_trim)
+        trim_db = new_trim
+    return {"ok": True, "lufs": out_i, "tp": out_tp, "trim_db": trim_db,
+           "md5": audio_md5(mp3_path)}
+
+
 def output_codec(bits, sample_fmt, container):
     """Return ffmpeg output args for the target container, preserving bit depth."""
     b = str(bits or "")
@@ -791,18 +891,44 @@ def cmd_diagnose(args):
 
 # ── process (Phase 2) ─────────────────────────────────────────────────────────
 
-def build_filters(args):
+def build_filters(args, sr=None):
+    """Assemble the optional pre-loudnorm filter chain. `sr` (the source's own
+    sample rate) is optional — omit it for a nominal/summary rendering of what
+    was requested (e.g. a report header); pass it when actually building the
+    chain for a specific track so --lpf can be checked against that track's
+    real Nyquist frequency (different tracks in one folder can, in principle,
+    have different sample rates)."""
     chain = []
     if getattr(args, "eq", None):
         chain.append(args.eq)              # literal corrective-EQ chain (v2), applied first
-    if args.hpf:
-        chain.append("highpass=f=80")
-    if args.lpf:
-        chain.append("lowpass=f=18000")
-    if args.notch:
-        chain.append("equalizer=f=60:width_type=o:width=2:g=-20,"
-                     "equalizer=f=120:width_type=o:width=2:g=-10,"
-                     "equalizer=f=180:width_type=o:width=2:g=-6")
+    if getattr(args, "hpf", None) is not None:
+        chain.append(f"highpass=f={args.hpf:g}")
+    if getattr(args, "lpf", False):
+        freq = LPF_DEFAULT_HZ
+        if sr is not None:
+            nyquist = sr / 2
+            if freq >= nyquist:
+                clamped = round(nyquist * LPF_NYQUIST_MARGIN)
+                print(f"  note: --lpf {freq:g} Hz is at/above this source's Nyquist "
+                      f"frequency ({nyquist:.0f} Hz at {sr} Hz sample rate) — a "
+                      f"filter at {freq:g} Hz would be a silent no-op, so clamping "
+                      f"to {clamped} Hz instead", flush=True)
+                freq = clamped
+        chain.append(f"lowpass=f={freq:g}")
+    if getattr(args, "notch", None) is not None:
+        # Narrow, genuinely a "notch" (a few Hz wide via width_type=h), not the
+        # old two-octave-wide cut that measured ~25.5 dB down at the guitar's
+        # 82 Hz low E. Harmonics are opt-in (--notch-harmonics) rather than
+        # stacked automatically — this is a code fix, not a per-recording
+        # tuning session, so don't guess which harmonics are actually present.
+        freq = args.notch
+        n_harm = getattr(args, "notch_harmonics", 0) or 0
+        notches = [f"equalizer=f={freq:g}:width_type=h:width={NOTCH_WIDTH_HZ:g}:"
+                   f"g={NOTCH_DEPTH_DB:g}"]
+        for h in range(2, 2 + n_harm):
+            notches.append(f"equalizer=f={freq * h:g}:width_type=h:"
+                           f"width={NOTCH_WIDTH_HZ:g}:g={NOTCH_DEPTH_DB:g}")
+        chain.append(",".join(notches))
     return ",".join(chain)
 
 
@@ -1260,6 +1386,25 @@ def _num_map(s):
     return out
 
 
+def recipe_signature(target, filt, tc_on, tc_partial, tc_force, tc_maxgr):
+    """Hash of everything that fully determines one track's render — apart
+    from the source audio itself — so a resume decision can prove "this run
+    would compute the identical recipe" instead of just "an output file
+    happens to exist and isn't older than the source". Previously a resume
+    trusted mtime alone: a later run requesting a different target, filter
+    chain, or transient-cap treatment for the same track could silently
+    reuse stale audio while still writing provenance describing the newly
+    requested (but never actually rendered) chain. Workflow version is
+    included because a version bump can change what a given mode/target
+    combination actually renders even with identical CLI flags."""
+    payload = json.dumps({
+        "workflow_version": WORKFLOW_VERSION, "target": target, "filters": filt,
+        "transient_cap": tc_on, "transient_cap_partial": tc_partial,
+        "transient_cap_force": tc_force, "transient_cap_max_gr": tc_maxgr,
+    }, sort_keys=True)
+    return hashlib.sha256(payload.encode()).hexdigest()[:16]
+
+
 def cmd_plan(args):
     """Dry run: the exact per-track decisions `process` would make, no audio
     written. Table + normalization_plan.txt in the input folder."""
@@ -1338,7 +1483,11 @@ def cmd_process(args):
     if not files:
         raise SystemExit(f"no .flac/.wav files in {infolder}")
     preflight_track_files(files)
-    filt = build_filters(args)
+    # nominal/unclamped, for the processing_report.txt header only — the actual
+    # per-track chain (below) is Nyquist-aware and can differ from this on an
+    # unusual low-sample-rate source; that per-track deviation is always
+    # visible in that track's own recorded `chain`.
+    filt_summary = build_filters(args)
 
     tag_ctx = show_tags(args.slug) if args.slug else None
     if args.slug and tag_ctx is None:
@@ -1365,6 +1514,15 @@ def cmd_process(args):
         out_mp3 = os.path.join(outfolder, os.path.splitext(f)[0] + ".mp3")
         num = lead_num(f)
 
+        # Probed up front (not just in the render branch below) so the filter
+        # chain can be built against THIS track's real sample rate — different
+        # tracks in one folder can, in principle, have different rates, and
+        # --lpf's Nyquist check needs to be per-track, not a single folder-wide
+        # guess (fix for #6: an 18 kHz low-pass on a 32 kHz/16 kHz-Nyquist
+        # source used to silently do nothing).
+        info = probe(src)
+        filt = build_filters(args, sr=int(info["sr"]))
+
         # Decide the effective per-track handling up front (source-only, cheap —
         # needed whether we process fresh or resume-skip). See plan_track: plain
         # linear when the nominal target fits under the TP ceiling; the v4
@@ -1377,6 +1535,12 @@ def cmd_process(args):
         tc_partial = num in _num_set(getattr(args, "transient_cap_partial", ""))
         tc_force = num in _num_set(getattr(args, "transient_cap_force", ""))
         tc_maxgr = _num_map(getattr(args, "transient_cap_max_gr", "")).get(num)
+        recipe_sig = recipe_signature(target, filt, tc_on, tc_partial, tc_force, tc_maxgr)
+        # Decoded once up front (extra cost paid on every track, resumed or
+        # not) so a resume decision can prove "these are the exact bytes the
+        # existing output's provenance claims to be built from", not just
+        # "mtime looks plausible" — the source-side half of the #2 fix.
+        src_md5 = audio_md5(src)
         plan = plan_track(src, target, pre=filt, transient_cap=tc_on,
                           tcap_partial=tc_partial, tcap_force=tc_force,
                           tcap_max_gr=tc_maxgr)
@@ -1404,13 +1568,52 @@ def cmd_process(args):
         # Resume-skip only if the existing output isn't stale: if the source was
         # re-exported (e.g. Rene fixed a click in Audacity) after this render, its
         # mtime moves past the output's and the old render must not be trusted
-        # just because a same-named file happens to exist.
-        stale = (os.path.exists(out_audio) and os.path.exists(out_mp3)
-                 and os.path.getmtime(out_audio) < os.path.getmtime(src))
-        if stale:
+        # just because a same-named file happens to exist. Also stale if the
+        # RECIPE changed — target, filter chain, or transient-cap treatment —
+        # even though the source bytes and mtime didn't. Previously only mtime
+        # was checked, so a later run requesting a different --target/--eq/
+        # --hpf/--transient-cap for an unchanged source would silently reuse
+        # the old render while writing provenance describing the newly
+        # requested (but never actually rendered) chain. `recipe_sig` is only
+        # compared when the existing provenance entry has one recorded — older
+        # entries that predate this check fall back to the mtime rule alone,
+        # so this fix doesn't force a mass reprocess of the whole archive.
+        prev_entry = prev_tracks.get(str(num), {})
+        recipe_changed = ("recipe_sig" in prev_entry
+                          and prev_entry["recipe_sig"] != recipe_sig)
+        src_changed = ("src_md5" in prev_entry
+                       and prev_entry["src_md5"] != src_md5)
+        mtime_stale = (os.path.exists(out_audio) and os.path.exists(out_mp3)
+                       and os.path.getmtime(out_audio) < os.path.getmtime(src))
+        stale = os.path.exists(out_audio) and os.path.exists(out_mp3) \
+            and (mtime_stale or recipe_changed or src_changed)
+        if recipe_changed:
+            print(f"  {f}: the requested recipe (target/filters/transient-cap) "
+                  "differs from what produced the existing output — ignoring it "
+                  "and reprocessing", flush=True)
+        elif src_changed:
+            print(f"  {f}: source audio MD5 differs from what produced the "
+                  "existing output (re-export with unchanged mtime?) — ignoring "
+                  "it and reprocessing", flush=True)
+        elif stale:
             print(f"  {f}: source is newer than the existing output — "
                   "ignoring it and reprocessing", flush=True)
         resumable = (os.path.exists(out_audio) and os.path.exists(out_mp3) and not stale)
+        if resumable:
+            # Confirm the existing output's bytes actually match what its own
+            # recorded provenance claims before trusting a resume-skip at all
+            # — recipe/mtime agreement doesn't by itself prove the file on
+            # disk wasn't hand-edited, partially re-exported, or left over
+            # from an interrupted run.
+            existing_md5 = prev_entry.get("md5")
+            if existing_md5:
+                out_md5_now = audio_md5(out_audio)
+                if out_md5_now != existing_md5:
+                    print(f"  {f}: existing output's audio MD5 doesn't match its "
+                          f"own recorded provenance ({out_md5_now[:8]} vs "
+                          f"{existing_md5[:8]}) — cannot trust this resume-skip; "
+                          "reprocessing", flush=True)
+                    resumable = False
         if resumable and tcap:
             # A resumed tcap render is only trusted when it can PROVE its
             # chain: the .v8state.json written beside the accepted render
@@ -1483,7 +1686,6 @@ def cmd_process(args):
                 print(f"  {f}: linear gain to {target} LUFS would hit {plan['pred']:+.2f} dBTP "
                       f"(> {TP_CEILING}) — using {used_target:+.1f} LUFS instead to keep "
                       f"true linear normalization (preserves fades/dynamics)", flush=True)
-            info = probe(src)
             in_I = in_I_chk
             pre = (filt + ",") if filt else ""
             codec = output_codec(info["bits"], info["sample_fmt"], container)
@@ -1610,29 +1812,21 @@ def cmd_process(args):
             # this — it's an MP3-only, listener-convenience-format concern — so trim
             # a small extra volume cut into the MP3 encode alone and re-measure,
             # same measure-and-correct pattern as the applause true-peak loop above.
-            mp3_trim_db = 0.0
-            for mp3_attempt in range(1, MP3_TP_MAX_ATTEMPTS + 1):
-                mp3_af = f"volume={mp3_trim_db}dB:precision=double" if mp3_trim_db else None
-                mp3_cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", out_audio]
-                if mp3_af:
-                    mp3_cmd += ["-af", mp3_af]
-                mp3_cmd += ["-b:a", "320k", "-id3v2_version", "3"] + tags + [out_mp3]
-                r2 = subprocess.run(mp3_cmd, capture_output=True, text=True)
-                if r2.returncode != 0:
-                    break
-                mp3_tp_now = float(measure(out_mp3, used_target)["input_tp"])
-                if mp3_tp_now <= TP_CEILING + TP_TOL or mp3_attempt == MP3_TP_MAX_ATTEMPTS:
-                    break
-                mp3_trim_db = round(mp3_trim_db - (mp3_tp_now - TP_CEILING) - 0.1, 2)
-                print(f"  {f}: MP3 true peak {mp3_tp_now:+.2f} dBTP — trimming MP3-only "
-                      f"gain to {mp3_trim_db:.2f} dB total and re-encoding", flush=True)
-            if r2.returncode != 0:
-                print(f"  MP3 FAIL {f}: {r2.stderr[-200:]}", flush=True)
+            # Factored into encode_mp3_with_qa() (also reused by make_stream_mp3.py's
+            # whole-show proxies) so both encoders get the identical QA.
+            mp3_result = encode_mp3_with_qa(
+                out_audio, out_mp3, used_target, tags,
+                on_trim=lambda attempt, tp_now, new_trim: print(
+                    f"  {f}: MP3 true peak {tp_now:+.2f} dBTP — trimming MP3-only "
+                    f"gain to {new_trim:.2f} dB total and re-encoding", flush=True))
+            if not mp3_result["ok"]:
+                print(f"  MP3 FAIL {f}: {mp3_result['stderr'][-200:]}", flush=True)
                 continue
             j2 = measure(out_audio, used_target)
 
         out_I, out_TP, out_LRA = float(j2["input_i"]), float(j2["input_tp"]), float(j2["input_lra"])
         md5 = audio_md5(out_audio)
+        mp3_md5 = audio_md5(out_mp3)
         max_m, max_s = max_short_term_momentary(out_audio)
         # the lossy encode can overshoot the FLAC's peaks — measure the MP3's
         # true peak too and warn if it would clip on decode
@@ -1680,13 +1874,17 @@ def cmd_process(args):
             entry = {"ver": entry_ver, "chain": track_chain,
                      "lufs": round(out_I, 2), "tp": round(out_TP, 2),
                      "mp3_tp": round(mp3_tp, 2), "max_m": max_m, "max_s": max_s,
-                     "lra": round(out_LRA, 2), "plr": plr, "md5": md5}
+                     "lra": round(out_LRA, 2), "plr": plr, "md5": md5, "mp3_md5": mp3_md5}
             if in_I is not None:
                 entry = {"ver": entry_ver, "chain": track_chain,
                          "in_lufs": round(in_I, 1),
                          "lufs": round(out_I, 2), "tp": round(out_TP, 2),
                          "mp3_tp": round(mp3_tp, 2), "max_m": max_m, "max_s": max_s,
-                         "lra": round(out_LRA, 2), "plr": plr, "md5": md5}
+                         "lra": round(out_LRA, 2), "plr": plr, "md5": md5, "mp3_md5": mp3_md5}
+            # #2 fix: recorded so the NEXT run can prove a resume-skip's recipe
+            # and source bytes both still match, instead of trusting mtime alone
+            entry["recipe_sig"] = recipe_sig
+            entry["src_md5"] = src_md5
             if used_target != target:
                 entry["target_lufs"] = used_target
             if limiter:
@@ -1730,7 +1928,7 @@ def cmd_process(args):
     # processing report
     rp = ["PROCESSING REPORT",
           f"Generated: {datetime.datetime.now().isoformat(timespec='seconds')}",
-          f"Filters: {filt or 'none'}", f"Target: {target} LUFS / {TP_CEILING} dBTP",
+          f"Filters: {filt_summary or 'none'}", f"Target: {target} LUFS / {TP_CEILING} dBTP",
           "=" * 43, "",
           f"{'File':40s}|{'In LUFS':8s}|{'Out LUFS':8s}|{'Out TP':8s}|Status",
           "-" * 82]
@@ -1765,7 +1963,7 @@ def cmd_process(args):
             "slug": args.slug, "target_lufs": whole(target), "tp_ceiling": whole(TP_CEILING),
             "source": f"{info0['bits']}-bit / {int(info0['sr'])//1000} kHz {cont}",
             **({"pre_edits": pre_edits} if pre_edits else {}),
-            "filters": filt or "none",
+            "filters": filt_summary or "none",
             # last-run context; the per-track `ver`/`chain` are the authoritative
             # record for mixed-version shows.
             "workflow_version": WORKFLOW_VERSION, "ffmpeg": ffmpeg_version(),
@@ -2101,9 +2299,29 @@ def main():
     p.add_argument("input")
     p.add_argument("output")
     p.add_argument("--target", type=float, required=True)
-    p.add_argument("--hpf", action="store_true", help="high-pass 80 Hz")
-    p.add_argument("--lpf", action="store_true", help="low-pass 18 kHz")
-    p.add_argument("--notch", action="store_true", help="60 Hz hum notch")
+    p.add_argument("--hpf", nargs="?", const=HPF_DEFAULT_HZ, type=float, default=None,
+                   metavar="FREQ",
+                   help=f"high-pass at FREQ Hz (default {HPF_DEFAULT_HZ:g} Hz when "
+                        "given with no value — DC/subsonic rumble only). 80 Hz sits "
+                        "close enough to the guitar's 82 Hz low E to thin acoustic "
+                        "guitar, so reaching up that high needs an explicit "
+                        "frequency, e.g. --hpf 80, never the bare flag's default")
+    p.add_argument("--lpf", action="store_true",
+                   help=f"low-pass at {LPF_DEFAULT_HZ:g} Hz; automatically clamped "
+                        "below the source's own Nyquist frequency (with a printed "
+                        "note) instead of silently applying a no-op filter on a "
+                        "low-sample-rate source")
+    p.add_argument("--notch", nargs="?", const=NOTCH_DEFAULT_HZ, type=float, default=None,
+                   metavar="FREQ",
+                   help=f"narrow mains-hum notch at FREQ Hz (default {NOTCH_DEFAULT_HZ:g} "
+                        "Hz -- US mains -- when given with no value; pass 50 for a "
+                        "50 Hz-mains recording). Genuinely narrow (a few Hz wide), "
+                        "unlike the old two-octave-wide cut this replaces")
+    p.add_argument("--notch-harmonics", dest="notch_harmonics", type=int, default=0,
+                   help="also notch this many harmonics above --notch's fundamental "
+                        "(0, the default, = fundamental only; e.g. 2 adds narrow "
+                        "notches at 2x/3x as well) — opt in only when a harmonic is "
+                        "actually visible/audible on that recording, not by default")
     p.add_argument("--eq", help="literal ffmpeg corrective-EQ chain applied before "
                                 "loudnorm (e.g. de-mud + presence + air for a muffled tape); "
                                 "recorded per-track in provenance")
