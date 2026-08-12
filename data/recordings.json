@@ -4754,7 +4754,7 @@
           "size_mb": 9,
           "file": "MP3/JerryHannan - Cafe Java 1999-03-25/03 Truck.mp3",
           "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/03 Truck.flac",
-          "flac_size_mb": 31,
+          "flac_size_mb": 32,
           "processed": true,
           "tags": [
             "original",
@@ -4812,8 +4812,8 @@
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:39",
           "size_mb": 9,
-          "file": "MP3/JerryHannan - Cafe Java 1999-03-25/07 Good Life.mp3",
-          "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/07 Good Life.flac",
+          "file": "MP3/JerryHannan - Cafe Java 1999-03-25/07 The Good Life.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/07 The Good Life.flac",
           "flac_size_mb": 32,
           "processed": true,
           "tags": [
@@ -4843,7 +4843,7 @@
           "size_mb": 7,
           "file": "MP3/JerryHannan - Cafe Java 1999-03-25/09 Luxury of Murder.mp3",
           "flac": "FLAC/JerryHannan - Cafe Java 1999-03-25/09 Luxury of Murder.flac",
-          "flac_size_mb": 24,
+          "flac_size_mb": 25,
           "processed": true,
           "tags": [
             "original"
@@ -11758,6 +11758,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-11",
+      "ts": "2026-08-11T17:25:12.000000",
+      "slug": "jerry-cafe-java-1999-03-25",
+      "report": true,
+      "text": "Reprocessed 10 of the 21 tracks on Jerry Hannan's solo show at Cafe Java from March 25, 1999 (v5→v8) — the tracks affected by a since-fixed bug in the older workflow that could silently flatten a track's natural dynamics instead of applying true linear gain. Seven tracks now qualify for the sparse-transient-cap mode, reaching the full −20 LUFS target: \"Truck,\" \"ABC,\" \"The Good Life,\" \"Blind Man,\" \"Luxury of Murder,\" \"Model Family Man,\" and \"The Parting Glass.\" Three more — \"Illegal Smile,\" \"Butter,\" and \"Anna May\" — are handled by the applause-only limiter and land a little short of the full target rather than over-shaved (−21.4, −21.6, and −24.5 respectively). The remaining 11 tracks were already correct under the older workflow and were left untouched. Also corrected a title left over from an earlier fix: track 7's filename read \"Good Life\" instead of the archive's established \"The Good Life.\""
+    },
     {
       "date": "2026-08-11",
       "ts": "2026-08-11T15:41:25.000000",

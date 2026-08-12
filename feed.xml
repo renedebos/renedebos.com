@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Reprocessed 10 of the 21 tracks on Jerry Hannan's solo show at Cafe Java from March 25, 1…</title>
+    <link>https://renedebos.com/shows/jerry-cafe-java-1999-03-25/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-11-jerry-cafe-java-1999-03-25</guid>
+    <pubDate>Tue, 11 Aug 2026 17:25:12 +0000</pubDate>
+    <description>Reprocessed 10 of the 21 tracks on Jerry Hannan's solo show at Cafe Java from March 25, 1999 (v5→v8) — the tracks affected by a since-fixed bug in the older workflow that could silently flatten a track's natural dynamics instead of applying true linear gain. Seven tracks now qualify for the sparse-transient-cap mode, reaching the full −20 LUFS target: "Truck," "ABC," "The Good Life," "Blind Man," "Luxury of Murder," "Model Family Man," and "The Parting Glass." Three more — "Illegal Smile," "Butter," and "Anna May" — are handled by the applause-only limiter and land a little short of the full target rather than over-shaved (−21.4, −21.6, and −24.5 respectively). The remaining 11 tracks were already correct under the older workflow and were left untouched. Also corrected a title left over from an earlier fix: track 7's filename read "Good Life" instead of the archive's established "The Good Life."</description>
+  </item>
+  <item>
     <title>Reprocessed Jerry Hannan's solo show at 19 Broadway from October 25, 1999 under the new w…</title>
     <link>https://renedebos.com/shows/jerry-19-broadway-1999-10-25/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-11-jerry-19-broadway-1999-10-25</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-12-jerry-cafe-java-1999-04-08</guid>
     <pubDate>Sun, 12 Jul 2026 21:20:00 +0000</pubDate>
     <description>Added the April 8, 1999 solo show at Cafe Java as 23 individual tracks (split out from the March 25 tape), normalized to −20 LUFS.</description>
-  </item>
-  <item>
-    <title>Added the March 25, 1999 solo show at Cafe Java as 21 individual tracks, treated with bro…</title>
-    <link>https://renedebos.com/shows/jerry-cafe-java-1999-03-25/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-12-jerry-cafe-java-1999-03-25</guid>
-    <pubDate>Sun, 12 Jul 2026 20:08:55 +0000</pubDate>
-    <description>Added the March 25, 1999 solo show at Cafe Java as 21 individual tracks, treated with broadband noise reduction (8dB, sensitivity 5) across the whole tape before splitting, then normalized to −20 LUFS.</description>
   </item>
 </channel>
 </rss>
