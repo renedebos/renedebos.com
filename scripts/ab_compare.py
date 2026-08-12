@@ -132,6 +132,12 @@ def build_params_rows(show, track, plan, live_measure, new_measure, live_ver, ne
                               f"{plan.get('gain_db', 0):+.1f} dB gain sized to the music's own peak "
                               f"({plan.get('music_peak_db', 0):.1f} dBFS), plus a lookahead limiter "
                               f"reaching only the flagged applause region(s)"),
+        "sparse-transient-cap": (f"<strong>sparse-transient-cap</strong>: one constant "
+                                  f"{plan.get('gain_db', 0):+.1f} dB gain to the full "
+                                  f"{plan['target']:+.1f} LUFS target, with a 1&nbsp;ms/50&nbsp;ms "
+                                  f"true-peak cap shaving up to {plan.get('tcap', {}).get('gr_db', 0):.1f} dB "
+                                  f"off isolated musical transients (~{plan.get('tcap', {}).get('engaged_pct', 0):.1f}% "
+                                  f"of the track, {plan.get('tcap', {}).get('events', 0)} event(s))"),
     }[plan["mode"]]
     live_mode_desc = ("plain <code>loudnorm linear=true</code> request — predates the v4/v5 overshoot "
                        "handling; likely fell back to dynamic (frame-adaptive) normalization silently "
@@ -154,6 +160,23 @@ def main():
     parser.add_argument("track", type=int, help="track number")
     parser.add_argument("--raw", help="path to the original unprocessed clip (default: search ~/gdrive-mount)")
     parser.add_argument("--port", type=int, default=8767)
+    parser.add_argument("--transient-cap", action="store_true",
+                         help="preview this track with the v8 sparse-transient cap applied "
+                              "(mirrors audio_process.py --transient-cap) instead of just "
+                              "reprocessing with default settings; the track's own "
+                              "listen-before-shipping flag, if any, is auto-accepted here "
+                              "since this is a local preview only -- nothing gets uploaded, "
+                              "the real accept/exclude decision still happens at "
+                              "publish_show.py publish time")
+    parser.add_argument("--transient-cap-partial", action="store_true",
+                         help="preview PARTIAL capping (full 6dB shave, lands short of "
+                              "target) for a track needing more than the standard recovery")
+    parser.add_argument("--transient-cap-force", action="store_true",
+                         help="preview with the sparsity gate forced past, as if already "
+                              "decided after listening (mirrors --transient-cap-force)")
+    parser.add_argument("--transient-cap-max-gr", type=float,
+                         help="preview with a raised per-track attenuation ceiling in dB "
+                              "(mirrors --transient-cap-max-gr)")
     args = parser.parse_args()
 
     show, track = load_track(args.slug, args.track)
@@ -173,17 +196,42 @@ def main():
     for d in (raw_dir, out_dir, final_dir):
         os.makedirs(d, exist_ok=True)
 
-    raw_dest = os.path.join(raw_dir, os.path.basename(raw_src))
+    # Force a clean "NN " leading prefix regardless of the raw source's own
+    # naming convention (gdrive-mount exports and split_raw.py output aren't
+    # guaranteed to match it) -- audio_process.py's lead_num() derives the
+    # track number straight from the filename, and --transient-cap-accept/
+    # -partial/-force/-max-gr all key off that number, so an unprefixed or
+    # ambiguously-numbered raw filename would silently mismatch them. Strip
+    # any existing leading number first so a raw source that's already
+    # correctly prefixed (the common case) doesn't end up double-prefixed.
+    clean_base = re.sub(r"^\s*\d+\s*", "", os.path.basename(raw_src))
+    raw_dest = os.path.join(raw_dir, f"{args.track:02d} {clean_base}")
     shutil.copy(raw_src, raw_dest)
 
     print("\n== diagnose (full) ==")
     run([sys.executable, os.path.join(HERE, "audio_process.py"), "diagnose", raw_dir, "--artist", artist])
 
-    plan = ap.plan_track(raw_dest, target)
+    plan = ap.plan_track(raw_dest, target, transient_cap=args.transient_cap,
+                         tcap_partial=args.transient_cap_partial,
+                         tcap_force=args.transient_cap_force,
+                         tcap_max_gr=args.transient_cap_max_gr)
     print(f"\nplan: mode={plan['mode']} target={plan['target']:.2f} LUFS — {plan['note']}")
 
     print("\n== process (current engine) ==")
-    run([sys.executable, os.path.join(HERE, "audio_process.py"), "process", raw_dir, out_dir, "--target", str(target)])
+    process_cmd = [sys.executable, os.path.join(HERE, "audio_process.py"), "process",
+                   raw_dir, out_dir, "--target", str(target)]
+    if args.transient_cap:
+        # Auto-accept THIS track's listen-flag (if any) -- see the --transient-cap
+        # help text: previewing a local render is safe regardless, the real
+        # accept/exclude call still happens at publish time.
+        process_cmd += ["--transient-cap", "--transient-cap-accept", str(args.track)]
+        if args.transient_cap_partial:
+            process_cmd += ["--transient-cap-partial", str(args.track)]
+        if args.transient_cap_force:
+            process_cmd += ["--transient-cap-force", str(args.track)]
+        if args.transient_cap_max_gr is not None:
+            process_cmd += ["--transient-cap-max-gr", f"{args.track}:{args.transient_cap_max_gr}"]
+    run(process_cmd)
 
     base = os.path.splitext(os.path.basename(raw_dest))[0]
     new_flac = os.path.join(out_dir, base + ".flac")
@@ -216,7 +264,8 @@ def main():
     pts_new, integ_new = ebur128_curve(new_flac)
 
     label_a = f"v{live_ver} (live now)"
-    label_b = f"v{ap.WORKFLOW_VERSION} (reprocessed)"
+    label_b = (f"v{ap.WORKFLOW_VERSION} + transient-cap" if plan["mode"] == "sparse-transient-cap"
+               else f"v{ap.WORKFLOW_VERSION} (reprocessed)")
     file_a = f"{track['title']} - {label_a}{os.path.splitext(live_flac)[1]}"
     file_b_flac = f"{track['title']} - {label_b}.flac"
     file_b_mp3 = f"{track['title']} - {label_b}.mp3"
@@ -229,8 +278,13 @@ def main():
     if plan["mode"] == "applause-limiter":
         for a, b, r in plan.get("regions", []):
             limited_regions.append([a, b, f"applause-limited (B), {-r:.1f} dB"])
+    elif plan["mode"] == "sparse-transient-cap" and plan.get("tcap", {}).get("longest_at_s") is not None:
+        t = plan["tcap"]
+        limited_regions.append([t["longest_at_s"], t["longest_at_s"] + t["longest_s"],
+                                f"transient-cap engaged (B), {t['gr_db']:.1f} dB max"])
 
-    title = f"{track['title']} — v{live_ver} vs v{ap.WORKFLOW_VERSION} A/B"
+    title = (f"{track['title']} — v{live_ver} vs v{ap.WORKFLOW_VERSION}"
+             + (" + transient-cap" if plan["mode"] == "sparse-transient-cap" else "") + " A/B")
     venue = show.get("venue_short") or show.get("venue") or ""
     date = show.get("date") or "unknown date"
     subtitle_bits = [ARTIST_NAMES.get(artist, artist), venue, date, f"track {args.track}"]
