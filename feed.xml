@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Reprocessed all 17 tracks on the earliest Mad Hannans show in the archive, at Marin Brewi…</title>
+    <link>https://renedebos.com/shows/mad-marin-brewing-co-1998-04-01/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-12-mad-marin-brewing-co-1998-04-01</guid>
+    <pubDate>Wed, 12 Aug 2026 18:57:45 +0000</pubDate>
+    <description>Reprocessed all 17 tracks on the earliest Mad Hannans show in the archive, at Marin Brewing Co. on April 1, 1998 (v5→v8) — affected by a since-fixed bug in the older workflow that could silently flatten tracks' natural dynamics instead of applying true linear gain. "ABC - Sesame Street" is handled by the applause-only limiter, landing at −20.7. Five tracks land a little short of the full target rather than over-shaved: "Clear Headed" (−21.2), "Space Cowboy" (−21.4), "Butter" (−21.8), "Plastic Lemons" (−20.2), and "Far Away Eyes" (−22.0). The remaining eleven tracks reach the full target under true linear gain.</description>
+  </item>
+  <item>
     <title>Reprocessed all 21 tracks on Jerry Hannan's solo show at 19 Broadway from August 23, 1999…</title>
     <link>https://renedebos.com/shows/jerry-19-broadway-1999-08-23/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-11-jerry-19-broadway-1999-08-23</guid>
@@ -278,13 +285,6 @@
     <link>https://renedebos.com/shows/jerry-cafe-java-1999-04-29/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-13-jerry-cafe-java-1999-04-29</guid>
     <pubDate>Mon, 13 Jul 2026 15:05:00 +0000</pubDate>
-    <description>Re-normalized all 21 tracks: a bug in the loudness pipeline had silently switched several tracks into dynamic (compressor-like) processing instead of true linear gain, flattening hand-drawn fades and room dynamics. Tracks where audience applause — not the music — was the loudest thing on the tape now get linear gain sized to the music itself, with only the applause gently limited, using the automated audio engineering workflow with ffmpeg</description>
-  </item>
-  <item>
-    <title>Re-normalized all 21 tracks: a bug in the loudness pipeline had silently switched several…</title>
-    <link>https://renedebos.com/shows/jerry-19-broadway-1999-02-01/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-13-jerry-19-broadway-1999-02-01</guid>
-    <pubDate>Mon, 13 Jul 2026 15:00:00 +0000</pubDate>
     <description>Re-normalized all 21 tracks: a bug in the loudness pipeline had silently switched several tracks into dynamic (compressor-like) processing instead of true linear gain, flattening hand-drawn fades and room dynamics. Tracks where audience applause — not the music — was the loudest thing on the tape now get linear gain sized to the music itself, with only the applause gently limited, using the automated audio engineering workflow with ffmpeg</description>
   </item>
 </channel>
