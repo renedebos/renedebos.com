@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Opted this show into the v8 sparse-transient-cap mode for the five tracks that landed sho…</title>
+    <link>https://renedebos.com/shows/mad-marin-brewing-co-1998-04-01/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-12-mad-marin-brewing-co-1998-04-01</guid>
+    <pubDate>Wed, 12 Aug 2026 19:55:09 +0000</pubDate>
+    <description>Opted this show into the v8 sparse-transient-cap mode for the five tracks that landed short of −20 LUFS in tonight's earlier reprocess. Four now reach the full target this way: "Clear Headed," "Space Cowboy," "Butter," and "Far Away Eyes" — all cleared automatically, no listen required. "Plastic Lemons" didn't qualify for capping and stays at −20.2, a negligible 0.2 dB short.</description>
+  </item>
+  <item>
     <title>Reprocessed all 15 tracks on the Mad Hannans' return to Marin Brewing Co. on April 1, 199…</title>
     <link>https://renedebos.com/shows/mad-marin-brewing-co-1999-04-01/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-12-mad-marin-brewing-co-1999-04-01</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-13-jerry-cafe-java-1999-05-27</guid>
     <pubDate>Mon, 13 Jul 2026 16:35:00 +0000</pubDate>
     <description>Added the full show as 20 individual tracks, split from the audience DAT and normalized to −20 LUFS for an even, comfortable listening level, using the automated audio engineering workflow with ffmpeg</description>
-  </item>
-  <item>
-    <title>Re-normalized all 22 tracks: a bug in the loudness pipeline had silently switched several…</title>
-    <link>https://renedebos.com/shows/mad-sweetwater-1999-05-18/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-13-mad-sweetwater-1999-05-18</guid>
-    <pubDate>Mon, 13 Jul 2026 15:10:00 +0000</pubDate>
-    <description>Re-normalized all 22 tracks: a bug in the loudness pipeline had silently switched several tracks into dynamic (compressor-like) processing instead of true linear gain, flattening hand-drawn fades and room dynamics. Tracks where audience applause — not the music — was the loudest thing on the tape now get linear gain sized to the music itself, with only the applause gently limited, using the automated audio engineering workflow with ffmpeg</description>
   </item>
 </channel>
 </rss>

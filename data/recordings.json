@@ -11272,7 +11272,7 @@
           "size_mb": 20,
           "file": "MP3/MadHannans - Marin Brewing Co 1998-04-01/03 Clear Headed.mp3",
           "flac": "FLAC/MadHannans - Marin Brewing Co 1998-04-01/03 Clear Headed.flac",
-          "flac_size_mb": 98,
+          "flac_size_mb": 99,
           "processed": true,
           "tags": [
             "original"
@@ -11345,7 +11345,7 @@
           "size_mb": 12,
           "file": "MP3/MadHannans - Marin Brewing Co 1998-04-01/08 Space Cowboy.mp3",
           "flac": "FLAC/MadHannans - Marin Brewing Co 1998-04-01/08 Space Cowboy.flac",
-          "flac_size_mb": 61,
+          "flac_size_mb": 62,
           "processed": true,
           "tags": [
             "cover",
@@ -11418,7 +11418,7 @@
           "size_mb": 11,
           "file": "MP3/MadHannans - Marin Brewing Co 1998-04-01/13 Butter.mp3",
           "flac": "FLAC/MadHannans - Marin Brewing Co 1998-04-01/13 Butter.flac",
-          "flac_size_mb": 52,
+          "flac_size_mb": 53,
           "processed": true,
           "tags": [
             "original",
@@ -11474,7 +11474,7 @@
           "size_mb": 10,
           "file": "MP3/MadHannans - Marin Brewing Co 1998-04-01/17 Far Away Eyes.mp3",
           "flac": "FLAC/MadHannans - Marin Brewing Co 1998-04-01/17 Far Away Eyes.flac",
-          "flac_size_mb": 48,
+          "flac_size_mb": 49,
           "processed": true,
           "tags": [
             "cover",
@@ -11759,6 +11759,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-12",
+      "ts": "2026-08-12T19:55:09.000000",
+      "slug": "mad-marin-brewing-co-1998-04-01",
+      "report": true,
+      "text": "Opted this show into the v8 sparse-transient-cap mode for the five tracks that landed short of −20 LUFS in tonight's earlier reprocess. Four now reach the full target this way: \"Clear Headed,\" \"Space Cowboy,\" \"Butter,\" and \"Far Away Eyes\" — all cleared automatically, no listen required. \"Plastic Lemons\" didn't qualify for capping and stays at −20.2, a negligible 0.2 dB short."
+    },
     {
       "date": "2026-08-12",
       "ts": "2026-08-12T19:02:32.000000",
