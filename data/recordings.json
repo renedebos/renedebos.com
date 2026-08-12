@@ -11761,6 +11761,13 @@
   "updates": [
     {
       "date": "2026-08-12",
+      "ts": "2026-08-12T19:02:32.000000",
+      "slug": "mad-marin-brewing-co-1999-04-01",
+      "report": true,
+      "text": "Reprocessed all 15 tracks on the Mad Hannans' return to Marin Brewing Co. on April 1, 1999 (v5→v8) — affected by a since-fixed bug in the older workflow that could silently flatten tracks' natural dynamics instead of applying true linear gain. Three tracks land a little short of the full target rather than over-shaved: \"Recycle\" (−21.0), \"Clear Headed\" (−20.6), and \"Getaway Blues\" (−21.2). The remaining twelve tracks reach the full target under true linear gain. Also restored \"The Kiss - Da Da Da (Slave to an Angel)\" to the archive's established spelling, \"The Kiss / Da Da Da (Slave to an Angel),\" and trimmed a stray trailing space from \"Recycle.\""
+    },
+    {
+      "date": "2026-08-12",
       "ts": "2026-08-12T18:57:45.000000",
       "slug": "mad-marin-brewing-co-1998-04-01",
       "report": true,
