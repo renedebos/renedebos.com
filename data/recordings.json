@@ -5964,7 +5964,7 @@
           "size_mb": 8,
           "file": "MP3/JerryHannan - Cafe Java 1999-05-27/11 Anna May.mp3",
           "flac": "FLAC/JerryHannan - Cafe Java 1999-05-27/11 Anna May.flac",
-          "flac_size_mb": 37,
+          "flac_size_mb": 36,
           "processed": true,
           "tags": [
             "original",
@@ -11759,6 +11759,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-12",
+      "ts": "2026-08-12T20:56:03.000000",
+      "slug": "jerry-cafe-java-1999-05-27",
+      "report": true,
+      "text": "Reprocessed all 20 tracks on Jerry Hannan's solo show at Cafe Java from May 27, 1999 (v5→v8) — affected by a since-fixed bug in the older workflow that could silently flatten tracks' natural dynamics instead of applying true linear gain. Five tracks land a little short of the full target rather than over-shaved: \"Illegal Smile\" (−20.3), \"Seven Drunken Nights\" (−21.0), \"Plastic Lemons\" (−22.2), \"Anna May\" (−21.6), and \"Open Door\" (−21.3). The remaining fifteen tracks reach the full target under true linear gain."
+    },
     {
       "date": "2026-08-12",
       "ts": "2026-08-12T20:16:16.000000",

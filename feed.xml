@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Reprocessed all 20 tracks on Jerry Hannan's solo show at Cafe Java from May 27, 1999 (v5→…</title>
+    <link>https://renedebos.com/shows/jerry-cafe-java-1999-05-27/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-12-jerry-cafe-java-1999-05-27</guid>
+    <pubDate>Wed, 12 Aug 2026 20:56:03 +0000</pubDate>
+    <description>Reprocessed all 20 tracks on Jerry Hannan's solo show at Cafe Java from May 27, 1999 (v5→v8) — affected by a since-fixed bug in the older workflow that could silently flatten tracks' natural dynamics instead of applying true linear gain. Five tracks land a little short of the full target rather than over-shaved: "Illegal Smile" (−20.3), "Seven Drunken Nights" (−21.0), "Plastic Lemons" (−22.2), "Anna May" (−21.6), and "Open Door" (−21.3). The remaining fifteen tracks reach the full target under true linear gain.</description>
+  </item>
+  <item>
     <title>Opted this show into the v8 sparse-transient-cap mode for the three tracks that landed sh…</title>
     <link>https://renedebos.com/shows/mad-marin-brewing-co-1999-04-01/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-12-mad-marin-brewing-co-1999-04-01</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-14-jerry-19-broadway-1999-11-15</guid>
     <pubDate>Tue, 14 Jul 2026 12:10:15 +0000</pubDate>
     <description>Added the November 15, 1999 solo show at 19 Broadway as 14 individual tracks, normalized to −20 LUFS, including an early version of "Burning Man" and an alternate-verse take of "Hollywood."</description>
-  </item>
-  <item>
-    <title>Added the full show as 27 individual tracks, split from the audience DAT and normalized t…</title>
-    <link>https://renedebos.com/shows/jerry-cafe-java-1999-06-17/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-13-jerry-cafe-java-1999-06-17</guid>
-    <pubDate>Mon, 13 Jul 2026 22:45:00 +0000</pubDate>
-    <description>Added the full show as 27 individual tracks, split from the audience DAT and normalized to −20 LUFS for an even, comfortable listening level, using the automated audio engineering workflow with ffmpeg</description>
   </item>
 </channel>
 </rss>
