@@ -199,9 +199,11 @@ knows offhand.
 - `updates[]` is a dated changelog and should read as historically accurate
   to what was true *at the time* — don't retroactively rewrite entries to
   match a later wording standard.
-- **`rclone delete` is hard-blocked for the agent** — every deletion must
-  go to Rene as exact copy-paste commands. (`rclone moveto`/`copyto` for
-  renames are fine and used freely today.)
+- **`rclone delete` against `r2:` is now agent-executable** (Rene lifted the
+  hard block 2026-08-11, pre-approved in `.claude/settings.local.json`) —
+  clean up stale R2 leftovers directly instead of handing Rene commands.
+  Still confirm with Rene before deleting anything on `gdrive:` (source of
+  truth). (`rclone moveto`/`copyto` for renames remain fine, used freely.)
 
 ## Reference
 Runbook: `CLAUDE.md` → "Publishing a Split Show". Technical record:
