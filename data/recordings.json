@@ -5964,7 +5964,7 @@
           "size_mb": 8,
           "file": "MP3/JerryHannan - Cafe Java 1999-05-27/11 Anna May.mp3",
           "flac": "FLAC/JerryHannan - Cafe Java 1999-05-27/11 Anna May.flac",
-          "flac_size_mb": 36,
+          "flac_size_mb": 37,
           "processed": true,
           "tags": [
             "original",
@@ -6053,7 +6053,7 @@
           "size_mb": 6,
           "file": "MP3/JerryHannan - Cafe Java 1999-05-27/17 Open Door.mp3",
           "flac": "FLAC/JerryHannan - Cafe Java 1999-05-27/17 Open Door.flac",
-          "flac_size_mb": 24,
+          "flac_size_mb": 25,
           "processed": true,
           "tags": [
             "original"
@@ -11759,6 +11759,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-12",
+      "ts": "2026-08-12T16:00:22.602506",
+      "slug": "jerry-cafe-java-1999-05-27",
+      "report": true,
+      "text": "Opted this show into the v8 sparse-transient-cap mode for the five tracks that landed short of −20 LUFS in the earlier reprocess. \"Plastic Lemons,\" \"Anna May,\" and \"Open Door\" all reach the full target now — the first two had review-tier flags (isolated transients near 0.4–0.45s) that were listened to and approved before capping; \"Open Door\" cleared automatically, no listen required. \"Illegal Smile\" and \"Seven Drunken Nights\" didn't qualify for capping and stay at their honest linear-reduced targets (−20.3 and −21.0)."
+    },
     {
       "date": "2026-08-12",
       "ts": "2026-08-12T21:54:20.000000",
