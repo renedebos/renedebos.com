@@ -5485,7 +5485,7 @@
           "size_mb": 7,
           "file": "MP3/JerryHannan - Cafe Java 1999-04-29/02 Illegal Smile.mp3",
           "flac": "FLAC/JerryHannan - Cafe Java 1999-04-29/02 Illegal Smile.flac",
-          "flac_size_mb": 34,
+          "flac_size_mb": 35,
           "processed": true,
           "tags": [
             "cover",
@@ -5650,8 +5650,8 @@
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "3:42",
           "size_mb": 9,
-          "file": "MP3/JerryHannan - Cafe Java 1999-04-29/13 Good Life.mp3",
-          "flac": "FLAC/JerryHannan - Cafe Java 1999-04-29/13 Good Life.flac",
+          "file": "MP3/JerryHannan - Cafe Java 1999-04-29/13 The Good Life.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-04-29/13 The Good Life.flac",
           "flac_size_mb": 44,
           "processed": true,
           "tags": [
@@ -5667,7 +5667,7 @@
           "size_mb": 6,
           "file": "MP3/JerryHannan - Cafe Java 1999-04-29/14 Open Door.mp3",
           "flac": "FLAC/JerryHannan - Cafe Java 1999-04-29/14 Open Door.flac",
-          "flac_size_mb": 25,
+          "flac_size_mb": 26,
           "processed": true,
           "tags": [
             "original"
@@ -5765,9 +5765,9 @@
           "songwriter": "Jerry Hannan & Sean Hannan",
           "duration": "5:06",
           "size_mb": 12,
-          "file": "MP3/JerryHannan - Cafe Java 1999-04-29/21 Leprechaun.mp3",
-          "flac": "FLAC/JerryHannan - Cafe Java 1999-04-29/21 Leprechaun.flac",
-          "flac_size_mb": 58,
+          "file": "MP3/JerryHannan - Cafe Java 1999-04-29/21 The Blarney Stone Blues.mp3",
+          "flac": "FLAC/JerryHannan - Cafe Java 1999-04-29/21 The Blarney Stone Blues.flac",
+          "flac_size_mb": 59,
           "processed": true,
           "tags": [
             "original",
@@ -5778,7 +5778,7 @@
       "description": [
         "Recorded from the audience on DAT at Cafe Java in Larkspur on April 29, 1999 — a 21-song solo set mixing Hannan originals with covers of John Prine, Cat Stevens, Paddy Nash, and Mentor Williams, alongside a pair of Irish traditionals.",
         "The show has been split into individual songs and loudness-normalized to an even listening level.",
-        "The set closes with the rarely-played “Leprechaun.”"
+        "The set closes with \"The Blarney Stone Blues.\""
       ],
       "page": null,
       "processing_status": "done",
@@ -11758,6 +11758,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-11",
+      "ts": "2026-08-11T18:32:00.000000",
+      "slug": "jerry-cafe-java-1999-04-29",
+      "report": true,
+      "text": "Reprocessed all 21 tracks on Jerry Hannan's solo show at Cafe Java from April 29, 1999 (v5→v8) — the whole show was affected by a since-fixed bug in the older workflow that could silently flatten tracks' natural dynamics instead of applying true linear gain. Six tracks now qualify for the sparse-transient-cap mode, reaching the full −20 LUFS target: \"Illegal Smile,\" \"Father and Son,\" \"Open Door,\" \"Plastic Lemons,\" \"Woman,\" and \"The Blarney Stone Blues.\" Six more land a little short of the full target rather than over-shaved: \"I Thought I Was You\" (−20.3), \"Drift Away\" (−20.8), \"ABC\" (−20.1), \"Black is the Color\" (−20.5), \"Nicolai\" (−20.1), and \"The Parting Glass\" (−20.2). The remaining nine tracks reach the full target under true linear gain. Also corrected a title left over from an earlier fix: track 13's filename read \"Good Life\" instead of the archive's established \"The Good Life.\""
+    },
     {
       "date": "2026-08-11",
       "ts": "2026-08-11T17:25:12.000000",

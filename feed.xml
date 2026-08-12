@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Reprocessed all 21 tracks on Jerry Hannan's solo show at Cafe Java from April 29, 1999 (v…</title>
+    <link>https://renedebos.com/shows/jerry-cafe-java-1999-04-29/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-11-jerry-cafe-java-1999-04-29</guid>
+    <pubDate>Tue, 11 Aug 2026 18:32:00 +0000</pubDate>
+    <description>Reprocessed all 21 tracks on Jerry Hannan's solo show at Cafe Java from April 29, 1999 (v5→v8) — the whole show was affected by a since-fixed bug in the older workflow that could silently flatten tracks' natural dynamics instead of applying true linear gain. Six tracks now qualify for the sparse-transient-cap mode, reaching the full −20 LUFS target: "Illegal Smile," "Father and Son," "Open Door," "Plastic Lemons," "Woman," and "The Blarney Stone Blues." Six more land a little short of the full target rather than over-shaved: "I Thought I Was You" (−20.3), "Drift Away" (−20.8), "ABC" (−20.1), "Black is the Color" (−20.5), "Nicolai" (−20.1), and "The Parting Glass" (−20.2). The remaining nine tracks reach the full target under true linear gain. Also corrected a title left over from an earlier fix: track 13's filename read "Good Life" instead of the archive's established "The Good Life."</description>
+  </item>
+  <item>
     <title>Reprocessed 10 of the 21 tracks on Jerry Hannan's solo show at Cafe Java from March 25, 1…</title>
     <link>https://renedebos.com/shows/jerry-cafe-java-1999-03-25/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-11-jerry-cafe-java-1999-03-25</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-13-jerry-cafe-java-1999-03-25</guid>
     <pubDate>Mon, 13 Jul 2026 09:58:17 +0000</pubDate>
     <description>Re-normalized all 21 tracks: a bug in the loudness pipeline had silently switched several tracks into dynamic (compressor-like) processing instead of true linear gain, flattening hand-drawn fades and room dynamics. Tracks where audience applause — not the music — was the loudest thing on the tape now get linear gain sized to the music itself, with only the applause gently limited, using the automated audio engineering workflow with ffmpeg</description>
-  </item>
-  <item>
-    <title>Added the April 8, 1999 solo show at Cafe Java as 23 individual tracks (split out from th…</title>
-    <link>https://renedebos.com/shows/jerry-cafe-java-1999-04-08/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-12-jerry-cafe-java-1999-04-08</guid>
-    <pubDate>Sun, 12 Jul 2026 21:20:00 +0000</pubDate>
-    <description>Added the April 8, 1999 solo show at Cafe Java as 23 individual tracks (split out from the March 25 tape), normalized to −20 LUFS.</description>
   </item>
 </channel>
 </rss>
