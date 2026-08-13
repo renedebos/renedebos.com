@@ -7277,7 +7277,7 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/22 Maids When You're Young Never Wed an Old Man.mp3",
           "size_mb": 9,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/22 Maids When You're Young Never Wed an Old Man.flac",
-          "flac_size_mb": 39,
+          "flac_size_mb": 40,
           "processed": true,
           "tags": [
             "irish",
@@ -11760,6 +11760,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-12",
+      "ts": "2026-08-12T23:40:50.808847",
+      "slug": "sean-19-broadway-2000-01-24",
+      "report": true,
+      "text": "Force-capped “Maids When You’re Young Never Wed an Old Man” after it initially declined the v8 sparse-transient-cap mode automatically for exceeding the calibrated review band (a single continuous engagement at 3:27.3 ran longer than the original listening evidence covered). After listening, given the explicit override — now reaches −20.5 LUFS instead of −22.6."
+    },
     {
       "date": "2026-08-12",
       "ts": "2026-08-12T23:28:30.459346",
