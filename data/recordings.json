@@ -7667,7 +7667,7 @@
           "size_mb": 7,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/01 Woman.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/01 Woman.flac",
-          "flac_size_mb": 31,
+          "flac_size_mb": 32,
           "processed": true,
           "tags": [
             "original"
@@ -7832,7 +7832,7 @@
           "size_mb": 9,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/12 Elephant Shoes.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/12 Elephant Shoes.flac",
-          "flac_size_mb": 39,
+          "flac_size_mb": 41,
           "processed": true,
           "tags": [
             "original"
@@ -11760,6 +11760,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T11:04:19.686744",
+      "slug": "sean-19-broadway-unknown",
+      "report": true,
+      "text": "Force-capped three tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode, all now reaching the full −20 target: “Woman,” “Elephant Shoes,” and “Angel from Montgomery.” Restored track 14's title to the archive's established spelling, “Angel from Montgomery,” after the fresh export drifted to “Angel of Montgomery.” A mild L/R level imbalance on track 1 (“Woman”) was reviewed and accepted as typical audience-tape mic placement, not a defect."
+    },
     {
       "date": "2026-08-13",
       "ts": "2026-08-13T10:43:47.066350",

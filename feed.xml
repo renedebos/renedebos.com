@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Force-capped three tracks landing between −21 and −25 LUFS into the v8 sparse-transient-c…</title>
+    <link>https://renedebos.com/shows/sean-19-broadway-unknown/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-13-sean-19-broadway-unknown</guid>
+    <pubDate>Thu, 13 Aug 2026 11:04:19 +0000</pubDate>
+    <description>Force-capped three tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode, all now reaching the full −20 target: “Woman,” “Elephant Shoes,” and “Angel from Montgomery.” Restored track 14's title to the archive's established spelling, “Angel from Montgomery,” after the fresh export drifted to “Angel of Montgomery.” A mild L/R level imbalance on track 1 (“Woman”) was reviewed and accepted as typical audience-tape mic placement, not a defect.</description>
+  </item>
+  <item>
     <title>Force-capped four tracks landing between −21 and −25 LUFS into the v8 sparse-transient-ca…</title>
     <link>https://renedebos.com/shows/jerry-19-broadway-1999-06-21/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-13-jerry-19-broadway-1999-06-21</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-18-jerry-19-broadway-1999-06-21</guid>
     <pubDate>Sat, 18 Jul 2026 17:16:26 +0000</pubDate>
     <description>Re-normalized all 21 tracks: the show's original v1 processing had silently hit exactly −20 LUFS and exactly −1 dBTP on several tracks — the same dynamic-mode fallback bug found in other pre-v4 shows — when tracks like "I Need a Lover" and "You're Pulling Me Leg / The Ted Kennedy Song" in fact needed a target as low as −24.7 LUFS to stay linear. Re-split from a fresh hand-edit pass using the current engine.</description>
-  </item>
-  <item>
-    <title>Re-normalized all 30 tracks: the show's original v1 processing used ffmpeg's naive loudno…</title>
-    <link>https://renedebos.com/shows/jerry-19-broadway-2001-01-08/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-17-jerry-19-broadway-2001-01-08</guid>
-    <pubDate>Fri, 17 Jul 2026 18:04:20 +0000</pubDate>
-    <description>Re-normalized all 30 tracks: the show's original v1 processing used ffmpeg's naive loudnorm, which had silently hit exactly −20 LUFS and exactly −1 dBTP on nearly every track — the signature of the same dynamic-mode fallback bug that flattened Sean Hannan's 1999-11-29 show, since several of these tracks in fact needed a target as low as −28 LUFS to stay linear. Tracks where audience applause — not the music — set the ceiling (Anna May, Luxury of Murder) now get linear gain sized to the music itself, with only the applause gently limited. Also re-split from a corrected label export that fixed a garbled track title and stripped stray junk labels.</description>
   </item>
 </channel>
 </rss>
