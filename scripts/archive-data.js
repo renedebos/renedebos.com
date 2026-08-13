@@ -23,6 +23,9 @@
   // AND'd across facets — same convention as playlist.js's `filters`.
   var filters = { artist: [], procVer: [], treatment: [] };
   var damagedOnly = false;
+  // track id -> true for rows with their transient-cap detail row open.
+  // Keyed by id (not array index) so state survives a re-sort/re-filter.
+  var expandedIds = {};
   var sortKey = null, sortDir = 1;
 
   var esc = function (s) {
@@ -90,16 +93,18 @@
       render: function (t) {
         if (!t.treatment) return "—";
         var label = TREAT_LABEL[t.treatment] || t.treatment;
-        // transient-capped tracks carry their guardrail record (v8): show the
-        // cap depth + engagement stats in the tooltip, ahead of the raw chain
-        var tip = t.chain || "";
+        // transient-capped tracks carry their guardrail record (v8) — full
+        // detail lives in the expandable row below (see renderDetailRow),
+        // not hidden in a hover-only tooltip. The tooltip here stays as a
+        // quick hint pointing at that, plus the raw chain for everything else.
         if (t.tcap) {
-          tip = "cap " + t.tcap.gr_db + " dB max (p95 " + t.tcap.p95_gr_db +
-                "), engaged " + t.tcap.engaged_pct + "% (" + t.tcap.events +
-                " event(s), longest " + t.tcap.longest_s + " s), near-peak " +
-                t.tcap.near_peak_pct + "%" + (tip ? " — " + tip : "");
+          var override = t.tcap.override ? " · extended cap" : "";
+          return '<span class="treat treat-' + esc(t.treatment) + ' treat-expandable" '
+            + 'data-id="' + esc(t.id) + '" title="Click for the full cap breakdown">'
+            + esc(label) + override
+            + '<span class="treat-toggle" aria-hidden="true"></span></span>';
         }
-        var note = tip ? ' title="' + esc(tip) + '"' : "";
+        var note = t.chain ? ' title="' + esc(t.chain) + '"' : "";
         return '<span class="treat treat-' + esc(t.treatment) + '"' + note + ">" + esc(label) + "</span>";
       } },
     { key: "procVer", label: "Ver", numeric: true, cls: "tver",
@@ -116,6 +121,37 @@
           ? '<span class="track-badge" title="Audible tape damage / dropouts">dropouts</span>' : "";
       } },
   ];
+
+  var TCAP_FIELD_LABELS = [
+    ["gr_db", "Attenuation applied", " dB"],
+    ["p95_gr_db", "P95 attenuation", " dB"],
+    ["engaged_pct", "Engaged", "%"],
+    ["events", "Events", ""],
+    ["longest_s", "Longest event", " s"],
+    ["near_peak_pct", "Near-peak density", "%"],
+    ["policy_max_gr_db", "Policy ceiling in effect", " dB"],
+  ];
+
+  // Full numeric breakdown for a transient-capped track, shown in an
+  // expandable row rather than a hover-only tooltip (see the Treatment
+  // column's render) — same disclosure idiom as the show page's own
+  // technical-data table, just per-row instead of per-show.
+  function renderDetailRow(t) {
+    var cap = t.tcap;
+    var fields = TCAP_FIELD_LABELS.map(function (f) {
+      var v = cap[f[0]];
+      if (v == null) return "";
+      return '<div class="ad-detail-field"><span class="ad-detail-k">' + esc(f[1])
+        + '</span><span class="ad-detail-v">' + esc(v) + esc(f[2]) + "</span></div>";
+    }).join("");
+    var override = cap.override
+      ? '<p class="ad-detail-override">' + esc(cap.override_note || "Ceiling raised for this track.") + "</p>"
+      : "";
+    var chain = t.chain ? '<p class="ad-detail-chain">' + esc(t.chain) + "</p>" : "";
+    return '<tr class="ad-detail-row" data-detail-for="' + esc(t.id) + '"><td colspan="' + COLUMNS.length + '">'
+      + '<div class="ad-detail-grid">' + fields + "</div>" + override + chain
+      + "</td></tr>";
+  }
 
   function uniq(key) {
     var seen = [];
@@ -212,9 +248,11 @@
       rows = rows.slice().sort(defaultSort);
     }
     bodyEl.innerHTML = rows.map(function (t) {
-      return "<tr>" + COLUMNS.map(function (c) {
+      var row = "<tr>" + COLUMNS.map(function (c) {
         return '<td class="' + (c.cls || "") + '">' + c.render(t) + "</td>";
       }).join("") + "</tr>";
+      if (t.tcap && expandedIds[t.id]) row += renderDetailRow(t);
+      return row;
     }).join("");
     statusEl.textContent = rows.length + " of " + CATALOG.length + " tracks match";
     if (clearBtn) {
@@ -222,6 +260,14 @@
         || filters.treatment.length || damagedOnly || qEl.value);
     }
   }
+
+  bodyEl.addEventListener("click", function (e) {
+    var t = e.target.closest(".treat-expandable");
+    if (!t) return;
+    var id = t.dataset.id;
+    expandedIds[id] = !expandedIds[id];
+    render();
+  });
 
   filtersEl.addEventListener("click", function (e) {
     var b = e.target.closest(".chip");
