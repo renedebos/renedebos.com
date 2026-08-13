@@ -56,22 +56,28 @@ header {
   display: flex; align-items: center; gap: 28px;
   padding: 22px 0; border-bottom: 1px solid var(--hairline);
 }
-/* Small icon mark instead of a repeated wordmark — the hero h1 right below
-   already says "The Hannan Tapes" at full size. */
+/* Mark reads "Shows" rather than the site name — it signals the browsable
+   show archive lives here, instead of repeating the wordmark already in the
+   hero h1 below. Fill/colors match the sitewide mark in site.css exactly
+   (previously an outline treatment here, unified on request). Underlined
+   because this is the one page where the mark IS the active nav item —
+   site_nav() in fragments.py deliberately skips a "Home" link and defers
+   that role to this mark. */
 .mark {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 34px; height: 34px; border-radius: 50%;
-  background: var(--panel); border: 1px solid var(--hairline);
-  color: var(--accent); font-size: 1.05rem;
-  transition: border-color 0.18s ease, background 0.18s ease;
+  height: 34px; padding: 0 16px; border-radius: 17px; flex-shrink: 0;
+  background: var(--accent); border: 1px solid var(--accent);
+  color: var(--bg); font-size: 0.85rem; font-weight: 600;
+  letter-spacing: 0.01em; white-space: nowrap; text-decoration: underline;
+  transition: filter 0.18s ease;
 }
-.mark:hover, .mark:focus-visible { border-color: var(--accent); background: var(--accent-dim); outline: none; }
+.mark:hover, .mark:focus-visible { filter: brightness(1.12); outline: none; }
 nav { display: flex; flex-wrap: wrap; gap: 10px 26px; font-size: 0.85rem; color: var(--ink-dim); }
 nav a:hover, nav a:focus-visible { color: var(--accent); outline: none; }
 
 /* ── hero ────────────────────────────────────────────────────────────────── */
 
-.hero { padding: 60px 0 44px; border-bottom: 1px solid var(--hairline); }
+.hero { padding: 60px 0 44px; border-bottom: 1px solid var(--hairline); background: var(--panel); }
 .eyebrow {
   font-family: 'Space Mono', monospace; font-size: 0.7rem; letter-spacing: 0.16em;
   text-transform: uppercase; color: var(--accent); margin-bottom: 14px;
