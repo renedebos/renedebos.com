@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Reprocessed “Far Away Eyes,” previously stuck at −23.0 LUFS on an older workflow version …</title>
+    <link>https://renedebos.com/shows/mad-sweetwater-2001-01-06/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-13-mad-sweetwater-2001-01-06</guid>
+    <pubDate>Thu, 13 Aug 2026 14:14:57 +0000</pubDate>
+    <description>Reprocessed “Far Away Eyes,” previously stuck at −23.0 LUFS on an older workflow version — the fresh Drive export measures louder than the prior source, so plain linear normalization reached the full −20 target directly, no transient cap needed.</description>
+  </item>
+  <item>
     <title>Force-capped “Rocky Road to Dublin / Star of County Down,” which landed between −21 and −…</title>
     <link>https://renedebos.com/shows/mad-cafe-java-1999-09-09/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-13-mad-cafe-java-1999-09-09</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-08-mad-cafe-java-1999-09-09</guid>
     <pubDate>Sat, 08 Aug 2026 17:52:34 +0000</pubDate>
     <description>Reprocessed this Mad Hannans set at Cafe Java again, this time under a new workflow (v8) built for tapes where the mic sat close to the drums: a millisecond-scale true-peak limiter now catches only the sharpest instant of an isolated musical transient — a snare hit, a strum — while the surrounding performance keeps its full, untouched gain, letting more tracks reach the archive's −20 LUFS standard instead of landing several dB quieter. Fifteen of the twenty-two tracks qualified and are now capped this way; “Rocky Road to Dublin / Star of County Down” needed more recovery than the policy's 6 dB ceiling allows, so it lands at −21.6 LUFS instead of −20 — inaudibly quieter, never over-shaved. “Truck” and “Anna May” are untouched by this change: both were already correctly handled by an earlier, unrelated fix that limits only audience applause at a track's edges, not the music. Two titles also picked up small spelling corrections back to the archive's established convention: “ABC (alt version)” and “The Kiss / Da Da Da (Slave to an Angel).”</description>
-  </item>
-  <item>
-    <title>Re-normalized this Mad Hannans set at Cafe Java to −20 LUFS on the current audio engineer…</title>
-    <link>https://renedebos.com/shows/mad-cafe-java-1999-09-09/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-08-mad-cafe-java-1999-09-09</guid>
-    <pubDate>Sat, 08 Aug 2026 02:40:00 +0000</pubDate>
-    <description>Re-normalized this Mad Hannans set at Cafe Java to −20 LUFS on the current audio engineering workflow (v7), replacing the show's original v1 pass — the last v1 show in the archive. The fresh hand-edit pass applied noise reduction across the show and corrected the song list: what was catalogued as a single 5:39 track, “Everything Reminds Me of You,” is in fact two songs, now split into separate tracks with the second restored as “Hear Me” — so the show runs 22 tracks rather than 21. “My Dear” has been identified as the song the archive lists elsewhere as “Ride On” and retitled to match, and “Plastic Melons” corrected to “Plastic Lemons.” Elsewhere in the archive, two tracks catalogued as “I Need a Lover” have been corrected to “Hear Me,” the song's real title.</description>
   </item>
 </channel>
 </rss>

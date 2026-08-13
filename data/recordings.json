@@ -10618,7 +10618,7 @@
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/18 Far Away Eyes.mp3",
           "size_mb": 12,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/18 Far Away Eyes.flac",
-          "flac_size_mb": 54,
+          "flac_size_mb": 50,
           "processed": true,
           "tags": [
             "cover",
@@ -11760,6 +11760,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T14:14:57.964928",
+      "slug": "mad-sweetwater-2001-01-06",
+      "report": true,
+      "text": "Reprocessed “Far Away Eyes,” previously stuck at −23.0 LUFS on an older workflow version — the fresh Drive export measures louder than the prior source, so plain linear normalization reached the full −20 target directly, no transient cap needed."
+    },
     {
       "date": "2026-08-13",
       "ts": "2026-08-13T13:54:34.764321",
