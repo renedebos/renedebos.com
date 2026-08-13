@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Opted the nine tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap m…</title>
+    <link>https://renedebos.com/shows/jerry-19-broadway-1999-07-19/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-13-jerry-19-broadway-1999-07-19</guid>
+    <pubDate>Thu, 13 Aug 2026 00:21:25 +0000</pubDate>
+    <description>Opted the nine tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode. Eight now reach the full −20 target: “A Pirate Looks at Forty,” “I Thought I Was You” (a review-tier flag, listened to and approved), “Butter,” “Anna May,” “Black is the Color,” “The Blarney Stone Blues,” “My Father's House,” and “Slave Woman.” “Kilkelly Ireland” already used the applause-only limiter for a boundary clap and stays at −21.9, since the music itself needed more headroom than the limiter alone recovers. Three titles restored to the archive's established spelling after the fresh export drifted: “My Dear (Ride On)” back to “Ride On,” “Angel of Montgomery” to “Angel from Montgomery,” and “She is The Girlfriend of The Boyfriend of Herself” to “The Girlfriend of the Boyfriend of Herself.” Track 22's fresh export read “Leprechaun” against the catalog's “The Blarney Stone Blues” — confirmed with Rene directly (an existing, previously-unresolved ambiguity, not a typo) that “The Blarney Stone Blues” is correct.</description>
+  </item>
+  <item>
     <title>Force-capped “Maids When You’re Young Never Wed an Old Man” after it initially declined t…</title>
     <link>https://renedebos.com/shows/sean-19-broadway-2000-01-24/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-12-sean-19-broadway-2000-01-24</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-16-sean-19-broadway-2000-01-24</guid>
     <pubDate>Thu, 16 Jul 2026 22:35:00 +0000</pubDate>
     <description>Re-normalized all 31 tracks to −20 LUFS on the current audio engineering workflow, replacing an older processing pass, using the automated audio engineering workflow with ffmpeg</description>
-  </item>
-  <item>
-    <title>Re-normalized all 11 tracks to −20 LUFS on the current audio engineering workflow, replac…</title>
-    <link>https://renedebos.com/shows/sean-19-broadway-2000-02-21/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-16-sean-19-broadway-2000-02-21</guid>
-    <pubDate>Thu, 16 Jul 2026 22:30:00 +0000</pubDate>
-    <description>Re-normalized all 11 tracks to −20 LUFS on the current audio engineering workflow, replacing an older processing pass; also corrected track 5's title to "Ode to Biddy McGee," using the automated audio engineering workflow with ffmpeg</description>
   </item>
 </channel>
 </rss>

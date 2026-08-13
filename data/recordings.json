@@ -2252,7 +2252,7 @@
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/02 A Pirate Looks at Forty.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/02 A Pirate Looks at Forty.flac",
-          "flac_size_mb": 42,
+          "flac_size_mb": 43,
           "processed": true,
           "tags": [
             "cover",
@@ -2325,7 +2325,7 @@
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/07 Butter.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/07 Butter.flac",
-          "flac_size_mb": 39,
+          "flac_size_mb": 40,
           "processed": true,
           "tags": [
             "original",
@@ -2340,7 +2340,7 @@
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/08 Anna May.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/08 Anna May.flac",
-          "flac_size_mb": 33,
+          "flac_size_mb": 34,
           "processed": true,
           "tags": [
             "original",
@@ -2547,9 +2547,9 @@
           "songwriter": "Steve Poltz",
           "duration": "4:34",
           "size_mb": 11,
-          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/22 Leprechaun.mp3",
-          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/22 Leprechaun.flac",
-          "flac_size_mb": 51,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/22 The Blarney Stone Blues.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/22 The Blarney Stone Blues.flac",
+          "flac_size_mb": 52,
           "processed": true,
           "tags": [
             "cover",
@@ -11760,6 +11760,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T00:21:25.939266",
+      "slug": "jerry-19-broadway-1999-07-19",
+      "report": true,
+      "text": "Opted the nine tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode. Eight now reach the full −20 target: “A Pirate Looks at Forty,” “I Thought I Was You” (a review-tier flag, listened to and approved), “Butter,” “Anna May,” “Black is the Color,” “The Blarney Stone Blues,” “My Father's House,” and “Slave Woman.” “Kilkelly Ireland” already used the applause-only limiter for a boundary clap and stays at −21.9, since the music itself needed more headroom than the limiter alone recovers. Three titles restored to the archive's established spelling after the fresh export drifted: “My Dear (Ride On)” back to “Ride On,” “Angel of Montgomery” to “Angel from Montgomery,” and “She is The Girlfriend of The Boyfriend of Herself” to “The Girlfriend of the Boyfriend of Herself.” Track 22's fresh export read “Leprechaun” against the catalog's “The Blarney Stone Blues” — confirmed with Rene directly (an existing, previously-unresolved ambiguity, not a typo) that “The Blarney Stone Blues” is correct."
+    },
     {
       "date": "2026-08-12",
       "ts": "2026-08-12T23:40:50.808847",
