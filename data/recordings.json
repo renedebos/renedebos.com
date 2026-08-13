@@ -9423,7 +9423,7 @@
           "size_mb": 13,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/21 Rocky Road to Dublin _ Star of County Down.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/21 Rocky Road to Dublin _ Star of County Down.flac",
-          "flac_size_mb": 63,
+          "flac_size_mb": 65,
           "processed": true,
           "tags": [
             "irish",
@@ -11760,6 +11760,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T13:54:34.764321",
+      "slug": "mad-cafe-java-1999-09-09",
+      "report": true,
+      "text": "Force-capped “Rocky Road to Dublin / Star of County Down,” which landed between −21 and −25 LUFS, into the v8 sparse-transient-cap mode with the standard 6 dB attenuation ceiling raised to 8 dB after a reviewed, recorded override — now reaching −20.22. Restored the title to its established “/” form after the fresh export drifted to an underscore."
+    },
     {
       "date": "2026-08-13",
       "ts": "2026-08-13T12:45:22.665522",

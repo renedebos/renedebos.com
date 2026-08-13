@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Force-capped “Rocky Road to Dublin / Star of County Down,” which landed between −21 and −…</title>
+    <link>https://renedebos.com/shows/mad-cafe-java-1999-09-09/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-13-mad-cafe-java-1999-09-09</guid>
+    <pubDate>Thu, 13 Aug 2026 13:54:34 +0000</pubDate>
+    <description>Force-capped “Rocky Road to Dublin / Star of County Down,” which landed between −21 and −25 LUFS, into the v8 sparse-transient-cap mode with the standard 6 dB attenuation ceiling raised to 8 dB after a reviewed, recorded override — now reaching −20.22. Restored the title to its established “/” form after the fresh export drifted to an underscore.</description>
+  </item>
+  <item>
     <title>Force-capped five shortfall tracks into the v8 sparse-transient-cap mode with the standar…</title>
     <link>https://renedebos.com/shows/jerry-19-broadway-2001-01-15/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-13-jerry-19-broadway-2001-01-15</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-08-mad-cafe-java-1999-09-09</guid>
     <pubDate>Sat, 08 Aug 2026 02:40:00 +0000</pubDate>
     <description>Re-normalized this Mad Hannans set at Cafe Java to −20 LUFS on the current audio engineering workflow (v7), replacing the show's original v1 pass — the last v1 show in the archive. The fresh hand-edit pass applied noise reduction across the show and corrected the song list: what was catalogued as a single 5:39 track, “Everything Reminds Me of You,” is in fact two songs, now split into separate tracks with the second restored as “Hear Me” — so the show runs 22 tracks rather than 21. “My Dear” has been identified as the song the archive lists elsewhere as “Ride On” and retitled to match, and “Plastic Melons” corrected to “Plastic Lemons.” Elsewhere in the archive, two tracks catalogued as “I Need a Lover” have been corrected to “Hear Me,” the song's real title.</description>
-  </item>
-  <item>
-    <title>Re-normalized all 21 tracks of this Mad Hannans set at the Sweetwater to −20 LUFS on the …</title>
-    <link>https://renedebos.com/shows/mad-sweetwater-2000-02-17/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-23-mad-sweetwater-2000-02-17</guid>
-    <pubDate>Thu, 23 Jul 2026 07:00:00 +0000</pubDate>
-    <description>Re-normalized all 21 tracks of this Mad Hannans set at the Sweetwater to −20 LUFS on the current audio engineering workflow (v7), replacing the show's original v2 pass; re-exported track 14 ("Butter") to restore the song's opening chords, missing from an earlier transfer; also corrected drifted titles "Hard Drinking," "I Need a Lover," and "The Kiss / Da Da Da (Slave to an Angel)" back to the archive's established convention, using the automated audio engineering workflow with ffmpeg.</description>
   </item>
 </channel>
 </rss>
