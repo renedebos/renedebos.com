@@ -1097,7 +1097,7 @@
           "size_mb": 10,
           "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/06 Sam Hall.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/06 Sam Hall.flac",
-          "flac_size_mb": 47,
+          "flac_size_mb": 46,
           "processed": true,
           "tags": [
             "cover"
@@ -2050,7 +2050,7 @@
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/13 Lover.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/13 Lover.flac",
-          "flac_size_mb": 35,
+          "flac_size_mb": 37,
           "processed": true,
           "tags": [
             "original"
@@ -2077,8 +2077,8 @@
           "songwriter": "Traditional",
           "duration": "1:58",
           "size_mb": 5,
-          "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/15 Still I Love Him.mp3",
-          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/15 Still I Love Him.flac",
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/15 Still I Love Him  .mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/15 Still I Love Him  .flac",
           "flac_size_mb": 23,
           "processed": true,
           "tags": [
@@ -2252,7 +2252,7 @@
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/02 A Pirate Looks at Forty.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/02 A Pirate Looks at Forty.flac",
-          "flac_size_mb": 42,
+          "flac_size_mb": 43,
           "processed": true,
           "tags": [
             "cover",
@@ -2325,7 +2325,7 @@
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/07 Butter.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/07 Butter.flac",
-          "flac_size_mb": 39,
+          "flac_size_mb": 40,
           "processed": true,
           "tags": [
             "original",
@@ -2340,7 +2340,7 @@
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/08 Anna May.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/08 Anna May.flac",
-          "flac_size_mb": 33,
+          "flac_size_mb": 34,
           "processed": true,
           "tags": [
             "original",
@@ -2547,9 +2547,9 @@
           "songwriter": "Steve Poltz",
           "duration": "4:34",
           "size_mb": 11,
-          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/22 Leprechaun.mp3",
-          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/22 Leprechaun.flac",
-          "flac_size_mb": 51,
+          "file": "MP3/JerryHannan - 19 Broadway 1999-07-19/22 The Blarney Stone Blues.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-07-19/22 The Blarney Stone Blues.flac",
+          "flac_size_mb": 52,
           "processed": true,
           "tags": [
             "cover",
@@ -3389,7 +3389,7 @@
           "size_mb": 16,
           "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/25 Hollywood (early version).mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/25 Hollywood (early version).flac",
-          "flac_size_mb": 68,
+          "flac_size_mb": 70,
           "processed": true,
           "tags": [
             "original"
@@ -4222,9 +4222,9 @@
           "songwriter": "Bruce Springsteen",
           "duration": "5:19",
           "size_mb": 13,
-          "file": "MP3/JerryHannan - 19 Broadway 2001-01-15 SBD/01 Highway Patrolman.mp3",
-          "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15 SBD/01 Highway Patrolman.flac",
-          "flac_size_mb": 59,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-15 SBD/01 State Trooper.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15 SBD/01 State Trooper.flac",
+          "flac_size_mb": 60,
           "processed": true,
           "tags": [
             "cover"
@@ -4561,7 +4561,7 @@
           "size_mb": 2,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15 SBD/24 Xmas Song.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15 SBD/24 Xmas Song.flac",
-          "flac_size_mb": 9,
+          "flac_size_mb": 10,
           "processed": true,
           "tags": [
             "original"
@@ -7129,7 +7129,8 @@
           "tags": [
             "cover",
             "ballad",
-            "country"
+            "country",
+            "guest"
           ]
         },
         {
@@ -7157,7 +7158,7 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/14 You Don't Know How It Feels.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/14 You Don't Know How It Feels.flac",
-          "flac_size_mb": 37,
+          "flac_size_mb": 38,
           "processed": true,
           "tags": [
             "cover",
@@ -7276,7 +7277,7 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/22 Maids When You're Young Never Wed an Old Man.mp3",
           "size_mb": 9,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/22 Maids When You're Young Never Wed an Old Man.flac",
-          "flac_size_mb": 39,
+          "flac_size_mb": 40,
           "processed": true,
           "tags": [
             "irish",
@@ -7307,7 +7308,7 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/24 Learn About Love.mp3",
           "size_mb": 7,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/24 Learn About Love.flac",
-          "flac_size_mb": 35,
+          "flac_size_mb": 36,
           "processed": true,
           "tags": [
             "cover"
@@ -7353,7 +7354,7 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/27 Some Get Married for Love.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/27 Some Get Married for Love.flac",
-          "flac_size_mb": 34,
+          "flac_size_mb": 36,
           "processed": true,
           "tags": [
             "irish"
@@ -7666,7 +7667,7 @@
           "size_mb": 7,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/01 Woman.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/01 Woman.flac",
-          "flac_size_mb": 31,
+          "flac_size_mb": 32,
           "processed": true,
           "tags": [
             "original"
@@ -7831,7 +7832,7 @@
           "size_mb": 9,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/12 Elephant Shoes.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/12 Elephant Shoes.flac",
-          "flac_size_mb": 39,
+          "flac_size_mb": 41,
           "processed": true,
           "tags": [
             "original"
@@ -8172,7 +8173,7 @@
           "file": "MP3/MadHannans - Sweetwater 2000-02-17 SBD/14 Butter.mp3",
           "size_mb": 8,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17 SBD/14 Butter.flac",
-          "flac_size_mb": 34,
+          "flac_size_mb": 35,
           "processed": true,
           "tags": [
             "original",
@@ -9422,7 +9423,7 @@
           "size_mb": 13,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/21 Rocky Road to Dublin _ Star of County Down.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/21 Rocky Road to Dublin _ Star of County Down.flac",
-          "flac_size_mb": 63,
+          "flac_size_mb": 65,
           "processed": true,
           "tags": [
             "irish",
@@ -10617,7 +10618,7 @@
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/18 Far Away Eyes.mp3",
           "size_mb": 12,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/18 Far Away Eyes.flac",
-          "flac_size_mb": 54,
+          "flac_size_mb": 50,
           "processed": true,
           "tags": [
             "cover",
@@ -11759,6 +11760,90 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T14:14:57.964928",
+      "slug": "mad-sweetwater-2001-01-06",
+      "report": true,
+      "text": "Reprocessed “Far Away Eyes,” previously stuck at −23.0 LUFS on an older workflow version — the fresh Drive export measures louder than the prior source, so plain linear normalization reached the full −20 target directly, no transient cap needed."
+    },
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T13:54:34.764321",
+      "slug": "mad-cafe-java-1999-09-09",
+      "report": true,
+      "text": "Force-capped “Rocky Road to Dublin / Star of County Down,” which landed between −21 and −25 LUFS, into the v8 sparse-transient-cap mode with the standard 6 dB attenuation ceiling raised to 8 dB after a reviewed, recorded override — now reaching −20.22. Restored the title to its established “/” form after the fresh export drifted to an underscore."
+    },
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T12:45:22.665522",
+      "slug": "jerry-19-broadway-2001-01-15",
+      "report": true,
+      "text": "Force-capped five shortfall tracks into the v8 sparse-transient-cap mode with the standard 6 dB attenuation ceiling raised per track after a reviewed, recorded override: “Highway Patrolman” (−20.39), “Anna May” (−20.28), and “Dope World” (−20.29) now land close to the full −20 target. “Loser” needed only a linear-reduced target (−21.0) to stay safely under the true-peak ceiling. “Xmas Song” was left at −21.24 — raising its ceiling further triggered the engine's own dynamics-safety check (cap engaging beyond isolated transients), so it was left short of full target rather than risk flattening the track's dynamics. Restored track 1's title to the archive's established spelling, “Highway Patrolman,” after the fresh export drifted to “State Trooper” (a different, real Springsteen song — verified this isn't the correct title for this track). Accepted a uniform ~6.5–7 dB L/R balance finding across all 31 tracks as a characteristic of this SBD source's channel mix, not a defect."
+    },
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T12:03:03.469433",
+      "slug": "mad-sweetwater-2000-02-17",
+      "report": true,
+      "text": "Force-capped “Butter,” which landed between −21 and −25 LUFS, into the v8 sparse-transient-cap mode — now reaching the full −20 target."
+    },
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T11:44:08.759612",
+      "slug": "jerry-19-broadway-1999-10-25",
+      "report": true,
+      "text": "Force-capped two tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode: “Black is the Color” now reaches the full −20 target, and “Hollywood (early version)” recovers to −20.60. Both exceeded the automatic review band and needed an explicit override."
+    },
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T11:21:02.255446",
+      "slug": "sean-19-broadway-2000-02-21",
+      "report": true,
+      "text": "Force-capped three tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode, all now reaching the full −20 target: “Galway Shawl,” “The German Clockwinder,” and “Plastic Lemons.”"
+    },
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T11:04:19.686744",
+      "slug": "sean-19-broadway-unknown",
+      "report": true,
+      "text": "Force-capped three tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode, all now reaching the full −20 target: “Woman,” “Elephant Shoes,” and “Angel from Montgomery.” Restored track 14's title to the archive's established spelling, “Angel from Montgomery,” after the fresh export drifted to “Angel of Montgomery.” A mild L/R level imbalance on track 1 (“Woman”) was reviewed and accepted as typical audience-tape mic placement, not a defect."
+    },
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T10:43:47.066350",
+      "slug": "jerry-19-broadway-1999-06-21",
+      "report": true,
+      "text": "Force-capped four tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode, all now reaching (or landing just short of) the full −20 target: “Everything Reminds Me of You,” “Hear Me,” “Still I Love Him,” and “You're Pulling Me Leg / The Ted Kennedy Song.” “Hear Me” exceeded the automatic review band and needed an explicit override, landing at −20.29. Restored track 13's title to the archive's established spelling, “Hear Me,” and track 16's to its established “/” form, after the fresh export drifted to “Lover” and an underscore respectively."
+    },
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T10:26:05.981109",
+      "slug": "jerry-19-broadway-1999-05-10",
+      "report": true,
+      "text": "Force-capped eight tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode, all now reaching the full −20 target: “I Thought I Was You,” “Getaway Blues,” “Sam Hall,” “The Oldest Baby in the World,” “Illegal Smile,” “Ted Kennedy Song,” “Butter,” and “The Parting Glass.” Two (“Sam Hall,” “Ted Kennedy Song”) exceeded the automatic review band and needed an explicit override. Restored track 17's title to the archive's established spelling, “Hear Me,” after the fresh export drifted back to “I Need a Lover.”"
+    },
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T00:21:25.939266",
+      "slug": "jerry-19-broadway-1999-07-19",
+      "report": true,
+      "text": "Opted the nine tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode. Eight now reach the full −20 target: “A Pirate Looks at Forty,” “I Thought I Was You” (a review-tier flag, listened to and approved), “Butter,” “Anna May,” “Black is the Color,” “The Blarney Stone Blues,” “My Father's House,” and “Slave Woman.” “Kilkelly Ireland” already used the applause-only limiter for a boundary clap and stays at −21.9, since the music itself needed more headroom than the limiter alone recovers. Three titles restored to the archive's established spelling after the fresh export drifted: “My Dear (Ride On)” back to “Ride On,” “Angel of Montgomery” to “Angel from Montgomery,” and “She is The Girlfriend of The Boyfriend of Herself” to “The Girlfriend of the Boyfriend of Herself.” Track 22's fresh export read “Leprechaun” against the catalog's “The Blarney Stone Blues” — confirmed with Rene directly (an existing, previously-unresolved ambiguity, not a typo) that “The Blarney Stone Blues” is correct."
+    },
+    {
+      "date": "2026-08-12",
+      "ts": "2026-08-12T23:40:50.808847",
+      "slug": "sean-19-broadway-2000-01-24",
+      "report": true,
+      "text": "Force-capped “Maids When You’re Young Never Wed an Old Man” after it initially declined the v8 sparse-transient-cap mode automatically for exceeding the calibrated review band (a single continuous engagement at 3:27.3 ran longer than the original listening evidence covered). After listening, given the explicit override — now reaches −20.5 LUFS instead of −22.6."
+    },
+    {
+      "date": "2026-08-12",
+      "ts": "2026-08-12T23:28:30.459346",
+      "slug": "sean-19-broadway-2000-01-24",
+      "report": true,
+      "text": "Opted 16 tracks on this show into the v8 sparse-transient-cap mode, all of which had landed short of −20 LUFS under the older workflow. Eight now reach the full target through capping alone: “Smoke in Heaven,” “Angel from Montgomery,” “You Don’t Know How It Feels,” “The Black Velvet Band,” “Me and Eddie Vedder,” “Gold’s Gym Guy,” “Learn About Love,” and “Some Get Married for Love.” Three landed a little short instead of over-shaved (true linear normalization preserved): “Woman” (−20.2), “The Good Life” (−20.7), and “Galway Shawl” (−20.9). “Maids When You’re Young Never Wed an Old Man” didn’t qualify for capping and stays at −22.6. Three more — “Beverley,” “Did You Ever See,” and “The Patriot Game” — already used the archive’s applause-only limiter for a loud clap at the track boundary and land close to or (for “The Patriot Game”) still short of target, since the music itself, not just the clap, needed more headroom than the limiter alone recovers."
+    },
     {
       "date": "2026-08-12",
       "ts": "2026-08-12T22:44:56.543817",

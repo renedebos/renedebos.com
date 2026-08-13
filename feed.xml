@@ -8,6 +8,90 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Reprocessed “Far Away Eyes,” previously stuck at −23.0 LUFS on an older workflow version …</title>
+    <link>https://renedebos.com/shows/mad-sweetwater-2001-01-06/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-13-mad-sweetwater-2001-01-06</guid>
+    <pubDate>Thu, 13 Aug 2026 14:14:57 +0000</pubDate>
+    <description>Reprocessed “Far Away Eyes,” previously stuck at −23.0 LUFS on an older workflow version — the fresh Drive export measures louder than the prior source, so plain linear normalization reached the full −20 target directly, no transient cap needed.</description>
+  </item>
+  <item>
+    <title>Force-capped “Rocky Road to Dublin / Star of County Down,” which landed between −21 and −…</title>
+    <link>https://renedebos.com/shows/mad-cafe-java-1999-09-09/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-13-mad-cafe-java-1999-09-09</guid>
+    <pubDate>Thu, 13 Aug 2026 13:54:34 +0000</pubDate>
+    <description>Force-capped “Rocky Road to Dublin / Star of County Down,” which landed between −21 and −25 LUFS, into the v8 sparse-transient-cap mode with the standard 6 dB attenuation ceiling raised to 8 dB after a reviewed, recorded override — now reaching −20.22. Restored the title to its established “/” form after the fresh export drifted to an underscore.</description>
+  </item>
+  <item>
+    <title>Force-capped five shortfall tracks into the v8 sparse-transient-cap mode with the standar…</title>
+    <link>https://renedebos.com/shows/jerry-19-broadway-2001-01-15/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-13-jerry-19-broadway-2001-01-15</guid>
+    <pubDate>Thu, 13 Aug 2026 12:45:22 +0000</pubDate>
+    <description>Force-capped five shortfall tracks into the v8 sparse-transient-cap mode with the standard 6 dB attenuation ceiling raised per track after a reviewed, recorded override: “Highway Patrolman” (−20.39), “Anna May” (−20.28), and “Dope World” (−20.29) now land close to the full −20 target. “Loser” needed only a linear-reduced target (−21.0) to stay safely under the true-peak ceiling. “Xmas Song” was left at −21.24 — raising its ceiling further triggered the engine's own dynamics-safety check (cap engaging beyond isolated transients), so it was left short of full target rather than risk flattening the track's dynamics. Restored track 1's title to the archive's established spelling, “Highway Patrolman,” after the fresh export drifted to “State Trooper” (a different, real Springsteen song — verified this isn't the correct title for this track). Accepted a uniform ~6.5–7 dB L/R balance finding across all 31 tracks as a characteristic of this SBD source's channel mix, not a defect.</description>
+  </item>
+  <item>
+    <title>Force-capped “Butter,” which landed between −21 and −25 LUFS, into the v8 sparse-transien…</title>
+    <link>https://renedebos.com/shows/mad-sweetwater-2000-02-17/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-13-mad-sweetwater-2000-02-17</guid>
+    <pubDate>Thu, 13 Aug 2026 12:03:03 +0000</pubDate>
+    <description>Force-capped “Butter,” which landed between −21 and −25 LUFS, into the v8 sparse-transient-cap mode — now reaching the full −20 target.</description>
+  </item>
+  <item>
+    <title>Force-capped two tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap…</title>
+    <link>https://renedebos.com/shows/jerry-19-broadway-1999-10-25/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-13-jerry-19-broadway-1999-10-25</guid>
+    <pubDate>Thu, 13 Aug 2026 11:44:08 +0000</pubDate>
+    <description>Force-capped two tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode: “Black is the Color” now reaches the full −20 target, and “Hollywood (early version)” recovers to −20.60. Both exceeded the automatic review band and needed an explicit override.</description>
+  </item>
+  <item>
+    <title>Force-capped three tracks landing between −21 and −25 LUFS into the v8 sparse-transient-c…</title>
+    <link>https://renedebos.com/shows/sean-19-broadway-2000-02-21/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-13-sean-19-broadway-2000-02-21</guid>
+    <pubDate>Thu, 13 Aug 2026 11:21:02 +0000</pubDate>
+    <description>Force-capped three tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode, all now reaching the full −20 target: “Galway Shawl,” “The German Clockwinder,” and “Plastic Lemons.”</description>
+  </item>
+  <item>
+    <title>Force-capped three tracks landing between −21 and −25 LUFS into the v8 sparse-transient-c…</title>
+    <link>https://renedebos.com/shows/sean-19-broadway-unknown/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-13-sean-19-broadway-unknown</guid>
+    <pubDate>Thu, 13 Aug 2026 11:04:19 +0000</pubDate>
+    <description>Force-capped three tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode, all now reaching the full −20 target: “Woman,” “Elephant Shoes,” and “Angel from Montgomery.” Restored track 14's title to the archive's established spelling, “Angel from Montgomery,” after the fresh export drifted to “Angel of Montgomery.” A mild L/R level imbalance on track 1 (“Woman”) was reviewed and accepted as typical audience-tape mic placement, not a defect.</description>
+  </item>
+  <item>
+    <title>Force-capped four tracks landing between −21 and −25 LUFS into the v8 sparse-transient-ca…</title>
+    <link>https://renedebos.com/shows/jerry-19-broadway-1999-06-21/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-13-jerry-19-broadway-1999-06-21</guid>
+    <pubDate>Thu, 13 Aug 2026 10:43:47 +0000</pubDate>
+    <description>Force-capped four tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode, all now reaching (or landing just short of) the full −20 target: “Everything Reminds Me of You,” “Hear Me,” “Still I Love Him,” and “You're Pulling Me Leg / The Ted Kennedy Song.” “Hear Me” exceeded the automatic review band and needed an explicit override, landing at −20.29. Restored track 13's title to the archive's established spelling, “Hear Me,” and track 16's to its established “/” form, after the fresh export drifted to “Lover” and an underscore respectively.</description>
+  </item>
+  <item>
+    <title>Force-capped eight tracks landing between −21 and −25 LUFS into the v8 sparse-transient-c…</title>
+    <link>https://renedebos.com/shows/jerry-19-broadway-1999-05-10/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-13-jerry-19-broadway-1999-05-10</guid>
+    <pubDate>Thu, 13 Aug 2026 10:26:05 +0000</pubDate>
+    <description>Force-capped eight tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode, all now reaching the full −20 target: “I Thought I Was You,” “Getaway Blues,” “Sam Hall,” “The Oldest Baby in the World,” “Illegal Smile,” “Ted Kennedy Song,” “Butter,” and “The Parting Glass.” Two (“Sam Hall,” “Ted Kennedy Song”) exceeded the automatic review band and needed an explicit override. Restored track 17's title to the archive's established spelling, “Hear Me,” after the fresh export drifted back to “I Need a Lover.”</description>
+  </item>
+  <item>
+    <title>Opted the nine tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap m…</title>
+    <link>https://renedebos.com/shows/jerry-19-broadway-1999-07-19/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-13-jerry-19-broadway-1999-07-19</guid>
+    <pubDate>Thu, 13 Aug 2026 00:21:25 +0000</pubDate>
+    <description>Opted the nine tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode. Eight now reach the full −20 target: “A Pirate Looks at Forty,” “I Thought I Was You” (a review-tier flag, listened to and approved), “Butter,” “Anna May,” “Black is the Color,” “The Blarney Stone Blues,” “My Father's House,” and “Slave Woman.” “Kilkelly Ireland” already used the applause-only limiter for a boundary clap and stays at −21.9, since the music itself needed more headroom than the limiter alone recovers. Three titles restored to the archive's established spelling after the fresh export drifted: “My Dear (Ride On)” back to “Ride On,” “Angel of Montgomery” to “Angel from Montgomery,” and “She is The Girlfriend of The Boyfriend of Herself” to “The Girlfriend of the Boyfriend of Herself.” Track 22's fresh export read “Leprechaun” against the catalog's “The Blarney Stone Blues” — confirmed with Rene directly (an existing, previously-unresolved ambiguity, not a typo) that “The Blarney Stone Blues” is correct.</description>
+  </item>
+  <item>
+    <title>Force-capped “Maids When You’re Young Never Wed an Old Man” after it initially declined t…</title>
+    <link>https://renedebos.com/shows/sean-19-broadway-2000-01-24/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-12-sean-19-broadway-2000-01-24</guid>
+    <pubDate>Wed, 12 Aug 2026 23:40:50 +0000</pubDate>
+    <description>Force-capped “Maids When You’re Young Never Wed an Old Man” after it initially declined the v8 sparse-transient-cap mode automatically for exceeding the calibrated review band (a single continuous engagement at 3:27.3 ran longer than the original listening evidence covered). After listening, given the explicit override — now reaches −20.5 LUFS instead of −22.6.</description>
+  </item>
+  <item>
+    <title>Opted 16 tracks on this show into the v8 sparse-transient-cap mode, all of which had land…</title>
+    <link>https://renedebos.com/shows/sean-19-broadway-2000-01-24/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-12-sean-19-broadway-2000-01-24</guid>
+    <pubDate>Wed, 12 Aug 2026 23:28:30 +0000</pubDate>
+    <description>Opted 16 tracks on this show into the v8 sparse-transient-cap mode, all of which had landed short of −20 LUFS under the older workflow. Eight now reach the full target through capping alone: “Smoke in Heaven,” “Angel from Montgomery,” “You Don’t Know How It Feels,” “The Black Velvet Band,” “Me and Eddie Vedder,” “Gold’s Gym Guy,” “Learn About Love,” and “Some Get Married for Love.” Three landed a little short instead of over-shaved (true linear normalization preserved): “Woman” (−20.2), “The Good Life” (−20.7), and “Galway Shawl” (−20.9). “Maids When You’re Young Never Wed an Old Man” didn’t qualify for capping and stays at −22.6. Three more — “Beverley,” “Did You Ever See,” and “The Patriot Game” — already used the archive’s applause-only limiter for a loud clap at the track boundary and land close to or (for “The Patriot Game”) still short of target, since the music itself, not just the clap, needed more headroom than the limiter alone recovers.</description>
+  </item>
+  <item>
     <title>Opted two more tracks on this show into the v8 sparse-transient-cap mode, both landing we…</title>
     <link>https://renedebos.com/shows/jerry-19-broadway-1999-06-07/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-12-jerry-19-broadway-1999-06-07</guid>
@@ -202,90 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-08-mad-cafe-java-1999-09-09</guid>
     <pubDate>Sat, 08 Aug 2026 17:52:34 +0000</pubDate>
     <description>Reprocessed this Mad Hannans set at Cafe Java again, this time under a new workflow (v8) built for tapes where the mic sat close to the drums: a millisecond-scale true-peak limiter now catches only the sharpest instant of an isolated musical transient — a snare hit, a strum — while the surrounding performance keeps its full, untouched gain, letting more tracks reach the archive's −20 LUFS standard instead of landing several dB quieter. Fifteen of the twenty-two tracks qualified and are now capped this way; “Rocky Road to Dublin / Star of County Down” needed more recovery than the policy's 6 dB ceiling allows, so it lands at −21.6 LUFS instead of −20 — inaudibly quieter, never over-shaved. “Truck” and “Anna May” are untouched by this change: both were already correctly handled by an earlier, unrelated fix that limits only audience applause at a track's edges, not the music. Two titles also picked up small spelling corrections back to the archive's established convention: “ABC (alt version)” and “The Kiss / Da Da Da (Slave to an Angel).”</description>
-  </item>
-  <item>
-    <title>Re-normalized this Mad Hannans set at Cafe Java to −20 LUFS on the current audio engineer…</title>
-    <link>https://renedebos.com/shows/mad-cafe-java-1999-09-09/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-08-mad-cafe-java-1999-09-09</guid>
-    <pubDate>Sat, 08 Aug 2026 02:40:00 +0000</pubDate>
-    <description>Re-normalized this Mad Hannans set at Cafe Java to −20 LUFS on the current audio engineering workflow (v7), replacing the show's original v1 pass — the last v1 show in the archive. The fresh hand-edit pass applied noise reduction across the show and corrected the song list: what was catalogued as a single 5:39 track, “Everything Reminds Me of You,” is in fact two songs, now split into separate tracks with the second restored as “Hear Me” — so the show runs 22 tracks rather than 21. “My Dear” has been identified as the song the archive lists elsewhere as “Ride On” and retitled to match, and “Plastic Melons” corrected to “Plastic Lemons.” Elsewhere in the archive, two tracks catalogued as “I Need a Lover” have been corrected to “Hear Me,” the song's real title.</description>
-  </item>
-  <item>
-    <title>Re-normalized all 21 tracks of this Mad Hannans set at the Sweetwater to −20 LUFS on the …</title>
-    <link>https://renedebos.com/shows/mad-sweetwater-2000-02-17/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-23-mad-sweetwater-2000-02-17</guid>
-    <pubDate>Thu, 23 Jul 2026 07:00:00 +0000</pubDate>
-    <description>Re-normalized all 21 tracks of this Mad Hannans set at the Sweetwater to −20 LUFS on the current audio engineering workflow (v7), replacing the show's original v2 pass; re-exported track 14 ("Butter") to restore the song's opening chords, missing from an earlier transfer; also corrected drifted titles "Hard Drinking," "I Need a Lover," and "The Kiss / Da Da Da (Slave to an Angel)" back to the archive's established convention, using the automated audio engineering workflow with ffmpeg.</description>
-  </item>
-  <item>
-    <title>Re-normalized all 24 tracks of Jerry's birthday show at the Sweetwater to −20 LUFS on the…</title>
-    <link>https://renedebos.com/shows/mad-sweetwater-2000-10-17/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-22-mad-sweetwater-2000-10-17</guid>
-    <pubDate>Wed, 22 Jul 2026 11:20:00 +0000</pubDate>
-    <description>Re-normalized all 24 tracks of Jerry's birthday show at the Sweetwater to −20 LUFS on the current audio engineering workflow (v7), replacing the show's original v1 pass; also fixed track titles "Model Family Man" and "Plastic Lemons" (stray trailing whitespace) and "The Kiss / Da Da Da (Slave to an Angel)" (drifted separator) back to the archive's established convention, using the automated audio engineering workflow with ffmpeg.</description>
-  </item>
-  <item>
-    <title>Re-normalized all 18 tracks to −20 LUFS on the current audio engineering workflow, replac…</title>
-    <link>https://renedebos.com/shows/sean-19-broadway-unknown/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-22-sean-19-broadway-unknown</guid>
-    <pubDate>Wed, 22 Jul 2026 00:00:00 +0000</pubDate>
-    <description>Re-normalized all 18 tracks to −20 LUFS on the current audio engineering workflow, replacing an older processing pass; also corrected track 3's title to "Don't Think Twice It's All Right" and track 14's to "Angel from Montgomery," using the automated audio engineering workflow with ffmpeg</description>
-  </item>
-  <item>
-    <title>Brought four more pre-v4 shows up to the current processing engine (v7) — Jerry Hannan at…</title>
-    <link>https://renedebos.com/updates/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-19-site</guid>
-    <pubDate>Sun, 19 Jul 2026 08:20:20 +0000</pubDate>
-    <description>Brought four more pre-v4 shows up to the current processing engine (v7) — Jerry Hannan at 19 Broadway on 1999-05-10, 1999-06-21, 1999-07-19, and 2001-01-15 — replacing early loudnorm-based passes that had occasionally fallen back to dynamic-mode compression instead of true linear gain. All four re-split from fresh hand-edit exports and re-verified against R2.</description>
-  </item>
-  <item>
-    <title>Re-normalized all 21 tracks: the show's original v1 processing had silently hit exactly −…</title>
-    <link>https://renedebos.com/shows/jerry-19-broadway-1999-06-21/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-18-jerry-19-broadway-1999-06-21</guid>
-    <pubDate>Sat, 18 Jul 2026 17:16:26 +0000</pubDate>
-    <description>Re-normalized all 21 tracks: the show's original v1 processing had silently hit exactly −20 LUFS and exactly −1 dBTP on several tracks — the same dynamic-mode fallback bug found in other pre-v4 shows — when tracks like "I Need a Lover" and "You're Pulling Me Leg / The Ted Kennedy Song" in fact needed a target as low as −24.7 LUFS to stay linear. Re-split from a fresh hand-edit pass using the current engine.</description>
-  </item>
-  <item>
-    <title>Re-normalized all 30 tracks: the show's original v1 processing used ffmpeg's naive loudno…</title>
-    <link>https://renedebos.com/shows/jerry-19-broadway-2001-01-08/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-17-jerry-19-broadway-2001-01-08</guid>
-    <pubDate>Fri, 17 Jul 2026 18:04:20 +0000</pubDate>
-    <description>Re-normalized all 30 tracks: the show's original v1 processing used ffmpeg's naive loudnorm, which had silently hit exactly −20 LUFS and exactly −1 dBTP on nearly every track — the signature of the same dynamic-mode fallback bug that flattened Sean Hannan's 1999-11-29 show, since several of these tracks in fact needed a target as low as −28 LUFS to stay linear. Tracks where audience applause — not the music — set the ceiling (Anna May, Luxury of Murder) now get linear gain sized to the music itself, with only the applause gently limited. Also re-split from a corrected label export that fixed a garbled track title and stripped stray junk labels.</description>
-  </item>
-  <item>
-    <title>Re-normalized all 21 tracks: a bug in the loudness pipeline had silently switched several…</title>
-    <link>https://renedebos.com/shows/sean-19-broadway-1999-11-29/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-17-sean-19-broadway-1999-11-29</guid>
-    <pubDate>Fri, 17 Jul 2026 01:00:00 +0000</pubDate>
-    <description>Re-normalized all 21 tracks: a bug in the loudness pipeline had silently switched several tracks into dynamic (compressor-like) processing instead of true linear gain, flattening hand-drawn fades and room dynamics. Tracks where audience applause — not the music — was the loudest thing on the tape now get linear gain sized to the music itself, with only the applause gently limited. Track 7, "The Rodeo Song," has some audible clipping baked into the source recording — normalization can't undo that, so it's flagged rather than papered over — using the automated audio engineering workflow with ffmpeg</description>
-  </item>
-  <item>
-    <title>Re-normalized all 31 tracks to −20 LUFS on the current audio engineering workflow, replac…</title>
-    <link>https://renedebos.com/shows/sean-19-broadway-2000-01-24/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-16-sean-19-broadway-2000-01-24</guid>
-    <pubDate>Thu, 16 Jul 2026 22:35:00 +0000</pubDate>
-    <description>Re-normalized all 31 tracks to −20 LUFS on the current audio engineering workflow, replacing an older processing pass, using the automated audio engineering workflow with ffmpeg</description>
-  </item>
-  <item>
-    <title>Re-normalized all 11 tracks to −20 LUFS on the current audio engineering workflow, replac…</title>
-    <link>https://renedebos.com/shows/sean-19-broadway-2000-02-21/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-16-sean-19-broadway-2000-02-21</guid>
-    <pubDate>Thu, 16 Jul 2026 22:30:00 +0000</pubDate>
-    <description>Re-normalized all 11 tracks to −20 LUFS on the current audio engineering workflow, replacing an older processing pass; also corrected track 5's title to "Ode to Biddy McGee," using the automated audio engineering workflow with ffmpeg</description>
-  </item>
-  <item>
-    <title>Added the Mad Hannans' return to Marin Brewing Co. in Larkspur, April 1, 1999 — the venue…</title>
-    <link>https://renedebos.com/shows/mad-marin-brewing-co-1999-04-01/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-15-mad-marin-brewing-co-1999-04-01</guid>
-    <pubDate>Wed, 15 Jul 2026 14:12:52 +0000</pubDate>
-    <description>Added the Mad Hannans' return to Marin Brewing Co. in Larkspur, April 1, 1999 — the venue's 10th anniversary, one year to the day after their first show there — as 15 individual tracks normalized to −20 LUFS. "Da Da Da (Slave to an Angel)" now opens with its "The Kiss" intro, missing from the 1998 show. Two audience transfers of the tape survive; the tracks come from the cleaner one, with the other kept as an alternate full-show download.</description>
-  </item>
-  <item>
-    <title>Added the earliest Mad Hannans show in the archive, April 1, 1998 at Marin Brewing Co. in…</title>
-    <link>https://renedebos.com/shows/mad-marin-brewing-co-1998-04-01/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-15-mad-marin-brewing-co-1998-04-01</guid>
-    <pubDate>Wed, 15 Jul 2026 12:51:28 +0000</pubDate>
-    <description>Added the earliest Mad Hannans show in the archive, April 1, 1998 at Marin Brewing Co. in Larkspur, as 17 individual tracks normalized to −20 LUFS. It's a rough audience recording left without EQ or noise reduction, and "Da Da Da (Slave to an Angel)" still lacks the "The Kiss" intro it later picked up. Includes a Steve Miller cover, "Space Cowboy."</description>
   </item>
 </channel>
 </rss>

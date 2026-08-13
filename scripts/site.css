@@ -94,21 +94,25 @@ header .wrap {
   display: flex;
   align-items: center;
   gap: 1.6rem;
-  padding-top: 1rem;
-  padding-bottom: 1rem;
+  padding-top: 22px;
+  padding-bottom: 22px;
 }
 
 .mark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
   height: 34px;
-  border-radius: 50%;
+  padding: 0 16px;
+  border-radius: 17px;
   background: var(--accent);
   border: 1px solid var(--accent);
   color: var(--bg);
-  font-size: 1.05rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  text-decoration: none;
   flex-shrink: 0;
   transition: filter 0.18s ease;
 }
@@ -1009,6 +1013,48 @@ main {
 .treat-applause-limiter { color: #9d85c9; }
 .treat-sparse-transient-cap { color: #c9a05c; }
 .treat-review { text-decoration: underline dotted; }
+
+/* /archive-data/ — expandable per-row transient-cap detail (2026-08-13):
+   full numeric breakdown on click, not hidden behind a hover-only tooltip */
+.treat-expandable { cursor: pointer; }
+.treat-expandable:hover { color: var(--accent); }
+.treat-toggle {
+  display: inline-block;
+  margin-left: 0.3em;
+  border: solid currentColor;
+  border-width: 0 1.5px 1.5px 0;
+  padding: 2px;
+  transform: rotate(45deg);
+  transition: transform 0.12s ease;
+}
+tr:has(+ .ad-detail-row) .treat-toggle { transform: rotate(-135deg); }
+.ad-detail-row td {
+  background: var(--accent-light);
+  padding: 0.7rem 1rem;
+  border-top: none;
+}
+.ad-detail-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.4rem;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.ad-detail-field { display: flex; gap: 0.4em; }
+.ad-detail-k { color: var(--muted); }
+.ad-detail-v { color: var(--text); font-variant-numeric: tabular-nums; }
+.ad-detail-override {
+  margin-top: 0.5rem;
+  font-size: 12px;
+  color: var(--highlight);
+}
+.ad-detail-chain {
+  margin-top: 0.4rem;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  word-break: break-all;
+}
 
 /* processing status badge (in the technical-data summary) */
 .proc-status {
