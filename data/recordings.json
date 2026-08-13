@@ -8173,7 +8173,7 @@
           "file": "MP3/MadHannans - Sweetwater 2000-02-17 SBD/14 Butter.mp3",
           "size_mb": 8,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17 SBD/14 Butter.flac",
-          "flac_size_mb": 34,
+          "flac_size_mb": 35,
           "processed": true,
           "tags": [
             "original",
@@ -11760,6 +11760,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T12:03:03.469433",
+      "slug": "mad-sweetwater-2000-02-17",
+      "report": true,
+      "text": "Force-capped “Butter,” which landed between −21 and −25 LUFS, into the v8 sparse-transient-cap mode — now reaching the full −20 target."
+    },
     {
       "date": "2026-08-13",
       "ts": "2026-08-13T11:44:08.759612",
