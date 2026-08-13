@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Force-capped two tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap…</title>
+    <link>https://renedebos.com/shows/jerry-19-broadway-1999-10-25/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-13-jerry-19-broadway-1999-10-25</guid>
+    <pubDate>Thu, 13 Aug 2026 11:44:08 +0000</pubDate>
+    <description>Force-capped two tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode: “Black is the Color” now reaches the full −20 target, and “Hollywood (early version)” recovers to −20.60. Both exceeded the automatic review band and needed an explicit override.</description>
+  </item>
+  <item>
     <title>Force-capped three tracks landing between −21 and −25 LUFS into the v8 sparse-transient-c…</title>
     <link>https://renedebos.com/shows/sean-19-broadway-2000-02-21/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-13-sean-19-broadway-2000-02-21</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-22-sean-19-broadway-unknown</guid>
     <pubDate>Wed, 22 Jul 2026 00:00:00 +0000</pubDate>
     <description>Re-normalized all 18 tracks to −20 LUFS on the current audio engineering workflow, replacing an older processing pass; also corrected track 3's title to "Don't Think Twice It's All Right" and track 14's to "Angel from Montgomery," using the automated audio engineering workflow with ffmpeg</description>
-  </item>
-  <item>
-    <title>Brought four more pre-v4 shows up to the current processing engine (v7) — Jerry Hannan at…</title>
-    <link>https://renedebos.com/updates/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-19-site</guid>
-    <pubDate>Sun, 19 Jul 2026 08:20:20 +0000</pubDate>
-    <description>Brought four more pre-v4 shows up to the current processing engine (v7) — Jerry Hannan at 19 Broadway on 1999-05-10, 1999-06-21, 1999-07-19, and 2001-01-15 — replacing early loudnorm-based passes that had occasionally fallen back to dynamic-mode compression instead of true linear gain. All four re-split from fresh hand-edit exports and re-verified against R2.</description>
   </item>
 </channel>
 </rss>

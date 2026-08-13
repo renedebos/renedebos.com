@@ -3389,7 +3389,7 @@
           "size_mb": 16,
           "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/25 Hollywood (early version).mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/25 Hollywood (early version).flac",
-          "flac_size_mb": 68,
+          "flac_size_mb": 70,
           "processed": true,
           "tags": [
             "original"
@@ -11760,6 +11760,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T11:44:08.759612",
+      "slug": "jerry-19-broadway-1999-10-25",
+      "report": true,
+      "text": "Force-capped two tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode: “Black is the Color” now reaches the full −20 target, and “Hollywood (early version)” recovers to −20.60. Both exceeded the automatic review band and needed an explicit override."
+    },
     {
       "date": "2026-08-13",
       "ts": "2026-08-13T11:21:02.255446",
