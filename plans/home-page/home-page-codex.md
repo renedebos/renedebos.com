@@ -61,6 +61,12 @@ separate yes/no decision.
 7. If another project needs the same source lines, finish or coordinate one
    pull request before merging the other; Git will flag conflicts, but the
    planning files should warn about them early.
+8. Sync with `main` at the start of a session (not on a fixed schedule) —
+   `git fetch origin main && git merge main` — so the branch doesn't drift
+   too far from what `main` has picked up elsewhere (e.g. the audio-processing
+   work landing there independently) and any conflict surfaces while someone
+   is actually present to resolve it. Do this again right before opening the
+   next pull request from this branch, even if it was done recently.
 
 A useful opening prompt for a future session is:
 
@@ -68,8 +74,10 @@ A useful opening prompt for a future session is:
 Work only in /home/renedebos/renedebos.com-home-page on the home-page branch.
 Read CLAUDE.md, plans/home-page/home-page.md, and
 plans/home-page/home-page-codex.md first. Confirm the branch and current Git
-status before editing. Keep this task limited to the home-page header icon.
-Do not commit, push, or merge until I ask.
+status before editing, then run `git fetch origin main && git merge main` to
+pick up anything new on main. The header-icon change (v1) already shipped —
+this session's task is further home-page layout work. Do not commit, push,
+or merge until I ask.
 ```
 
 ## GitHub Flow for This Project

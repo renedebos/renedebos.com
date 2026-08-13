@@ -257,7 +257,21 @@ For this project:
       `/contact/`, desktop and mobile widths, light and dark — all read
       cleanly. Hover/focus-visible rules were left untouched (only the
       resting-state geometry/color changed), so not separately screenshotted.
-- [ ] Commit the change on `home-page`.
-- [ ] Push the branch and open a pull request into `main`.
-- [ ] Merge only after reviewing the pull request.
+- [x] Commit the change on `home-page` (`2f9e688`).
+- [x] Push the branch and open a pull request into `main` — [PR #2](https://github.com/renedebos/renedebos.com/pull/2).
+- [x] Merge only after reviewing the pull request — merged `2026-08-13T20:38:35Z`
+      (`a455f9d`), deploy succeeded, verified live on renedebos.com and
+      `/contact/`.
+
+## 8. Unrelated finding: stray Cloudflare Workers Builds integration
+
+While reviewing this PR, a second, undocumented deploy mechanism surfaced:
+Cloudflare's native "Workers Builds" Git integration on `renedebos-site`,
+separate from this repo's `deploy.yml` GitHub Actions workflow (the only one
+`wrangler.jsonc` documents). It builds with `npx wrangler versions upload`
+(preview only, doesn't route production traffic) and had failed on this PR
+with an invalid/rolled build token — unrelated to this project's code. Fixed
+by regenerating the build token in the Cloudflare dashboard (Settings →
+Builds → API token); a manual retry then succeeded and produced working
+preview URLs. Not otherwise pursued further as part of this project.
 
