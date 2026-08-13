@@ -1414,7 +1414,7 @@
           "size_mb": 6,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/02 Smoke in Heaven.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/02 Smoke in Heaven.flac",
-          "flac_size_mb": 31,
+          "flac_size_mb": 30,
           "processed": true,
           "tags": [
             "original",
@@ -1473,7 +1473,7 @@
           "size_mb": 10,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/06 Hello in There.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/06 Hello in There.flac",
-          "flac_size_mb": 46,
+          "flac_size_mb": 44,
           "processed": true,
           "tags": [
             "cover",
@@ -1488,7 +1488,7 @@
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/07 Luxury of Murder.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/07 Luxury of Murder.flac",
-          "flac_size_mb": 34,
+          "flac_size_mb": 33,
           "processed": true,
           "tags": [
             "original"
@@ -1575,7 +1575,7 @@
           "size_mb": 6,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/13 Open Door.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/13 Open Door.flac",
-          "flac_size_mb": 26,
+          "flac_size_mb": 25,
           "processed": true,
           "tags": [
             "original"
@@ -1589,7 +1589,7 @@
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/14 Long Black Veil.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/14 Long Black Veil.flac",
-          "flac_size_mb": 34,
+          "flac_size_mb": 33,
           "processed": true,
           "tags": [
             "cover",
@@ -1663,7 +1663,7 @@
           "size_mb": 11,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/19 Recycle.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/19 Recycle.flac",
-          "flac_size_mb": 57,
+          "flac_size_mb": 56,
           "processed": true,
           "tags": [
             "original",
@@ -1678,7 +1678,7 @@
           "size_mb": 7,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/20 Madeline.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/20 Madeline.flac",
-          "flac_size_mb": 34,
+          "flac_size_mb": 33,
           "processed": true,
           "tags": [
             "original"
@@ -1792,7 +1792,7 @@
           "size_mb": 9,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/28 Everything Reminds Me of You.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/28 Everything Reminds Me of You.flac",
-          "flac_size_mb": 44,
+          "flac_size_mb": 43,
           "processed": true,
           "tags": [
             "original"
@@ -11759,6 +11759,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-12",
+      "ts": "2026-08-12T20:35:34.722103",
+      "slug": "jerry-19-broadway-1999-06-07",
+      "report": true,
+      "text": "Reprocessed all 29 tracks on Jerry Hannan's solo set at 19 Broadway from June 7, 1999 (v5→v8) — affected by a since-fixed bug in the older workflow that could silently flatten tracks' natural dynamics instead of applying true linear gain. Opted into the v8 sparse-transient-cap mode from the start; five tracks had review-tier flags (isolated transients on “Kilkelly Ireland,” “Butter,” “Everything Reminds Me of You,” “Happy Birthday Marco,” and “Ted Kennedy Song”) that were listened to and approved before capping; all now reach the full −20 LUFS target. “A Bunch of Thyme” qualified for the applause-only limiter instead (a loud clap at the track boundary, not the music, was setting the ceiling). Two titles restored to the archive's established spelling after the fresh export drifted: “The Barney Stone Blues” to “The Blarney Stone Blues,” and “Come On All You Young Maidens” (the traditional song's opening lyric line) back to “A Bunch of Thyme.”"
+    },
     {
       "date": "2026-08-12",
       "ts": "2026-08-12T16:00:22.602506",
