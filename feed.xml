@@ -15,6 +15,13 @@
     <description>Reprocessed all 27 tracks on Jerry Hannan's solo show at Cafe Java from June 17, 1999 (v5→v8), following a full fade-edit re-do — the earlier edit pass was lost to a prepare mishap and has now been redone from scratch, clearing every one of the 14 tracks that previously had clipping verdicts. Opted into the v8 sparse-transient-cap mode from the start; none of the three PRED_TP tracks ("Black Is the Color," "Anna May," "Learn About Love") needed more than a fraction of a dB of recovery, under the threshold where capping is worth attempting, so all three land at their honest linear-reduced targets instead. Three titles restored to the archive's established spelling after the fresh export drifted: "I Need a Lover" to "Hear Me," "I Want to Lean About Love" to "Learn About Love," and the recurring slash/hyphen filename convention on "The Kiss / Da Da Da (Slave to an Angel)." A typo in track 27's filename ("Barney" for "Blarney") was also corrected.</description>
   </item>
   <item>
+    <title>Reprocessed all 21 tracks on Jerry Hannan's solo set at Cafe Java from March 25, 1999 (v5…</title>
+    <link>https://renedebos.com/shows/jerry-cafe-java-1999-03-25/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-12-jerry-cafe-java-1999-03-25</guid>
+    <pubDate>Wed, 12 Aug 2026 21:41:17 +0000</pubDate>
+    <description>Reprocessed all 21 tracks on Jerry Hannan's solo set at Cafe Java from March 25, 1999 (v5→v8) — affected by a since-fixed bug in the older workflow that could silently flatten tracks' natural dynamics instead of applying true linear gain. Opted into the v8 sparse-transient-cap mode from the start; six tracks reach the full −20 LUFS target that way with no listening flags. “Daddy” and “Black is the Color” qualified for the applause-only limiter instead (a loud clap at the track boundary, not the music, was setting the ceiling). A track-6 L/R balance difference (4.7 dB RMS, peaks close) was reviewed and accepted — reads as normal audience-tape mic positioning, not a defect. Two titles restored to the archive's established spelling after the fresh export drifted: “Good Life” to “The Good Life,” and “Angel of Montgomery” to “Angel from Montgomery.”</description>
+  </item>
+  <item>
     <title>Reprocessed all 20 tracks on Jerry Hannan's solo show at Cafe Java from May 27, 1999 (v5→…</title>
     <link>https://renedebos.com/shows/jerry-cafe-java-1999-05-27/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-12-jerry-cafe-java-1999-05-27</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-14-jerry-19-broadway-1999-08-23</guid>
     <pubDate>Tue, 14 Jul 2026 23:05:00 +0000</pubDate>
     <description>Recovered 7 more songs from the rougher of the two August 23, 1999 19 Broadway reels and added them to the show page as a separate "Part 1 (Distorted)" batch — rough listening in places, but archived rather than lost. Includes an alternate "ABC," another early "Rugburns," and three songs new to the archive: "Troy," "The Kiss," and "Da Da Da (Slave to an Angel)."</description>
-  </item>
-  <item>
-    <title>Added the August 23, 1999 solo show at 19 Broadway as 14 individual tracks, normalized to…</title>
-    <link>https://renedebos.com/shows/jerry-19-broadway-1999-08-23/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-14-jerry-19-broadway-1999-08-23</guid>
-    <pubDate>Tue, 14 Jul 2026 21:49:28 +0000</pubDate>
-    <description>Added the August 23, 1999 solo show at 19 Broadway as 14 individual tracks, normalized to −20 LUFS. The two source reels are mislabeled, so this main set comes from the cleaner of the two. Includes an early version of "Rugburns" and a Steve Poltz cover, "Single Life."</description>
   </item>
 </channel>
 </rss>
