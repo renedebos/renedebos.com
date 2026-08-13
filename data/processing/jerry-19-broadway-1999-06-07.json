@@ -600,7 +600,7 @@
       "note": "sparse musical transients (not applause) set the ceiling: one constant +3.4 dB gain to the full -20 LUFS target, with a 1 ms/50 ms true-peak cap shaving up to 4.8 dB off the transients (~0.4% of the track, 3 event(s), longest 0.25 s; 0.3% near-peak density) [review: transient cap engages continuously for 0.25 s at 0:38.0 (auto envelope 0.2 s) — review tier, listen before shipping]"
     },
     "27": {
-      "ver": 5,
+      "ver": 8,
       "chain": "volume=14.83dB,alimiter=limit=0.870964:attack=5:release=100:level=false:latency=1",
       "in_lufs": -35.0,
       "lufs": -20.19,
