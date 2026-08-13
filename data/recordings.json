@@ -2050,7 +2050,7 @@
           "size_mb": 8,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/13 Lover.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/13 Lover.flac",
-          "flac_size_mb": 35,
+          "flac_size_mb": 37,
           "processed": true,
           "tags": [
             "original"
@@ -2077,8 +2077,8 @@
           "songwriter": "Traditional",
           "duration": "1:58",
           "size_mb": 5,
-          "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/15 Still I Love Him.mp3",
-          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/15 Still I Love Him.flac",
+          "file": "MP3/JerryHannan - 19 Broadway 1999-06-21/15 Still I Love Him  .mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-21/15 Still I Love Him  .flac",
           "flac_size_mb": 23,
           "processed": true,
           "tags": [
@@ -11760,6 +11760,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T10:43:47.066350",
+      "slug": "jerry-19-broadway-1999-06-21",
+      "report": true,
+      "text": "Force-capped four tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode, all now reaching (or landing just short of) the full −20 target: “Everything Reminds Me of You,” “Hear Me,” “Still I Love Him,” and “You're Pulling Me Leg / The Ted Kennedy Song.” “Hear Me” exceeded the automatic review band and needed an explicit override, landing at −20.29. Restored track 13's title to the archive's established spelling, “Hear Me,” and track 16's to its established “/” form, after the fresh export drifted to “Lover” and an underscore respectively."
+    },
     {
       "date": "2026-08-13",
       "ts": "2026-08-13T10:26:05.981109",
