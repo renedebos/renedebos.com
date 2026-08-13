@@ -156,7 +156,7 @@ def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main,
 
 <header>
   <div class="wrap">
-    <a class="mark" href="/" aria-label="The Hannan Tapes &mdash; home">&#9834;</a>
+    <a class="mark" href="/" aria-label="Shows &mdash; The Hannan Tapes home">Shows</a>
     <nav>
 {nav}
     </nav>

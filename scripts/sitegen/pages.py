@@ -116,7 +116,7 @@ HOME_SHELL = '''<!DOCTYPE html>
 <div class="wrap">
 
   <header>
-    <a class="mark" href="/" aria-label="The Hannan Tapes &mdash; home">&#9834;</a>
+    <a class="mark" href="/" aria-label="Shows &mdash; The Hannan Tapes home">Shows</a>
     <nav>
     {nav_links}
     </nav>

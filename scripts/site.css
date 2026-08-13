@@ -94,21 +94,25 @@ header .wrap {
   display: flex;
   align-items: center;
   gap: 1.6rem;
-  padding-top: 1rem;
-  padding-bottom: 1rem;
+  padding-top: 22px;
+  padding-bottom: 22px;
 }
 
 .mark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
   height: 34px;
-  border-radius: 50%;
+  padding: 0 16px;
+  border-radius: 17px;
   background: var(--accent);
   border: 1px solid var(--accent);
   color: var(--bg);
-  font-size: 1.05rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  text-decoration: none;
   flex-shrink: 0;
   transition: filter 0.18s ease;
 }
