@@ -295,3 +295,20 @@ sticky-navigation project replaces it.
       losing shuffle, saved queues, restore, or Media Session behavior
 - [ ] Manual spot-check on Safari/Chrome/Firefox, mobile and desktop
 - [ ] Remove the old four engines and duplicated markup once parity holds
+
+## 7. Session & Branch Workflow
+
+This project uses its own dedicated branch and worktree, same pattern as the
+home-page project (fuller writeup: `plans/home-page/home-page-codex.md` in
+the `home-page` branch/worktree):
+
+- Branch: `player-consolidation`
+- Worktree: `/home/renedebos/renedebos.com-player-consolidation`
+
+Sync with `main` at the start of a session — not on a fixed schedule —
+`git fetch origin main && git merge main`. This keeps the branch from
+drifting too far from what `main` picks up elsewhere (audio-processing
+work, other projects' merges) and lets any conflict surface while someone
+is actually present to resolve it, rather than piling up silently. Do this
+again right before opening or updating this project's pull request, even if
+it was done recently.
