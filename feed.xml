@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Opted two more tracks on this show into the v8 sparse-transient-cap mode, both landing we…</title>
+    <link>https://renedebos.com/shows/jerry-19-broadway-1999-06-07/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-12-jerry-19-broadway-1999-06-07</guid>
+    <pubDate>Wed, 12 Aug 2026 22:44:56 +0000</pubDate>
+    <description>Opted two more tracks on this show into the v8 sparse-transient-cap mode, both landing well short of −20 LUFS: "Hello in There" and "Hollywood (alt verse)." Both exceeded the automatic review band (a single continuous engagement over 0.5s) and needed Rene's explicit after-listening override to cap. "Hello in There" now reaches −20.14 LUFS (was −23.7). "Hollywood (alt verse)" reaches −20.81 LUFS (was −25.8) — the 6 dB attenuation cap kept it from reaching the full target, but it's much closer.</description>
+  </item>
+  <item>
     <title>Reprocessed all 27 tracks on Jerry Hannan's solo show at Cafe Java from June 17, 1999 (v5…</title>
     <link>https://renedebos.com/shows/jerry-cafe-java-1999-06-17/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-12-jerry-cafe-java-1999-06-17</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-15-mad-marin-brewing-co-1998-04-01</guid>
     <pubDate>Wed, 15 Jul 2026 12:51:28 +0000</pubDate>
     <description>Added the earliest Mad Hannans show in the archive, April 1, 1998 at Marin Brewing Co. in Larkspur, as 17 individual tracks normalized to −20 LUFS. It's a rough audience recording left without EQ or noise reduction, and "Da Da Da (Slave to an Angel)" still lacks the "The Kiss" intro it later picked up. Includes a Steve Miller cover, "Space Cowboy."</description>
-  </item>
-  <item>
-    <title>Recovered 7 more songs from the rougher of the two August 23, 1999 19 Broadway reels and …</title>
-    <link>https://renedebos.com/shows/jerry-19-broadway-1999-08-23/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-14-jerry-19-broadway-1999-08-23</guid>
-    <pubDate>Tue, 14 Jul 2026 23:05:00 +0000</pubDate>
-    <description>Recovered 7 more songs from the rougher of the two August 23, 1999 19 Broadway reels and added them to the show page as a separate "Part 1 (Distorted)" batch — rough listening in places, but archived rather than lost. Includes an alternate "ABC," another early "Rugburns," and three songs new to the archive: "Troy," "The Kiss," and "Da Da Da (Slave to an Angel)."</description>
   </item>
 </channel>
 </rss>

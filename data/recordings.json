@@ -1473,7 +1473,7 @@
           "size_mb": 10,
           "file": "MP3/JerryHannan - 19 Broadway 1999-06-07/06 Hello in There.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-06-07/06 Hello in There.flac",
-          "flac_size_mb": 44,
+          "flac_size_mb": 46,
           "processed": true,
           "tags": [
             "cover",
@@ -11759,6 +11759,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-12",
+      "ts": "2026-08-12T22:44:56.543817",
+      "slug": "jerry-19-broadway-1999-06-07",
+      "report": true,
+      "text": "Opted two more tracks on this show into the v8 sparse-transient-cap mode, both landing well short of −20 LUFS: \"Hello in There\" and \"Hollywood (alt verse).\" Both exceeded the automatic review band (a single continuous engagement over 0.5s) and needed Rene's explicit after-listening override to cap. \"Hello in There\" now reaches −20.14 LUFS (was −23.7). \"Hollywood (alt verse)\" reaches −20.81 LUFS (was −25.8) — the 6 dB attenuation cap kept it from reaching the full target, but it's much closer."
+    },
     {
       "date": "2026-08-12",
       "ts": "2026-08-12T21:41:17.430152",
