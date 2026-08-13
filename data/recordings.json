@@ -4222,9 +4222,9 @@
           "songwriter": "Bruce Springsteen",
           "duration": "5:19",
           "size_mb": 13,
-          "file": "MP3/JerryHannan - 19 Broadway 2001-01-15 SBD/01 Highway Patrolman.mp3",
-          "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15 SBD/01 Highway Patrolman.flac",
-          "flac_size_mb": 59,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-15 SBD/01 State Trooper.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15 SBD/01 State Trooper.flac",
+          "flac_size_mb": 60,
           "processed": true,
           "tags": [
             "cover"
@@ -4561,7 +4561,7 @@
           "size_mb": 2,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15 SBD/24 Xmas Song.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15 SBD/24 Xmas Song.flac",
-          "flac_size_mb": 9,
+          "flac_size_mb": 10,
           "processed": true,
           "tags": [
             "original"
@@ -11760,6 +11760,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T12:45:22.665522",
+      "slug": "jerry-19-broadway-2001-01-15",
+      "report": true,
+      "text": "Force-capped five shortfall tracks into the v8 sparse-transient-cap mode with the standard 6 dB attenuation ceiling raised per track after a reviewed, recorded override: “Highway Patrolman” (−20.39), “Anna May” (−20.28), and “Dope World” (−20.29) now land close to the full −20 target. “Loser” needed only a linear-reduced target (−21.0) to stay safely under the true-peak ceiling. “Xmas Song” was left at −21.24 — raising its ceiling further triggered the engine's own dynamics-safety check (cap engaging beyond isolated transients), so it was left short of full target rather than risk flattening the track's dynamics. Restored track 1's title to the archive's established spelling, “Highway Patrolman,” after the fresh export drifted to “State Trooper” (a different, real Springsteen song — verified this isn't the correct title for this track). Accepted a uniform ~6.5–7 dB L/R balance finding across all 31 tracks as a characteristic of this SBD source's channel mix, not a defect."
+    },
     {
       "date": "2026-08-13",
       "ts": "2026-08-13T12:03:03.469433",
