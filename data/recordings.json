@@ -3389,7 +3389,7 @@
           "size_mb": 16,
           "file": "MP3/JerryHannan - 19 Broadway 1999-10-25/25 Hollywood (early version).mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-10-25/25 Hollywood (early version).flac",
-          "flac_size_mb": 68,
+          "flac_size_mb": 70,
           "processed": true,
           "tags": [
             "original"
@@ -4222,9 +4222,9 @@
           "songwriter": "Bruce Springsteen",
           "duration": "5:19",
           "size_mb": 13,
-          "file": "MP3/JerryHannan - 19 Broadway 2001-01-15 SBD/01 Highway Patrolman.mp3",
-          "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15 SBD/01 Highway Patrolman.flac",
-          "flac_size_mb": 59,
+          "file": "MP3/JerryHannan - 19 Broadway 2001-01-15 SBD/01 State Trooper.mp3",
+          "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15 SBD/01 State Trooper.flac",
+          "flac_size_mb": 60,
           "processed": true,
           "tags": [
             "cover"
@@ -4561,7 +4561,7 @@
           "size_mb": 2,
           "file": "MP3/JerryHannan - 19 Broadway 2001-01-15 SBD/24 Xmas Song.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 2001-01-15 SBD/24 Xmas Song.flac",
-          "flac_size_mb": 9,
+          "flac_size_mb": 10,
           "processed": true,
           "tags": [
             "original"
@@ -7667,7 +7667,7 @@
           "size_mb": 7,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/01 Woman.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/01 Woman.flac",
-          "flac_size_mb": 31,
+          "flac_size_mb": 32,
           "processed": true,
           "tags": [
             "original"
@@ -7832,7 +7832,7 @@
           "size_mb": 9,
           "file": "MP3/SeanHannan - 19 Broadway unknown date/12 Elephant Shoes.mp3",
           "flac": "FLAC/SeanHannan - 19 Broadway unknown date/12 Elephant Shoes.flac",
-          "flac_size_mb": 39,
+          "flac_size_mb": 41,
           "processed": true,
           "tags": [
             "original"
@@ -8173,7 +8173,7 @@
           "file": "MP3/MadHannans - Sweetwater 2000-02-17 SBD/14 Butter.mp3",
           "size_mb": 8,
           "flac": "FLAC/MadHannans - Sweetwater 2000-02-17 SBD/14 Butter.flac",
-          "flac_size_mb": 34,
+          "flac_size_mb": 35,
           "processed": true,
           "tags": [
             "original",
@@ -9423,7 +9423,7 @@
           "size_mb": 13,
           "file": "MP3/MadHannans - Cafe Java 1999-09-09/21 Rocky Road to Dublin _ Star of County Down.mp3",
           "flac": "FLAC/MadHannans - Cafe Java 1999-09-09/21 Rocky Road to Dublin _ Star of County Down.flac",
-          "flac_size_mb": 63,
+          "flac_size_mb": 65,
           "processed": true,
           "tags": [
             "irish",
@@ -10618,7 +10618,7 @@
           "file": "MP3/MadHannans - Sweetwater 2001-01-06/18 Far Away Eyes.mp3",
           "size_mb": 12,
           "flac": "FLAC/MadHannans - Sweetwater 2001-01-06/18 Far Away Eyes.flac",
-          "flac_size_mb": 54,
+          "flac_size_mb": 50,
           "processed": true,
           "tags": [
             "cover",
@@ -11760,6 +11760,55 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T14:14:57.964928",
+      "slug": "mad-sweetwater-2001-01-06",
+      "report": true,
+      "text": "Reprocessed “Far Away Eyes,” previously stuck at −23.0 LUFS on an older workflow version — the fresh Drive export measures louder than the prior source, so plain linear normalization reached the full −20 target directly, no transient cap needed."
+    },
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T13:54:34.764321",
+      "slug": "mad-cafe-java-1999-09-09",
+      "report": true,
+      "text": "Force-capped “Rocky Road to Dublin / Star of County Down,” which landed between −21 and −25 LUFS, into the v8 sparse-transient-cap mode with the standard 6 dB attenuation ceiling raised to 8 dB after a reviewed, recorded override — now reaching −20.22. Restored the title to its established “/” form after the fresh export drifted to an underscore."
+    },
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T12:45:22.665522",
+      "slug": "jerry-19-broadway-2001-01-15",
+      "report": true,
+      "text": "Force-capped five shortfall tracks into the v8 sparse-transient-cap mode with the standard 6 dB attenuation ceiling raised per track after a reviewed, recorded override: “Highway Patrolman” (−20.39), “Anna May” (−20.28), and “Dope World” (−20.29) now land close to the full −20 target. “Loser” needed only a linear-reduced target (−21.0) to stay safely under the true-peak ceiling. “Xmas Song” was left at −21.24 — raising its ceiling further triggered the engine's own dynamics-safety check (cap engaging beyond isolated transients), so it was left short of full target rather than risk flattening the track's dynamics. Restored track 1's title to the archive's established spelling, “Highway Patrolman,” after the fresh export drifted to “State Trooper” (a different, real Springsteen song — verified this isn't the correct title for this track). Accepted a uniform ~6.5–7 dB L/R balance finding across all 31 tracks as a characteristic of this SBD source's channel mix, not a defect."
+    },
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T12:03:03.469433",
+      "slug": "mad-sweetwater-2000-02-17",
+      "report": true,
+      "text": "Force-capped “Butter,” which landed between −21 and −25 LUFS, into the v8 sparse-transient-cap mode — now reaching the full −20 target."
+    },
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T11:44:08.759612",
+      "slug": "jerry-19-broadway-1999-10-25",
+      "report": true,
+      "text": "Force-capped two tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode: “Black is the Color” now reaches the full −20 target, and “Hollywood (early version)” recovers to −20.60. Both exceeded the automatic review band and needed an explicit override."
+    },
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T11:21:02.255446",
+      "slug": "sean-19-broadway-2000-02-21",
+      "report": true,
+      "text": "Force-capped three tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode, all now reaching the full −20 target: “Galway Shawl,” “The German Clockwinder,” and “Plastic Lemons.”"
+    },
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T11:04:19.686744",
+      "slug": "sean-19-broadway-unknown",
+      "report": true,
+      "text": "Force-capped three tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode, all now reaching the full −20 target: “Woman,” “Elephant Shoes,” and “Angel from Montgomery.” Restored track 14's title to the archive's established spelling, “Angel from Montgomery,” after the fresh export drifted to “Angel of Montgomery.” A mild L/R level imbalance on track 1 (“Woman”) was reviewed and accepted as typical audience-tape mic placement, not a defect."
+    },
     {
       "date": "2026-08-13",
       "ts": "2026-08-13T10:43:47.066350",
