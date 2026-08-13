@@ -1097,7 +1097,7 @@
           "size_mb": 10,
           "file": "MP3/JerryHannan - 19 Broadway 1999-05-10/06 Sam Hall.mp3",
           "flac": "FLAC/JerryHannan - 19 Broadway 1999-05-10/06 Sam Hall.flac",
-          "flac_size_mb": 47,
+          "flac_size_mb": 46,
           "processed": true,
           "tags": [
             "cover"
@@ -11760,6 +11760,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-13",
+      "ts": "2026-08-13T10:26:05.981109",
+      "slug": "jerry-19-broadway-1999-05-10",
+      "report": true,
+      "text": "Force-capped eight tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode, all now reaching the full −20 target: “I Thought I Was You,” “Getaway Blues,” “Sam Hall,” “The Oldest Baby in the World,” “Illegal Smile,” “Ted Kennedy Song,” “Butter,” and “The Parting Glass.” Two (“Sam Hall,” “Ted Kennedy Song”) exceeded the automatic review band and needed an explicit override. Restored track 17's title to the archive's established spelling, “Hear Me,” after the fresh export drifted back to “I Need a Lover.”"
+    },
     {
       "date": "2026-08-13",
       "ts": "2026-08-13T00:21:25.939266",

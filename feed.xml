@@ -8,6 +8,13 @@
   <language>en-us</language>
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
+    <title>Force-capped eight tracks landing between −21 and −25 LUFS into the v8 sparse-transient-c…</title>
+    <link>https://renedebos.com/shows/jerry-19-broadway-1999-05-10/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-13-jerry-19-broadway-1999-05-10</guid>
+    <pubDate>Thu, 13 Aug 2026 10:26:05 +0000</pubDate>
+    <description>Force-capped eight tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode, all now reaching the full −20 target: “I Thought I Was You,” “Getaway Blues,” “Sam Hall,” “The Oldest Baby in the World,” “Illegal Smile,” “Ted Kennedy Song,” “Butter,” and “The Parting Glass.” Two (“Sam Hall,” “Ted Kennedy Song”) exceeded the automatic review band and needed an explicit override. Restored track 17's title to the archive's established spelling, “Hear Me,” after the fresh export drifted back to “I Need a Lover.”</description>
+  </item>
+  <item>
     <title>Opted the nine tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap m…</title>
     <link>https://renedebos.com/shows/jerry-19-broadway-1999-07-19/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-13-jerry-19-broadway-1999-07-19</guid>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-17-sean-19-broadway-1999-11-29</guid>
     <pubDate>Fri, 17 Jul 2026 01:00:00 +0000</pubDate>
     <description>Re-normalized all 21 tracks: a bug in the loudness pipeline had silently switched several tracks into dynamic (compressor-like) processing instead of true linear gain, flattening hand-drawn fades and room dynamics. Tracks where audience applause — not the music — was the loudest thing on the tape now get linear gain sized to the music itself, with only the applause gently limited. Track 7, "The Rodeo Song," has some audible clipping baked into the source recording — normalization can't undo that, so it's flagged rather than papered over — using the automated audio engineering workflow with ffmpeg</description>
-  </item>
-  <item>
-    <title>Re-normalized all 31 tracks to −20 LUFS on the current audio engineering workflow, replac…</title>
-    <link>https://renedebos.com/shows/sean-19-broadway-2000-01-24/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-16-sean-19-broadway-2000-01-24</guid>
-    <pubDate>Thu, 16 Jul 2026 22:35:00 +0000</pubDate>
-    <description>Re-normalized all 31 tracks to −20 LUFS on the current audio engineering workflow, replacing an older processing pass, using the automated audio engineering workflow with ffmpeg</description>
   </item>
 </channel>
 </rss>
