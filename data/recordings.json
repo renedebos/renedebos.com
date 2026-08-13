@@ -7129,7 +7129,8 @@
           "tags": [
             "cover",
             "ballad",
-            "country"
+            "country",
+            "guest"
           ]
         },
         {
@@ -7157,7 +7158,7 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/14 You Don't Know How It Feels.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/14 You Don't Know How It Feels.flac",
-          "flac_size_mb": 37,
+          "flac_size_mb": 38,
           "processed": true,
           "tags": [
             "cover",
@@ -7307,7 +7308,7 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/24 Learn About Love.mp3",
           "size_mb": 7,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/24 Learn About Love.flac",
-          "flac_size_mb": 35,
+          "flac_size_mb": 36,
           "processed": true,
           "tags": [
             "cover"
@@ -7353,7 +7354,7 @@
           "file": "MP3/SeanHannan - 19 Broadway 2000-01-24/27 Some Get Married for Love.mp3",
           "size_mb": 8,
           "flac": "FLAC/SeanHannan - 19 Broadway 2000-01-24/27 Some Get Married for Love.flac",
-          "flac_size_mb": 34,
+          "flac_size_mb": 36,
           "processed": true,
           "tags": [
             "irish"
@@ -11759,6 +11760,13 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-08-12",
+      "ts": "2026-08-12T23:28:30.459346",
+      "slug": "sean-19-broadway-2000-01-24",
+      "report": true,
+      "text": "Opted 16 tracks on this show into the v8 sparse-transient-cap mode, all of which had landed short of −20 LUFS under the older workflow. Eight now reach the full target through capping alone: “Smoke in Heaven,” “Angel from Montgomery,” “You Don’t Know How It Feels,” “The Black Velvet Band,” “Me and Eddie Vedder,” “Gold’s Gym Guy,” “Learn About Love,” and “Some Get Married for Love.” Three landed a little short instead of over-shaved (true linear normalization preserved): “Woman” (−20.2), “The Good Life” (−20.7), and “Galway Shawl” (−20.9). “Maids When You’re Young Never Wed an Old Man” didn’t qualify for capping and stays at −22.6. Three more — “Beverley,” “Did You Ever See,” and “The Patriot Game” — already used the archive’s applause-only limiter for a loud clap at the track boundary and land close to or (for “The Patriot Game”) still short of target, since the music itself, not just the clap, needed more headroom than the limiter alone recovers."
+    },
     {
       "date": "2026-08-12",
       "ts": "2026-08-12T22:44:56.543817",

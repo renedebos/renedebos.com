@@ -4,10 +4,9 @@
   "tp_ceiling": -1,
   "source": "24-bit / 48 kHz FLAC",
   "filters": "none",
-  "tool": "ffmpeg loudnorm",
-  "workflow_version": 6,
+  "workflow_version": 8,
   "ffmpeg": "7.1.3-0+deb13u1",
-  "date": "2026-07-16",
+  "date": "2026-08-12",
   "tracks": {
     "1": {
       "ver": 6,
@@ -40,7 +39,7 @@
       "note": "one constant gain to the show target; predicted TP -1.5 dBTP fits under the -1 ceiling"
     },
     "3": {
-      "ver": 6,
+      "ver": 8,
       "chain": "volume=6.34dB:precision=double",
       "in_lufs": -26.5,
       "lufs": -20.16,
@@ -51,12 +50,15 @@
       "lra": 13.5,
       "plr": 19.16,
       "md5": "f18ca00a8307c2c1b58c28cf1c8efc18",
+      "mp3_md5": "88fe8248486eb73a2015f9ef64b9d5f0",
+      "recipe_sig": "343a5eb2494db089",
+      "src_md5": "3849c1279d8e84cba57e20f1535741b6",
       "target_lufs": -20.17,
       "mode": "linear-reduced",
       "note": "gain to -20 LUFS would overshoot the TP ceiling by 0.2 dB — small enough to simply take the track's own max linear target; dynamics untouched"
     },
     "4": {
-      "ver": 6,
+      "ver": 8,
       "chain": "volume=2.8dB:precision=double",
       "in_lufs": -23.5,
       "lufs": -20.71,
@@ -67,6 +69,9 @@
       "lra": 12.4,
       "plr": 19.71,
       "md5": "85fa82d2aa3b96cd96989fb59b953e71",
+      "mp3_md5": "1ba7c184b35705b12345c62095ed832c",
+      "recipe_sig": "343a5eb2494db089",
+      "src_md5": "2ed56cdc261d440b08788da8c57d4d2f",
       "target_lufs": -20.71,
       "mode": "linear-reduced",
       "note": "gain to -20 LUFS would overshoot the TP ceiling by 0.7 dB — small enough to simply take the track's own max linear target; dynamics untouched"
@@ -99,7 +104,7 @@
       "note": "applause (not music) set the ceiling: one constant +5.5 dB gain sized to the music peaks (-8.8 dB), with only the applause transients at 3:30–3:35 limited (up to 3.1 dB); the music is untouched linear"
     },
     "6": {
-      "ver": 6,
+      "ver": 8,
       "chain": "volume=4.82dB:precision=double",
       "in_lufs": -25.8,
       "lufs": -20.95,
@@ -110,6 +115,9 @@
       "lra": 13.2,
       "plr": 19.95,
       "md5": "29591fc8e214bec2f4b1f2c334278b8b",
+      "mp3_md5": "87b03e889959286ac4a5883f275c7d60",
+      "recipe_sig": "343a5eb2494db089",
+      "src_md5": "59ae743c9b0e0c5093332da26e3ebf43",
       "target_lufs": -20.95,
       "mode": "linear-reduced",
       "note": "gain to -20 LUFS would overshoot the TP ceiling by 0.9 dB — small enough to simply take the track's own max linear target; dynamics untouched"
@@ -145,24 +153,39 @@
       "note": "one constant gain to the show target; predicted TP -3.8 dBTP fits under the -1 ceiling"
     },
     "9": {
-      "ver": 6,
-      "chain": "volume=0.3dB:precision=double",
+      "ver": 8,
+      "chain": "volume=1.51dB:precision=double,aresample=192000,alimiter=limit=0.841395:attack=1:release=50:level=false:latency=1,aresample=48000",
       "in_lufs": -21.5,
-      "lufs": -21.21,
-      "tp": -1.0,
-      "mp3_tp": -1.04,
-      "max_m": -13.3,
-      "max_s": -16.4,
-      "lra": 12.9,
-      "plr": 20.21,
-      "md5": "6c7d3fbbc9749daf2ab06008931dc621",
-      "target_lufs": -21.21,
-      "mode": "linear-reduced",
-      "note": "gain to -20 LUFS would overshoot the TP ceiling by 1.2 dB — small enough to simply take the track's own max linear target; dynamics untouched"
+      "lufs": -20.01,
+      "tp": -1.49,
+      "mp3_tp": -1.39,
+      "max_m": -12.0,
+      "max_s": -15.2,
+      "lra": 12.8,
+      "plr": 18.52,
+      "md5": "06edbc7c02f438aae9fb85c5c584dfc9",
+      "mp3_md5": "5e749b18829c05465643af2a7e4a5c5a",
+      "recipe_sig": "343a5eb2494db089",
+      "src_md5": "3aa158bb84bebf22fffb10f5ca2b633b",
+      "transient_cap": {
+        "gain_db": 1.51,
+        "limit_db": -1.5,
+        "gr_db": 1.71,
+        "near_peak_pct": 0.58,
+        "engaged_pct": 0.2,
+        "events": 7,
+        "longest_s": 0.05,
+        "longest_at_s": 148.1,
+        "p95_gr_db": 1.45,
+        "in_lra": 12.9,
+        "policy_max_gr_db": 6.0
+      },
+      "mode": "sparse-transient-cap",
+      "note": "sparse musical transients (not applause) set the ceiling: one constant +1.5 dB gain to the full -20 LUFS target, with a 1 ms/50 ms true-peak cap shaving up to 1.7 dB off the transients (~0.2% of the track, 7 event(s), longest 0.05 s; 0.6% near-peak density)"
     },
     "10": {
-      "ver": 6,
-      "chain": "volume=8.6dB,alimiter=limit=0.870964:attack=5:release=100:level=false:latency=1",
+      "ver": 8,
+      "chain": "volume=8.85dB,alimiter=limit=0.870964:attack=5:release=100:level=false:latency=1",
       "in_lufs": -28.9,
       "lufs": -20.25,
       "tp": -1.19,
@@ -172,23 +195,25 @@
       "lra": 9.7,
       "plr": 19.06,
       "md5": "c10c3faadf7016781fd324fe9eff94bd",
-      "target_lufs": -20.25,
+      "mp3_md5": "bc65419761160958d3b1c98357104c47",
+      "recipe_sig": "343a5eb2494db089",
+      "src_md5": "6d8635930fb47abd336139ef88e554ca",
       "applause_limiter": {
-        "gain_db": 8.6,
+        "gain_db": 8.85,
         "limit_db": -1.2,
         "regions": [
           [
             0.0,
             5.0,
-            2.8
+            3.1
           ]
         ]
       },
       "mode": "applause-limiter",
-      "note": "applause (not music) set the ceiling: one constant +8.6 dB gain sized to the music peaks (-12.4 dB), with only the applause transients at 0:00–0:05 limited (up to 2.8 dB); the music is untouched linear"
+      "note": "applause (not music) set the ceiling: one constant +8.8 dB gain sized to the music peaks (-12.4 dB), with only the applause transients at 0:00–0:05 limited (up to 3.1 dB); the music is untouched linear"
     },
     "11": {
-      "ver": 6,
+      "ver": 8,
       "chain": "volume=-0.18dB:precision=double",
       "in_lufs": -20.2,
       "lufs": -20.36,
@@ -199,25 +224,43 @@
       "lra": 9.0,
       "plr": 19.36,
       "md5": "e3dddd6191f36340f365918a2cd4f335",
+      "mp3_md5": "1c09e7b12d751b112f335ac961c78ba0",
+      "recipe_sig": "343a5eb2494db089",
+      "src_md5": "089da4f76c0367d455e9bc3b562c7327",
       "target_lufs": -20.35,
       "mode": "linear-reduced",
       "note": "gain to -20 LUFS would overshoot the TP ceiling by 0.4 dB — small enough to simply take the track's own max linear target; dynamics untouched"
     },
     "12": {
-      "ver": 6,
-      "chain": "volume=1.98dB:precision=double",
+      "ver": 8,
+      "chain": "volume=3.5dB:precision=double,aresample=192000,alimiter=limit=0.841395:attack=1:release=50:level=false:latency=1,aresample=48000",
       "in_lufs": -23.5,
-      "lufs": -21.54,
-      "tp": -1.0,
-      "mp3_tp": -1.03,
-      "max_m": -12.6,
-      "max_s": -15.9,
-      "lra": 15.5,
-      "plr": 20.54,
-      "md5": "64c06dd88205d76c996a04b587b1a92e",
-      "target_lufs": -21.52,
-      "mode": "linear-reduced",
-      "note": "gain to -20 LUFS would overshoot the TP ceiling by 1.5 dB — small enough to simply take the track's own max linear target; dynamics untouched"
+      "lufs": -20.0,
+      "tp": -1.5,
+      "mp3_tp": -1.48,
+      "max_m": -11.3,
+      "max_s": -14.4,
+      "lra": 15.6,
+      "plr": 18.5,
+      "md5": "04b04f1ce8e44b00da5ac382b4d740b0",
+      "mp3_md5": "0917393935a36ee75aa6e0781a08ad27",
+      "recipe_sig": "343a5eb2494db089",
+      "src_md5": "2db0b4bf767d8b9f86e6e207fb71120b",
+      "transient_cap": {
+        "gain_db": 3.5,
+        "limit_db": -1.5,
+        "gr_db": 2.02,
+        "near_peak_pct": 0.08,
+        "engaged_pct": 0.08,
+        "events": 3,
+        "longest_s": 0.1,
+        "longest_at_s": 163.9,
+        "p95_gr_db": 0.46,
+        "in_lra": 15.6,
+        "policy_max_gr_db": 6.0
+      },
+      "mode": "sparse-transient-cap",
+      "note": "sparse musical transients (not applause) set the ceiling: one constant +3.5 dB gain to the full -20 LUFS target, with a 1 ms/50 ms true-peak cap shaving up to 2.0 dB off the transients (~0.1% of the track, 3 event(s), longest 0.10 s; 0.1% near-peak density)"
     },
     "13": {
       "ver": 6,
@@ -235,36 +278,66 @@
       "note": "one constant gain to the show target; predicted TP -1.8 dBTP fits under the -1 ceiling"
     },
     "14": {
-      "ver": 6,
-      "chain": "volume=1.6dB:precision=double",
+      "ver": 8,
+      "chain": "volume=3.44dB:precision=double,aresample=192000,alimiter=limit=0.841395:attack=1:release=50:level=false:latency=1,aresample=48000",
       "in_lufs": -23.4,
-      "lufs": -21.84,
-      "tp": -1.0,
-      "mp3_tp": -1.0,
-      "max_m": -10.7,
-      "max_s": -15.1,
-      "lra": 15.9,
-      "plr": 20.84,
-      "md5": "92ff9be448c02b73f2c47ab715f77934",
-      "target_lufs": -21.84,
-      "mode": "linear-reduced",
-      "note": "gain to -20 LUFS would overshoot the TP ceiling by 1.8 dB — small enough to simply take the track's own max linear target; dynamics untouched"
+      "lufs": -20.01,
+      "tp": -1.5,
+      "mp3_tp": -1.49,
+      "max_m": -9.4,
+      "max_s": -13.4,
+      "lra": 16.0,
+      "plr": 18.51,
+      "md5": "2ab3a8973eb90c9e9b43284dc6ea050e",
+      "mp3_md5": "97a9cffaa7fdea9f63c05800686f550f",
+      "recipe_sig": "343a5eb2494db089",
+      "src_md5": "775aaca1bbd2e1c9d7732b86cc7b1bca",
+      "transient_cap": {
+        "gain_db": 3.44,
+        "limit_db": -1.5,
+        "gr_db": 2.34,
+        "near_peak_pct": 0.2,
+        "engaged_pct": 0.1,
+        "events": 1,
+        "longest_s": 0.2,
+        "longest_at_s": 112.15,
+        "p95_gr_db": 1.46,
+        "in_lra": 15.9,
+        "policy_max_gr_db": 6.0
+      },
+      "mode": "sparse-transient-cap",
+      "note": "sparse musical transients (not applause) set the ceiling: one constant +3.4 dB gain to the full -20 LUFS target, with a 1 ms/50 ms true-peak cap shaving up to 2.3 dB off the transients (~0.1% of the track, 1 event(s), longest 0.20 s; 0.2% near-peak density)"
     },
     "15": {
-      "ver": 6,
-      "chain": "volume=3.83dB:precision=double",
+      "ver": 8,
+      "chain": "volume=5.11dB:precision=double,aresample=192000,alimiter=limit=0.841395:attack=1:release=50:level=false:latency=1,aresample=48000",
       "in_lufs": -25.1,
-      "lufs": -21.28,
-      "tp": -1.0,
-      "mp3_tp": -0.98,
-      "max_m": -11.9,
-      "max_s": -16.4,
-      "lra": 9.0,
-      "plr": 20.28,
-      "md5": "d3cf92dd2d273dc7373515078a741f40",
-      "target_lufs": -21.28,
-      "mode": "linear-reduced",
-      "note": "gain to -20 LUFS would overshoot the TP ceiling by 1.3 dB — small enough to simply take the track's own max linear target; dynamics untouched"
+      "lufs": -20.0,
+      "tp": -1.5,
+      "mp3_tp": -1.46,
+      "max_m": -10.7,
+      "max_s": -15.1,
+      "lra": 9.1,
+      "plr": 18.5,
+      "md5": "8d5d0703eb2be57567e0955433f3ed0c",
+      "mp3_md5": "a7717af29abccac52515187c6a9fad59",
+      "recipe_sig": "343a5eb2494db089",
+      "src_md5": "18f48f077e09627294900496e2cbedc1",
+      "transient_cap": {
+        "gain_db": 5.11,
+        "limit_db": -1.5,
+        "gr_db": 1.78,
+        "near_peak_pct": 0.13,
+        "engaged_pct": 0.07,
+        "events": 2,
+        "longest_s": 0.05,
+        "longest_at_s": 147.1,
+        "p95_gr_db": 0.86,
+        "in_lra": 9.1,
+        "policy_max_gr_db": 6.0
+      },
+      "mode": "sparse-transient-cap",
+      "note": "sparse musical transients (not applause) set the ceiling: one constant +5.1 dB gain to the full -20 LUFS target, with a 1 ms/50 ms true-peak cap shaving up to 1.8 dB off the transients (~0.1% of the track, 2 event(s), longest 0.05 s; 0.1% near-peak density)"
     },
     "16": {
       "ver": 6,
@@ -309,36 +382,66 @@
       "note": "one constant gain to the show target; predicted TP -1.6 dBTP fits under the -1 ceiling"
     },
     "18": {
-      "ver": 6,
-      "chain": "volume=0.43dB:precision=double",
+      "ver": 8,
+      "chain": "volume=1.75dB:precision=double,aresample=192000,alimiter=limit=0.841395:attack=1:release=50:level=false:latency=1,aresample=48000",
       "in_lufs": -21.8,
-      "lufs": -21.33,
-      "tp": -1.0,
-      "mp3_tp": -0.97,
-      "max_m": -13.3,
-      "max_s": -16.7,
+      "lufs": -20.01,
+      "tp": -1.49,
+      "mp3_tp": -1.48,
+      "max_m": -12.0,
+      "max_s": -15.4,
       "lra": 9.4,
-      "plr": 20.33,
-      "md5": "5338c4ec719fc7d938093b1e85a4833d",
-      "target_lufs": -21.32,
-      "mode": "linear-reduced",
-      "note": "gain to -20 LUFS would overshoot the TP ceiling by 1.3 dB — small enough to simply take the track's own max linear target; dynamics untouched"
+      "plr": 18.52,
+      "md5": "a6865589224a3a74d2c3280f676efccb",
+      "mp3_md5": "5717610da40a3f78609dbedfe7d81db8",
+      "recipe_sig": "343a5eb2494db089",
+      "src_md5": "3798fb7fd547dbdb2f1fee2891c6e661",
+      "transient_cap": {
+        "gain_db": 1.75,
+        "limit_db": -1.5,
+        "gr_db": 1.82,
+        "near_peak_pct": 0.05,
+        "engaged_pct": 0.03,
+        "events": 1,
+        "longest_s": 0.05,
+        "longest_at_s": 91.2,
+        "p95_gr_db": 1.65,
+        "in_lra": 9.4,
+        "policy_max_gr_db": 6.0
+      },
+      "mode": "sparse-transient-cap",
+      "note": "sparse musical transients (not applause) set the ceiling: one constant +1.8 dB gain to the full -20 LUFS target, with a 1 ms/50 ms true-peak cap shaving up to 1.8 dB off the transients (~0.0% of the track, 1 event(s), longest 0.05 s; 0.1% near-peak density)"
     },
     "19": {
-      "ver": 6,
-      "chain": "volume=0.01dB:precision=double",
+      "ver": 8,
+      "chain": "volume=1.24dB:precision=double,aresample=192000,alimiter=limit=0.841395:attack=1:release=50:level=false:latency=1,aresample=48000",
       "in_lufs": -21.2,
-      "lufs": -21.23,
-      "tp": -1.0,
-      "mp3_tp": -1.0,
-      "max_m": -14.2,
-      "max_s": -18.8,
+      "lufs": -20.01,
+      "tp": -1.5,
+      "mp3_tp": -1.51,
+      "max_m": -13.0,
+      "max_s": -17.6,
       "lra": 4.7,
-      "plr": 20.23,
-      "md5": "fd16fcad29e0d60726bd335afa71e884",
-      "target_lufs": -21.23,
-      "mode": "linear-reduced",
-      "note": "gain to -20 LUFS would overshoot the TP ceiling by 1.2 dB — small enough to simply take the track's own max linear target; dynamics untouched"
+      "plr": 18.51,
+      "md5": "918abc14d5e831877cc4c976092232f3",
+      "mp3_md5": "7057e7d3a7ce636acc402abf3f53bfa4",
+      "recipe_sig": "343a5eb2494db089",
+      "src_md5": "fd5c67e4fe210d7083cee92c9dfa84db",
+      "transient_cap": {
+        "gain_db": 1.24,
+        "limit_db": -1.5,
+        "gr_db": 1.73,
+        "near_peak_pct": 0.1,
+        "engaged_pct": 0.03,
+        "events": 1,
+        "longest_s": 0.05,
+        "longest_at_s": 150.9,
+        "p95_gr_db": 1.72,
+        "in_lra": 4.8,
+        "policy_max_gr_db": 6.0
+      },
+      "mode": "sparse-transient-cap",
+      "note": "sparse musical transients (not applause) set the ceiling: one constant +1.2 dB gain to the full -20 LUFS target, with a 1 ms/50 ms true-peak cap shaving up to 1.7 dB off the transients (~0.0% of the track, 1 event(s), longest 0.05 s; 0.1% near-peak density)"
     },
     "20": {
       "ver": 6,
@@ -371,7 +474,7 @@
       "note": "one constant gain to the show target; predicted TP -3.3 dBTP fits under the -1 ceiling"
     },
     "22": {
-      "ver": 6,
+      "ver": 8,
       "chain": "volume=0.09dB:precision=double",
       "in_lufs": -22.7,
       "lufs": -22.64,
@@ -382,9 +485,12 @@
       "lra": 9.3,
       "plr": 21.64,
       "md5": "167f9a2ceafb564740171911641820f1",
+      "mp3_md5": "ef4d567df7a13568e9e42c3814309f97",
+      "recipe_sig": "343a5eb2494db089",
+      "src_md5": "fc5f630afc6254e3aba04225b0ff5512",
       "target_lufs": -22.65,
       "mode": "linear-reduced",
-      "note": "gain to -20 LUFS would overshoot the TP ceiling by 2.6 dB; the loudest peaks are in (or within 2 dB of) the music itself, so limiting would only recover 0.0 dB — the track takes its honest quieter max linear target instead [review: applause limiting would only recover 0.0 dB — not worth a limiter]"
+      "note": "gain to -20 LUFS would overshoot the TP ceiling by 2.6 dB; the loudest peaks are in (or within 2 dB of) the music itself, so limiting would only recover 0.0 dB — the track takes its honest quieter max linear target instead [review: transient-cap declined: the limiter would engage on 0.5% of the track (longest event 0.90 s at 3:27.3) — beyond the review band (2% / 0.5 s); repeated-compression territory, no listening evidence — reduced linear target instead (--transient-cap-force after listening to override); applause limiting would only recover 0.0 dB — not worth a limiter]"
     },
     "23": {
       "ver": 6,
@@ -402,20 +508,35 @@
       "note": "one constant gain to the show target; predicted TP -1.2 dBTP fits under the -1 ceiling"
     },
     "24": {
-      "ver": 6,
-      "chain": "volume=5.04dB:precision=double",
+      "ver": 8,
+      "chain": "volume=9.29dB:precision=double,aresample=192000,alimiter=limit=0.841395:attack=1:release=50:level=false:latency=1,aresample=48000",
       "in_lufs": -29.3,
-      "lufs": -24.25,
-      "tp": -1.0,
-      "mp3_tp": -0.96,
-      "max_m": -12.7,
-      "max_s": -18.1,
-      "lra": 9.8,
-      "plr": 23.25,
-      "md5": "2f7a296cbc3668cf696aa16e76f08417",
-      "target_lufs": -24.25,
-      "mode": "linear-reduced",
-      "note": "gain to -20 LUFS would overshoot the TP ceiling by 4.2 dB; the loudest peaks are in (or within 2 dB of) the music itself, so limiting would only recover 0.0 dB — the track takes its honest quieter max linear target instead [review: mid-song high-crest window(s) at 1:55.000, 2:30.000 — treated as music (caps the gain), listen to confirm; applause limiting would only recover 0.0 dB — not worth a limiter]"
+      "lufs": -20.03,
+      "tp": -1.49,
+      "mp3_tp": -1.36,
+      "max_m": -8.6,
+      "max_s": -13.9,
+      "lra": 9.7,
+      "plr": 18.54,
+      "md5": "911342c16e481e9722dc4d18fc5518d0",
+      "mp3_md5": "a6bac67f25cc8574125d48c377bac1a0",
+      "recipe_sig": "343a5eb2494db089",
+      "src_md5": "ae4062078ada42c033584d09cdafaac8",
+      "transient_cap": {
+        "gain_db": 9.29,
+        "limit_db": -1.5,
+        "gr_db": 4.75,
+        "near_peak_pct": 0.05,
+        "engaged_pct": 0.27,
+        "events": 7,
+        "longest_s": 0.2,
+        "longest_at_s": 21.35,
+        "p95_gr_db": 2.68,
+        "in_lra": 9.7,
+        "policy_max_gr_db": 6.0
+      },
+      "mode": "sparse-transient-cap",
+      "note": "sparse musical transients (not applause) set the ceiling: one constant +9.3 dB gain to the full -20 LUFS target, with a 1 ms/50 ms true-peak cap shaving up to 4.8 dB off the transients (~0.3% of the track, 7 event(s), longest 0.20 s; 0.1% near-peak density) [review: mid-song high-crest window(s) at 1:55.000, 2:30.000 — treated as music (caps the gain), listen to confirm]"
     },
     "25": {
       "ver": 6,
@@ -448,24 +569,39 @@
       "note": "one constant gain to the show target; predicted TP -4.1 dBTP fits under the -1 ceiling"
     },
     "27": {
-      "ver": 6,
-      "chain": "volume=1.33dB:precision=double",
+      "ver": 8,
+      "chain": "volume=6.36dB:precision=double,aresample=192000,alimiter=limit=0.841395:attack=1:release=50:level=false:latency=1,aresample=48000",
       "in_lufs": -26.4,
-      "lufs": -25.04,
-      "tp": -1.0,
-      "mp3_tp": -0.98,
-      "max_m": -14.2,
-      "max_s": -19.0,
-      "lra": 16.0,
-      "plr": 24.04,
-      "md5": "f6f69a601a4d2f8361a5776ab3e21fc1",
-      "target_lufs": -25.03,
-      "mode": "linear-reduced",
-      "note": "gain to -20 LUFS would overshoot the TP ceiling by 5.0 dB; the loudest peaks are in (or within 2 dB of) the music itself, so limiting would only recover 0.0 dB — the track takes its honest quieter max linear target instead [review: applause limiting would only recover 0.0 dB — not worth a limiter]"
+      "lufs": -20.07,
+      "tp": -1.5,
+      "mp3_tp": -1.43,
+      "max_m": -11.1,
+      "max_s": -13.9,
+      "lra": 15.9,
+      "plr": 18.57,
+      "md5": "4710c9ac0014d2fbcef49f93d57ae49c",
+      "mp3_md5": "845d2fc89c08310816375298f774c8f6",
+      "recipe_sig": "343a5eb2494db089",
+      "src_md5": "6229b5f77809f7c2e6770d8a38d3e425",
+      "transient_cap": {
+        "gain_db": 6.36,
+        "limit_db": -1.5,
+        "gr_db": 5.53,
+        "near_peak_pct": 0.03,
+        "engaged_pct": 0.21,
+        "events": 6,
+        "longest_s": 0.15,
+        "longest_at_s": 38.4,
+        "p95_gr_db": 2.43,
+        "in_lra": 15.9,
+        "policy_max_gr_db": 6.0
+      },
+      "mode": "sparse-transient-cap",
+      "note": "sparse musical transients (not applause) set the ceiling: one constant +6.4 dB gain to the full -20 LUFS target, with a 1 ms/50 ms true-peak cap shaving up to 5.5 dB off the transients (~0.2% of the track, 6 event(s), longest 0.15 s; 0.0% near-peak density)"
     },
     "28": {
-      "ver": 6,
-      "chain": "volume=8.28dB,alimiter=limit=0.870964:attack=5:release=100:level=false:latency=1",
+      "ver": 8,
+      "chain": "volume=8.47dB,alimiter=limit=0.870964:attack=5:release=100:level=false:latency=1",
       "in_lufs": -28.5,
       "lufs": -20.19,
       "tp": -1.1,
@@ -475,25 +611,27 @@
       "lra": 14.5,
       "plr": 19.09,
       "md5": "198ae79ab19a8e13d694836642e1de92",
-      "target_lufs": -20.19,
+      "mp3_md5": "f936ca82525d39708ba9cf1ea8d08e27",
+      "recipe_sig": "343a5eb2494db089",
+      "src_md5": "730df87d520be1cb20730df448aa483b",
       "applause_limiter": {
-        "gain_db": 8.28,
+        "gain_db": 8.47,
         "limit_db": -1.2,
         "regions": [
           [
             105.0,
             110.0,
-            2.6
+            2.7
           ],
           [
             110.0,
             115.0,
-            4.3
+            4.5
           ]
         ]
       },
       "mode": "applause-limiter",
-      "note": "applause (not music) set the ceiling: one constant +8.3 dB gain sized to the music peaks (-12.0 dB), with only the applause transients at 1:45–1:50, 1:50–1:55 limited (up to 4.3 dB); the music is untouched linear"
+      "note": "applause (not music) set the ceiling: one constant +8.5 dB gain sized to the music peaks (-12.0 dB), with only the applause transients at 1:45–1:50, 1:50–1:55 limited (up to 4.5 dB); the music is untouched linear"
     },
     "29": {
       "ver": 6,
@@ -538,8 +676,8 @@
       "note": "one constant gain to the show target; predicted TP -3.2 dBTP fits under the -1 ceiling"
     },
     "31": {
-      "ver": 6,
-      "chain": "volume=6.62dB,alimiter=limit=0.870964:attack=5:release=100:level=false:latency=1",
+      "ver": 8,
+      "chain": "volume=6.66dB,alimiter=limit=0.870964:attack=5:release=100:level=false:latency=1",
       "in_lufs": -30.1,
       "lufs": -23.44,
       "tp": -1.16,
@@ -549,20 +687,23 @@
       "lra": 18.0,
       "plr": 22.28,
       "md5": "36ff376f24f97d0da2fb3a707cc3c591",
-      "target_lufs": -23.44,
+      "mp3_md5": "9a76abe8aaeedf4c5823e54f86cf331e",
+      "recipe_sig": "343a5eb2494db089",
+      "src_md5": "d725a3bc73d9396ad685643c1a6b9b6c",
+      "target_lufs": -23.4,
       "applause_limiter": {
-        "gain_db": 6.62,
+        "gain_db": 6.66,
         "limit_db": -1.2,
         "regions": [
           [
             185.0,
             190.0,
-            2.9
+            3.0
           ]
         ]
       },
       "mode": "applause-limiter",
-      "note": "applause (not music) set the ceiling: one constant +6.6 dB gain sized to the music peaks (-7.9 dB), with only the applause transients at 3:05–3:10 limited (up to 2.9 dB); the music is untouched linear [review: mid-song high-crest window(s) at 0:55.000 — treated as music (caps the gain), listen to confirm]"
+      "note": "applause (not music) set the ceiling: one constant +6.7 dB gain sized to the music peaks (-7.9 dB), with only the applause transients at 3:05–3:10 limited (up to 3.0 dB); the music is untouched linear [review: mid-song high-crest window(s) at 0:55.000 — treated as music (caps the gain), listen to confirm; context: 0.1% of 50 ms frames within 3 dB of this source's overall peak (informational — applause-limiter takes precedence; the music stays strictly linear). Caveat: when applause tops the file, this screen understates the music's own density — measurements against a processed/limited copy read much higher (Truck: 1.6% source vs 12.3% published), so any future stacked-cap question must be decided by engagement stats at a real threshold, not this number]"
     }
   }
 }
