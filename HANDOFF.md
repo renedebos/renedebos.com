@@ -1,214 +1,132 @@
-# Session Handoff — Hannan Recordings (renedebos.com)
-**Date:** 2026-08-12 → 2026-08-13 · **Branch:** `main` — everything through
-`9933f9b` is committed, pushed, and **live**, deploy green and spot-checked
-on renedebos.com itself. Working tree is otherwise clean except the
-always-untracked `codex-notes.md` and one new untracked file,
-`plans/player-consolidation/navigation-continuity-mockup.html` — not
-authored by me this session, origin/status unclear, worth checking with
-Rene before touching it.
+# Session Handoff — Workflow & Home-Page Icon (renedebos.com)
+**Date:** 2026-08-13 · **Scope:** a multi-branch workflow session, not a
+single-branch feature session — spans `home-page`, `player-consolidation`,
+and `share`. `main` itself was not developed on directly this session; it
+continued to move independently from concurrent audio-processing work (last
+observed at `c334352`), which this session did not do and isn't attempting
+to narrate beyond what's visible in commit messages.
 
 ## ✅ Done this session
 
-### Dynamic-fallback bug campaign is now fully complete
-All 10 shows identified by the 2026-08-11 archive-wide audit
-(`scripts/audit_dynamic_fallback.py`, 182 susceptible tracks, 99 exceeded
-the LRA-drift gate) are confirmed on v8. Earlier today (before this
-session's transcript): `jerry-19-broadway-1999-10-25`,
-`jerry-19-broadway-1999-11-15`, `mad-marin-brewing-co-1998-04-01`,
-`mad-marin-brewing-co-1999-04-01` (plus a six-bug audio-pipeline
-correctness pass, see prior handoff content in git history if needed).
-Tonight, this session:
+### Home-page header icon — shipped end to end
+First real exercise of the git worktree + branch + PR workflow, run all the
+way through: research the current code → design iteration (rejected an SVG
+icon concept, landed on a text pill reading **"Shows"**) → real-browser
+verification (Playwright screenshots, light/dark, desktop/mobile) → three
+real bugs found by actually looking at the result and fixed (a
+sitewide-invisible-until-now underline, a header-height mismatch, an
+inconsistent pill color between the two stylesheets) → a follow-on
+consistency pass (unified pill color, home-page-only active-state
+underline, matched the hero block's background to every other page's
+`.page-title`) → committed, pushed, PR #2 opened, reviewed, merged, deploy
+verified live on renedebos.com itself (not just a green Action).
+Full design history: `plans/home-page/home-page.md` and
+`plans/home-page/home-page-codex.md`.
 
-- **`jerry-cafe-java-1999-05-27`** — full v8 reprocess; tracks 10 (Plastic
-  Lemons) and 11 (Anna May) hit review-tier transient-cap flags, listened
-  to and approved. This is also where Rene established the **standing
-  preference**: always opt PRED_TP-flagged tracks into `--transient-cap`,
-  don't ask per show (still respect listen-before-shipping hard-blocks) —
-  see `feedback_default_transient_cap.md` in memory.
-- **`jerry-cafe-java-1999-06-17`** — the show paused since 2026-08-11's
-  data-loss incident (see that incident's writeup, still valid history,
-  in `feedback_prepare_wipes_local_staging.md`). Rene finished the fade
-  re-edit; reprocessed clean, transient-cap opted in from the start, no
-  tracks needed capping (all landed under the 1 dB minimum-benefit
-  threshold). Title fixes: "I Need a Lover"→"Hear Me", "I Want to Lean
-  About Love"→"Learn About Love", slash/hyphen convention on "The Kiss /
-  Da Da Da", "Barney"→"Blarney Stone Blues" typo.
-- **`jerry-19-broadway-1999-06-07`** — full 29-track v8 reprocess,
-  transient-cap opted in. Five review-tier flags (tracks 12, 17, 22, 26,
-  29), each listened to and approved individually via
-  `scripts/ab_compare.py --transient-cap` (see tooling section below).
-  Track 27 auto-qualified for the applause-limiter mode. Title fixes:
-  "Barney"→"Blarney Stone Blues", and "Come On All You Young Maidens" (a
-  lyric-derived mislabel) back to the established "A Bunch of Thyme".
-- **`jerry-cafe-java-1999-03-25`** — finished the reprocess left partial
-  from 2026-08-11 (10/21 done then). Full 21 tracks now on v8. Hit the
-  session's first genuine **hard-blocking diagnostic** (not just
-  informational): a BALANCE flag on track 6 (ABC), 4.7 dB L/R RMS
-  difference. Investigated with `ffmpeg astats` per-channel — peaks were
-  close (−3.7 vs −4.5 dB), only RMS differed, consistent with normal
-  audience-tape mic positioning rather than a defect. Rene reviewed and
-  accepted via `--accept-diagnostic "6:BALANCE"`. Title fixes: "Good
-  Life"→"The Good Life", "Angel of Montgomery"→"Angel from Montgomery"
-  (also had to fix the show's own `description` text, which referenced
-  the wrong title as if it were an intentional rarity).
-- Two Drive `Processed/` cleanups (stale pre-rename-fix leftover files) and
-  one R2 cleanup, all via `rclone delete` (R2 pre-approved,
-  Drive confirmed with Rene each time per existing policy).
+### Unrelated deploy-infra finding, fixed
+PR #2 surfaced a failing Cloudflare **Workers Builds** native Git
+integration on `renedebos-site` — a second, undocumented deploy mechanism
+separate from this repo's real `deploy.yml` GitHub Actions workflow (the
+only one `wrangler.jsonc` documents). Root cause: an invalid/rolled build
+token, unrelated to any code. Fixed by regenerating the token in the
+Cloudflare dashboard; a manual retry then succeeded and produced working PR
+preview URLs as a side benefit. Logged in `home-page.md` §8.
 
-### Found and fixed a real gap in the resume-skip logic itself
-While closing out the campaign, `version-map --version 5` still showed 8
-tracks across two just-shipped shows. Investigated rather than assumed:
-- **`jerry-cafe-java-1999-03-25`** (7 tracks) — false alarm. Chain strings
-  and MD5s were byte-identical to a known-good v8 fix from 2026-08-11,
-  proving they were safely resumed, not silently reused. Only the `ver`
-  label was stale.
-- **`jerry-19-broadway-1999-06-07`** (4 tracks: Crystal Rose, Truck, Blind
-  Man, Some Get Married for Love) — a real gap. Their provenance had been
-  *relabeled* to describe a v8-style render, but the audio bytes were the
-  original, never-reverified v5 `loudnorm` output — the local
-  `~/work/<slug>/out/` directory had leftovers from a 2026-08-10 scoped
-  session predating the `recipe_sig`/`src_md5` safety fields, so the
-  resume-skip's staleness check silently passed. Forced a genuine
-  re-render (fresh `prepare` + scoped `publish --tracks 3,4,8,10`); new
-  bytes came back MD5-identical to the old ones, which is only possible
-  if the original v5 render for those specific tracks was never actually
-  bugged — now proven, not assumed. Commit `7644b15`.
-- Root cause **not fixed in code** (a real fix would make
-  `recipe_changed`/`src_changed` default `True`, not `False`, when
-  `recipe_sig`/`src_md5` are simply absent from old provenance) — full
-  reproduction and fix direction in memory,
-  `resume_skip_recipe_sig_gap.md`. Flag this for whoever next owns
-  `audio_process.py`.
-- Corrected the resulting stale `ver: 5` → `ver: 8` labels for all 8
-  tracks (audio was never in question, only what `/archive-data/`
-  displayed). Archive-wide v5 count is now **zero**. Commit `9933f9b`.
+### Worktree/branch workflow established and taught from scratch
+Rene had zero prior git-branch experience going into this session. Walked
+through, with real actions not just explanation: branch vs. worktree vs.
+folder; why `git worktree` (not plain folder copies or branch-switching in
+one folder) is the right shape for running concurrent Claude/Codex sessions
+on different projects without collision; the full commit → push → PR →
+review → merge → deploy lifecycle; a **staged-merge rehearsal**
+(`git merge --no-commit --no-ff`) in a disposable, detached-HEAD throwaway
+worktree so a merge could be inspected before being made real, without
+touching the actual `main` folder (which had real in-progress audio work
+sitting there uncommitted at the time — checked first, deliberately not
+touched); and `git revert` as the correct rollback tool if a bad merge ever
+reaches `main`, instead of history-rewriting.
 
-### Player-consolidation plan started
-New `plans/` folder convention established (tracked in git, one
-subfolder per initiative, `<topic>-plan.md` naming to keep editor
-tabs/fuzzy-open distinguishable once there are several). First one:
-`plans/player-consolidation/`:
-- `player-consolidation-plan.md` — proposal to replace the site's four
-  independent audio players (`player.js` track rows + "Full Recording",
-  `playlist.js`, `continuous-player.js`) with one controller-per-document,
-  multi-view component (compact/hero/mini densities), plus a client-side
-  loudness control (Archive/Louder/Loudest via `GainNode` + overload
-  protection) and a small functions list (share-timestamp, repeat,
-  keyboard shortcuts — speed control and loop-region explicitly rejected,
-  don't fit this archive's material).
-- `player_consolidation_codex.md` — Codex's review of the plan. Verified
-  its specific claims against the real code (shuffle/endless-queue/saved
-  playlists/Media Session all genuinely exist, confirmed via grep) before
-  accepting them. Folded the real findings in (controller-per-document,
-  not per-row; honest limiter language instead of an unproven "brick-wall/
-  never clips" claim; migration-parity checklist) while trimming the
-  process-heavy asks (formal cross-browser test suite) that don't fit a
-  two-person project.
-- `player-consolidation-mockup.html` — a working HTML/CSS/JS concept
-  mockup (published as a Claude Artifact, self-contained with real
-  archive data — track titles/durations from tonight's shows). Also
-  reviewed by Codex; fixed real problems (a false "survives navigation"
-  claim on the mini bar, misleading absolute-LUFS labels, the hero
-  showing one variant when it needed two — standalone recording vs. queued
-  track with prev/next, non-semantic interactive elements, phone-width
-  overflow).
-- `player-consolidation-mockup-codex-review.md` — that review, logged.
-- **Not yet reconciled:** `navigation-continuity-mockup.html` appeared in
-  the working tree untracked, not authored by me — check with Rene on its
-  origin/status before building on it or committing it.
-- **Open architectural question, deliberately not decided yet:** sticky
-  playback across page navigation. The site is a static multi-page site;
-  consolidating the player does not by itself make audio survive a full
-  page load. `/player/` stays as the practical workaround until/unless
-  client-side navigation is separately decided — see the plan's "Open
-  Questions" section.
+### `player-consolidation` and `share` synced and pushed
+- `player-consolidation`: had one uncommitted local doc commit and had
+  **never been pushed to GitHub at all** — fully local since its creation.
+  Documented the same "sync main into this branch at session start / before
+  the next PR" rule already written for `home-page`
+  (`player-consolidation-plan.md` §7). Merged 17 commits from `main`
+  (clean, no conflicts), integrity-checked, pushed — now backed up.
+- `share`: new branch/worktree created this session for a proposed
+  share-a-song / share-a-search-result feature. A repo-research pass first
+  (not designed blind) found more prior art than expected — song pages
+  already have stable canonical URLs, search already persists its free-text
+  query to the URL, and a full share-popover UI already exists per-track on
+  show pages (`player.js`) that this can likely reuse rather than
+  reinventing. Real finding: player-consolidation's own plan already has an
+  open "share timestamp" item tied to a URL-grammar redesign that hasn't
+  happened yet — so this project's plan explicitly **defers any
+  timestamp-flavored sharing** until that lands, while scoping search-filter
+  URLs and basic song/search sharing as buildable anytime (they don't touch
+  the same URL namespace at all). Plan + Codex-notes placeholder written,
+  committed, pushed. `plans/share/share-plan.md` / `share-codex.md`.
 
-### Investigated (unresolved, informational)
-- A reported Chromebook loudness discrepancy (live site sounding louder
-  than a local A/B comparison) — ruled out as a pipeline bug (FLAC and
-  live MP3 measured identically via direct `ffmpeg`/`ebur128`
-  measurement; MP3 encoding confirmed to be a straightforward transcode
-  with no separate loudness pass). Root cause likely browser/OS
-  playback-chain specific, not further diagnosable without listening
-  directly. Rene accepted the transient-cap fix on the affected track
-  (05-27 track 10) as a practical mitigation rather than continuing to
-  chase the root cause.
-- Discussed (not decided) whether to also reprocess workflow-v6 shows
-  ahead of a hypothetical v9 engine — recommendation was **no**, v6 has no
-  correctness bug to fix (unlike v5), so bundling v6 into a future v9 pass
-  avoids doing the same shows twice.
-- Discussed archive-wide headroom: pushing the on-disk target from −20 to
-  −19 LUFS would break the −1 dBTP ceiling on 116 of 680 tracks currently
-  at full target — this is the concrete data point behind the
-  player-consolidation plan's client-side loudness control (sidesteps the
-  ceiling per-listener instead of re-fighting it per-track on disk).
+All four worktrees end this session fully synced with their remotes, no
+uncommitted work anywhere, verified via `git status --short --branch` on
+each.
 
 ## 🔧 In progress / blocked
-Nothing blocking. All audio work for tonight is shipped and verified live.
-The player-consolidation plan is a proposal awaiting Rene's next move
-(build it, extend the plan to playlist-generator/search-page, or park it).
+Nothing blocking. `home-page` branch stays alive (Rene has more home-page
+layout work planned — don't delete it). `player-consolidation` and `share`
+are both proposals awaiting the next work session on each; `share` is
+explicitly meant to wait on `player-consolidation`'s URL-grammar decision
+before its timestamp-sharing idea is picked up. `main`'s audio-processing
+work is a separate, concurrent thread this session didn't touch.
 
 ## Gotchas learned this session
-- **`recipe_sig`/`src_md5`-based resume-skip trusts old provenance that
-  simply lacks those fields** — see `resume_skip_recipe_sig_gap.md`.
-  After any "full reprocess" claim, run
-  `python3 scripts/audio_process.py version-map --version 5` and treat any
-  hit as a lead: diff the track's `chain` field before/after in git. Chain
-  unchanged + md5 unchanged = safe resume. Chain changed (old `loudnorm=`
-  → new `volume=`) + md5 unchanged = the real bug, force a re-render.
-- **`publish_show.py`'s `--accept-diagnostic 'TRACK:CATEGORY'` is for hard
-  blocks only** (`CLIPPING`, `DROPOUT`, `BALANCE`, `PHASE`) — these are
-  confirmed-defect categories, not just informational flags like
-  `PRED_TP`/`HIGH_LRA`. Investigate with real tooling (e.g. `ffmpeg
-  -af astats` for a BALANCE flag) before asking Rene to accept/reject,
-  don't just relay the raw flag.
-- **A stale local `~/work/<slug>/out/` directory left over from an earlier
-  session is the actual mechanism behind the resume-skip gap above** — not
-  `~/work/<slug>/tracks/` (already covered by the 2026-08-11 incident/
-  `feedback_prepare_wipes_local_staging.md`). `prepare` only manages
-  `tracks/`; `out/` isn't touched by it and can silently persist
-  old renders across sessions/days if a prior run didn't reach its own
-  cleanup step.
-- **Rename a track's title before its first `publish` call, not after** —
-  established convention (`rename-track`), reconfirmed working smoothly
-  across all four shows tonight. Note it needs re-running after every
-  fresh `prepare` (a fresh Drive fetch reintroduces the same title-drift
-  filename each time).
-- **`ab_compare.py --transient-cap --raw PATH` requires an explicit `--raw`
-  path when a track's source isn't findable via the automatic
-  `~/gdrive-mount` search** — reliably worked tonight by pointing at the
-  already-staged file in `~/work/<slug>/tracks/`.
-- **Never chain a `pkill` targeting a background server with the command
-  that replaces it in one call** — causes ambiguous kills (both the old
-  and new process can end up dead). Run them as separate calls.
+- **A branch can only be checked out in one worktree at a time** — trying
+  to `git worktree add` a second copy of `main` for a disposable rehearsal
+  failed until switched to `git worktree add --detach <path> main`
+  (detached HEAD at main's commit, no branch-checkout conflict).
+- **`home.css` has a global `a { text-decoration: none; }` reset that
+  `site.css` lacks** — `.mark` had always had a browser-default underline
+  on every non-home page, invisible under the old single-glyph icon, only
+  visible once it became real text. Worth an eventual audit for other
+  elements with the same latent gap.
+- **`home.css` wraps the entire page (header through footer) in one
+  `.wrap`**, unlike `site.css`'s `.page-title`, which sits on a div outside
+  `.wrap` for a true full-bleed background band. A panel-background fix on
+  `.hero` therefore reads as "boxed" on wide screens, not full-bleed like
+  the rest of the site — closing that fully needs restructuring home's
+  layout, deliberately not done this pass (diminishing returns for a v1).
+- **Cloudflare's native "Workers Builds" Git integration is a separate
+  mechanism from this repo's own GitHub Actions deploy**, targeting the
+  same Worker name. Its build token lives entirely on Cloudflare's side
+  (Settings → Builds → API token) — regenerating it needs no corresponding
+  change anywhere in this repo (not a GitHub secret, not `wrangler.jsonc`).
+- **Cloudflare's edge-cache purge (in `deploy.yml`) doesn't clear a user's
+  own browser cache** — worth a hard-refresh reminder before concluding
+  live content is actually missing/stale.
 
 ## Durable facts (don't undo)
-- **v8 now covers the entire archive** for the dynamic-fallback bug's
-  affected list — zero v5 tracks remain (`version-map` confirms). The one
-  remaining `⚠ MIXED` show, `jerry-19-broadway-2001-01-15` (v7/v8 split),
-  is unrelated — v7 isn't part of the buggy version range.
-- **Standing preference: always opt PRED_TP-flagged tracks into
-  `--transient-cap`**, no need to ask per show — but listen-before-shipping
-  hard-blocks (review-tier flags) still require Rene's ears every time,
-  no exception.
-- **`plans/` is a new, deliberate, tracked-in-git convention** (not
-  gitignored, per Rene's explicit choice) — one subfolder per initiative,
-  `<topic>-plan.md` / `<topic>-codex-review.md` naming. Expect
-  `plans/playlist-generator/` and `plans/search-page/` folders in a future
-  session.
-- `codex-notes.md` remains untracked scratch input from an external
-  review tool, not Rene's own notes — verify claims before acting, same as
-  always.
-- Linear-normalization policy, transient-cap (v8) tiers, and the
-  applause-limiter exception are unchanged — see CLAUDE.md, not repeated
-  here.
+- **Four-worktree map**, one branch each, sharing one `.git`:
+  `/home/renedebos/renedebos.com` (`main`),
+  `/home/renedebos/renedebos.com-home-page` (`home-page`),
+  `/home/renedebos/renedebos.com-player-consolidation`
+  (`player-consolidation`), `/home/renedebos/renedebos.com-share` (`share`).
+- **Sync-with-main is a session-start/pre-PR habit, not a scheduled job** —
+  deliberately rejected a daily-cron approach (unattended merge conflicts
+  have nowhere to go); documented identically in `home-page-codex.md` and
+  `player-consolidation-plan.md` §7.
+- **`plans/<project>/<project>-plan.md` + `plans/<project>/<project>-codex.md`
+  naming convention now has three live examples**: `player-consolidation`,
+  `home-page`, `share`. The `-codex.md` file is reserved for the separate
+  Codex tool's actual review output, pasted in verbatim — never fabricated
+  by Claude to fill the slot, even as a placeholder (see `share-codex.md`
+  for what an honest placeholder looks like).
+- Only `main` triggers the real deploy (`deploy.yml`, `on: push: branches:
+  [main]`); no branch protection is configured; pushing/merging any other
+  branch is inert with respect to the live site.
 
 ## Reference
-Runbook: `CLAUDE.md` → "Publishing a Split Show". Technical record:
-`WORKFLOW_VERSIONS[8]` in `audio_process.py`. Dynamic-fallback bug
-background: `scripts/audit_dynamic_fallback.py`'s docstring, and
-`dynamic_fallback_bug_2026_08_11.md` in memory (now marked complete).
-Resume-skip gap: `resume_skip_recipe_sig_gap.md` in memory. Player
-consolidation: `plans/player-consolidation/` (plan, mockup, both Codex
-reviews). External review scratchpad: `codex-notes.md` (untracked, not
-Rene's notes).
+This session's PR: [#2](https://github.com/renedebos/renedebos.com/pull/2)
+(merged). Plan docs: `plans/home-page/`, `plans/player-consolidation/`,
+`plans/share/` (each with its own `-plan.md`/`-codex.md` pair). Root
+`CLAUDE.md` has the durable project-wide conventions this session didn't
+change.
