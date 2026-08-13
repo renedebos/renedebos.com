@@ -11762,6 +11762,13 @@
   "updates": [
     {
       "date": "2026-08-13",
+      "ts": "2026-08-13T11:21:02.255446",
+      "slug": "sean-19-broadway-2000-02-21",
+      "report": true,
+      "text": "Force-capped three tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode, all now reaching the full −20 target: “Galway Shawl,” “The German Clockwinder,” and “Plastic Lemons.”"
+    },
+    {
+      "date": "2026-08-13",
       "ts": "2026-08-13T11:04:19.686744",
       "slug": "sean-19-broadway-unknown",
       "report": true,

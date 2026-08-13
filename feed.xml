@@ -9,6 +9,13 @@
   <atom:link href="https://renedebos.com/feed.xml" rel="self" type="application/rss+xml"/>
   <item>
     <title>Force-capped three tracks landing between −21 and −25 LUFS into the v8 sparse-transient-c…</title>
+    <link>https://renedebos.com/shows/sean-19-broadway-2000-02-21/</link>
+    <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-13-sean-19-broadway-2000-02-21</guid>
+    <pubDate>Thu, 13 Aug 2026 11:21:02 +0000</pubDate>
+    <description>Force-capped three tracks landing between −21 and −25 LUFS into the v8 sparse-transient-cap mode, all now reaching the full −20 target: “Galway Shawl,” “The German Clockwinder,” and “Plastic Lemons.”</description>
+  </item>
+  <item>
+    <title>Force-capped three tracks landing between −21 and −25 LUFS into the v8 sparse-transient-c…</title>
     <link>https://renedebos.com/shows/sean-19-broadway-unknown/</link>
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-08-13-sean-19-broadway-unknown</guid>
     <pubDate>Thu, 13 Aug 2026 11:04:19 +0000</pubDate>
@@ -279,13 +286,6 @@
     <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-19-site</guid>
     <pubDate>Sun, 19 Jul 2026 08:20:20 +0000</pubDate>
     <description>Brought four more pre-v4 shows up to the current processing engine (v7) — Jerry Hannan at 19 Broadway on 1999-05-10, 1999-06-21, 1999-07-19, and 2001-01-15 — replacing early loudnorm-based passes that had occasionally fallen back to dynamic-mode compression instead of true linear gain. All four re-split from fresh hand-edit exports and re-verified against R2.</description>
-  </item>
-  <item>
-    <title>Re-normalized all 21 tracks: the show's original v1 processing had silently hit exactly −…</title>
-    <link>https://renedebos.com/shows/jerry-19-broadway-1999-06-21/</link>
-    <guid isPermaLink="false">https://renedebos.com/updates/#2026-07-18-jerry-19-broadway-1999-06-21</guid>
-    <pubDate>Sat, 18 Jul 2026 17:16:26 +0000</pubDate>
-    <description>Re-normalized all 21 tracks: the show's original v1 processing had silently hit exactly −20 LUFS and exactly −1 dBTP on several tracks — the same dynamic-mode fallback bug found in other pre-v4 shows — when tracks like "I Need a Lover" and "You're Pulling Me Leg / The Ted Kennedy Song" in fact needed a target as low as −24.7 LUFS to stay linear. Re-split from a fresh hand-edit pass using the current engine.</description>
   </item>
 </channel>
 </rss>
