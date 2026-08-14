@@ -3,19 +3,19 @@
 Status: **in progress.** Rollout is incremental, one surface at a time —
 see §6. Phase 1 (show pages) Steps 1–4 are built: `PlaybackController`, the
 view layer, the `data-item` markup every show page carries, and
-`player-boot.js` — 60 passing deterministic tests across
+`player-boot.js` — 61 passing deterministic tests across
 `test-player-controller.mjs` (22), `test-player-views.mjs` (16) and
-`test-player-boot.mjs` (22). **Three show pages now run the new engine**
+`test-player-boot.mjs` (23). **Three show pages now run the new engine**
 (the allowlist in `pages.CONTROLLER_ENGINE_SLUGS`); the other 27 and every
 song page are byte-identical to before. **Step 4 is done, including its
-browser pass** (2026-08-14, `scripts/browser_check.mjs`, 38/38 against real
+browser pass** (2026-08-14, `scripts/browser_check.mjs`, 44/44 against real
 Chromium — see §6 Step 4's entry for the full record, including the
 corrected, policy-dependent framing of deep-link autoplay). That pass was
 against the **local** build only; production-origin verification is a
 separate, still-outstanding step — see Step 5's 5a. Nothing is pushed or
 deployed.
 Mockup: https://claude.ai/code/artifact/71ae2166-d3ed-471d-9719-abd73fe353ba
-Reviewed by Codex seven times, all recorded in
+Reviewed by Codex eight times, all recorded in
 `player-consolidation-codex.md`: the first pass on the original proposal,
 followed by reviews of the concrete plan, live controller, view layer, two of
 the Step 3 markup, and the built Step 4 implementation. From the fifth review
@@ -1086,12 +1086,18 @@ during migration, not removed speculatively.
        breakage scenarios run against a temp copy of `assets/`+`shows/`, so
        the script never touches the working tree.
 
-       **38/38 passed** (Chromium; a WebKit smoke pass — mount, a real
+       **44/44 passed** (Chromium; a WebKit smoke pass — mount, a real
        click-gesture play, canvas rendering — also passed separately, not
        yet folded into the default run since `playwright-webkit` isn't
        reliably available via a plain global install). Covered: controller
-       mounts and the legacy engine provably stays dormant (no `_audio`
-       marker anywhere) on all three allowlisted pages; real playback
+       mounts *every* row and hero card, not a partial set (view count
+       checked against the real markup, not just captured and printed); both
+       legacy engines provably stay dormant — `player.js` (no `_audio`
+       marker) and, separately, `wavesurfer.js` (zero real `<audio>`
+       elements exist anywhere pre-interaction, since neither the
+       controller's own shared audio element nor an eagerly-built legacy
+       WaveSurfer instance is in the document until something actually
+       plays) — on all three allowlisted pages; real playback
        actually advances, `toggle()`/`seek()`/Space all work against it; a
        real `WaveSurfer` canvas renders (had to pierce a Shadow DOM —
        WaveSurfer v7 uses one by default, worth knowing for future
@@ -1136,6 +1142,48 @@ during migration, not removed speculatively.
        production-origin verification (real caching, real headers, real
        deployed Worker) is a separate, still-outstanding step; see Step 5's
        5a below, which is where that belongs, not here.
+
+       **Eighth Codex review, fixed same day (2026-08-14).** Requested focus
+       was the `--prod` extension to `browser_check.mjs` built for Step 5a
+       and PR #3's readiness to merge; it surfaced three findings in the
+       *existing* Step 4 code instead, all confirmed and fixed, each with a
+       fail-then-pass-proven regression test (full disposition:
+       `player-consolidation-codex.md`):
+
+       1. **Inactive-row DOM churn.** `_render()` only gated the
+          progress/canvas paint path on active state — the button icon
+          (`innerHTML`) and `aria-label` were rewritten unconditionally on
+          every `timeupdate` tick, for every row, active or not,
+          contradicting this doc's own "doesn't churn on every tick" claim
+          above and a test that only ever watched the time label. Fixed
+          with one early return in `_render()`, gated on the exact same
+          `active`/`_wasActive` condition the progress block already used.
+          The regression test now also watches `innerHTML`/`aria-label`
+          writes, not just the time label.
+       2. **Async peaks decoration wasn't actually inside the "one shared
+          try/catch."** `attachPeaks()`'s fetch resolves after
+          `bootShowPage()` has already returned and the page has already
+          been claimed — a throw from one view's `setPeaks()` used to abort
+          the whole per-view loop (views after it never decorated) and its
+          own `.catch()` fallback then retried the *entire* loop from
+          scratch, downgrading views that had already decorated correctly;
+          a repeat throw on retry produced a genuine unhandled rejection on
+          an already-claimed page. Fixed by making `apply()`
+          exception-isolated per view (one bad row logs and moves on, the
+          rest still decorate, no retry-from-scratch) with a trailing catch
+          so the returned promise can no longer reject at all. Both
+          overclaiming comments (the `bootShowPage` header and the
+          `attachPeaks` call site) corrected to say plainly that the shared
+          try/catch covers the decoration steps' synchronous *wiring* only,
+          never `attachPeaks`'s asynchronous continuation.
+       3. **`browser_check.mjs`'s "mounted"/"legacy dormant" checks didn't
+          prove what their names claimed.** Fixed and reflected in the
+          44/44 browser-pass numbers above.
+
+       Local suite grew to 61 (`test-player-boot.mjs` 22 → 23). No
+       overclaims survived — items 1 and 2 are now true exactly as
+       originally documented; item 3 is why the browser-pass description
+       above reads the way it now does.
 5. [ ] **Restructured per a later Codex review's recommendation** (see that
        review's "the proposed Step 5 rollout is too compressed" concern in
        `player-consolidation-codex.md`): the original single checklist item
@@ -1232,7 +1280,7 @@ review):**
 - [x] literal parity checklist exists (§3)
 - [x] the shared controller works with existing show-page markup (Step 4) —
       built, covered by deterministic tests, and confirmed against real
-      Chromium/WebKit (`scripts/browser_check.mjs`, 2026-08-14, 38/38)
+      Chromium/WebKit (`scripts/browser_check.mjs`, 2026-08-14, 44/44)
 - [x] stale-play and queue-transition tests pass
       (`test-player-controller.mjs` 22/22, `test-player-views.mjs` 16/16)
 - [x] the old engine remains available as a fallback during the allowlist

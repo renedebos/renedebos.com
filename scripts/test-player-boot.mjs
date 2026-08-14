@@ -162,6 +162,57 @@ test('a failed peaks fetch still hands every waveform row an empty peaks object'
   } finally { c.destroy(); }
 });
 
+test('one row throwing from setPeaks does not skip/downgrade the others or leak an unhandled rejection', async () => {
+  // Eighth review, finding #2: attachPeaks's apply() used to run every
+  // view's setPeaks() inside a single Array.prototype.forEach with no
+  // per-view isolation. A throw from any one view aborted the whole pass
+  // (views after it in iteration order never got decorated), and the outer
+  // .catch(() => apply({})) then retried the ENTIRE loop with an empty map —
+  // downgrading views that had already been correctly decorated on the first
+  // pass. If the same view threw again on retry, the promise rejected with
+  // nothing left to catch it.
+  const quiet = console.error;
+  console.error = () => {};
+  const unhandled = [];
+  const onUnhandled = (reason) => unhandled.push(reason);
+  process.on('unhandledRejection', onUnhandled);
+  try {
+    const { doc, handle, c, release } = await boot({
+      rows: 3,
+      peaksUrl: '/assets/peaks/x.json',
+      peaks: { 1: { p: [1], d: 100 }, 2: { p: [2], d: 200 }, 3: { p: [3], d: 300 } },
+      holdPeaks: true,
+    });
+    try {
+      // Patch AFTER mount, BEFORE the fetch resolves — holdPeaks is exactly
+      // what makes that window observable.
+      handle.rowViews[1].setPeaks = () => { throw new Error('setPeaks boom'); };
+
+      release();
+      // The microtask queue needs more than one drain to fully propagate a
+      // rejection through fetch().then().then().catch() — one tick may not
+      // be enough.
+      await tick();
+      await tick();
+
+      assert.equal(unhandled.length, 0,
+        'a bad row must never surface as an unhandled rejection on an already-claimed page');
+      assert.equal(handle.rowViews[0].peaks.d, 100,
+        'the row BEFORE the throwing one must still get its real peaks');
+      assert.equal(handle.rowViews[2].peaks.d, 300,
+        'the row AFTER the throwing one must still get its real peaks, not be skipped by the abort or downgraded by a retry-from-scratch');
+
+      doc.querySelectorAll('.track-list [data-item]')[0].querySelector('.play-btn').dispatch('click');
+      await tick();
+      assert.equal(c.state, 'playing',
+        'the controller must stay fully usable despite one row failing decoration');
+    } finally { c.destroy(); }
+  } finally {
+    process.removeListener('unhandledRejection', onUnhandled);
+    console.error = quiet;
+  }
+});
+
 test('a malformed row aborts the whole boot, leaving the flag unset for the legacy engine', async () => {
   const quiet = console.error;
   console.error = () => {};

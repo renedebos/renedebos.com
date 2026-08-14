@@ -47,6 +47,15 @@ const HERO_SELECTOR = '.recording-item[data-item]';
 // its detached audio. `abort` now closes both gaps: every listener below is
 // registered against its signal, and destroy() aborts it before destroying
 // the controller, so the two cleanups can never drift apart again.
+//
+// That one-try/catch guarantee covers the SYNCHRONOUS wiring of all four
+// decoration steps below -- attachPeaks's own kickoff (registering the fetch)
+// and wireKeyboard/wireDeepLink/wireResize's listener registration. It does
+// NOT extend to attachPeaks's asynchronous continuation: that promise chain
+// resolves later, well after this try/catch's stack frame has already
+// returned, so a failure there can't be caught here no matter how it's wired
+// (eighth review, finding #2). attachPeaks is exception-isolated internally
+// instead -- see the comment on it below.
 export function bootShowPage(doc, win) {
   const controller = new PlaybackController();
   const views = [];
@@ -95,9 +104,17 @@ export function bootShowPage(doc, win) {
       destroy() { abort.abort(); controller.destroy(); },
     };
 
-    // Best-effort decoration, but wired against the same abort boundary and
-    // the same catch as mounting above — a throw here is cleaned up exactly
-    // like a malformed-markup throw, not left half-wired.
+    // Best-effort decoration. Only attachPeaks's own SYNCHRONOUS kickoff
+    // (registering the fetch call) is covered by the try/catch above — a
+    // throw there is cleaned up exactly like a malformed-markup throw, same
+    // as wireKeyboard/wireDeepLink/wireResize's registration below. Its
+    // asynchronous continuation (the fetch resolving and applying peaks)
+    // runs later, outside this stack frame entirely, so this catch cannot
+    // and does not protect it (eighth review, finding #2) — what actually
+    // protects that path is attachPeaks being exception-isolated per view
+    // internally, so one row's setPeaks() failure can't cascade into a
+    // retry-from-scratch or an unhandled rejection on an already-claimed
+    // page. See attachPeaks's own comment for the detail.
     attachPeaks(handle, win);
     wireKeyboard(handle, doc, abort.signal);
     wireDeepLink(handle, doc, win, abort.signal);
@@ -122,17 +139,27 @@ export function bootShowPage(doc, win) {
 // its waveform and its seek surface instead of losing both.
 function attachPeaks(handle, win) {
   const url = win && win.WS_PEAKS_URL;
+  // Best effort, per view: one row's setPeaks() failing must not stop the
+  // rest of the page from decorating and must never surface as an
+  // unhandled rejection on an already-claimed page (eighth review, finding
+  // #2) -- this whole function resolves well outside bootShowPage's
+  // synchronous try/catch (see the comment at its call site), so nothing
+  // here can lean on that catch to clean up after it.
   const apply = (map) => {
     handle.views.forEach(v => {
       if (!v.waveContainer) return;
-      v.setPeaks((v.item.peaksKey && map[v.item.peaksKey]) || {});
+      try {
+        v.setPeaks((v.item.peaksKey && map[v.item.peaksKey]) || {});
+      } catch (e) {
+        console.error('[player-boot] setPeaks failed for one row; the rest still decorate', e);
+      }
     });
   };
   if (!url || typeof fetch !== 'function') { apply({}); return Promise.resolve(); }
   return fetch(url)
     .then(r => r.json())
-    .then(apply)
-    .catch(() => apply({}));
+    .then(apply, () => apply({}))
+    .catch(e => console.error('[player-boot] peaks decoration failed unexpectedly', e));
 }
 
 // Space toggles whatever is actually playing. The legacy handler could only

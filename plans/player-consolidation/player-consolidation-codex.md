@@ -1098,3 +1098,196 @@ pages, clean), and all three suites — `test-player-controller.mjs` 22/22,
 tests total, up from 51 at the start of the review. Nothing pushed or
 deployed; the browser pass from the previous session's plan is still
 outstanding and still gates Step 5.
+
+---
+
+## Phase 1 Step 4 implementation review — 2026-08-14
+
+1. **Medium — The previous inactive-row churn fix is incomplete.**
+
+   Evidence: every `timeupdate` notifies every view in [player-controller.js](/home/renedebos/renedebos.com-player-consolidation/scripts/player-controller.js:159) and [player-controller.js](/home/renedebos/renedebos.com-player-consolidation/scripts/player-controller.js:541). Before checking `_wasActive`, `_render()` still toggles classes and calls `_setPlayState()` for inactive rows in [player-views.js](/home/renedebos/renedebos.com-player-consolidation/scripts/player-views.js:183), which replaces the button’s SVG through `innerHTML` and rewrites its ARIA label at line 219. This contradicts the no-inactive-rewrites claims in [player-consolidation-plan.md](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:390) and line 705. The passing test at [test-player-views.mjs](/home/renedebos/renedebos.com-player-consolidation/scripts/test-player-views.mjs:294) watches only the inactive time label, so it misses button and class writes. A direct 25-tick probe observed 25 `innerHTML` writes and 25 `aria-label` writes on one inactive row.
+
+   Why it matters: the allowlisted pages carry 20–24 rows, and the wider rollout reaches 34. Re-parsing SVG markup for every inactive button on every media tick creates exactly the per-item DOM churn the optimization claims to have removed.
+
+   Suggested fix: return early from `_render()` when a view is inactive and was not previously active, before class/button updates, or cache the last rendered `(active,state)` tuple. Extend the test to instrument button `innerHTML`, attributes, class mutations, time text, and canvas creation—not only `timeEl.textContent`.
+
+2. **Medium — Late peaks decoration is not inside the claimed transactional failure boundary.**
+
+   Evidence: `bootShowPage()` invokes `attachPeaks()` without awaiting its promise at [player-boot.js](/home/renedebos/renedebos.com-player-consolidation/scripts/player-boot.js:101), then returns and sets the mounted flag at lines 205–206. Exceptions from the later `.then(apply)` at lines 132–135 therefore cannot reach the surrounding synchronous `try/catch`, despite the comments at lines 38–49 and 98–100 saying mounting and decoration share one catch. `setPeaks()` can perform canvas or WaveSurfer construction at [player-views.js](/home/renedebos/renedebos.com-player-consolidation/scripts/player-views.js:107). A delayed-fetch probe with `setPeaks()` throwing produced an unhandled `late decoration failed` rejection after the controller had claimed the page.
+
+   Why it matters: once `PLAYER_ENGINE_MOUNTED` is set, the legacy engines remain dormant. A late WaveSurfer/DOM failure cannot trigger the advertised fallback and may leave a claimed page with a broken waveform and an unhandled rejection.
+
+   Suggested fix: make asynchronous decoration explicitly best-effort and exception-isolated per view. Catch `setPeaks()` failures without retrying the same throwing path, abort/ignore results after teardown, and keep native controller playback usable. Correct the comments and plan to say only synchronous mount/decorator registration is transactional. Add a delayed-fetch test where `setPeaks()` throws and assert there is no unhandled rejection and playback remains usable.
+
+3. **Medium — The browser pass does not prove that every real-page view mounted or that both legacy engines stayed dormant.**
+
+   Evidence: the harness records `viewCount` at [browser_check.mjs](/home/renedebos/renedebos.com-player-consolidation/scripts/browser_check.mjs:137), but the passing condition at line 141 checks only the flag and existence of `PLAYER_BOOT`. It never compares mounted roots with the real `[data-item]` elements. Its legacy check at lines 144–146 looks only for `player.js`’s `_audio` marker on `.custom-player`; legacy `wavesurfer.js` creates WaveSurfer instances at [wavesurfer.js](/home/renedebos/renedebos.com-player-consolidation/scripts/wavesurfer.js:45) without setting that marker. Nevertheless, the plan says the legacy engine “provably stays dormant” on all three pages at [player-consolidation-plan.md](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:1092). The Node source test also deliberately covers only `player.js`, not `wavesurfer.js`, as documented at plan lines 745–756.
+
+   Why it matters: a missed view or double-mounted legacy WaveSurfer is the central rollout risk. The current harness can report “controller mounted” with an incomplete view set, and its stated marker cannot directly distinguish dormant from active legacy waveform initialization.
+
+   Suggested fix: assert that `PLAYER_BOOT.views.length` equals the real row-plus-card count and that every expected element is represented exactly once. Before activating a row, assert that no legacy WaveSurfer shadow root/media element exists, or expose an explicit dev-only legacy initialization marker. Exercise every hero on the multipart and alternate-transfer pages, not only the first card.
+
+**Verification during this review**
+
+- `python3 scripts/build.py --check` — passed: 31 shows, 680 curated tracks.
+- `python3 scripts/verify_markup.py` — passed: 747 items across 30 show pages.
+- `node scripts/test-player-controller.mjs` — passed, 22/22.
+- `node scripts/test-player-views.mjs` — passed, 16/16.
+- `node scripts/test-player-boot.mjs` — passed, 22/22.
+- Inactive-row write probe — reproduced 25 SVG and 25 ARIA writes over 25 ticks.
+- Delayed peaks-decoration failure probe — reproduced an unhandled rejection after successful mount.
+- `NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs --skip-webkit` — could not start Chromium in this read-only environment: Playwright failed creating `/tmp/playwright-artifacts-*` with `EROFS`; no browser assertions ran.
+- `git diff --check` and source/generated player asset comparisons — passed; working tree clean and all three generated player assets match their sources.
+_Review generated 2026-08-14 09:21:45 PDT by `scripts/codex_review.sh` (codex exec, read-only)._
+
+### Disposition (Claude, 2026-08-14)
+
+Requested focus was the new `--prod` commit (1ff1aa5) and PR #3's readiness
+to merge; Codex instead surfaced three pre-existing gaps in Step 4's
+original implementation and in the older parts of `browser_check.mjs`. All
+three confirmed by reading the actual code (not re-run via Codex's own
+probes, which don't persist outside its sandboxed session) — none are
+factually wrong, and none touch this session's `--prod` code specifically.
+
+- **#1 Medium, inactive-row rewrites incomplete — confirmed.** `_render()`
+  (`player-views.js:177-212`) only gates the progress/time/canvas paint path
+  behind `if (active) {} else if (this._wasActive) {}` (193-209). The
+  `classList.toggle(...)` calls (183-184) and `_setPlayState()` (186-191 —
+  which unconditionally does `this.btn.innerHTML = iconHtml` and
+  `setAttribute('aria-label', ...)` at 219/222) run on *every* `_render()`
+  regardless of active state, and `_render()` runs on every controller
+  `_notify()`, which fires on every `timeupdate`
+  (`player-controller.js:159-167`). Directly contradicts the explicit claims
+  at `player-consolidation-plan.md:390-392` and `:705`. The existing
+  regression test (`test-player-views.mjs:294`) only instruments
+  `timeEl.textContent` — it never watches `innerHTML` or `aria-label`, so it
+  passes today despite the button/icon churn it was meant to catch. Real
+  defect and a real test gap, not just a documentation mismatch.
+- **#2 Medium, async peaks decoration isn't actually inside the boot-level
+  try/catch — confirmed.** `bootShowPage()` (`player-boot.js:57-111`) calls
+  `attachPeaks(handle, win)` synchronously inside the try (line 101) but
+  never awaits or `.catch()`s its returned promise, then returns `handle`
+  immediately (105). The auto-run block sets `MOUNTED_FLAG` synchronously
+  right after `bootShowPage()` returns (200-211) — before `attachPeaks`'s
+  fetch chain has resolved. A throw inside `apply()` (133, or its own
+  fallback at 135) runs in a microtask outside the synchronous try/catch's
+  stack frame, so it is *not* "caught exactly like a malformed-markup throw"
+  the way the header comment (38-49) claims — that claim holds for the
+  decoration steps' synchronous wiring, not for this async continuation.
+  Real mismatch between documented and actual behavior: a `setPeaks()`
+  failure that surfaces after the fetch lands produces an unhandled
+  rejection on an already-claimed page, with no fallback available (legacy
+  is already dormant by then).
+- **#3 Medium, `browser_check.mjs`'s "mounted"/"legacy dormant" checks don't
+  prove what their names claim — confirmed.** The `controller mounted`
+  check (~line 141, pre-existing, not part of this session's diff) passes on
+  `flag === true && hasBoot` alone — `viewCount` is captured and printed but
+  never compared against the real row+card count, so an incomplete view set
+  would still report PASS. The `legacy engine stayed dormant` check
+  (~144-146) only looks for player.js's `_audio` marker on `.custom-player`;
+  wavesurfer.js is gated by the identical `window.PLAYER_ENGINE_MOUNTED`
+  check (confirmed at `wavesurfer.js:171-173`) but sets no equivalent marker
+  on `.ws-track` rows, and nothing in the harness inspects WaveSurfer/
+  `.ws-track` state when the controller is active. Both engines are in fact
+  gated by the same flag today, so this isn't evidence of a live bug — it's
+  a real verification gap: a regression specific to wavesurfer.js's own gate
+  (as opposed to player.js's) would slip past this harness undetected.
+  Codex's own verification block notes it couldn't actually run
+  `browser_check.mjs` in its sandboxed environment (Playwright `EROFS`), so
+  this finding is from reading the code, not an observed harness failure —
+  it holds up on inspection regardless.
+
+**Not raised, and independently checked anyway:** whether this session's
+actual `--prod` additions (the `isRemote` gating logic, `checkAssetHeaders`,
+`checkNonAllowlistedPagesUnaffected`) have defects of their own — despite
+being the stated focus, Codex didn't flag anything there. Before committing,
+I independently verified the `_headers` Cache-Control expectation, the real
+selectors/markup for the five non-allowlisted sample pages, the `#p=` hash
+format, and `tracks.json`'s shape against the actual repo state (not
+assumed) and found no issue. Nothing in this review changes that.
+
+**Recommendation:** #1-#3 are all pre-existing Step 4 issues already on this
+branch (not introduced by PR #3's new commit), so they don't block merging
+PR #3 on their own new-code merits — but they are real correctness/testing
+gaps worth fixing before this canary is trusted further (5b's wider
+rollout in particular would amplify #1's per-tick DOM churn across ~34 rows
+per page instead of ~24). Whether to fix them now (via `/apply-review`)
+before merging, or merge as-is and fix in a follow-up commit, is a call for
+Rene — flagging it rather than deciding it here.
+
+### Fixes applied (Claude, 2026-08-14)
+
+Rene approved fixing all three before merging PR #3. All fixed, each with a
+regression test proven to fail on the unfixed code first, then pass after —
+verified independently (re-ran the full suite and the real-browser pass
+myself, not just trusted the implementing pass's report).
+
+1. **Fixed.** `player-views.js`'s `_render()` now returns immediately when
+   `!active && !this._wasActive`, before any DOM write — the same guard
+   condition the progress/canvas block already used, applied earlier so it
+   covers the button icon and `aria-label` too. Extended the existing
+   regression test (`test-player-views.mjs:294`) to instrument
+   `innerHTML`/`aria-label` writes on the inactive row, not just the time
+   label. **Proven failing first:** ran against the unfixed code — 25/25
+   icon and aria-label writes over 25 ticks, matching the review's own probe
+   exactly. Passed cleanly after the fix. One necessary fixture correction
+   surfaced along the way: `test-player-views.mjs`'s `trackRow()` fixture
+   started with a blank `aria-label`, which only worked before because the
+   (buggy) unconditional initial render filled it in — updated the fixture
+   to pre-set `aria-label="Play <label>"`, mirroring what
+   `fragments.py:159-173`'s real server-rendered markup actually ships, which
+   is exactly the fact the fix's safety argument depends on (verified by
+   reading `fragments.py` directly, not assumed).
+2. **Fixed.** `attachPeaks()` in `player-boot.js` now wraps each view's
+   `setPeaks()` call in its own try/catch inside `apply()` (log and continue
+   on failure — one bad row can no longer abort the loop or trigger a
+   retry-from-scratch that downgrades already-decorated rows), uses the
+   two-argument `.then(onFulfilled, onRejected)` form so only a genuine
+   fetch/parse failure triggers the empty-map fallback, and ends in a
+   trailing `.catch()` so the returned promise can no longer reject at all.
+   Both overclaiming comments (the `bootShowPage` header and the
+   `attachPeaks` call-site comment) rewritten to say precisely what the
+   shared try/catch covers (synchronous wiring only) versus what protects
+   the async continuation (per-view isolation, not the try/catch). New
+   regression test in `test-player-boot.mjs` patches one row's `setPeaks` to
+   always throw, mounts with `holdPeaks`, releases the fetch, and watches
+   `process.on('unhandledRejection', ...)`. **Proven failing first:** ran
+   against the unfixed code — one unhandled rejection observed (the test's
+   own listener caught it cleanly rather than crashing the process, which is
+   itself useful information about Node's exact behavior here). Passed
+   cleanly after the fix, including confirming the row before and the row
+   after the throwing one both still received their real peaks data, and
+   that the controller stayed fully playable afterward.
+3. **Fixed.** `browser_check.mjs`'s `runParityPass()` now asserts
+   `viewCount === expectedViewCount` (computed from the real
+   `.track-list [data-item]` + `.recording-item[data-item]` count in the
+   same `page.evaluate` call) instead of only printing it, and adds a
+   pre-interaction dormancy check for `wavesurfer.js` specifically: on pages
+   with `.ws-track` rows, before any click, `findAudioDeep(document.body)`
+   must find zero real `<audio>` elements — true only if neither the
+   controller's own shared audio element (never appended to the document,
+   confirmed by grep) nor an eagerly-built legacy WaveSurfer instance
+   exists yet. This lives in a manual/dev-only harness, not the `test-*.mjs`
+   node suites, so there's no unit-level fail-then-pass proof for it; instead
+   ran it for real (positive control) against the actual deployed-nowhere
+   local build: **44/44 passed**, including the new checks on all three
+   allowlisted pages (`views=21/expected=21`, `views=23/expected=23`,
+   `views=26/expected=26`; `audioElements=0` on all three) — confirming the
+   new assertions are correctly wired and don't false-positive against
+   known-good code. Re-ran this myself independently after the implementing
+   pass reported the same 44/44, to be sure.
+
+**Re-verification (run independently, not just trusted):**
+```
+python3 scripts/build.py --check   → integrity OK — 31 shows, 680 curated tracks
+python3 scripts/build.py           → markup OK — 747 items across 30 generated show pages
+node scripts/test-player-controller.mjs → 22/22
+node scripts/test-player-views.mjs      → 16/16
+node scripts/test-player-boot.mjs       → 23/23
+NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs --skip-webkit → 44/44
+```
+
+Nothing here touches PR #3's actual new commit (the `--prod` extension
+itself) — that code was independently checked before it was committed and
+nothing in this pass changed the assessment. PR #3 is ready to merge as far
+as this review is concerned.

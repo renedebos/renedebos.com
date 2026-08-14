@@ -177,6 +177,14 @@ export class PlayerView {
   _render(snapshot) {
     if (!snapshot) return;
     const active = this._isActive(snapshot);
+    // A row that is not active now and was never active before gets zero DOM
+    // writes here — this runs on every controller _notify(), i.e. every
+    // timeupdate tick, for every mounted view, so a page of many rows must
+    // not churn on every tick (plan.md's explicit claim). A row transitioning
+    // FROM active TO inactive still falls through for exactly one final
+    // render (this._wasActive is still true on that call) so it can reset to
+    // idle below.
+    if (!active && !this._wasActive) { this._wasActive = active; return; }
     const state = active ? snapshot.state : 'idle';
     const audio = this.controller ? this.controller.audioElement : null;
 

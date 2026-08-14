@@ -38,6 +38,12 @@ function trackRow({ waveform = false, num = 1, duration = '3:42' } = {}) {
   const row = new FakeElement('div', ['track-row', waveform ? 'ws-track' : 'custom-player']);
   const btn = new FakeElement('button', ['play-btn']);
   btn.dataset.playLabel = `Song ${num}, Jerry Hannan, 1999-05-27`;
+  // Mirrors fragments.py's player(): the real button ships with its idle
+  // aria-label already baked into the server-rendered markup
+  // (aria-label="Play{label}") rather than relying on a first JS render to
+  // set it — which is exactly why _render()'s early-return-when-never-active
+  // (Finding #1) is safe to skip that redundant initial write.
+  btn.setAttribute('aria-label', `Play ${btn.dataset.playLabel}`);
   row.appendChild(btn);
   row.appendChild(new FakeElement('span', ['track-num']));
   if (waveform) row.appendChild(new FakeElement('div', ['ws-wave']));
@@ -313,6 +319,22 @@ test('inactive rows are not rewritten on every timeupdate tick', async () => {
       set(v) { writes++; this._t = v; },
       configurable: true,
     });
+    // Also instrument the play button's icon/aria-label churn — _setPlayState
+    // runs unconditionally on every _render() call today, independent of the
+    // active-gating that already protects progress/time/canvas above.
+    let iconWrites = 0;
+    let ariaWrites = 0;
+    const btn = inactive.querySelector('.play-btn');
+    Object.defineProperty(btn, 'innerHTML', {
+      get() { return this._html || ''; },
+      set(v) { iconWrites++; this._html = v; },
+      configurable: true,
+    });
+    const realSetAttribute = btn.setAttribute.bind(btn);
+    btn.setAttribute = (k, v) => {
+      if (k === 'aria-label') ariaWrites++;
+      return realSetAttribute(k, v);
+    };
     audio.duration = 222;
     for (let i = 0; i < 25; i++) {
       audio.currentTime = i;
@@ -320,6 +342,10 @@ test('inactive rows are not rewritten on every timeupdate tick', async () => {
     }
     assert.equal(writes, 0,
       'a row that was already inactive must not be rewritten on every tick — with waveforms that meant redrawing its canvas 25 times');
+    assert.equal(iconWrites, 0,
+      'an inactive row\'s play button icon must not be rewritten on every tick either');
+    assert.equal(ariaWrites, 0,
+      'an inactive row\'s aria-label must not be rewritten on every tick either');
   } finally { c.destroy(); }
 });
 

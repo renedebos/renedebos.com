@@ -137,13 +137,46 @@ async function runParityPass(browser) {
     const mounted = await page.evaluate(() => ({
       flag: window.PLAYER_ENGINE_MOUNTED, hasBoot: !!window.PLAYER_BOOT,
       viewCount: window.PLAYER_BOOT ? window.PLAYER_BOOT.views.length : 0,
+      expectedViewCount: document.querySelectorAll('.track-list [data-item]').length
+        + document.querySelectorAll('.recording-item[data-item]').length,
     }));
     record(`${path} controller mounted`, mounted.flag === true && mounted.hasBoot,
       `flag=${mounted.flag} views=${mounted.viewCount}`);
+    // (a) viewCount was captured and printed but never actually compared
+    // against the real row+card count, so a boot that mounted an incomplete
+    // view set would still PASS (eighth review, finding #3).
+    record(`${path} mounted every row and hero card, not a partial set`,
+      mounted.viewCount === mounted.expectedViewCount,
+      `views=${mounted.viewCount} expected=${mounted.expectedViewCount}`);
 
     const legacyRan = await page.evaluate(() =>
       Array.from(document.querySelectorAll('.custom-player')).some((el) => !!el._audio));
-    record(`${path} legacy engine stayed dormant`, legacyRan === false);
+    record(`${path} legacy player.js stayed dormant`, legacyRan === false);
+
+    // (b) the check above only sees player.js's own `_audio` marker on
+    // `.custom-player` elements -- it has no way to tell whether
+    // wavesurfer.js (gated by the identical PLAYER_ENGINE_MOUNTED check, but
+    // with no marker of its own) also stayed dormant. wavesurfer.js eagerly
+    // creates a real WaveSurfer instance -- with its own real <audio> element
+    // -- for every .ws-track row on page load if it ever runs (plan.md:
+    // "Today every row eagerly gets its own WaveSurfer instance on page
+    // load"). The controller engine's own shared <audio> element is never
+    // appended to the document (grepped: no appendChild/document.body.append
+    // for it anywhere) and player-views.js only builds a WaveSurfer for a row
+    // once it becomes ACTIVE, which can't happen before any interaction. So
+    // on a controller-engine page, immediately after load and BEFORE any
+    // click, findAudioDeep() finding zero real <audio> elements proves
+    // wavesurfer.js never ran -- checked here, before the play-button click
+    // further down, so it observes the true pre-interaction state.
+    if (await page.locator('.ws-track').count() > 0) {
+      const preClickAudioCount = await page.evaluate(`(() => {
+        ${findAudioDeepFn}
+        return findAudioDeep(document.body).length;
+      })()`);
+      record(`${path} legacy wavesurfer.js stayed dormant (no eager WaveSurfer before interaction)`,
+        preClickAudioCount === 0, `audioElements=${preClickAudioCount}`);
+    }
+
     record(`${path} no console errors on load`, consoleErrors.length === 0, consoleErrors.slice(0, 3).join(' | '));
 
     const firstRow = page.locator('.track-list [data-item]').first();
