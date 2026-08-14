@@ -24,6 +24,31 @@ export class FakeClassList {
 // [attr="value"]. Enough for every selector the player modules use.
 const COMPOUND = /^[a-zA-Z][\w-]*|#[\w-]+|\.[\w-]+|\[[^\]]+\]/g;
 
+// Shared by FakeElement and FakeWindow — both need the real DOM's `{ signal }`
+// option so player-boot.js's AbortController-scoped listeners (added for the
+// Step 4 review's finding #1: handle.destroy() must actually remove them) get
+// exercised here rather than only in a browser. `signal` is the real global
+// AbortSignal (Node has one), not a fake — only the addEventListener/dispatch
+// side needs faking.
+function addListener(listeners, type, fn, opts) {
+  const list = (listeners[type] ||= []);
+  const entry = { fn };
+  const signal = opts && opts.signal;
+  if (signal) {
+    if (signal.aborted) return;          // never registered, matching real DOM
+    signal.addEventListener('abort', () => {
+      const i = list.indexOf(entry);
+      if (i !== -1) list.splice(i, 1);
+    });
+  }
+  list.push(entry);
+}
+function dispatchListeners(listeners, type, evt) {
+  // Snapshot before iterating: a handler that unmounts/removes another
+  // listener for the same event must not skip or double-fire a sibling.
+  (listeners[type] || []).slice().forEach(({ fn }) => fn(evt));
+}
+
 export class FakeElement {
   constructor(tag, classes = [], attrs = {}) {
     this.tagName = tag.toUpperCase();
@@ -62,8 +87,8 @@ export class FakeElement {
   scrollIntoView() { this.scrolledIntoView = true; }
   setAttribute(k, v) { this.attributes[k] = v; }
   getAttribute(k) { return this.attributes[k]; }
-  addEventListener(type, fn) { (this._listeners[type] ||= []).push(fn); }
-  dispatch(type, evt = {}) { (this._listeners[type] || []).forEach(fn => fn(evt)); }
+  addEventListener(type, fn, opts) { addListener(this._listeners, type, fn, opts); }
+  dispatch(type, evt = {}) { dispatchListeners(this._listeners, type, evt); }
   querySelector(sel) { return this.querySelectorAll(sel)[0] || null; }
   querySelectorAll(sel) {
     // Descendant combinators only — that's all these modules use
@@ -124,8 +149,8 @@ export class FakeWindow {
     this.devicePixelRatio = 1;
     this._listeners = {};
   }
-  addEventListener(type, fn) { (this._listeners[type] ||= []).push(fn); }
-  dispatch(type, evt = {}) { (this._listeners[type] || []).forEach(fn => fn(evt)); }
+  addEventListener(type, fn, opts) { addListener(this._listeners, type, fn, opts); }
+  dispatch(type, evt = {}) { dispatchListeners(this._listeners, type, evt); }
 }
 
 export class FakeAudio extends EventTarget {
@@ -164,6 +189,11 @@ export class FakeWaveSurfer {
 import { readFileSync } from 'node:fs';
 
 const read = (name) => readFileSync(new URL(`./${name}`, import.meta.url), 'utf8');
+// Exported so a test can execute a slice of a REAL classic script (player.js,
+// wavesurfer.js) against the fake DOM, rather than only re-implementing what
+// it's supposed to do — the Step 4 review's finding #4: no suite loaded
+// either file, so their own engine-selection gates had zero coverage.
+export const readScript = read;
 const dataUrl = (src) => 'data:text/javascript;base64,' + Buffer.from(src).toString('base64');
 export const controllerUrl = new URL('./player-controller.js', import.meta.url).href;
 

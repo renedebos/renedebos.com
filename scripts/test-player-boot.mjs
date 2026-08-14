@@ -15,7 +15,7 @@
 
 import assert from 'node:assert/strict';
 import {
-  FakeElement, FakeDocument, FakeWindow, FakeAudio, loadPlayerBoot,
+  FakeElement, FakeDocument, FakeWindow, FakeAudio, loadPlayerBoot, readScript,
 } from './test-fake-dom.mjs';
 
 globalThis.getComputedStyle = () => ({ getPropertyValue: () => '' });
@@ -318,6 +318,175 @@ test('a window resize redraws inert waveforms', async () => {
     await new Promise(r => setTimeout(r, 200));
     assert.equal(redrawn, handle.views.length);
   } finally { c.destroy(); }
+});
+
+// Step 4 review finding #1: a destroyed boot must actually stay destroyed.
+// The controller's own _destroyed guards (player-controller.js) and the boot's
+// listener teardown (the shared AbortController in player-boot.js) are two
+// separate fixes for the same bug — either alone would have masked the other
+// not existing, so each gets its own case.
+// All three below call handle.destroy() — the real public teardown entry
+// point (window.PLAYER_BOOT.destroy() on a real page) — deliberately NOT
+// c.destroy() (the raw controller). Calling the controller directly would
+// leave player-boot.js's own AbortController untouched and let the
+// controller's _destroyed guards silently backstop the very listener leak
+// these tests exist to catch — which is exactly what happened while writing
+// this test the first time: the resize case failed until it was corrected to
+// call handle.destroy(), proving the distinction matters.
+test('destroy() stops a leaked Space listener from restarting playback', async () => {
+  const { doc, handle, c } = await boot({ rows: 1 });
+  doc.querySelectorAll('.track-list [data-item]')[0].querySelector('.play-btn').dispatch('click');
+  await tick();
+  assert.equal(c.state, 'playing');
+
+  handle.destroy();
+  assert.equal(c.audioElement.paused, true);
+
+  // wireKeyboard's listener on `doc` is document-scoped, not controller-scoped
+  // — it outlives destroy() unless something explicitly removes it. This
+  // proves it no longer reaches the controller.
+  doc.dispatch('keydown', { code: 'Space', preventDefault: () => {} });
+  await tick();
+  assert.equal(c.audioElement.paused, true,
+    'a leaked keyboard listener must not be able to restart a destroyed controller');
+});
+
+test('destroy() stops a leaked hashchange/load listener from queuing playback', async () => {
+  const { doc, win, handle, c } = await boot({ rows: 2 });
+  handle.destroy();
+
+  win.location.hash = '#track-1';
+  win.location.search = '?autoplay=1';
+  win.dispatch('load');
+  win.dispatch('hashchange');
+  await tick();
+  assert.equal(c.currentIndex, -1,
+    'a leaked deep-link listener must not be able to queue/play on a destroyed controller');
+});
+
+test('destroy() stops a leaked resize listener from touching torn-down views', async () => {
+  const { win, handle, c } = await boot({ peaksUrl: '/assets/peaks/x.json', peaks: { 1: { p: [1], d: 9 } } });
+  await tick();
+  let redrawn = 0;
+  handle.views.forEach(v => { v.redrawWave = () => { redrawn++; }; });
+  handle.destroy();
+
+  win.dispatch('resize');
+  await new Promise(r => setTimeout(r, 200));
+  assert.equal(redrawn, 0, 'a leaked resize listener must not fire after destroy()');
+});
+
+test('the controller itself refuses to be driven after destroy(), independent of player-boot.js', async () => {
+  // Same property, proven directly against PlaybackController — belt-and-
+  // braces with the boot-level tests above, since either fix alone (the
+  // controller's guards, or the boot's listener teardown) would have hidden
+  // the other one being missing.
+  const { c } = await boot({ rows: 1 });
+  c.destroy();
+  c.play(0);
+  c.toggle();
+  c.setQueue([{ id: 'x', streamUrl: 'https://example.test/x.mp3', title: 'X' }], { startIndex: 0, autoplay: true });
+  await tick();
+  assert.equal(c.audioElement.paused, true);
+  assert.equal(c.currentIndex, -1);
+});
+
+// Step 4 review finding #2: a page where the row/hero selectors find nothing
+// must not claim itself. Not just a defensive instinct — verify_markup.py's
+// new check_every_row_has_item() only runs at build time; this is the runtime
+// backstop for the same invariant (e.g. a hand-edited or corrupted page that
+// never went through build.py).
+test('a page with no playable rows or recording cards refuses to claim itself', async () => {
+  const quiet = console.error;
+  console.error = () => {};
+  try {
+    const { win } = await boot({ rows: 0, heroes: 0 });
+    assert.equal(win.PLAYER_ENGINE_MOUNTED, undefined,
+      'an empty mount must not set the flag — nothing here for the controller to own');
+    assert.equal(win.PLAYER_BOOT, undefined);
+  } finally { console.error = quiet; }
+});
+
+test('mount() on an already-destroyed controller is inert, not a live view', async () => {
+  const { c } = await boot({ rows: 1 });
+  c.destroy();
+  let attached = false;
+  const fakeView = { onAttach() { attached = true; }, onDetach() {} };
+  const unmount = c.mount(fakeView);
+  assert.equal(attached, false, 'mount() must not attach a view to a destroyed controller');
+  unmount(); // must not throw
+});
+
+// ── player.js's own gate, executed for real (Step 4 review finding #4) ─────
+// Every test above exercises player-boot.js/player-views.js/player-controller.js
+// — none of them ever loads player.js, so a regression that deleted its
+// engine-selection gate entirely would leave the whole suite green (proven by
+// mutation-checking while applying this review's fixes). This runs player.js's
+// REAL source — not a reimplementation of what it's supposed to do — against a
+// fake DOM, sliced just before the "── downloads" section: everything the gate
+// itself needs (the BroadcastChannel block, initCustomPlayers,
+// initLegacySpaceBar, initLegacyDeepLink, the gate) is above that marker: the
+// download-modal/toast/tooltip code below it calls document.getElementById()
+// against raw innerHTML strings our fake DOM doesn't parse, and is unrelated
+// to what's under test here. wavesurfer.js shares the identical gate pattern
+// (its own comment says so) and isn't separately covered — the review offered
+// "player.js OR wavesurfer.js" as sufficient, and player.js is on every page.
+function playerJsGateSource() {
+  const full = readScript('player.js');
+  const downloadsStart = full.indexOf('// ── downloads');
+  const deepLinkStart = full.indexOf('// ── deep-link to a track ──');
+  assert.ok(downloadsStart > 0 && deepLinkStart > downloadsStart,
+    'player.js\'s section markers moved — update the slice points');
+  // Excise the downloads/tooltip/share sections: they call
+  // document.getElementById() against raw innerHTML strings our fake DOM
+  // doesn't parse, and none of it is relevant to the gate under test. Keep
+  // everything else, INCLUDING the deep-link section further down — its
+  // initLegacyDeepLink() is one of the three functions the gate's
+  // initLegacyPlayback() calls, so leaving it out would ReferenceError.
+  return full.slice(0, downloadsStart) + full.slice(deepLinkStart);
+}
+
+// A minimal .custom-player row — everything initCustomPlayers() dereferences
+// before it unconditionally sets `player._audio = audio` at the end, which is
+// this test's external signal that legacy actually ran.
+function fakeCustomPlayerRow() {
+  const row = new FakeElement('div', ['custom-player']);
+  row.dataset.src = 'https://example.test/full.mp3';
+  row.appendChild(new FakeElement('button', ['play-btn']));
+  row.appendChild(new FakeElement('span', ['time-label', 'current']));
+  row.appendChild(new FakeElement('input', ['progress-range']));
+  return row;
+}
+
+test('player.js\'s real gate stays dormant once a peer boot has already mounted', async () => {
+  const doc = new FakeDocument();
+  const row = fakeCustomPlayerRow();
+  doc.appendChild(row);
+  const win = new FakeWindow({});
+  win.PLAYER_ENGINE = 'controller';
+  win.PLAYER_ENGINE_MOUNTED = true;   // simulates a peer player-boot.js success
+  globalThis.document = doc;
+  globalThis.window = win;
+
+  new Function(playerJsGateSource())();  // runs the real top-level gate logic
+  doc.dispatch('DOMContentLoaded');
+  assert.equal(row._audio, undefined,
+    'player.js must NOT wire .custom-player rows when a peer boot already mounted');
+});
+
+test('player.js\'s real gate initializes legacy playback when no peer boot mounted', async () => {
+  const doc = new FakeDocument();
+  const row = fakeCustomPlayerRow();
+  doc.appendChild(row);
+  const win = new FakeWindow({});
+  win.PLAYER_ENGINE = 'controller';    // flagged page, but no boot ever claimed it
+  globalThis.document = doc;
+  globalThis.window = win;
+
+  new Function(playerJsGateSource())();
+  doc.dispatch('DOMContentLoaded');
+  assert.notEqual(row._audio, undefined,
+    'player.js must wire .custom-player rows as the fallback when nothing else mounted');
 });
 
 // ── runner ─────────────────────────────────────────────────────────────────

@@ -194,6 +194,7 @@ export class PlaybackController {
   // return to the track list after the Hero card's playSingleton() collapsed
   // it (see playSingleton's note).
   setQueue(items, { startIndex = -1, autoplay = false } = {}) {
+    if (this._destroyed) return;
     ++this._gen;
     this._queue = items.map(normalizeItem);
     this._shuffleOn = false;
@@ -216,6 +217,7 @@ export class PlaybackController {
   }
 
   appendQueue(items) {
+    if (this._destroyed) return 0;
     const existing = new Set(this._queue.map(t => t.id));
     const fresh = items.map(normalizeItem).filter(t => !existing.has(t.id));
     if (fresh.length) { this._queue = this._queue.concat(fresh); this._notify(); }
@@ -230,6 +232,7 @@ export class PlaybackController {
   // one had been. Only an emptied queue, or removing the last item while it
   // plays, actually stops.
   removeAt(index) {
+    if (this._destroyed) return;
     if (index < 0 || index >= this._queue.length) return;
     const wasPlaying = this._idx !== -1 && !this.audio.paused;
     const removed = this._queue[index];
@@ -259,6 +262,7 @@ export class PlaybackController {
   // Unused by show pages — the intended foundation for /playlist//player/'s
   // queue-editing UI, not yet proven against their real behavior.
   reorder(fromIndex, toIndex) {
+    if (this._destroyed) return;
     if (fromIndex < 0 || fromIndex >= this._queue.length) return;
     // Clamp rather than trust the caller: a drag-and-drop UI can hand over an
     // out-of-range drop target, and splice() would silently append instead.
@@ -277,7 +281,15 @@ export class PlaybackController {
   }
 
   // ── transport ──
+  // Every method below is a no-op once destroy() has run — the whole point of
+  // finding #1 in the Step 4 review: a leaked listener (a document/window one
+  // player-boot.js installed, a leftover Media Session action handler, a stray
+  // reference held by calling code) could otherwise reach into a "destroyed"
+  // controller and start its detached <audio> element playing again. Reading
+  // state (the getters/snapshot() below) stays open after destroy — only
+  // driving the controller further is refused.
   play(itemOrIndex) {
+    if (this._destroyed) return Promise.resolve();
     if (itemOrIndex == null) {
       if (this._idx === -1) {
         return this._queue.length ? this._playIndex(0) : Promise.resolve();
@@ -310,17 +322,19 @@ export class PlaybackController {
   // Hero -> track -> next work. Covered by the queue-context tests in
   // test-player-controller.mjs.
   playSingleton(item) {
+    if (this._destroyed) return Promise.resolve();
     this.setQueue([normalizeItem(item)]);
     return this._playIndex(0);
   }
 
   pause() {
-    if (this._idx === -1) return;
+    if (this._destroyed || this._idx === -1) return;
     ++this._gen; // invalidate any in-flight play() promise so its rejection doesn't surface as an error
     this.audio.pause();
   }
 
   toggle() {
+    if (this._destroyed) return Promise.resolve();
     if (this._idx === -1) return this.play(0);
     // A failed item retries rather than toggling. Don't infer this from
     // audio.paused: an element that errored mid-playback can still report
@@ -331,6 +345,7 @@ export class PlaybackController {
   }
 
   stop() {
+    if (this._destroyed) return;
     ++this._gen;
     this._idx = -1;
     this._setState('idle');
@@ -339,17 +354,19 @@ export class PlaybackController {
   }
 
   seek(seconds) {
-    if (!isFinite(this.audio.duration)) return;
+    if (this._destroyed || !isFinite(this.audio.duration)) return;
     this.audio.currentTime = Math.max(0, Math.min(seconds, this.audio.duration));
   }
 
   seekBy(deltaSeconds) {
+    if (this._destroyed) return;
     this.seek(this.audio.currentTime + deltaSeconds);
   }
 
-  next() { this._advance(1); }
+  next() { if (!this._destroyed) this._advance(1); }
 
   prev() {
+    if (this._destroyed) return;
     // Matches the existing playlist.js/continuous-player.js convention:
     // more than 3s in, restart the current track instead of going back.
     if (this.audio.currentTime > 3) { this.seek(0); return; }
@@ -366,6 +383,7 @@ export class PlaybackController {
 
   // ── modes ──
   setRepeatOne(on) {
+    if (this._destroyed) return;
     this._repeatOne = !!on;
     this._notify();
   }
@@ -375,6 +393,7 @@ export class PlaybackController {
   // off restores the pre-shuffle snapshot verbatim and relocates the
   // currently-playing item in it so playback position doesn't jump.
   toggleShuffle() {
+    if (this._destroyed) return;
     if (this._shuffleOn) {
       if (this._unshuffledQueue) {
         const playingId = this._idx !== -1 ? this._queue[this._idx].id : null;
@@ -398,6 +417,7 @@ export class PlaybackController {
 
   // ── views ──
   mount(view) {
+    if (this._destroyed) return () => {};
     this._views.add(view);
     view.onAttach(this);
     return () => this.unmount(view);
@@ -420,6 +440,7 @@ export class PlaybackController {
   // Media Session handlers in particular are global to the document, so a
   // stale one would hijack the lock-screen controls of whatever replaced it.
   destroy() {
+    if (this._destroyed) return;
     ++this._gen;                       // invalidate any in-flight play() promise
     this._unclaim();
     this._views.forEach(v => v.onDetach());

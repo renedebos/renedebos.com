@@ -436,6 +436,48 @@ test('waveform tap while paused starts playback first, then seeks (iOS gesture r
   } finally { c.destroy(); }
 });
 
+// Step 4 review finding #4: the existing "failed peaks fetch" boot test only
+// checked that setPeaks() STORED the value — a mutation that dropped the
+// draw/upgrade calls entirely still passed it. This tests the actual
+// behavior: which of _upgradeWave/_drawInertWave setPeaks() invokes, keyed on
+// whether the row happens to be active when the (asynchronous, in the real
+// bootstrap) peaks arrive.
+test('setPeaks() upgrades an active row and draws an inactive one — not just stores the value', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    const items = ['t1', 't2'].map(id => item(id));
+    const views = items.map((it, i) => {
+      const row = trackRow({ waveform: true, num: i + 1 });
+      // No peaks at construction — mirrors player-boot.js mounting before the
+      // peaks fetch resolves.
+      const v = new CompactPlayerView(row, it, { queueItems: items, queueIndex: i, peaks: null });
+      c.mount(v);
+      return v;
+    });
+
+    views[0].root.querySelector('.play-btn').dispatch('click');
+    await tick(); // views[0] is now the active row; views[1] stays inactive
+
+    let upgraded = 0, drawn = 0;
+    views[0]._upgradeWave = () => { upgraded++; };
+    views[0]._drawInertWave = () => { drawn++; };
+    views[1]._upgradeWave = () => { upgraded++; };
+    views[1]._drawInertWave = () => { drawn++; };
+
+    const peaks = { p: [0.1, 0.5, 0.9], d: 200 };
+    views[0].setPeaks(peaks);
+    assert.equal(views[0].peaks, peaks, 'the value is still stored');
+    assert.equal(upgraded, 1, 'the ACTIVE row must upgrade to a real WaveSurfer, not just store peaks');
+    assert.equal(drawn, 0);
+
+    views[1].setPeaks(peaks);
+    assert.equal(views[1].peaks, peaks);
+    assert.equal(drawn, 1, 'the INACTIVE row must draw its inert canvas, not just store peaks');
+    assert.equal(upgraded, 1, 'still just the one upgrade from the active row');
+  } finally { c.destroy(); }
+});
+
 test('unmount detaches the view so later controller updates cannot touch its DOM', async () => {
   const audio = new FakeAudio();
   const c = new PlaybackController({ audio, mediaSession: false });

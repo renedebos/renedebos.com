@@ -34,10 +34,24 @@ const HERO_SELECTOR = '.recording-item[data-item]';
 // wrong with the markup (a malformed data-item, a missing streamUrl) rather
 // than mounting a half-working engine — the caller turns that into a clean
 // fallback to the legacy engines.
+//
+// Mounting and decoration (peaks/keyboard/deep-link/resize) share ONE
+// try/catch and ONE AbortController (Step 4 review finding #1). Two things
+// that finding caught in the earlier version: (a) the decoration steps were
+// wired outside the try that covered mounting, so a throw from any of them
+// left the caller with a mounted controller and no `handle` to clean it up
+// with; (b) `handle.destroy()` destroyed the controller but never removed the
+// keyboard/deep-link/resize listeners it had installed on `doc`/`win`, which
+// are document/window-scoped and outlive the controller — a leaked Space
+// listener could still call a "destroyed" controller's `toggle()` and resume
+// its detached audio. `abort` now closes both gaps: every listener below is
+// registered against its signal, and destroy() aborts it before destroying
+// the controller, so the two cleanups can never drift apart again.
 export function bootShowPage(doc, win) {
   const controller = new PlaybackController();
   const views = [];
   const rowViews = [];
+  const abort = new AbortController();
   let rowItems = [];
 
   try {
@@ -62,26 +76,38 @@ export function bootShowPage(doc, win) {
       controller.mount(view);
       views.push(view);
     });
+
+    // Belt-and-braces with verify_markup.py's build-time check (Step 4 review
+    // finding #2): if the selectors above found nothing — every row missing
+    // data-item, or genuinely no playable markup on the page — mounting would
+    // still set the flag and claim the page with nothing to play. Fail the
+    // boot instead, so the caller falls back to the legacy engines rather
+    // than silently owning an empty page.
+    if (!views.length) {
+      throw new Error('player-boot: found no playable rows or recording cards on this page');
+    }
+
+    const handle = {
+      controller,
+      views,
+      rowViews,
+      rowItems,
+      destroy() { abort.abort(); controller.destroy(); },
+    };
+
+    // Best-effort decoration, but wired against the same abort boundary and
+    // the same catch as mounting above — a throw here is cleaned up exactly
+    // like a malformed-markup throw, not left half-wired.
+    attachPeaks(handle, win);
+    wireKeyboard(handle, doc, abort.signal);
+    wireDeepLink(handle, doc, win, abort.signal);
+    wireResize(handle, win, abort.signal);
+    return handle;
   } catch (e) {
+    abort.abort();
     controller.destroy();          // unmounts every view mounted so far
     throw e;
   }
-
-  const handle = {
-    controller,
-    views,
-    rowViews,
-    rowItems,
-    destroy() { controller.destroy(); },
-  };
-
-  // Everything below is best-effort decoration: a failure in any of it leaves
-  // a working player, so none of it belongs inside the boot's success gate.
-  attachPeaks(handle, win);
-  wireKeyboard(handle, doc);
-  wireDeepLink(handle, doc, win);
-  wireResize(handle, win);
-  return handle;
 }
 
 // Peaks arrive asynchronously, but the mount above must be synchronous — the
@@ -112,7 +138,7 @@ function attachPeaks(handle, win) {
 // Space toggles whatever is actually playing. The legacy handler could only
 // ever reach a .custom-player row (waveform rows were invisible to it); with
 // one engine per document there is exactly one thing Space can mean.
-function wireKeyboard(handle, doc) {
+function wireKeyboard(handle, doc, signal) {
   doc.addEventListener('keydown', e => {
     if (e.code !== 'Space') return;
     const tag = doc.activeElement ? doc.activeElement.tagName : '';
@@ -120,7 +146,7 @@ function wireKeyboard(handle, doc) {
     e.preventDefault();
     if (!handle.controller.currentItem) return;
     handle.controller.toggle();
-  });
+  }, { signal });
 }
 
 // Deep links (#track-N, optionally with ?autoplay=1) — same behavior the two
@@ -128,7 +154,7 @@ function wireKeyboard(handle, doc) {
 // hash change, but autoplay only on the initial arrival. (player.js's
 // focusHashTrack never autoplays a waveform row, and wavesurfer.js only ever
 // looks at the hash once, at build time.)
-function wireDeepLink(handle, doc, win) {
+function wireDeepLink(handle, doc, win, signal) {
   const focus = (allowAutoplay) => {
     if (!win.location || !win.location.hash) return;
     let el;
@@ -147,20 +173,24 @@ function wireDeepLink(handle, doc, win) {
   };
   // Deliberately on 'load', matching player.js: scrollIntoView wants layout
   // settled, and a module runs well before that.
-  win.addEventListener('load', () => focus(true));
-  win.addEventListener('hashchange', () => focus(false));
+  win.addEventListener('load', () => focus(true), { signal });
+  win.addEventListener('hashchange', () => focus(false), { signal });
 }
 
 // An inert canvas is drawn at one fixed pixel size; WaveSurfer re-renders
 // itself on resize but the peak-drawn canvases would just stretch.
-function wireResize(handle, win) {
+function wireResize(handle, win, signal) {
   let timer = null;
   win.addEventListener('resize', () => {
     if (timer) clearTimeout(timer);
+    // A resize that fires right before destroy() can still have a pending
+    // timer when abort() runs; the 'resize' listener itself is removed by
+    // then, but this guards the already-scheduled callback too.
     timer = setTimeout(() => {
+      if (signal.aborted) return;
       handle.views.forEach(v => v.redrawWave());
     }, 150);
-  });
+  }, { signal });
 }
 
 // ── auto-run ────────────────────────────────────────────────────────────────

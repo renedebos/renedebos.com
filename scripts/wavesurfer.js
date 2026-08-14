@@ -158,9 +158,16 @@ function start() {
 // shortcut here: readyState is already 'interactive' while deferred and module
 // scripts run, so a "we're past loading, just go" branch would fire this module
 // BEFORE player-boot.js (a later module) had any chance to claim the page —
-// double-initializing exactly what the flag exists to prevent. DOMContentLoaded
-// has not fired at this point under any script placement, so the listener
-// always gets registered in time.
+// double-initializing exactly what the flag exists to prevent. The guarantee
+// this actually relies on (per the HTML Standard's parsing/script-processing
+// model, confirmed in the Step 4 review): every emitted <script> here is a
+// parser-inserted module, executed in document order, and DOMContentLoaded is
+// only queued after that whole ordered list has run — so registering this
+// listener during that same synchronous parse job is always in time. That's
+// narrower than "any script placement" (a script inserted dynamically after
+// parsing, or added with different scheduling, isn't covered by this
+// argument) — it holds because build.py emits these as ordinary parser-
+// inserted <script> tags, not because DOMContentLoaded is unconditionally late.
 if (window.PLAYER_ENGINE === 'controller') {
   document.addEventListener('DOMContentLoaded', () => {
     if (!window.PLAYER_ENGINE_MOUNTED) start();

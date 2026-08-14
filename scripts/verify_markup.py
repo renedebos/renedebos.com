@@ -70,8 +70,53 @@ def check_engine_wiring(rel, src, slug, allowlist):
     return errors
 
 
+TRACK_ROW_TAG_RE = re.compile(r'<div class="track-row[^"]*"[^>]*>')
+RECORDING_ITEM_TAG_RE = re.compile(r'<div class="recording-item"[^>]*>')
+ID_ATTR_RE = re.compile(r'\bid="([^"]*)"')
+
+
+def check_every_row_has_item(rel, src):
+    """Every .track-row and .recording-item element must carry a valid
+    data-item — not just validate whichever data-item attributes happen to be
+    present in the page (Step 4 review finding #2).
+
+    ITEM_RE below only sees attributes that exist; it can't notice one that's
+    missing. A build regression that dropped playable_item_attr() from one row
+    would pass every check that only validates found attributes: the row is
+    invisible to ITEM_RE (nothing to parse), invisible to player-boot.js's
+    ROW_SELECTOR (nothing to mount), and on an allowlisted page gets neither
+    the new engine (suppressed by the flag) nor the legacy one (also
+    suppressed) — a silently dead row. This enumerates the ELEMENTS
+    independently of the attribute, so a missing one is a build failure
+    instead of an invisible gap.
+    """
+    errors = []
+    for tag in TRACK_ROW_TAG_RE.findall(src):
+        if 'data-item="' not in tag:
+            m = ID_ATTR_RE.search(tag)
+            ident = m.group(1) if m else "<no id>"
+            errors.append(f"{rel}: track row {ident!r} has no data-item attribute")
+    for tag in RECORDING_ITEM_TAG_RE.findall(src):
+        if 'data-item="' not in tag:
+            errors.append(f"{rel}: a .recording-item element has no data-item attribute")
+    return errors
+
+
 SRC_RE = re.compile(r'src="(/assets/[^"]+)"')
-IMPORT_RE = re.compile(r"from '(/assets/[^']+)'")
+# Covers every JS import shape this project's own scripts might reasonably
+# use, single- or double-quoted (Step 4 review finding #5 — the old
+# single-quoted-`from`-only version missed player.js:401's dynamic
+# `await import('/assets/client-zip.js')`, a real, currently-existing gap):
+#   from '/assets/x.js'        static import
+#   export ... from '/assets/x.js'   re-export (the bare "from '...'" shape
+#                                     is identical, so this falls out for free)
+#   import('/assets/x.js')     dynamic import
+#   import '/assets/x.js'      side-effect import
+# Not a real JS parser (a comment containing this exact shape would still be
+# treated as an import) — a conservative regex scan is what the review itself
+# offered as an acceptable alternative to a full parser, for a project this
+# size.
+IMPORT_RE = re.compile(r"""(?:from\s+|import\s*\(\s*|import\s+)['"](/assets/[^'"]+)['"]""")
 
 
 def check_assets_exist(rel, src):
@@ -124,6 +169,7 @@ def check():
         errors += check_engine_wiring(rel, src, os.path.basename(os.path.dirname(path)),
                                       CONTROLLER_ENGINE_SLUGS)
         errors += check_assets_exist(rel, src)
+        errors += check_every_row_has_item(rel, src)
 
         for raw in ITEM_RE.findall(src):
             try:
@@ -177,7 +223,45 @@ def check():
     return errors, n_track, n_rec, n_pages
 
 
+def _selftest():
+    """In-memory checks that check_every_row_has_item() actually distinguishes
+    "attribute present" from "attribute missing" — added after the Step 4
+    review (finding #2) showed the old approach (ITEM_RE.findall, which only
+    sees attributes that exist) can't tell the difference. Run automatically
+    on every invocation, ahead of the real check: cheap, no filesystem, no
+    reason to make it opt-in and risk it being skipped.
+    """
+    ok_row = '<div class="track-row ws-track" id="track-1" data-item="{}">'
+    bad_row = '<div class="track-row ws-track" id="track-2">'
+    errs = check_every_row_has_item("selftest", ok_row + bad_row)
+    assert len(errs) == 1 and "track-2" in errs[0], f"expected one error naming track-2, got {errs}"
+
+    ok_card = '<div class="recording-item" data-item="{}">'
+    bad_card = '<div class="recording-item">'
+    errs = check_every_row_has_item("selftest", ok_card + bad_card)
+    assert len(errs) == 1 and "recording-item" in errs[0], f"expected one recording-item error, got {errs}"
+
+    errs = check_every_row_has_item("selftest", ok_row + ok_card)
+    assert errs == [], f"expected no errors when every element has data-item, got {errs}"
+
+    # IMPORT_RE (finding #5): must catch every import shape this project's own
+    # scripts might use, not just the single-quoted static `from` it started
+    # with — that gap is what let player.js:401's dynamic import go unchecked.
+    cases = {
+        "from '/assets/a.js'": "/assets/a.js",
+        'from "/assets/b.js"': "/assets/b.js",
+        "export { x } from '/assets/c.js'": "/assets/c.js",
+        "import('/assets/d.js')": "/assets/d.js",
+        "await import( '/assets/e.js' )": "/assets/e.js",
+        "import '/assets/f.js';": "/assets/f.js",
+    }
+    for src, expected in cases.items():
+        got = IMPORT_RE.findall(src)
+        assert got == [expected], f"IMPORT_RE on {src!r}: expected [{expected!r}], got {got}"
+
+
 def main():
+    _selftest()
     errors, n_track, n_rec, n_pages = check()
     if errors:
         print(f"markup integrity FAILED — {len(errors)} problem(s):")

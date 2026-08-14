@@ -203,8 +203,14 @@ function initLegacyPlayback() {
 // DOMContentLoaded, not a readyState check: readyState is already 'interactive'
 // while deferred/module scripts run, so a "past loading, just go" shortcut would
 // initialize this before player-boot.js (a module, and later in the document)
-// ever got to claim the page. DOMContentLoaded has not fired yet under any
-// script placement, so the listener is always registered in time.
+// ever got to claim the page. The actual guarantee (HTML Standard's parsing/
+// script-processing model, confirmed in the Step 4 review — see wavesurfer.js
+// for the fuller note): build.py emits every script here as an ordinary
+// parser-inserted <script> in document order, and that whole ordered list runs
+// before DOMContentLoaded is even queued, so registering this listener in the
+// same synchronous parse job is always in time. Narrower than "any script
+// placement" — a dynamically inserted or differently-scheduled script isn't
+// covered by this argument, only build.py's own output is.
 if (window.PLAYER_ENGINE === 'controller') {
   document.addEventListener('DOMContentLoaded', () => {
     if (!window.PLAYER_ENGINE_MOUNTED) initLegacyPlayback();
