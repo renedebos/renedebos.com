@@ -1,198 +1,195 @@
 # Session Handoff — Hannan Recordings (renedebos.com)
-**Date:** 2026-08-13 · **Branch:** `main` — everything through `c334352`
-is committed, pushed, and **live**, deploy green and spot-checked on
-renedebos.com itself. Working tree clean except the always-untracked
-`codex-notes.md`.
+**Date:** 2026-08-14 · **Branch:** `player-consolidation`
+(worktree `/home/renedebos/renedebos.com-player-consolidation`)
 
-**Note on scope:** this was one of several concurrent threads tonight. This
-handoff covers the `main`-branch work only — the audio-processing archive.
-A separate, parallel session ran on the `home-page` worktree/branch (site
-header redesign, and the first real exercise of a new git-worktree
-workflow); see "Concurrent work on other branches" below for a pointer
-rather than a full narrative — that session's own handoff lives on its own
-branch.
+Working tree has uncommitted changes, **nothing committed, nothing pushed,
+nothing deployed**. Merged `origin/main` earlier this session (one conflict,
+in `HANDOFF.md` itself — resolved in favour of this branch's handoff).
 
-## ✅ Done this session
+**Phase 1 Step 4 is done, including its browser pass.** Three show pages run
+the new player engine in the *built* output; the live site is still entirely
+on the legacy engines, because none of this has been pushed.
 
-### Archive-data page: cap-audit detail is now visible to a human, not just hover-only
-`/archive-data/`'s Treatment column previously only exposed the full
-transient-cap provenance (attenuation applied, engagement %, event count,
-policy ceiling, override note) via a native `title=` tooltip — invisible on
-touch devices, easy to miss even on desktop. Added a real, always-discoverable
-click-to-expand detail row (`scripts/archive-data.js`, styling in
-`scripts/site.css`), following the same `<details>`-style disclosure pattern
-already used elsewhere on the site (song entries, the show page's own
-`#technical-data` table). Commit `c5497e9`.
+## ✅ Done this session — Phase 1 Step 4, start to finish
 
-### "Force through all 22 tracks plus the 6" — archive-wide shortfall batch, complete
-Rene's instruction: force every remaining linear-reduced shortfall track
-(LUFS between −21 and −25) archive-wide into the v8 transient-cap mode, and
-separately raise the 6 dB attenuation ceiling for the 6 tracks already
-pinned at it. 9 shows, all shipped and verified live:
+Plan: `plans/player-consolidation/player-consolidation-plan.md` (Step 4's
+entry has the full record — architecture, all corrections, and the browser
+pass results). Steps 1–3 were an earlier session's.
 
-1. **`jerry-19-broadway-1999-05-10`** (8 tracks) — two review-tier flags
-   (Sam Hall, Ted Kennedy Song) exceeded the auto band, force-accepted.
-2. **`jerry-19-broadway-1999-06-21`** (4 tracks) — `draft_tracks.py`
-   overwrote 3 of the 4 titles with the fresh export's filename spelling
-   (see the bug writeup below); restored "Hear Me" and the "/" form of
-   "You're Pulling Me Leg / The Ted Kennedy Song" by hand after publish.
-3. **`sean-19-broadway-unknown`** (3 tracks) — a genuine hard-blocking
-   BALANCE finding (4.4 dB L/R RMS) on track 1, reviewed and accepted as
-   normal audience-tape mic placement, not a defect.
-4. **`sean-19-broadway-2000-02-21`** (3 tracks) — clean, no flags.
-5. **`jerry-19-broadway-1999-10-25`** (2 tracks) — both review-tier,
-   force-accepted per standing instruction.
-6. **`mad-sweetwater-2000-02-17`** (1 track, Butter) — clean.
-7. **`jerry-19-broadway-2001-01-15`** (5 tracks, ceiling-raise batch) —
-   **every one of the show's 31 tracks** carried a uniform ~6.5–7 dB
-   BALANCE finding (an SBD source's own channel-mix characteristic, not a
-   defect — accepted all 31 at once). Escalated one genuinely ambiguous
-   title call to Rene rather than guessing: track 1's fresh filename read
-   "State Trooper," a real, different Springsteen song from the catalogued
-   "Highway Patrolman" — Rene confirmed keep "Highway Patrolman." One
-   track ("Xmas Song") landed short of −20 even after raising its ceiling
-   to 9 dB — traced to the engine's own dynamics-safety check (cap
-   engaging beyond isolated transients, exactly the failure mode the
-   no-dynamics-compression policy exists to catch), left short rather than
-   forced further.
-8. **`mad-cafe-java-1999-09-09`** (1 track, ceiling raised to 8 dB) — clean
-   result, −20.22. **Push hit a real conflict here**: an unrelated PR
-   (`home-page` branch, header redesign) had landed on `origin/main`
-   mid-batch. Fetched, merged (`git merge origin/main`, auto-resolved, no
-   manual conflict markers), rebuilt to confirm no drift, pushed.
-9. **`mad-sweetwater-2001-01-06`** (1 track, Far Away Eyes) — the planned
-   ~9 dB ceiling override turned out to be unnecessary: the fresh Drive
-   export measured louder than the stale source the original estimate was
-   based on, so plain linear gain reached the full −20 target directly.
+### The implementation
 
-Full deploy-verification pass at the end (not per-show, to keep the batch
-moving): confirmed via a fresh Action run plus a live spot-check that only
-the final deploy could serve.
+**Engine selection: legacy defers, controller claims.** An allowlisted show
+page emits `window.PLAYER_ENGINE = 'controller'` inline before `player.js`.
+Both legacy engines hold their playback init until `DOMContentLoaded` and
+check `window.PLAYER_ENGINE_MOUNTED`; `player-boot.js` is a module, so it runs
+first, mounts inside `try`/`catch`, and sets that flag only on success. A 404,
+a parse error, or any boot exception falls back to today's working player at
+*runtime*, not just at deploy time — confirmed for real this session (below).
 
-### Found a real, repeatable bug: `draft_tracks.py` silently overwrites titles
-Discovered while fixing show 2 above, then confirmed on 5 of the 9 shows in
-total (jerry-19-broadway-1999-06-21, sean-19-broadway-unknown,
-jerry-19-broadway-2001-01-15, mad-cafe-java-1999-09-09, and implicitly
-guarded-against on the rest). `scripts/draft_tracks.py:93` —
-`title = f[3:-5]` — takes a track's title straight from the fresh export's
-filename on every scoped publish, with **zero preservation** of the
-existing catalog spelling, unlike tags (which at least attempt a
-cross-archive majority vote). `publish_show.py`'s `preflight_catalog_titles()`
-already does the right cross-reference check at `prepare` time, but it's
-print-only and never wired to the actual write. Every affected track needed
-a manual post-publish fix. Full writeup, root cause, and fix options in
-memory: `draft_tracks_title_overwrite_bug.md`.
+- **`scripts/player-boot.js`** mounts one `PlaybackController`,
+  `CompactPlayerView` per `.track-list [data-item]` row, `HeroPlayerView` per
+  `.recording-item[data-item]`, wires peaks/Space/deep-links/resize, and
+  refuses to claim a page where it mounted nothing.
+- **`wavesurfer.js` is gated too**, not just `player.js` — every show-page
+  track row is `.ws-track`, invisible to `player.js`'s `.custom-player`-only
+  `initCustomPlayers`, so gating just `player.js` would leave waveform rows
+  dead on any boot failure.
+- **Allowlist** `pages.CONTROLLER_ENGINE_SLUGS`: `jerry-cafe-java-1999-05-27`,
+  `jerry-cafe-java-1999-03-25` (two hero cards), `mad-sweetwater-2000-10-17`
+  (alternate transfer sharing a stream proxy).
+- **`verify_markup.py`** checks the whole engine handshake (flag/boot travel
+  together, only on allowlisted slugs, ordering vs. `player.js`), every
+  `.track-row`/`.recording-item` element has a valid `data-item` (not just
+  validating whichever attributes happen to be present), and every `/assets/`
+  script a page loads — plus everything those scripts import, including
+  dynamic `import()` — is actually written by `build.py`.
 
-### `song-title-consistency` plan written
-`plans/song-title-consistency/song-title-consistency-plan.md` — proposal to
-fix the bug above properly: a shared canonical title registry
-(`data/song-titles.json`, bootstrapped from the current catalog by majority
-vote — a real read-only scan found only 26 of 145 songs have any spelling
-drift on file, almost all of it trivial capitalization/whitespace noise),
-consulted by both `draft_tracks.py` and `publish_show.py` instead of their
-current two independent, incomplete matching implementations, plus a
-`build.py` integrity-check addition (warn-only, matching the existing
-rarity-tag-drift precedent). Also documents a separate, deferred fix: the
-R2 download filename a visitor actually receives (`worker/index.js`'s
-Content-Disposition) is built from the raw R2 key basename, not the
-catalog title — so a title correction today doesn't propagate to what
-people download. Not yet built. `song-title-consistency-codex-review.md`
-is a pending placeholder — not fabricated content, waiting on an actual
-Codex pass. Commit `c334352`.
+### The seventh Codex review, and its fixes
 
-## Concurrent work on other branches (not this session — pointer only)
-A separate session ran the **first real exercise of a git-worktree
-workflow** this project now uses: four worktrees sharing one `.git`,
-`main` / `home-page` / `player-consolidation` / `share`, each on its own
-branch. That session shipped the home-page header redesign (musical-note
-mark → a "Shows" text pill) end to end — PR #2, reviewed, merged into
-`main` (visible above as `a455f9d` / `2f9e688`), deploy verified live —
-plus fixed an unrelated Cloudflare Workers Builds token issue found along
-the way, and synced/pushed the `player-consolidation` and `share`
-worktrees (the latter a new proposal for song/search sharing). Full detail
-lives on that branch's own version of this file and in
-`plans/home-page/home-page.md` — not duplicated here since this session
-didn't do that work and can't vouch for specifics beyond what's visible in
-the commit log.
+A review ran during a usage-interrupted pause in this session (focused on the
+built Step 4 code, not just the plan). All six findings confirmed on
+independent verification and fixed, each with a regression test proven to
+fail without the fix:
 
-**Worth knowing for any future `main`-branch session:** `HANDOFF.md` got
-independently rewritten on both `main` and `home-page` this round,
-producing a real (non-mechanical) merge conflict neither git nor a plain
-merge could resolve — reconciled by hand this time. Consider moving each
-branch's full session narrative into its own `plans/<project>/<project>.md`
-going forward (the pattern `home-page`'s session was already half-using)
-and treating root `HANDOFF.md` as `main`-only, to stop this recurring with
-`player-consolidation` or `share`.
+1. **High — a destroyed controller could be reactivated** by a leaked
+   document/window listener `player-boot.js` never removed. Fixed: a
+   `_destroyed` guard on every mutating `PlaybackController` method, plus one
+   shared `AbortController` in `player-boot.js` so `handle.destroy()`
+   actually removes what it installed. Both halves proven independently
+   necessary (reverting either alone left a different subset of tests
+   failing).
+2. **Medium — a missing `data-item` would pass silently.** Fixed:
+   `verify_markup.py` now enumerates elements, not just attributes it finds.
+3. **Medium — "falls back to the complete legacy engine pair" overclaimed
+   one case.** `wavesurfer.js` and `player-views.js` share one vendored
+   dependency (`wavesurfer.esm.js`); if THAT fails, both waveform engines die
+   together. Not new fragility — always true, on every page, before this
+   phase existed — just a claim that needed the exception carved out.
+   Corrected everywhere it appeared.
+4. **Medium — two real test-coverage gaps**, both closed: `setPeaks()` now
+   has a test asserting it actually draws/upgrades, not just stores the
+   value; `player.js`'s real source (not a reimplementation) is now loaded
+   and executed in two tests proving its gate both suppresses and allows
+   legacy init correctly.
+5. **Low — the asset-import checker missed dynamic `import()`.** Fixed,
+   confirmed against the real, previously-invisible `client-zip.js` case.
+6. **Low — imprecise timing-guarantee wording.** Corrected in code comments
+   and the plan.
 
-## 🔧 In progress / blocked
-Nothing blocking. All audio work for tonight is shipped and verified live.
-The `song-title-consistency` plan is a proposal awaiting a Codex pass and
-Rene's go-ahead to build.
+Test suite grew from 51 to 60 (`test-player-controller.mjs` 22,
+`test-player-views.mjs` 16, `test-player-boot.mjs` 22), plus five
+documentation-drift issues Codex's review separately flagged (a stale
+missing-peaks contradiction, stale "hides prev/next" language describing a
+mechanism that doesn't exist, a stale `/review-step` description, two stale
+test counts) — all fixed. Step 5 was also restructured into an explicit
+5a/5b/5c sequence per that review's recommendation (deploy-and-verify the
+canary on production *before* expanding it; expand the allowlist and delete
+the legacy fallback as two separate decisions, not one step).
+
+### The browser pass — done for real, not just reasoned about
+
+No browser existed in the environment for most of this session. One turned
+out to be reachable later via `playwright-chromium`/`playwright-webkit`
+(globally installed, not a project dependency this repo carries). Built a
+permanent, reproducible, checked-in harness:
+
+**`scripts/browser_check.mjs`** — dev-only (same status as
+`test-player-*.mjs`, not wired into `build.py` or any deploy gate). Run with:
+```
+python3 scripts/build.py   # make sure shows/ is current
+NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs
+```
+Serves the real repo locally and drives real Chromium against it — real
+production audio (`streamUrl` points at the live worker, nothing mocked),
+real `WaveSurfer` rendering, real `BroadcastChannel` delivery. The two
+breakage tests copy `assets/`+`shows/` into a temp directory and manipulate
+the copy, so the script never touches the working tree.
+
+**38/38 passed.** Controller mounts and legacy stays dormant on all three
+allowlisted pages; real playback actually advances and responds to
+toggle/seek/Space; a real `WaveSurfer` canvas renders; the Hero → track →
+next round trip works with real audio at each step; the
+`mad-sweetwater-2000-10-17` alternate-transfer case shows only one card
+active at a time; real cross-tab claim/pause between a show page and
+`/playlist/`; both breakage scenarios confirmed with real playing audio
+(player-boot.js missing → full fallback; wavesurfer.esm.js missing → Full
+Recording works, waveform rows correctly dead in both engines). A WebKit
+smoke pass (mount, real click-gesture playback, canvas render) also passed,
+run separately since `playwright-webkit` isn't reliably available via a
+plain global install.
+
+**Deep-link autoplay is policy-dependent — described that way, not as a pass
+or fail.** `?autoplay=1#track-N` reliably queues the right track and
+highlights the right row. Whether the browser actually starts playback on
+arrival depends on Media Engagement, which a fresh session has none of —
+Chromium blocked it here, confirmed identical against the legacy engine
+(not a regression). What's actually asserted: the controller surfaces this
+as a visible `'error'` state with a "Retry `<track>`"-labeled button and a
+`role="status"` message, and **a real user-gesture click on Retry
+successfully starts playback** — confirmed directly.
+
+**Not covered, still needs real hardware:** actual Firefox, actual
+iOS/Android devices (WebKit-the-engine approximates but isn't identical to
+Safari, especially for mobile autoplay/backgrounding). And this was all
+against the **local** build — production-origin verification (real caching,
+real headers, the real deployed Worker) is Step 5's 5a, still outstanding.
+
+## 🔧 Next up
+
+**Step 5, sub-step 5a**: deploy the existing 3-page allowlist as-is (no
+widening, no deletions) and verify it on the production origin — this is the
+first time the canary actually does canary duty, since it's never been
+deployed. See the plan's Step 5 entry for the full 5a/5b/5c sequence and why
+it's split that way.
+
+Before that: review and decide whether to commit/push what's sitting
+uncommitted in this worktree right now (all of Step 4 + the seventh review's
+fixes + the browser pass + this handoff).
 
 ## Gotchas learned this session
-- **`draft_tracks.py` always derives `title` from the fresh filename, never
-  preserves the existing catalog spelling** — see
-  `draft_tracks_title_overwrite_bug.md`. After any scoped `publish` that
-  touches a track flagged `TITLE CHANGED` in `prepare`'s diagnose, always
-  re-check that track's `title` field afterward, even when the flag looked
-  like harmless filename-convention noise (most of them are, but the write
-  path doesn't know that).
-- **A whole-show-uniform BALANCE finding (same few-dB range on every
-  track) is a source characteristic, not a per-track defect** — seen on an
-  audience tape (single track, 4.4 dB) and an SBD board feed (all 31
-  tracks, 6.3–7.2 dB, near-identical spread). Worth eyeballing the
-  *spread* across the show before deciding accept-vs-investigate, not just
-  the raw dB number on one track.
-- **Raising `--transient-cap-max-gr`'s ceiling doesn't always move the
-  result** — one track's shortfall was gated by the engine's own LRA-shift
-  dynamics-safety check, not by the declared ceiling (which was already
-  well above what the track's transients actually needed). Check the
-  `[LRA shifted]` status tag before assuming a higher ceiling will help;
-  if it's present, forcing further risks exactly the dynamics-flattening
-  the whole transient-cap policy exists to prevent.
-- **A multi-line Bash command with a variable assignment (`accept=$(...)`)
-  can get killed at the 2-minute mark instead of auto-backgrounding**,
-  unlike simple single-line `python3 ...` calls which reliably
-  auto-background past the timeout. Pass `run_in_background: true`
-  explicitly for anything nontrivial rather than relying on the timeout
-  heuristic — confirmed this killed an in-progress render twice before
-  switching.
-- **A rejected `git push` mid-batch can mean real, unrelated work landed
-  on the remote** — don't assume it's your own stale branch state.
-  `git fetch` + inspect before merging; in this case it was a legitimate
-  PR from a parallel session, safely auto-merged with zero conflicts once
-  identified.
+
+- **`document.readyState` is not a shortcut for the DOMContentLoaded
+  barrier.** Already `'interactive'` while deferred/module scripts run, so a
+  "past loading, just go" branch would fire the legacy engine before a later
+  module could claim the page.
+- **A mutation test can be vacuous** — the partial-mount teardown test passed
+  with the teardown deleted until its malformed item moved from a row (always
+  normalized before anything mounts) to a hero card (mounted after).
+- **`browser.newPage()` creates an isolated context per call** (its own
+  storage/cache partition) — silently breaks `BroadcastChannel` between what
+  look like tabs, and serves stale cached responses across what looks like a
+  fresh load after a file changed on disk. Use one explicit, shared
+  `browser.newContext()` per scenario; a fresh one specifically when a file
+  on disk just changed and the next load must not see a cached response.
+- **WaveSurfer.js v7 renders into a Shadow DOM by default** — Playwright
+  locators pierce it automatically, raw `document.querySelectorAll()` inside
+  `page.evaluate()` does not.
 
 ## Durable facts (don't undo)
-- **Archive-wide shortfall-track batch is complete** — the 22
-  linear-reduced tracks plus the 6 at-ceiling tracks identified by the
-  2026-08-13 audit are all now on v8 transient-cap (or confirmed to not
-  need it, in Far Away Eyes' case).
-- **`/archive-data/`'s Treatment column is click-expandable** for any
-  `sparse-transient-cap` track — full provenance (gr_db, p95_gr_db,
-  engaged_pct, events, longest_s, near_peak_pct, policy_max_gr_db,
-  override) visible to anyone browsing the page, not hover-only.
-- **Four-worktree map now in use**, one branch each, sharing one `.git`:
-  `/home/renedebos/renedebos.com` (`main`),
-  `/home/renedebos/renedebos.com-home-page` (`home-page`),
-  `/home/renedebos/renedebos.com-player-consolidation`
-  (`player-consolidation`), `/home/renedebos/renedebos.com-share` (`share`).
-- **`plans/<project>/<project>-plan.md` + `plans/<project>/<project>-codex-review.md`
-  naming convention** now has multiple live examples
-  (`player-consolidation`, `song-title-consistency`, and `home-page`/`share`
-  on their own branches, spelled slightly differently as `-codex.md`) — the
-  Codex file is reserved for the actual external tool's output, pasted in
-  verbatim, never fabricated as a placeholder beyond a plain "pending" note.
-- `codex-notes.md` remains untracked scratch input from an external review
-  tool, not Rene's own notes — verify claims before acting, same as always.
-- Linear-normalization policy, transient-cap (v8) tiers, and the
-  applause-limiter exception are unchanged — see CLAUDE.md, not repeated
-  here.
+
+- **`downloads.lossless` carries an R2 key, not a URL.** `/stream` hard-403s
+  every `.wav`/`.flac`. Named `lossless`, not `flac` — 64 of 747 items are WAV.
+- **Recording ids key on the lossless original**, not the stream key, which is
+  not unique across transfers of one tape.
+- **No BroadcastChannel wire-format change until `/playlist/` and `/player/`
+  migrate** — the legacy engines still expect a bare string; cross-tab
+  claim/pause between old and new pages is real, confirmed behavior.
+- **Deep-link autoplay fires on initial load only**, deliberately — exact
+  parity with the two legacy engines. Whether it actually plays depends on
+  browser autoplay policy, not app logic (see above).
+- **A `wavesurfer.esm.js` failure kills waveform rows in BOTH engines** — it's
+  the one dependency `wavesurfer.js` and `player-views.js` share. Not new,
+  not a regression Step 4 introduced — true since before this initiative.
+- Loudness control and sticky navigation remain **fully deferred**; see the
+  plan's §2 and §5.
+- Branch/worktree workflow is the plan's §8; sync with
+  `git fetch origin && git merge origin/main` at session start and before a
+  PR.
 
 ## Reference
-Runbook: `CLAUDE.md` → "Publishing a Split Show". Technical record:
-`WORKFLOW_VERSIONS[8]` in `audio_process.py`. Title-overwrite bug:
-`draft_tracks_title_overwrite_bug.md` in memory. Song-title-consistency
-plan: `plans/song-title-consistency/`. External review scratchpad:
-`codex-notes.md` (untracked, not Rene's notes). Home-page/worktree
-session: `plans/home-page/`, and that branch's own `HANDOFF.md`.
+Runbook: `CLAUDE.md` → "Publishing a Split Show". Player work:
+`plans/player-consolidation/` (plan + `player-consolidation-codex.md`, seven
+review passes with dispositions). Review loop: plan §7. Tests:
+`node scripts/test-player-{controller,views,boot}.mjs`. Real-browser
+verification: `scripts/browser_check.mjs` (needs `playwright-chromium`,
+see its header for setup).

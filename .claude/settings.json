@@ -48,10 +48,23 @@
       "Bash(curl -s \"https://renedebos.com/shows/sean-19-broadway-1999-11-29/\")",
       "Bash(curl -s \"https://renedebos.com/updates/\")",
       "Bash(git checkout *)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"https://renedebos.com/manual/\")"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"https://renedebos.com/manual/\")",
+      "Bash(node -e \"console.log\\(typeof BroadcastChannel, typeof navigator, typeof Audio, typeof MediaMetadata\\)\")",
+      "Bash(node scripts/test-player-controller.mjs)",
+      "Bash(kill %1)",
+      "Bash(pkill -f \"node scripts/test-player-controller.mjs\")",
+      "Bash(timeout 15 node scripts/test-player-controller.mjs)",
+      "Bash(timeout 20 node scripts/test-player-controller.mjs)",
+      "Bash(timeout 25 node scripts/test-player-controller.mjs)",
+      "Bash(timeout 25 node scripts/test-player-views.mjs)",
+      "Bash(codex --version)",
+      "Bash(codex --help)",
+      "Bash(mkdir -p /home/renedebos/renedebos.com-player-consolidation/.claude/commands && echo created)",
+      "Bash(bash scripts/codex_review.sh:*)"
     ],
     "additionalDirectories": [
-      "/home/renedebos/work/sean-19-broadway-1999-11-29"
+      "/home/renedebos/work/sean-19-broadway-1999-11-29",
+      "/home/renedebos/renedebos.com-player-consolidation/.claude"
     ]
   },
   "hooks": {

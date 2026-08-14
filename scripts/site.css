@@ -13,6 +13,17 @@
   --sans: 'Karla', sans-serif;
   --serif: 'Cormorant Garamond', serif;
   --mono: 'Space Mono', monospace;
+
+  /* Namespaced aliases the shared player component reads (player-views.js),
+     so it never depends on either token system's own variable names — this
+     file's and home.css's differ, and their nearest equivalents aren't
+     identical in dark mode (--accent-light vs --accent-dim). Aliasing via
+     var() rather than literals means these follow the dark-theme overrides
+     below automatically. Mirror these three in home.css if the player ever
+     renders on a home.css-styled page. */
+  --player-accent: var(--accent);
+  --player-track: var(--border);
+  --player-surface: var(--player-bg);
 }
 
 /* Dark theme — follows the OS preference; a [data-theme] override wins if a
@@ -455,6 +466,18 @@ main {
 .track-row:hover { background: var(--accent-light); }
 .track-row:hover .track-title { color: var(--accent); }
 .track-row.playing { background: var(--accent-light); box-shadow: inset 3px 0 0 var(--accent); }
+
+/* A row whose audio failed to load (404/CORS/decode). Before the shared
+   controller there was no 'error' handling at all, so a hard failure just left
+   the row spinning forever; now it says so and the play button offers a retry.
+   Highlight-toned rather than red — a missing file on an archive of 1990s
+   cassette transfers is a mundane event, not an alarm. */
+.player-error { box-shadow: inset 3px 0 0 var(--highlight); }
+.player-error-msg {
+  color: var(--highlight);
+  font: 0.7rem var(--mono);
+  white-space: nowrap;
+}
 
 .track-row .play-btn { width: 30px; height: 30px; }
 .track-row .play-btn svg { width: 12px; height: 12px; }
