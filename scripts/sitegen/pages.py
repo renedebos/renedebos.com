@@ -767,14 +767,40 @@ def build_show(show):
                 flac_title = "Download FLAC (password protected)" + (f" · {t['flac_size_mb']} MB" if t.get("flac_size_mb") else "")
                 dl_btns.append(dl_button(t["flac"], title=flac_title))
             # Playlist-selection id: {show-slug}-{tracknum:02d}, matching assets/tracks.json.
-            add_btn = track_add_button(f'{show["slug"]}-{t["num"]:02d}')
+            track_id = f'{show["slug"]}-{t["num"]:02d}'
+            add_btn = track_add_button(track_id)
+            # The shared player reads this; nothing consumes it until the
+            # controller is switched on for a page (see the plan's Step 4).
+            # play_label is rebuilt unescaped here on purpose — playable_item_attr
+            # escapes the whole JSON itself, so passing the esc()'d one would
+            # double-escape it.
+            item_attr = playable_item_attr(
+                item_id=track_id,
+                kind="track",
+                stream=stream,
+                title=t["title"],
+                artist=track_artist,
+                venue=show.get("venue"),
+                date=show.get("date"),
+                date_display=date_with_subtitle(show),
+                duration_label=t["duration"],
+                # Peaks JSON is keyed by track number as a string; a row whose
+                # key is missing from the fetched map just renders without a
+                # waveform, per-row rather than per-show.
+                peaks_key=str(t["num"]) if has_waves else None,
+                page_url=f'{show_url(show)}#track-{t["num"]}',
+                play_label=f'{t["title"]}, {track_artist}, {date_with_subtitle(show)}',
+                lossless_file=t.get("flac"),
+                lossless_size_mb=t.get("flac_size_mb"),
+                dropouts=t.get("dropouts"),
+            )
             if has_waves:
                 # waveform replaces the progress bar; the download (if any) keeps the
                 # .ws-dl wrapper so the mobile grouping styles apply (matches the lab page).
                 dl = ('\n        <div class="ws-dl">' +
                       "".join("\n          " + b for b in dl_btns) +
                       "\n        </div>") if dl_btns else ""
-                rows.append(f'''      <div class="track-row ws-track" id="track-{t["num"]}" data-trackid="{t["num"]}" data-src="{esc(stream)}">
+                rows.append(f'''      <div class="track-row ws-track" id="track-{t["num"]}" data-trackid="{t["num"]}" data-src="{esc(stream)}" {item_attr}>
         <button class="play-btn" aria-label="Play {play_label}" data-play-label="{play_label}">{PLAY_SVG}</button>
         <span class="track-num">{t["num"]:02d}</span>
         {title_html}
@@ -784,7 +810,7 @@ def build_show(show):
       </div>''')
             else:
                 dl = "".join("\n        " + b for b in dl_btns)
-                rows.append(f'''      <div class="track-row custom-player" id="track-{t["num"]}" data-src="{esc(stream)}">
+                rows.append(f'''      <div class="track-row custom-player" id="track-{t["num"]}" data-src="{esc(stream)}" {item_attr}>
         <button class="play-btn" aria-label="Play {play_label}" data-play-label="{play_label}">{PLAY_SVG}</button>
         <span class="track-num">{t["num"]:02d}</span>
         {title_html}
@@ -819,7 +845,8 @@ def build_show(show):
         title = r["label"] or "Complete show"
         meta = [("Source", r["source"]), ("Format", r["format"]), ("Size", r["size"])]
         play_label = f'{title}, {artist["name"]}, {date_with_subtitle(show)}'
-        cards.append(recording_card(title, meta, r["source"], r["file"], r.get("stream"), play_label))
+        cards.append(recording_card(title, meta, r["source"], r["file"], r.get("stream"), play_label,
+                                    show=show))
     label = "Full Recording" if len(canon) == 1 else "Full Recording &middot; " + f"{len(canon)} parts"
     streamed = any(r.get("stream") for r in canon)
     hint = ('\n    <p class="track-hint">Full shows stream as 320&nbsp;kbps MP3 &mdash; '
@@ -838,7 +865,8 @@ def build_show(show):
         for r in alts:
             meta = [("Source", r["source"]), ("Format", r["format"]), ("Size", r["size"])]
             play_label = f'{r["alt_label"]}, {artist["name"]}, {date_with_subtitle(show)}'
-            cards.append(recording_card(r["alt_label"], meta, r["source"], r["file"], r.get("stream"), play_label))
+            cards.append(recording_card(r["alt_label"], meta, r["source"], r["file"], r.get("stream"), play_label,
+                                        show=show))
         parts.append(f'''
   <section>
     <details class="alt-details">

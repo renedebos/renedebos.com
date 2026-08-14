@@ -1,33 +1,64 @@
 # Player consolidation: Feature Proposal
 
-Status: proposal — not yet built. Mockup: https://claude.ai/code/artifact/71ae2166-d3ed-471d-9719-abd73fe353ba
-Reviewed by Codex — see `player_consolidation_codex.md` in this folder. This
-revision folds in its accepted findings (noted inline) and trims its
-process-heavy asks (formal test suite, cross-browser QA matrix) down to
-something proportionate for a two-person hobby project.
+Status: **in progress.** Rollout is incremental, one surface at a time —
+see §6. Phase 1 (show pages) Steps 1–3 are built: `PlaybackController`, the
+view layer (37 passing deterministic tests across
+`test-player-controller.mjs` (22) and `test-player-views.mjs` (15)), and the
+`data-item` markup every show page now carries. **No JS reads that markup
+yet and no page has switched engines** — the site behaves exactly as before,
+verified byte-for-byte. Step 4 (the `player-boot.js` bootstrap, gated to an
+allowlist of show slugs) is next, and is the first step where a visitor
+could notice anything.
+Mockup: https://claude.ai/code/artifact/71ae2166-d3ed-471d-9719-abd73fe353ba
+Reviewed by Codex six times, all recorded in
+`player-consolidation-codex.md`: the first pass on the original proposal,
+followed by reviews of the concrete plan, live controller, view layer, and
+two of the Step 3 markup. From the fifth review onward these are produced by
+`scripts/codex_review.sh` (see §7). This revision folds in the accepted
+findings from all six (noted
+inline) and trims process-heavy asks (formal cross-browser test suite, full
+CI matrix) down to something proportionate for a two-person hobby project —
+while still keeping a real, re-runnable regression suite for the parts that
+are actually state-machine logic (§3).
+
+The third review's three migration blockers are resolved: the queue-origin
+contract that keeps the Hero card from stranding the track queue (§2), and
+the two sequencing corrections to Steps 4 and 5 that would otherwise have
+double-initialized players and broken untouched song pages/`/playlist/`
+(§6). So are the fourth's (four view-layer defects — see Step 2's record in
+§6) and the fifth/sixth's, which between them caught a dead retry condition,
+a download schema publishing guaranteed-403 URLs and mislabelling 64 WAVs as
+FLAC, an unenforced peaks invariant, an overstated test fixture, and a Step 4
+design that would have degraded to silence instead of falling back.
+
+This single file is the project's one living plan document — architecture,
+concrete design, and the running implementation checklist all in one place,
+revised in place as work progresses (per this project's own `plans/`
+convention: one `<topic>-plan.md` per initiative, not one file per phase).
 
 ## 1. Objective
 
 Replace the site's four independent audio players with one shared
 implementation, rendered at different densities depending on context. Add a
-client-side loudness control and a small set of other player functions along
-the way.
+client-side loudness control and a small set of other player functions
+along the way — loudness is currently a **fully deferred** later phase, not
+part of the active work (see §4, §6).
 
 **Clarified scope (Codex catch):** "one component" means one shared
-implementation, not one browser-wide `<audio>` element. A normal page and the
-`/player/` popup are separate documents and cannot share an in-memory audio
-engine — each document gets its own controller instance, built from the same
-module/state schema, still coordinated by `BroadcastChannel`. *Within* one
-document, the target is one playback engine with multiple views — a show
-page with many track rows plus a hero view should not create an audio graph
-per row.
+implementation, not one browser-wide `<audio>` element. A normal page and
+the `/player/` popup are separate documents and cannot share an in-memory
+audio engine — each document gets its own controller instance, built from
+the same module/state schema, still coordinated by `BroadcastChannel`.
+*Within* one document, the target is one playback engine with multiple
+views — a show page with many track rows plus a hero view should not create
+an audio graph per row.
 
 **Success criterion:** all current playback and handoff behavior survives
 (see the parity checklist in §3), every document has at most one active
 playback engine, and density changes affect presentation only, not
 media/queue semantics.
 
-## 2. Proposed Architecture & System Design
+## 2. Architecture
 
 ### The problem today
 
@@ -48,41 +79,333 @@ markup migration.
 They're coordinated only by a `BroadcastChannel('hannan-playback')`
 claim/pause protocol so two don't play at once — that's cross-tab conflict
 avoidance, not a shared component. Each has to be fixed/extended four times
-for the same change.
+for the same change. Two of the four (`player.js`'s registry-based claim
+and `continuous-player.js`'s simpler inline claim) already implement that
+protocol two structurally different ways despite an identical wire format —
+one of several small drifts consolidation fixes as a side effect (§3).
 
 There are also existing lifecycle races worth designing out rather than
 carrying forward: a `play()` promise can resolve after the user has picked
 another track or another tab has claimed playback, and lazily-rendered song
-rows add listeners with no unsubscribe path today. The shared engine should
-use a generation token to ignore stale async results and give views an
-explicit mount/destroy API.
+rows add listeners with no unsubscribe path today. The shared engine uses a
+generation token to ignore stale async results and gives views an explicit
+mount/destroy API — built and regression-tested as of Phase 1 Step 1 (§3).
 
-### Proposal: controller + views, three densities
+### Controller + views, three densities
 
-- A `PlaybackController` per document owns the sole `<audio>` element, queue,
-  current item/index, repeat/shuffle state, Web Audio graph, playback claim,
-  Media Session integration, persistence, and error state.
+- A `PlaybackController` per document owns the sole `<audio>` element,
+  queue, current item/index, repeat/shuffle state, playback claim, Media
+  Session integration, and error state. **Not** Web Audio/loudness state —
+  that's a fully separate, deferred concern (Loudness control, below);
+  nothing in the controller assumes it will ever exist.
 - Compact, hero, and mini `PlayerView` instances subscribe to controller
   state and dispatch commands. They do not own media elements or audio
   graphs. A playing item can be reflected in its compact row *and* a
   mini/hero view simultaneously without duplicating playback.
 - The `/player/` popup gets its own controller (separate document) using the
-  identical module and state schema.
+  identical module and state schema, in its own later migration phase.
 - A small explicit state machine (`idle`, `loading`, `playing`, `paused`,
   `ended`, `error`) replaces icon-state changes scattered across event
   handlers.
 
-Define a normalized playable-item schema before building views: stable ID,
-kind (`track` or `whole-show`), stream key/URL, version, title, artist,
-date/venue, duration if known, peaks reference if available, canonical page
-URL, and authorized download choices. A hero view represents both a lone
-whole-show recording and a queued `/player/` track — those don't share
-identical metadata today, so this needs to be resolved explicitly.
+**Runtime granularity — resolved, not an open question.** One controller
+with many views. The alternative once considered (a simpler reusable view
+class that still owns one audio element per instance) is rejected outright:
+it contradicts the whole point of consolidation — one playback engine per
+document — and isn't on the table for any phase.
 
-Control-matrix decisions still open:
+**Concrete `PlaybackController` API** (built — `scripts/player-controller.js`):
 
-- The hero's prev/next only make sense for a queue, not a lone full
-  recording — hide/disable based on queue state.
+```js
+class PlaybackController {
+  constructor({ audio = new Audio(), mediaSession = true } = {}) {}
+
+  // queue
+  setQueue(items, { startIndex = -1, autoplay = false } = {}) {}
+  appendQueue(items) {}
+  removeAt(index) {}
+  reorder(fromIndex, toIndex) {}   // unused by show pages; intended foundation for /playlist//player/, parity not yet proven
+
+  // transport
+  play(itemOrIndex) {}    // plays something already in the queue (by index or matching id); no-ops otherwise
+  playSingleton(item) {}  // explicit queue-REPLACING play — the Hero "Full Recording"/alternate-transfer card
+  pause() {}
+  toggle() {}
+  stop() {}
+  seek(seconds) {}
+  seekBy(deltaSeconds) {}
+  next() {}
+  prev() {}                        // ">3s => seek 0" convention preserved
+
+  // modes
+  setRepeatOne(on) {}              // checked first in the 'ended' handler
+  toggleShuffle() {}               // exact existing algorithm: shuffle only queue.slice(idx+1); off restores snapshot
+
+  // views
+  mount(view) {}
+  unmount(view) {}
+
+  // read-only
+  get state() {}                   // 'idle'|'loading'|'playing'|'paused'|'ended'|'error'
+  get currentItem() {}
+  get currentIndex() {}
+  get queue() {}
+  get audioElement() {}            // exposed so a view's WaveSurfer instance can wrap it
+
+  destroy() {}
+}
+```
+
+**`play()` vs. `playSingleton()`.** An earlier design had `play(item)`
+silently rebuild the whole queue to length 1 whenever the item wasn't
+already in it — correct for the Hero card, but an id-mismatch bug anywhere
+else would then silently discard the rest of the page's queue instead of
+failing in a noticeable way (Codex catch, second review). `play(item)` now
+only plays something already in the queue and no-ops if it isn't;
+`playSingleton(item)` is the explicit, named queue-replacing operation
+`HeroPlayerView` calls for the Full Recording / alternate-transfer card.
+This is how the Hero's prev/next semantics resolve (a previously open
+question): a standalone whole-show recording collapses the queue to length
+1 via `playSingleton()`, and `HeroPlayerView` hides prev/next whenever
+`queue.length <= 1`.
+
+**Queue-origin contract — what each context supplies, and how it switches.**
+Codex's second review caught a real flaw here: `playSingleton()` discards
+the queue, so if a track row then tried to resume with `play(item)`, the row
+would be unqueued and correctly no-op — a dead-looking row. The rule that
+resolves it, and which Step 2's views must follow:
+
+| Context | Operation | Effect on the existing queue |
+|---|---|---|
+| Show-page track row (any row, any time) | `setQueue(allRowsInDomOrder, { startIndex, autoplay: true })` | **Replaces** — always re-asserts the show's own full track list, which is both correct for "click a track on a show page" and what makes returning from the Hero card work |
+| Hero Full Recording / alternate transfer | `playSingleton(item)` | **Replaces** with a length-1 queue; prev/next unavailable |
+| Lazily rendered song occurrence (future phase) | `playSingleton(item)` | **Replaces** — preserves today's singleton behavior; "all performances of this song" would be a deliberate later decision, not a side effect |
+| `/playlist/` (future phase) | `setQueue(generatedOrRestoredQueue, …)` | **Replaces** |
+| `/player/` handoff append (future phase) | `appendQueue(items)` | **Extends**, playback uninterrupted — matches today's `sendToPlayer()` merge semantics |
+
+A track row must never call `play(item)` to start playback; `play()` is for
+acting on something already known to be queued (Media Session handlers,
+`next()`/`prev()`, a row click when the show queue is already loaded — where
+re-asserting is harmless anyway). The three round-trip flows (Track → Hero →
+Track, Hero → Track → Next, Alternate → Track) are regression-tested.
+
+**Generation token** (`this._gen`): incremented in `setQueue()`,
+`play()`/`playSingleton()`, `pause()`, and `stop()`. Every async
+continuation (the `play()` promise's `.then`/`.catch`, and the WaveSurfer
+upgrade path below) captures and checks it before acting, so a stale
+promise from a superseded `play()` call can't clobber newer state — a real
+race (rapid double-click between two rows) no current engine guards
+against. Regression-tested in `scripts/test-player-controller.mjs`.
+
+**BroadcastChannel claim protocol** — generalizes `player.js`'s
+listener-registry shape (the more capable of the two existing
+implementations) as a module-level singleton:
+
+```js
+let channel = null;
+try { channel = new BroadcastChannel('hannan-playback'); } catch {}
+const selfId = Math.random().toString(36).slice(2);
+const listeners = new Set();
+function claim(owner) {
+  if (channel) channel.postMessage(selfId);
+  listeners.forEach(l => { if (l.owner !== owner) l.fn(); });
+}
+function onExternalClaim(owner, fn) {
+  const entry = { owner, fn };
+  listeners.add(entry);
+  return () => listeners.delete(entry);
+}
+if (channel) channel.onmessage = e => { if (e.data !== selfId) listeners.forEach(l => l.fn()); };
+```
+
+Each controller registers itself as one `owner` in its constructor and
+unregisters in `destroy()`. `continuous-player.js`'s simpler inline
+"pause on any message" shape (used once `/player/` migrates) is a strict
+specialization — correct only because that page has exactly one controller
+— and collapses into this general form with zero behavior change; no
+separate design work needed for it later.
+
+Codex's second review suggested replacing the bare-random-string wire
+message with a structured, validated shape (`{version, type, senderId}`).
+**Deliberately not done yet**: the not-yet-migrated `playlist.js`/
+`continuous-player.js` both still expect a bare string — changing the
+format now would break cross-tab claim/pause between a migrated page and
+either of those two, a real currently-working behavior the parity checklist
+tests for. Do this once, when `/playlist/` and `/player/` migrate and the
+wire format changes for every participant at once, not as a
+dual-format-supporting change mid-migration.
+
+**State machine** — six states, standard transitions off native `<audio>`
+events plus explicit calls. The one genuinely new piece: **one `'error'`
+listener per controller** (a real reduction from zero anywhere today),
+reading `audio.error` and flipping to `'error'` state so views can render
+an inline "Playback failed — tap to retry" affordance — structurally fixes
+today's bug where a hard load failure leaves the UI stuck showing the
+loading spinner forever (`'waiting'` fires, but nothing ever un-sets it,
+since no current engine listens for `'error'`).
+
+A bug found while writing the deterministic tests, fixed before it shipped:
+repeat-one's `ended` handler replayed the *same* item by calling
+`_playIndex()` again, but that function only reassigns `audio.src` (which
+resets `currentTime` as a side effect) when the item actually changes — so
+without an explicit `audio.currentTime = 0`, repeat-one would have resumed
+from the end instead of restarting. This is exactly the kind of bug manual
+QA tends to miss and a state-machine test catches by construction.
+
+**Media Session** — generalizes the existing `playlist.js`/
+`continuous-player.js` pattern (metadata, position state, `play`/`pause`/
+`previoustrack`/`nexttrack` handlers), enabled by default. Show pages get
+Media Session/lock-screen support for the first time — currently zero.
+
+**Playable-item schema:**
+
+```ts
+{
+  id: string,                  // tracks: "{show-slug}-{2-digit-track}" (matches assets/tracks.json);
+                               // recordings: "recording:{show-slug}:{r2-key}" (see below)
+  kind: 'track' | 'recording', // 'recording' = Full Recording / hero card item
+  streamUrl: string,           // fully resolved at build time (sitegen.core.stream_url()), never assembled client-side
+  title: string,
+  artist: string,
+  venue: string | null,
+  date: string | null,
+  dateDisplay: string | null,
+  durationSec: number | null,
+  durationLabel: string | null,
+  peaksKey: string | null,     // key into the page's already-fetched peaks map
+  pageUrl: string,
+  playLabel: string,           // pre-composed a11y string, same convention fragments.py already uses
+  downloads: { lossless: { key, format, sizeMb, title } | null },
+  dropouts: boolean,
+}
+```
+
+**`downloads.lossless` carries an R2 key, not a URL** (Codex catch). The
+lossless original is reachable *only* through the worker's `/auth` +
+`/download` pair — `/stream` deliberately 403s every `.wav`/`.flac`
+(`worker/index.js`) — so a stream URL here would be an address guaranteed to
+fail. (The legacy download button's `href` looks like a stream URL but is never
+fetched: `player.js` intercepts the click and reads the key out of it.) The
+field is named `lossless` rather than `flac` because **64 of the 747 items are
+WAV**, which the earlier `downloads.flac` shape silently misreported.
+
+**Peaks coverage is a build invariant, not a runtime fallback** (Codex catch).
+An earlier draft claimed a missing peaks entry degrades to a plain range at
+per-row granularity. It doesn't: `build_show()` picks waveform-vs-range markup
+per *show*, and a `.ws-track` row has no `.progress-range` at all — so a track
+missing from the peaks map would render with neither a waveform nor a seek bar,
+silently unseekable. Rather than write a fallback for what would mean a corrupt
+peaks file, `validate()` now fails the build if any track-listed show's peaks
+JSON is missing a track number (`core.py`). Zero shows violate it today.
+
+**Recording IDs must be unique per card, and the scheme has to exist before
+Step 3 generates any markup** (Codex catch). Every view decides whether it is
+the active one by comparing `currentItem.id` against its own item's `id`, so
+two recording cards sharing an id — or both defaulting to a show-level one —
+would render as active simultaneously. Shows can carry several: one or more
+canonical "Full Recording" parts plus any number of alternate transfers.
+Scheme: **`recording:{show-slug}:{lossless-r2-key}`** — keyed on the
+recording's `file` (the lossless original), which is its real identity,
+stable across rebuilds, and needs no new identifier invented or stored.
+
+Deliberately **not** the stream key, which is not unique:
+`mad-sweetwater-2000-10-17` offers a WAV and a FLAC transfer of the same tape
+that share a single MP3 stream proxy, so a stream-keyed id made both cards
+render as active. Found by the Step 3 build-output check, not by inspection.
+Regression-tested with two alternate transfer cards in
+`test-player-views.mjs`.
+
+`normalizeItem()` validates/defaults this shape without knowing where data
+came from: `id` and `streamUrl` are required (a missing stream URL throws
+rather than silently becoming `''`, which would surface as a confusing
+decode error instead of the data problem it is), and `durationSec` is
+rejected to `null` unless finite and non-negative — it feeds seek math and
+Media Session's `setPositionState()`, which throws on non-finite input, and
+later phases will feed this from persisted/URL-derived state that can't be
+trusted the way build-time markup can. Bounding queue *length* for those
+untrusted sources is a later-phase concern (show-page queues are
+build-generated and inherently bounded).
+
+For show pages: `itemFromRowElement(el)` reads a single
+`data-item` JSON attribute rendered server-side onto each row — **zero
+network round trip**, preserving today's property that show pages never
+fetch a JSON catalog for row data (same convention already used for
+`data-info` tooltips and `window.ZIP_MANIFEST`). Peaks stay out of the item
+schema as inline data — `peaksKey` is a pointer; the page fetches
+`window.WS_PEAKS_URL` once per page (unchanged from today) and passes the
+parsed map into view construction. A row missing peaks coverage falls back
+to the plain range input at *row* granularity, not *show* granularity — an
+improvement over today's all-or-nothing `has_waves` fork.
+
+(`itemFromCatalogRow(row)`, mapping `assets/tracks.json` rows to the same
+shape for `/playlist/`/`/player/`, is designed now for forward-compatibility
+but not built until those phases. A richer, versioned persisted-state shape
+for those two pages — also raised by Codex's second review — is likewise a
+later-phase concern: show pages don't persist controller state to
+`localStorage` at all, so there's nothing to version yet.)
+
+**View lifecycle** (built — `scripts/player-views.js`):
+
+```js
+class PlayerView {
+  constructor(root, item, { density = 'compact', peaks = null } = {}) {}
+  onAttach(controller) {}          // wires DOM listeners, paints from controller.snapshot()
+  onControllerUpdate(snapshot) {}
+  onDetach() {}                    // aborts all its listeners, tears down any waveform
+}
+// Track rows. Given the show's full ordered queue, so a click re-asserts it
+// (see the queue-origin contract above) rather than playing a lone item.
+class CompactPlayerView extends PlayerView {} // (root, item, { queueItems, queueIndex, peaks })
+// Full Recording / alternate transfer: calls playSingleton(); prev/next
+// hidden whenever queue.length <= 1.
+class HeroPlayerView extends PlayerView {}
+```
+
+Views own no media element and no audio graph — they read
+`controller.snapshot()` and dispatch commands. Each holds an
+`AbortController` so `onDetach()` removes every listener it added in one
+call. A view only rewrites its row's DOM while it is the active item, or
+once on the transition away from active, so a page of many rows doesn't
+churn on every `timeupdate` tick.
+
+**Waveform upgrade/downgrade — the one real behavior change, not just a
+refactor.** Today *every* row eagerly gets its own `WaveSurfer` instance on
+page load (confirmed, not lazy/`IntersectionObserver`-gated). Built design:
+a compact row renders an inert canvas from its precomputed peaks by default
+(drawn to match WaveSurfer's own `barWidth: 2` / `barGap: 1` / `normalize`
+output, so upgrading isn't visually jarring); only the currently-active row
+gets an actual `WaveSurfer` instance, created by wrapping
+`controller.audioElement` (verified supported — the vendored
+`wavesurfer.esm.js` accepts `media:` and sets `isExternalMedia = true`,
+correctly skipping teardown of an externally-owned element on `destroy()`).
+
+**Ordering correction found while building Step 2 — the earlier plan's
+"construct the WaveSurfer *before* `audio.play()`, inside the gesture" was
+wrong and would have broken playback.** WaveSurfer captures
+`options.url || this.getSrc() || ""` at construction and defers its
+`load()` to a microtask. Construct it before the controller assigns
+`audio.src` and it captures `url = ""`; the deferred
+`setSrc("", peaks)` then reaches
+`if (i && this.media.removeAttribute("src"))` — sees the src that appeared
+in the meantime, and strips it, killing playback. Constructing it *after*
+assignment makes `i === t` and returns early instead.
+
+The stated iOS rationale was also subtly wrong: the gesture constraint
+applies to whoever calls `play()`, which is now the controller — WaveSurfer
+here is purely a renderer wrapping an already-playing element, so it never
+needs the gesture itself. `_playIndex()` therefore orders operations
+**assign `src` → notify views (upgrade happens here) → `play()`**: still
+synchronous, still within the user gesture, but with a source WaveSurfer
+can safely adopt. The controller also tracks `_currentSrc` separately,
+because the `audio.src` DOM getter returns a resolved absolute URL that
+won't reliably string-compare against what was assigned.
+
+The existing iOS "tap-while-paused plays first, then seeks in the
+`.then()`" workaround is preserved, now routed through
+`controller.play()`/`controller.seek()` inside the same tap.
+
+Control-matrix decisions:
+
 - **Download policy:** FLAC is the protected/gated download; MP3 is the
   ungated streaming proxy and isn't currently presented as a download.
   "FLAC/MP3 download" in the mockup conflicts with that boundary — preserve
@@ -90,29 +413,46 @@ Control-matrix decisions still open:
 - Repeat-one must take precedence over queue auto-advance/reshuffling;
   turning it off restores the previous queue mode.
 - "Persistent mini bar" means sticky *within* the current page unless
-  site-wide sticky navigation is separately approved (see §5).
+  site-wide sticky navigation is separately approved (§5 — deferred).
 - The existing playlist-selection bar also sits at the bottom of pages —
-  define stacking/overlap behavior if both are present.
+  define stacking/overlap behavior if both are present, once mini density
+  is actually built (`/playlist/`/`/player/` phases).
+- Mini density is not a third view class — a `HeroPlayerView` configuration
+  flag (no waveform ever, condensed layout). Out of scope for show pages;
+  sketched now for the later phases.
 
-For waveforms: avoid one WaveSurfer instance per compact row when a single
-controller owns playback. Precomputed peaks can render as inert
-canvas/SVG for non-active rows, upgraded to an interactive seek surface only
-for the active one; defer off-screen rendering with `IntersectionObserver`.
+### Loudness control — fully deferred, not simplified
 
-### Loudness control
+**Confirmed with Rene 2026-08-13: loudness is a separate future phase, not
+part of the active consolidation work at all** (stronger than "not yet
+decided" — no Web Audio graph, no `GainNode`, no limiter work happens until
+that phase is deliberately scoped). Kept here because the design thinking
+already done is worth preserving for whenever that happens, and because the
+controller above is deliberately built with zero assumptions about it.
 
 Not a remaster — a live, client-side gain stage, so it never touches the
-stored master. **Revised after review — the original "brick-wall, never
-clips" claim overstated what a `DynamicsCompressorNode` guarantees.**
+stored master. **Revised after the first Codex review — the original
+"brick-wall, never clips" claim overstated what a `DynamicsCompressorNode`
+guarantees.**
 
 - `DynamicsCompressorNode` has threshold/ratio/attack/knee, but no output
   ceiling guarantee — it doesn't provably keep true/inter-sample peaks under
   a chosen bound. Don't promise "never clips" on that basis alone. A real
   guarantee needs either a tested look-ahead limiter (likely an
   `AudioWorklet`) or a deliberately conservative gain derived from each
-  track's known peak headroom. If a plain compressor ships first, describe
-  it as overload *protection*, not a limiter, and validate worst-case
-  overshoot before calling it safe.
+  track's known peak headroom.
+- **New data point (Codex's second review, ran real numbers against
+  `assets/track-spec.json`'s `mp3TruePeak` field across all 680 tracks):**
+  only **18** tracks have enough headroom for a flat +4 dB boost while
+  staying under −1 dBTP, only **4** have enough for +6 dB, and **61**
+  already exceed −1 dBTP before any boost at all. This rules out
+  "conservative gain-only, no limiter" as a clean fit for more than a
+  couple dozen tracks archive-wide — whoever scopes this phase should start
+  from this number, not re-derive it. `assets/tracks.json` (what
+  `/playlist/`/`/player/` actually consume) doesn't currently carry
+  `mp3TruePeak`; joining it into the playable-item data path is this
+  phase's problem to solve, one way or another (tested limiter, or a
+  per-track variable boost capped by known headroom).
 - **Archive mode needs a true bypass**, not "gain node at 0 dB through the
   compressor" — routing archive-target audio through a compressor with a
   threshold near −1 dBFS can still alter tracks that reach that threshold
@@ -121,44 +461,97 @@ clips" claim overstated what a `DynamicsCompressorNode` guarantees.**
 - Set `audio.crossOrigin = "anonymous"` **before** assigning the (cross-
   origin) stream URL — otherwise `createMediaElementSource()` can be
   silenced by CORS. The production Worker already emits the right headers;
-  local/preview hosts need the same treatment, including on Range responses.
-- One lazily-created `AudioContext` per document, resumed synchronously from
-  the user's play/loudness gesture; handle `suspended`/interrupted states.
+  local/preview hosts need the same treatment, including on Range
+  responses, and this needs real local-preview testing (the Worker
+  currently allows only production site origins, not arbitrary localhost
+  ones).
+- One lazily-created `AudioContext` per document, resumed synchronously
+  from the user's play/loudness gesture; handle `suspended`/interrupted
+  states. Never create a second `MediaElementAudioSourceNode` for the same
+  media element — build one graph, then change routing/parameters.
 - If Web Audio is unavailable/blocked, Archive playback must still work
   through the native media element, with boosted modes simply unavailable —
-  a loudness feature must never make a previously playable recording silent.
+  a loudness feature must never make a previously playable recording
+  silent, and must not leave an element hung off a failed cross-origin Web
+  Audio fetch.
 - Convert dB to gain with `10 ** (dB / 20)`, ramp over ~20–50 ms when
   switching modes to avoid clicks.
-- Open question, not yet decided: is loudness mode global, per-queue, or
-  per-item — and does it persist / sync with the popup?
-- The −20/−16/−14 numbers in the mockup are illustrative only. Before
-  finalizing them: test against real corpus material, including
-  transient-capped tracks and tracks that already sit close to −20 without
-  headroom — a fixed dB boost does not produce a fixed output LUFS across
-  material with different starting loudness. Consider a conservative default
-  or first-use notice given headphone-volume risk on "Loudest."
+- Open, unscoped: is loudness mode global, per-queue, or per-item — and
+  does it persist / sync with the popup? The −20/−16/−14 numbers in the
+  mockup remain illustrative only. Before finalizing: test against real
+  corpus material including transient-capped tracks, consider a
+  conservative default or first-use notice given headphone-volume risk on
+  "Loudest," and whole-show recordings need their own headroom policy since
+  they lack the track-level `mp3TruePeak` provenance above.
 
-### Why one component is worth it regardless of the sticky-navigation question below
+### Why controller-first is worth it regardless of the deferred phases
 
-Agreed by review. This refactor has value without navigation changes. Build
-order: extract and prove the controller first, adapt existing views to it,
-*then* replace markup — keeps behavior parity observable instead of
-combining engine, UI, and navigation changes in one step.
+Agreed by both Codex reviews. This refactor has value independent of
+sticky-navigation or loudness. Build order: extract and prove the
+controller first, adapt existing views to it, *then* replace markup — keeps
+behavior parity observable instead of combining engine, UI, and navigation
+changes in one step. This is now the literal Phase 1 step order in §6, not
+just a principle.
 
 ## 3. Technical Details
 
-**Files in scope:** `scripts/player.js`, `scripts/playlist.js`,
-`scripts/continuous-player.js`, `scripts/wavesurfer.js`, `scripts/songs.js`,
-`scripts/track-select.js`, `scripts/site.css` / `scripts/home.css` (two
-token systems the component must work under — see root `CLAUDE.md`), and the
-generators in `scripts/sitegen/` (`fragments.py`, `pages.py`) plus
-`scripts/build.py`. `worker/index.js` enters scope only if CORS or stream
-metadata needs to change. Generated output under `assets/`, `/playlist/`,
-`/player/`, show pages, and song pages gets rebuilt, never hand-edited.
+**Files in scope:**
+
+Built: `scripts/player-controller.js` (the shared engine),
+`scripts/player-views.js` (compact/hero views), and their dev-only test
+harnesses `scripts/test-player-controller.mjs` /
+`scripts/test-player-views.mjs` (not shipped — no `build.py` line, no
+`assets/` copy; see Verification below). `scripts/site.css` gained the three
+`--player-*` alias tokens the views read.
+
+Not yet built: `scripts/player-boot.js` (page-level bootstrap for show
+pages).
+
+Existing files touched across the full initiative: `scripts/player.js`
+(trimmed as each phase migrates its consumers off it, never converted to a
+module — three other classic scripts still read its top-level bindings as
+ambient globals), `scripts/playlist.js`, `scripts/continuous-player.js`,
+`scripts/wavesurfer.js` (deleted once show pages fully migrate),
+`scripts/songs.js`, `scripts/track-select.js`, `scripts/site.css` /
+`scripts/home.css` (two token systems the component must work under — see
+root `CLAUDE.md`; resolved via three alias custom properties,
+`--player-accent`/`--player-track`/`--player-surface`, added to `site.css`
+first since show pages need them, so the shared component never touches
+the two systems' non-identical dark-mode tokens directly), and the
+generators in `scripts/sitegen/` (`fragments.py`'s `player()` at line 78
+and `recording_card()`; `pages.py`'s `build_show()`, row templates at lines
+777/787) plus `scripts/build.py`. `worker/index.js` enters scope only if
+CORS or stream metadata needs to change (not needed while loudness stays
+deferred — no Web Audio consumer exists yet). `site_worker.js` enters scope
+only if timestamp-sharing changes `/play/{slug}` short-link behavior (not
+built yet). Generated output under `assets/`, `/playlist/`, `/player/`,
+show pages, and song pages gets rebuilt, never hand-edited.
+
+Module boundaries: no classic script calls `claimPlayback`/`onExternalClaim`
+synchronously at parse time (verified against the real code — every call
+site is inside a later event handler), so a module-script bootstrap can
+safely install bridge globals (`window.claimPlayback`/
+`window.onExternalClaim`) before any classic script needs them, without
+converting `songs.js`/`track-select.js`/`playlist.js` to modules
+themselves. Where a classic script needs to trigger controller behavior it
+doesn't own, use a DOM `CustomEvent` bridge rather than a direct call.
+
+A separate `downloads.js` file (splitting the password modal/batch-ZIP
+logic out of `player.js`) was suggested by Codex's second review. **Declined
+for now**: the separation actually being asked for — playback logic
+isolated from download/auth logic — already holds, since that logic lives
+in `player-controller.js`, a different file entirely. The stated reason for
+a further split ("so `/player/` doesn't inherit machinery it doesn't use")
+doesn't apply — `/player/`'s `build_player()` bypasses `page_shell()`
+entirely and has never loaded `player.js`. Worth doing later as a tidy-up;
+not blocking any current phase.
 
 **Migration-parity checklist (Codex catch, verified against the actual
-code — all of these are real, working behavior today, not hypothetical):**
+code — all of these are real, working behavior today, not hypothetical).
+Kept as two literal lists per Codex's second review, so a test failure is
+unambiguous about which bucket it's in:**
 
+*Must not regress:*
 - waveform-row and curated-list auto-advance
 - shuffle and endless-queue mode (`playlist.js`, `continuous-player.js`)
 - saved playlists (`localStorage`, `playlist.js`'s `SAVED_KEY`)
@@ -169,17 +562,38 @@ code — all of these are real, working behavior today, not hypothetical):**
 - deep-linked tracks and the current `?autoplay=1#track-N` behavior
 - password-gated single and batch downloads
 - alternate recordings, stream-only items, items with no known duration
-- loading/stalled/rejected-play/missing-file/decode-error states
+- cross-tab claim/pause between any two of the four current surfaces
 
-**Other functions:**
+*Hardening introduced by consolidation (new, not previously true anywhere —
+don't describe these as "already working" the way an earlier draft of this
+checklist did; Codex's second review caught that inaccuracy):*
+- a genuine `'error'`-state (404/CORS/decode failure) instead of a
+  permanently-stuck loading spinner
+- Space-bar reaching whatever's actually active, including a waveform row
+  (today it only reaches `.custom-player` rows)
+- stale-play/generation-token races (rapid double-click between rows)
+  resolving on the last request, not whichever promise happens to settle
+  first
+- waveform instances created only for the active row, only after a real
+  user gesture (today every row eagerly gets one on page load)
+- Media Session on show pages (currently zero there)
+- unified BroadcastChannel claim shape (currently two structurally
+  different implementations behind the same wire format)
+
+**Other functions (still to design/build, no phase committed yet):**
 
 - **Share timestamp** — copies a link that opens straight to the current
   second. Needs one canonical URL grammar across queued tracks, show-page
   tracks, and whole shows — the site already uses `#p=id,...`, `&t=...`,
   `#track-N`, and `?autoplay=1`; a timestamp scheme must not collide with
-  those or break existing short playlist links.
+  those or break existing short playlist links. `site_worker.js` owns
+  playlist short links; `worker/index.js` owns audio streaming/CORS — a
+  timestamp feature touches the former only if it changes `/play/{slug}`
+  redirect behavior.
 - **Repeat** — restarts the current track on end instead of advancing the
-  queue. Plain repeat-one, not a loop-region editor.
+  queue. Plain repeat-one, not a loop-region editor. The controller-level
+  mechanism (`setRepeatOne`) is already built; no view surfaces a toggle
+  for it yet.
 - **Keyboard shortcuts** — `space` play/pause, `←`/`→` seek ±5s, `↑`/`↓`
   next/prev in queue. Scope shortcuts to an active/focused player; ignore
   links, inputs, selects, `contenteditable`, and modifier chords — global
@@ -191,11 +605,14 @@ code — all of these are real, working behavior today, not hypothetical):**
 - Download authorization (password verification, token expiry, filename
   authorization, WAV/FLAC rejection on `/stream`) stays entirely
   server-side, exactly as today — the player UI never becomes the security
-  boundary.
+  boundary. Worth a regression test that lossless keys can't be played
+  through the streaming route, whenever a formal test layer exists for
+  that boundary.
 - Treat URL fragments, query params, `localStorage`, and `BroadcastChannel`
   messages as untrusted input the same way the current code already should:
   validate IDs against the catalog, clamp indices/times/gain, bound queue
-  length.
+  length. The random playback id in the claim protocol prevents
+  self-pausing; it is not an authentication mechanism.
 - Continue escaping metadata (`textContent`/DOM construction, not
   interpolated `innerHTML`).
 
@@ -208,14 +625,89 @@ workstream):**
   omit the waveform until they exist.
 - Update visible/subscribed views only; run any `requestAnimationFrame`
   progress loop only while playing, stop it on pause/hidden/teardown.
+- Fetch and index `tracks.json` once per document, once `/playlist/`/
+  `/player/` are in scope; avoid full queue rerenders for every time tick.
 
-**Verification:** manual spot-check on Safari, Chrome, and Firefox before
-shipping — matching how the rest of this project already ships (build fails
-the integrity checks, then a manual check on the live site). Not proposing a
-formal automated test suite or CI browser matrix; that's disproportionate
-for this project's size, even though the individual technical points above
-(CORS ordering, bypass path, audio-graph-per-document) are worth getting
-right regardless.
+**Deterministic controller tests (built —
+`scripts/test-player-controller.mjs`, `node scripts/test-player-controller.mjs`,
+not wired into CI):** state-machine/queue logic doesn't need a browser to
+verify, and manual checks alone are weak for it (Codex's second review).
+Twenty-two cases against a fake `<audio>` element, all currently passing:
+
+- *Async races:* a stale/rejected `play()` promise doesn't clobber newer
+  state once a later `play()` supersedes it; rapid consecutive `play()`
+  calls settle on the last item.
+- *Queue/transport:* repeat-one restarts the same item from
+  `currentTime = 0` at `ended` (the test that caught the bug above);
+  `ended` without repeat-one advances and running off the end sets
+  `state = 'ended'`; `toggleShuffle()` only reorders the unplayed tail and
+  restores the exact original order on toggle-off.
+- *Queue-context round trips* (the show-page flows Codex flagged):
+  Track → Hero → Track restores the full track queue; Hero → Track → Next
+  advances within the restored queue; Alternate recording → Track likewise.
+- *Legacy parity:* removing the currently-playing item slides the next one
+  in and keeps playing (matching `playlist.js:803-828` /
+  `continuous-player.js:339-356` exactly), while removing the last item, or
+  emptying the queue, stops; `reorder()` clamps an out-of-range target and
+  invalidates the now-meaningless pre-shuffle snapshot.
+- *Consistency/teardown:* `setQueue()` without autoplay halts audio left
+  over from the discarded queue rather than leaving it audible while
+  `currentItem` points elsewhere; `normalizeItem()` rejects items missing
+  `id`/`streamUrl` and sanitizes NaN/negative durations; `destroy()` pauses
+  playback and detaches every listener so a destroyed controller can't be
+  driven by later media events.
+- *Coordination:* an external claim from another controller pauses one that
+  was playing; a hard load failure surfaces as `state = 'error'`.
+- *Failure recovery / capability guards:* `toggle()` on a failed item retries
+  with a genuinely fresh load rather than pausing (an element that errored
+  mid-playback can still report `paused === false`, which would otherwise
+  make the only visible control pause something that isn't playing); a
+  browser that throws on an unsupported `setActionHandler` action still
+  constructs a working controller.
+
+**Deterministic view tests (built — `scripts/test-player-views.mjs`,
+`node scripts/test-player-views.mjs`):** fifteen cases driving real view
+instances against a hand-rolled fake DOM, with fixtures mirroring the actual
+generated markup (a `.ws-track` row, a `.custom-player` row, and a hero card
+built from `recording_card()`'s real shape — `.progress-wrap` and all,
+with the single bare time label it actually emits (it calls `player()` with no
+duration, so there is no separate total label), and no prev/next controls). Covered:
+`data-item` parsing including malformed JSON; icon/aria-label state across
+idle/loading/playing; the two time-label formats; a track row re-asserting
+its whole show queue rather than calling `play()` on a possibly-unqueued
+item; a hero playing as a singleton and going inactive when a track queue
+takes over; two alternate recording cards staying independently active
+(the unique-recording-ID requirement); a superseded row clearing its state;
+error state landing on the active row only, rendering a visible
+`role="status"` message, relabelling the button to "Retry", and clearing on
+a successful retry; **inactive rows not being rewritten across repeated
+`timeupdate` ticks**; **tapping an inactive waveform starting that row,
+re-asserting its queue, and landing at the tapped position**; range seeking
+that refuses to hijack playback from an inactive row; waveform upgrade only
+for the active row (wrapping the shared element, passing no `url`) with
+teardown of the previous one; the iOS tap-while-paused play-then-seek path;
+and unmount detaching a view from further updates.
+
+**What these tests do not cover** — deliberately, since they need a real
+browser and stay part of the manual parity checklist: canvas rendering
+output, real WaveSurfer internals, actual media loading/decoding, and layout.
+The fake DOM reports `clientWidth: 0`, so the inert-canvas draw path in
+particular is exercised only in a browser.
+
+These prove the controller's and views' own chosen behavior and (for
+`removeAt`) one verified point of legacy parity — they are not a substitute
+for the
+`/playlist/`-phase work of demonstrating full behavioral parity with the
+legacy queued players.
+
+**Manual verification:** spot-check on Safari, Chrome, and Firefox before
+shipping each phase — matching how the rest of this project already ships
+(build fails the integrity checks, then a manual check on the live site).
+Not proposing a formal automated *browser* test suite or CI matrix; that's
+disproportionate for this project's size. The deterministic tests above are
+a different, narrower thing — pure controller logic, no DOM/media/network —
+and don't replace manual checks for actual media/autoplay/CORS/Media
+Session/mobile-backgrounding/visual behavior.
 
 ## 4. Rejected / Out of Scope
 
@@ -223,11 +715,17 @@ right regardless.
   recordings, not spoken word/lecture content).
 - **Loop-region (drag-select a span to repeat)** — not useful for this use
   case; replaced by the simpler repeat-one above.
+- **A reusable view class owning its own audio element per instance** —
+  contradicts the one-engine-per-document success criterion; not a live
+  alternative for any phase (§2).
 - **SPA/client-side navigation and iframe-shell work** — see sticky
-  navigation in §5; a separate decision.
+  navigation in §5; a separate decision, confirmed deferred.
+- **Client-side loudness control, this phase** — confirmed fully deferred
+  with Rene 2026-08-13, not merely simplified; see §2's Loudness section
+  for the design thinking preserved for whenever it's scoped.
 - **Cross-device playback sync, server-side remastering, in-browser EQ/
   crossfade/loudness analysis, per-track user presets, and any redesign of
-  the download-authentication policy** — all out of scope for this pass.
+  the download-authentication policy** — all out of scope, no phase.
 
 The existing `/player/` popup is **not** out of scope in the sense of being
 disposable early — it's the current practical mechanism for uninterrupted
@@ -236,67 +734,303 @@ sticky-navigation project replaces it.
 
 ## 5. Open Questions
 
-- **Sticky playback across page navigation.** Consolidating the player does
-  **not** by itself make playback survive clicking to another page. The
-  site is a static multi-page site (`scripts/build.py` generates full
-  separate HTML pages) — every internal link is a full page load, tearing
-  down all JS state including any playing `<audio>` element. This is true
-  of the *current* four-player setup too. A service worker alone doesn't
-  fix this either — it can't preserve a live audio element across a full
-  document navigation. The `/player/` popup is the current, lower-risk
-  workaround and should be treated as the baseline during consolidation. If
-  client-side navigation is pursued later, it needs its own scope covering
+**Resolved (2026-08-13, with Rene, before Phase 1 began):**
+
+- ~~Sticky playback across page navigation~~ — confirmed deferred. The site
+  is a static multi-page site (`scripts/build.py` generates full separate
+  HTML pages) — every internal link is a full page load, tearing down all
+  JS state including any playing `<audio>` element, true of the *current*
+  four-player setup too. A service worker alone doesn't fix this either —
+  it can't preserve a live audio element across a full document navigation.
+  `/player/` is the baseline during consolidation. If client-side
+  navigation is pursued later, it needs its own scope covering
   History/`popstate`, scroll/focus restoration, title/meta updates,
   same-origin URL filtering, and a real-navigation fallback on error — a
   genuinely separate architectural decision, not a side effect of this one.
-- **Runtime granularity:** one controller with many views (recommended), or
-  a simpler reusable view class that still owns one audio element per
-  instance?
+- ~~Runtime granularity~~ — one controller with many views; see §2.
+- ~~Hero queue semantics~~ — `playSingleton()` collapses the queue to
+  length 1; prev/next hidden whenever `queue.length <= 1`; see §2.
+- ~~Rollout structure~~ — incremental, one surface at a time, riskiest
+  first (show pages, then `/playlist/`, then `/player/`); see §6.
+- ~~Loudness control, this pass~~ — fully deferred, not just weakened; see
+  §2/§4.
+
+**Still open (deferred to the phase that actually needs the answer):**
+
 - **Mini bar scope:** sticky on `/playlist/` only, or site-wide? Site-wide
-  is part of the sticky-navigation decision above, not this one.
-- **Hero queue semantics:** what does prev/next mean for a standalone
-  whole-show recording with no queue?
+  is part of the sticky-navigation decision above, not a `/playlist/`-phase
+  decision.
 - **Which playlist features surface in the mini/expanded states** — shuffle,
-  queue editing, saved playlists, endless mode, open-in-popup?
-- **Loudness control default/options** — −20/−16/−14 were illustrative,
-  not yet validated against real listening across the corpus.
-- **Loudness/repeat persistence** — per-item, per-queue, or global? Shared
-  with the popup or reset per document?
-- **Web Audio fallback** — confirmed behavior when Web Audio/CORS is
-  unavailable (Archive-only, boosted modes disabled, per §2).
+  queue editing, saved playlists, endless mode, open-in-popup? — a
+  `/playlist/`/`/player/`-phase question.
+- **Loudness control default/options, values, persistence** — everything in
+  §2's Loudness section; unscoped until that phase starts.
+- **Web Audio fallback behavior** — moot until loudness is scoped, since
+  it's currently the only Web Audio consumer anywhere in the plan.
+- **Timestamp URL grammar** — not yet designed; see §3's "Other functions."
 
 ## 6. Implementation Steps
 
-- [x] Codex review — findings recorded in `player_consolidation_codex.md`,
-      accepted findings folded into this revision
-- [ ] Turn the migration-parity checklist (§3) into a literal pre/post
-      migration test list
-- [ ] Decide sticky-navigation scope — recommended: separate project,
-      preserve `/player/` as the baseline in the meantime
-- [ ] Specify the per-document controller, playable-item schema, and view
-      subscribe/teardown API
-- [ ] Decide mini-bar scope and its interaction with the playlist-selection
-      bar
-- [ ] Prototype the Web Audio path against the production Worker with
-      `crossOrigin` set before `src`
-- [ ] Choose the real limiter strategy (or explicitly weaken the no-clip
-      claim); implement the Archive bypass and the no-Web-Audio fallback
-- [ ] Measure candidate loudness gains against representative and
-      worst-case archive tracks
+Rollout is incremental and per-surface, riskiest surface first — confirmed
+with Rene 2026-08-13. Old engines for a surface stay live and unmodified
+until that surface's parity checklist (§3) passes; they are the fallback
+during migration, not removed speculatively.
+
+- [x] Codex review (first pass) — findings recorded in
+      `player-consolidation-codex.md`, accepted findings folded into this
+      revision
+- [x] Codex review (second pass, against the live implementation) —
+      findings recorded in `player-consolidation-codex.md`, accepted
+      findings folded into this revision
+- [x] Sticky-navigation scope decided — deferred, `/player/` stays baseline
+- [x] Loudness scope decided — fully deferred, not part of active work
+- [x] Controller API, playable-item schema, state machine, view
+      subscribe/teardown API specified (§2)
+- [x] Migration-parity checklist turned into the two literal lists in §3
+
+### Phase 1 — show pages (in progress)
+
+1. [x] `scripts/player-controller.js`, no DOM. Full controller: queue,
+       transport, shuffle-tail algorithm, BroadcastChannel registry,
+       generation token, state machine, `'error'` listener, Media Session,
+       `play()`/`playSingleton()` split, legacy-parity `removeAt()`,
+       complete `destroy()` teardown, `normalizeItem()` validation,
+       `build.py` wiring. *Verified:*
+       `node scripts/test-player-controller.mjs`, 22/22 passing; full
+       `python3 scripts/build.py` confirmed byte-identical output elsewhere.
+2. [x] `scripts/player-views.js`, no DOM change on real pages: `PlayerView`
+       base, `CompactPlayerView`, `HeroPlayerView`, `itemFromRowElement()`,
+       plus the `--player-*` alias tokens and error-state CSS in `site.css`,
+       and `build.py` wiring. Forced the `_playIndex` ordering correction
+       documented in §2. A fourth Codex review then found four real defects
+       in the first cut, all fixed and regression-tested: inactive rows were
+       being rewritten (and their canvases redrawn) on every `timeupdate`
+       tick; tapping an inactive row's waveform silently did nothing (a
+       legacy-behavior regression); the promised error affordance was an
+       unstyled class with a retry path that couldn't actually recover a
+       failed media element; and the hero fixture invented prev/next controls
+       the real `recording_card()` markup doesn't emit. *Verified:*
+       `test-player-views.mjs` 15/15, `test-player-controller.mjs` 22/22,
+       full build byte-identical except the intended `site.css` additions.
+3. [x] Additive markup only. `fragments.py` gained `playable_item_attr()`
+       (one builder for the whole schema, returning the already-escaped
+       attribute so no caller can forget to escape) and
+       `recording_item_id()`. `build_show()`'s two row templates and
+       `recording_card()` now carry `data-item`.
+
+       **Deviation from the earlier plan, for the better:** `player()` was
+       *not* given an `item_json` param. The hero's view root is
+       `.recording-item`, which `recording_card()` builds directly — so the
+       attribute goes there, and `player()` (shared with song pages) stays
+       completely untouched, which serves this phase's "don't touch song
+       pages" boundary better than the original sketch did. `recording_card()`
+       takes an optional `show=None`; callers that omit it emit byte-identical
+       markup to before.
+
+       *Verified:* `build.py --check` passes; all 747 emitted items
+       (680 track + 67 recording, across 30 pages) parse as valid JSON with
+       required fields present and **ids unique within every page**; every
+       item's `streamUrl` matches the legacy `data-src` on the same element
+       exactly, so the new engine cannot play different audio than the old
+       one; song pages emit no `data-item` at all; and stripping the new
+       attribute from the whole build reproduces HEAD's HTML **byte for
+       byte**, proving the change is purely additive.
+
+       The uniqueness check immediately caught a real collision that
+       validated Codex's finding #4: `mad-sweetwater-2000-10-17` offers a WAV
+       and a FLAC transfer of the same tape *sharing one MP3 stream proxy*,
+       so an id keyed on the stream key made both cards render as active.
+       Recording ids are therefore keyed on the lossless original's R2 key —
+       the recording's real identity — not the stream key.
+4. [ ] `player-boot.js`, flagged to a small allowlist of show slugs. Mounts
+       `CompactPlayerView` on every `[data-item]` element inside
+       `.track-list` (deliberately matches both `.ws-track` and
+       `.custom-player`), mounts `HeroPlayerView` on `.recording-item`,
+       wires Space-bar/deep-link/Media Session.
+
+       **Engine selection must be transactional, and must gate every legacy
+       playback registration — not just the initial mount.** Two Codex catches,
+       in successive reviews, both against earlier drafts of this step:
+
+       *(a) Timing.* `player.js:173` calls `initCustomPlayers(document)` at
+       classic-script parse time and `wavesurfer.js` auto-builds on module
+       execution, so a `dataset.mounted` guard set later by a deferred module
+       can never win — the legacy pass has already run.
+
+       *(b) A static flag alone is a regression, not a fallback.* Setting
+       `window.PLAYER_ENGINE = 'controller'` before `player.js` and having the
+       legacy code bail means an unsupported-module browser, a 404 on an asset,
+       a parse error, or any bootstrap exception leaves the page with **no
+       working player at all** — worse than today, where a `wavesurfer.js`
+       failure still leaves the Full Recording player alive via classic
+       `player.js`. Retained legacy code is only a *deploy-time* rollback
+       unless something can fall back at *runtime*.
+
+       Design that satisfies both: **legacy defers, controller claims.**
+       - `build_show()` emits `window.PLAYER_ENGINE = 'controller'` inline
+         before the `player.js` tag (fixes (a) — the decision exists before any
+         legacy code runs).
+       - Seeing that flag, `player.js` does not initialize immediately; it
+         registers its auto-init on `DOMContentLoaded` instead. Same for the
+         Space and `focusHashTrack` handlers (see below).
+       - `player-boot.js` (a module, so it executes after parsing but *before*
+         `DOMContentLoaded` — deferred scripts are guaranteed to run first)
+         mounts the controller inside a `try`/`catch`. On success it sets a
+         "controller mounted" marker; on failure it tears down any partial
+         mounts and leaves the marker unset.
+       - At `DOMContentLoaded`, legacy checks the marker: set → stay dormant;
+         unset → initialize normally, exactly as it does today.
+
+       This makes a module/asset/boot failure degrade to the current engine
+       rather than to silence, and it is testable without a browser matrix.
+
+       **Gate all three legacy playback registrations, not just the mount**
+       (the second catch): `initCustomPlayers` at `player.js:173`, the Space
+       handler at `player.js:175-190`, and `focusHashTrack`'s load/hashchange
+       listeners at `player.js:579-601` are registered independently. Gating
+       only the first leaves two live: both deep-link handlers would scroll and
+       mutate `.target`, both could act on `?autoplay=1` (a double start on a
+       non-waveform row), and the legacy Space listener would swallow Space
+       even with no legacy player active. Download, share, and tooltip code
+       stays untouched — it isn't playback.
+
+       *Verify (flagged pages only):* full parity checklist (§3); exactly one
+       engine mounted (no duplicate listeners on a row); and deliberately break
+       the module (rename the asset) to confirm the page falls back to a
+       working legacy player rather than going inert.
+5. [ ] Flip the allowlist on for all show pages, and remove only what is
+       provably unreferenced. Every show page emits the engine flag and
+       `player-boot.js`; stop emitting `wavesurfer.js`'s module tag.
+
+       **Do NOT delete `initCustomPlayers` or the claim globals from
+       `player.js` in this phase** (Codex catch — an earlier draft of this
+       step would have broken untouched pages the same phase claimed not to
+       touch). `songs.js:72` still calls bare `initCustomPlayers(container)`
+       for lazily-inserted song-page rows, and those rows deliberately don't
+       get `data-item` markup until song pages migrate; `/playlist/` still
+       calls `claimPlayback`/`onExternalClaim` as ambient globals. Both keep
+       working untouched because the legacy code stays. Note also that the
+       legacy signature is `onExternalClaim(fn, owner)` while the new
+       internal helper is `onExternalClaim(owner, fn)` — transposed. That
+       mismatch is a real trap for any future bridge/facade, and is precisely
+       why this phase builds no such bridge: nothing on a migrated show page
+       calls the legacy globals at all, and cross-document coordination
+       already works because both implementations post to the same
+       `BroadcastChannel` name with the same wire format.
+
+       `scripts/wavesurfer.js` **can** be deleted here — verified that
+       nothing else in the site references it (its only consumers are the
+       show-page rows this phase migrates, plus `build_wavesurfer_lab()`,
+       handled in step 6). *Verify:* full build + `--check` passes; a real
+       song page and `/playlist/` still play correctly with the legacy engine
+       untouched; cross-tab claim/pause still works between a migrated show
+       page and `/playlist/`.
+6. [ ] Deferred housekeeping: `build_wavesurfer_lab()`'s fourth row-markup
+       copy (`.ws-row`, zero production traffic) — delete or update to the
+       unified shape after parity is proven. Note this is coupled to step 5's
+       `wavesurfer.js` deletion (the lab page is its other consumer), so
+       either do them together or leave both until this step.
+
+**Legacy-removal debt this phase deliberately leaves behind** (not
+oversights — each waits for the phase that makes it safe):
+`initCustomPlayers`, the `activePlayer`/Space-bar block, and the
+BroadcastChannel implementation all stay in `player.js` until song pages
+(for the first) and `/playlist/`/`/player/` (for the rest) have migrated.
+The final cleanup — including collapsing the transposed
+`onExternalClaim` signatures into one — belongs to whichever phase migrates
+the last consumer.
+
+**Implementation gate before Step 5 deletes any old engine (Codex's second
+review):**
+- [x] queue-origin semantics for show pages written down (page load →
+      `setQueue()` with every row; Hero card → `playSingleton()`)
+- [x] controller API and module-loading strategy settled: legacy `player.js`
+      stays a classic script and keeps its globals for unmigrated consumers,
+      while migrated show pages are gated off it entirely by a page-level
+      engine flag — **no bridge/facade is built**, since nothing on a migrated
+      page calls the legacy globals (§3, Step 4)
+- [x] literal parity checklist exists (§3)
+- [ ] the shared controller works with existing show-page markup (Step 4)
+- [x] stale-play and queue-transition tests pass
+      (`test-player-controller.mjs` 22/22, `test-player-views.mjs` 15/15)
+- [ ] the old engine remains available as a fallback during the allowlist
+      step (by design — Step 4 keeps both live until Step 5)
+
+**Explicitly not touched this phase:** song pages (`_song_occ_html`,
+`songs.js`'s `initCustomPlayers` re-invocation for lazily-inserted rows),
+`/playlist/`, `/player/`. Their eventual migration reuses the same
+schema/controller — the intended foundation for it, though (per Phase 2's
+note) only `removeAt` parity has actually been demonstrated, so expect real
+adaptation work rather than a drop-in. `songs.js`'s lazy re-mount becomes
+`window.PlayerController.mountCompactRows(container)`, wrapping
+`container.querySelectorAll('[data-item]').forEach(...)`, same
+call-repeatedly-safely contract as today's `if (player._audio) return;`
+guard.
+
+### Phase 2 — `/playlist/` (not started)
+
+Migrate onto the same `PlaybackController`/view classes without losing
+shuffle, saved queues (`localStorage['savedPlaylists']`), restore, or Media
+Session behavior. `itemFromCatalogRow(row)` (mapping `assets/tracks.json`
+rows to the playable-item schema) gets built here. Not detailed further
+until Phase 1 proves the controller/view split end-to-end.
+
+Known parity work waiting for this phase, rather than assumed-free:
+`removeAt()`'s legacy slide-in semantics are already ported and tested, but
+the rest of the queue-editing surface (`reorder()`, endless-mode reshuffle,
+`#p=` hash resync, saved-playlist round trips) has **not** been demonstrated
+against the real `playlist.js` behavior — treat the controller as the
+intended foundation, not a proven drop-in. This is also where the
+`localStorage` state shape gets versioned (with invalid/future versions
+degrading to a clean queue rather than partially restoring), and where
+queue length from persisted/URL-derived sources needs an explicit bound.
+
+### Phase 3 — `/player/` popup (not started)
+
+Separate document, own controller instance, identical module/state schema.
+This is also the natural point to switch the BroadcastChannel wire format
+to a structured/validated message shape (§2), since every claim-protocol
+participant changes together instead of needing a dual-format bridge.
+
+### Phase 4 — loudness control (not started, not scoped)
+
+See §2's Loudness section for everything already known, including the
+mp3TruePeak headroom data. Genuinely unscoped until deliberately picked up.
+
+### Cross-phase, not yet assigned to a specific phase
+
 - [ ] Define the timestamp URL grammar against existing `#p=`/`&t=`/
       `#track-N`/`?autoplay=1` usage
-- [ ] Extract the shared controller/queue/Media Session/keyboard logic while
-      keeping current markup, to prove parity before touching UI
-- [ ] Build the compact density on the shared controller, lazy/lightweight
-      waveforms
-- [ ] Build the hero density, including conditional queue controls
-- [ ] Build the mini density
-- [ ] Migrate `/playlist/` and `/player/` onto the new component without
-      losing shuffle, saved queues, restore, or Media Session behavior
-- [ ] Manual spot-check on Safari/Chrome/Firefox, mobile and desktop
-- [ ] Remove the old four engines and duplicated markup once parity holds
+- [ ] Build repeat-one and keyboard-shortcut UI surfaces on top of the
+      controller-level mechanisms that already exist
+- [ ] Manual spot-check on Safari/Chrome/Firefox, mobile and desktop, once
+      each phase has something to check
 
-## 7. Session & Branch Workflow
+## 7. Review loop
+
+Reviews from the fifth onward are produced by **`scripts/codex_review.sh`**,
+which runs `codex exec -s read-only`, captures the result, and appends it to
+this initiative's `*-codex.md`. Codex cannot modify the repo; only the script
+writes, and only by appending — the plan itself is never touched. Path
+derivation is generic (`*-plan.md` → `*-codex.md`), so it works for future
+`plans/` initiatives too.
+
+```
+scripts/codex_review.sh plans/<initiative>/<topic>-plan.md "<what to focus on>"
+```
+
+`/review-step` (`.claude/commands/review-step.md`) runs that script and then
+verifies each finding against the code, applies what holds, and explicitly
+declines what doesn't — replacing a four-message manual relay.
+
+**Deciding which findings hold is deliberately not automated.** Several Codex
+suggestions here have been correctly declined (a separate `downloads.js`, a
+structured `BroadcastChannel` wire format mid-migration), and several real bugs
+were caught only because a claim was traced rather than trusted — including a
+test that passed for the wrong reason. Applying findings wholesale would lose
+exactly the thing that has made this loop valuable.
+
+## 8. Session & Branch Workflow
 
 This project uses its own dedicated branch and worktree, same pattern as the
 home-page project (fuller writeup: `plans/home-page/home-page-codex.md` in
@@ -306,7 +1040,10 @@ the `home-page` branch/worktree):
 - Worktree: `/home/renedebos/renedebos.com-player-consolidation`
 
 Sync with `main` at the start of a session — not on a fixed schedule —
-`git fetch origin main && git merge main`. This keeps the branch from
+`git fetch origin && git merge origin/main` (not `git fetch origin main &&
+git merge main`, which can merge a stale local `main` depending on which
+checkout most recently advanced it — `origin/main` after a fresh fetch is
+unambiguous). This keeps the branch from
 drifting too far from what `main` picks up elsewhere (audio-processing
 work, other projects' merges) and lets any conflict surface while someone
 is actually present to resolve it, rather than piling up silently. Do this

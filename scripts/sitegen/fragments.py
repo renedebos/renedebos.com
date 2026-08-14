@@ -38,6 +38,74 @@ def track_add_button(track_id):
     return (f'<button type="button" class="track-add" data-id="{esc(track_id)}" '
             f'aria-pressed="false" aria-label="Add to playlist selection">{PLUS_SVG}</button>')
 
+def playable_item_attr(*, item_id, kind, stream, title, artist=None, venue=None,
+                       date=None, date_display=None, duration_label=None,
+                       peaks_key=None, page_url=None, play_label=None,
+                       lossless_file=None, lossless_size_mb=None, dropouts=False):
+    """Build the `data-item="..."` attribute the shared player reads.
+
+    One normalized playable item per playable thing, serialized into the markup
+    at build time so a show page with 30 tracks still costs zero network round
+    trips to know what it can play (same convention as data-info tooltips and
+    window.ZIP_MANIFEST). Consumed by itemFromRowElement() in
+    scripts/player-views.js and validated by normalizeItem() in
+    scripts/player-controller.js — keep the field names in sync with the schema
+    documented in plans/player-consolidation/player-consolidation-plan.md.
+
+    Returns the whole attribute (already HTML-escaped) rather than raw JSON, so
+    no caller can forget to escape it. Pass RAW values: json.dumps handles JSON
+    escaping and esc() handles HTML escaping, so pre-escaped input would be
+    double-escaped and show up mangled in the player UI.
+    """
+    # The lossless original is reachable ONLY through the worker's /auth +
+    # /download pair, so what a consumer needs is the R2 key, not a URL:
+    # /stream deliberately 403s every .wav/.flac (worker/index.js), so
+    # publishing a stream URL here would be publishing an address guaranteed to
+    # fail. (The legacy download button's href looks like a stream URL but is
+    # never fetched — player.js intercepts the click and reads the key out of
+    # it.) Named `lossless`, not `flac`, because 64 of these are WAV.
+    lossless = None
+    if lossless_file:
+        lossless = {"key": lossless_file,
+                    "format": lossless_file.rsplit(".", 1)[-1].lower(),
+                    "sizeMb": lossless_size_mb,
+                    "title": lossless_file.split("/")[-1]}
+    item = {
+        "id": item_id,
+        "kind": kind,
+        "streamUrl": stream,
+        "title": title,
+        "artist": artist or "",
+        "venue": venue or None,
+        "date": date or None,
+        "dateDisplay": date_display or None,
+        # Same helper feeds.py uses for tracks.json's durationSec, so the two
+        # producers of this schema field can't drift apart.
+        "durationSec": _duration_sec(duration_label) if duration_label else None,
+        "durationLabel": duration_label or None,
+        "peaksKey": peaks_key,
+        "pageUrl": page_url or "",
+        "playLabel": play_label or title,
+        "downloads": {"lossless": lossless},
+        "dropouts": bool(dropouts),
+    }
+    return f'data-item="{esc(json.dumps(item, ensure_ascii=False))}"'
+
+def recording_item_id(show_slug, file):
+    """Stable, unique id for a whole-show recording or alternate transfer.
+
+    Needs to be unique *per card*: a player view decides whether it is the
+    active one by comparing ids, so two cards sharing one would both render as
+    playing at once.
+
+    Keyed on the lossless original's R2 key, NOT the stream key: several shows
+    offer two transfers of the same tape (e.g. mad-sweetwater-2000-10-17 has a
+    WAV and a FLAC) that share a single MP3 stream proxy, so stream keys are
+    not unique per card. The lossless key is the recording's real identity, and
+    is stable across rebuilds.
+    """
+    return f"recording:{show_slug}:{file}"
+
 def dl_button(file, *, title="Download"):
     # Icon-only (no text label): with only the password-protected lossless
     # download left, the format doesn't need spelling out in the button —
@@ -107,15 +175,36 @@ def player(file, duration=None, download_file=None, version=None, label=None):
           {downloads}
         </div>'''
 
-def recording_card(title, meta_pairs, badge, file, stream_file=None, play_label=None):
+def recording_card(title, meta_pairs, badge, file, stream_file=None, play_label=None,
+                   show=None):
     # Stream the lossy proxy (stream_file) when one exists; the lossless `file`
     # is only reachable through the download/password flow.
     grid = "".join(f'<span class="meta-label">{esc(k)}</span><span class="meta-value">{esc(v)}</span>'
                    for k, v in meta_pairs if v)
-    lossless = file.rsplit(".", 1)[-1].lower() in ("wav", "flac")
+    is_lossless = file.rsplit(".", 1)[-1].lower() in ("wav", "flac")
     play = player(stream_file or file,
-                  download_file=file if lossless else None, label=play_label)
-    return f'''      <div class="recording-item">
+                  download_file=file if is_lossless else None, label=play_label)
+    # `show` is optional so the attribute is purely additive: callers that
+    # don't pass it emit exactly the markup they did before. The attribute goes
+    # on .recording-item (not the inner .custom-player) because that card is
+    # what a HeroPlayerView mounts on — which also keeps player() itself, shared
+    # with song pages, untouched this phase.
+    item_attr = ""
+    if show is not None:
+        item_attr = " " + playable_item_attr(
+            item_id=recording_item_id(show["slug"], file),
+            kind="recording",
+            stream=stream_url(stream_file or file),
+            title=title,
+            artist=artist_name(show["artist"]),
+            venue=show.get("venue"),
+            date=show.get("date"),
+            date_display=date_with_subtitle(show),
+            page_url=show_url(show),
+            play_label=play_label or title,
+            lossless_file=file if is_lossless else None,
+        )
+    return f'''      <div class="recording-item"{item_attr}>
         <div class="recording-meta">
           <div>
             <div class="recording-title">{esc(title)}</div>
@@ -746,4 +835,4 @@ def song_jsonld(s):
     })
 
 
-__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', 'STATUS_BLURB', '_pre_edit_class', '_pre_edit_label', '_show_label', '_song_occ_html', '_src_tag', 'contact_block', 'content', 'dl_button', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'player', 'recording_card', 'show_jsonld', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'track_add_button', 'updates_list']
+__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', 'STATUS_BLURB', '_pre_edit_class', '_pre_edit_label', '_show_label', '_song_occ_html', '_src_tag', 'contact_block', 'content', 'dl_button', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'playable_item_attr', 'player', 'recording_card', 'recording_item_id', 'show_jsonld', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'track_add_button', 'updates_list']

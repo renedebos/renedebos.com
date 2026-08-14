@@ -55,8 +55,7 @@ def sort_key(show):
     return (show["date"] is None, show["date"] or "9999", show["slug"])
 
 def track_total(tracks):
-    secs = sum(int(t["duration"].split(":")[0]) * 60 + int(t["duration"].split(":")[1])
-               for t in tracks)
+    secs = sum(_duration_sec(t["duration"]) for t in tracks)
     return f"{secs // 3600}h {secs % 3600 // 60}m" if secs >= 3600 else f"{secs // 60}m"
 
 def sanitize_filename(s):
@@ -198,8 +197,21 @@ def validate():
             errors.append(f"{where}: tracks span multiple R2 folders: {sorted(folders)}")
         # Referential integrity: waveforms + processing provenance for curated shows.
         if s.get("tracks"):
-            if not os.path.exists(os.path.join(ROOT, "data", "peaks", f"{s['slug']}.json")):
+            peaks_path = os.path.join(ROOT, "data", "peaks", f"{s['slug']}.json")
+            if not os.path.exists(peaks_path):
                 errors.append(f"{where}: missing data/peaks/{s['slug']}.json (run scripts/gen_peaks.py --slug {s['slug']})")
+            else:
+                # Per-TRACK coverage, not just "the file exists". A show with a
+                # peaks file renders every track as a waveform row, which has no
+                # native range input — so a track missing from the peaks map
+                # would get neither a waveform nor a seek bar, i.e. a silently
+                # unseekable row. Enforcing the invariant here is better than
+                # writing a fallback for what would mean a corrupt peaks file.
+                have = set(json.load(open(peaks_path)))
+                missing = sorted(t["num"] for t in s["tracks"] if str(t["num"]) not in have)
+                if missing:
+                    errors.append(f"{where}: data/peaks/{s['slug']}.json is missing track(s) {missing} "
+                                  f"(re-run scripts/gen_peaks.py --slug {s['slug']})")
             if any(t.get("processed") for t in s["tracks"]):
                 proc_path = os.path.join(ROOT, "data", "processing", f"{s['slug']}.json")
                 if not os.path.exists(proc_path):

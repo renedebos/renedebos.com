@@ -18,6 +18,8 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+import verify_markup  # noqa: E402  (needs the path insert above)
+
 from sitegen.core import *       # noqa: F401,F403
 from sitegen.fragments import *  # noqa: F401,F403
 from sitegen.pages import *      # noqa: F401,F403
@@ -36,6 +38,11 @@ def main():
     here = os.path.dirname(os.path.abspath(__file__))
     write("assets/site.css", open(os.path.join(here, "site.css")).read())
     write("assets/player.js", open(os.path.join(here, "player.js")).read())
+    # Shared PlaybackController — see plans/player-consolidation/. Not yet
+    # referenced by any generated page (that's a later migration step); just
+    # shipped alongside the rest of the JS so it's staged for player-boot.js.
+    write("assets/player-controller.js", open(os.path.join(here, "player-controller.js")).read())
+    write("assets/player-views.js", open(os.path.join(here, "player-views.js")).read())
     write("assets/wavesurfer.esm.js", open(os.path.join(here, "vendor", "wavesurfer.esm.js")).read())
     write("assets/wavesurfer.js", open(os.path.join(here, "wavesurfer.js")).read())
     # client-zip@2.4.5 (MIT) — assembles multiple fetch() Responses into a
@@ -85,6 +92,10 @@ def main():
     total = sum(len(s["recordings"]) for s in M["shows"]) + len(M["singles"])
     print(f"Built 7 site pages + {n} show pages + {len(songs)} song pages ({total} recordings, "
           f"{sum(len(s['tracks'] or []) for s in M['shows'])} curated tracks)")
+    # Integrity of the *generated* player markup — validate() covers source data
+    # but never reads the emitted data-item attributes. Cheap (a regex pass over
+    # the show pages), so it runs on every full build rather than on demand.
+    verify_markup.main()
 
 
 if __name__ == "__main__":
