@@ -8,9 +8,10 @@ implemented, locally verified, and PR'd — not yet merged/deployed.** PR #3
 55/58 (every player-consolidation-specific check passed; the 3 non-passes
 are one known, pre-existing, unrelated console warning — see below). Step
 5b (widen the allowlist to every show) is implemented, passing locally
-(184/184), and has its own PR open — merging it and running
-`browser_check.mjs --prod` against it is the very next thing to do; see
-below.
+(185/185 — a tenth review found and fixed a real bug in the rollback
+mechanism first, see below), and has its own PR open — merging it and
+running `browser_check.mjs --prod` against it is the very next thing to do;
+see below.
 
 ## ✅ Done this session — Step 4 through Step 5a
 
@@ -199,20 +200,60 @@ count, both legacy engines' dormancy, console errors) on all 30 pages, and
 the full interactive check (real playback/toggle/seek/Space/canvas) on 4
 pages chosen for genuinely different markup shapes — the original 3 from
 5a, plus `jerry-19-broadway-1999-03-29` (the catalog's largest page: 34
-tracks, 5 recording cards — a real stress test for the eighth review's
-inactive-row DOM-churn fix). The show list itself is fetched once at
-runtime from `assets/home-shows.json`, not hardcoded — this file should
-never need manual updating again regardless of catalog size.
+tracks, 5 recording cards). This page's heavy check now genuinely stress
+tests the eighth review's inactive-row DOM-churn fix — a real
+`MutationObserver` watches an inactive row through the whole
+playback/toggle/seek/Space sequence and asserts zero mutations, not just
+"other checks passed so it's probably fine" (added in the tenth review's
+fixes, below). The show list itself is fetched once at runtime from
+`assets/home-shows.json`, not hardcoded — this file should never need
+manual updating again regardless of catalog size.
 
-**Local pass: 184/184.** The `isRemote` code path verified against a local
+**Local pass: 185/185.** The `isRemote` code path verified against a local
 server standing in for production (never touched real production for
-this): 192/196, the same 4 known `Cache-Control` non-passes every prior
+this): same 4 known `Cache-Control` non-passes every prior
 local-server-as-remote run has shown (a bare `http.server` doesn't set
 Cloudflare's real headers — not a regression). Confirmed the
 non-allowlisted-show-page check now correctly self-skips with a log
 message, since every show is allowlisted post-5b — the defensive design
 built for exactly this in the ninth review's fixes, exercised for real for
 the first time.
+
+## A tenth review — on the 5b implementation itself, not just readiness
+
+Run before merging PR #4, same `/review-step` discipline. Found one real bug
+and two lower-stakes gaps:
+
+- **The rollback escape hatch was broken by its own build gate — the
+  important finding.** `CONTROLLER_ENGINE_EXCLUDED_SLUGS` is supposed to let
+  one show be rolled back without reverting the whole thing, but
+  `verify_markup.py`'s coverage check (added for 5b, wired into the default
+  gate) only checked `public - allowlisted`, so excluding any show
+  immediately made the gate report it as "missing." Reproduced directly
+  before fixing: simulating one exclusion produced exactly that error,
+  meaning `build.py --check` — CI's real gate — would have failed the
+  moment the escape hatch was ever actually used. Fixed with a three-way
+  check (allowlisted, or deliberately excluded, or a genuine gap) plus a new
+  `assets/controller-excluded-slugs.json` asset so `browser_check.mjs` can
+  tell an intentional exclusion apart from a broken page. Simulated a real
+  exclusion end-to-end (edited the generated asset, then a show page
+  directly) to confirm the fix actually works before reverting the
+  simulation cleanly.
+- **`browser_check.mjs` trusted `home-shows.json` blindly.** Now asserts all
+  4 `HEAVY_CHECK_SLUGS` are actually present in the fetched catalog, failing
+  loudly instead of silently running a smaller stress-test set. The deeper
+  gap — `home-shows.json` only includes track-listed shows, while
+  `CONTROLLER_ENGINE_SLUGS` covers every public show — is documented but not
+  fixed (they coincide today; fixing it properly means changing
+  `home-shows.json`'s row-inclusion criteria, which the live homepage also
+  depends on — a separate decision).
+- **The "DOM-churn stress test" claim was overstated** until the
+  `MutationObserver` addition above made it true instead of just softening
+  the wording.
+
+Full record, all findings independently verified (not taken on the review's
+word — one reproduced by simulation): `player-consolidation-codex.md`'s
+tenth review.
 
 ## 🔧 Next up
 

@@ -119,10 +119,46 @@ const HEAVY_CHECK_SLUGS = [
 // again.
 let ALL_SHOWS = null;
 
+// assets/controller-excluded-slugs.json mirrors sitegen.pages'
+// CONTROLLER_ENGINE_EXCLUDED_SLUGS (Step 5b's rollback escape hatch, fixed
+// 2026-08-14) -- a plain JSON array of slugs deliberately NOT allowlisted,
+// currently always []. Fetched once alongside home-shows.json so the main
+// per-page loop can skip these pages (asserting "controller mounted" on a
+// deliberately-excluded page would be a false failure) and
+// pickNonAllowlistedShowPage() can find a real one instead of always hitting
+// its "everyone's allowlisted" null path.
+let EXCLUDED_SLUGS = [];
+
 async function fetchAllShowUrls(context) {
-  const res = await context.request.get(BASE + '/assets/home-shows.json');
-  const shows = await res.json();
+  const [showsRes, excludedRes] = await Promise.all([
+    context.request.get(BASE + '/assets/home-shows.json'),
+    context.request.get(BASE + '/assets/controller-excluded-slugs.json'),
+  ]);
+  const shows = await showsRes.json();
   ALL_SHOWS = shows;
+  EXCLUDED_SLUGS = await excludedRes.json();
+
+  // Residual, currently-latent gap: home-shows.json is built by
+  // build_home_shows() (scripts/sitegen/feeds.py), which only includes shows
+  // with a truthy `tracks` field ("one row per track-listed show," per its
+  // own docstring) -- a subset of PUBLIC_SHOWS, which is what
+  // CONTROLLER_ENGINE_SLUGS is actually computed from. Today every public
+  // show is track-listed so the two sets coincide, but nothing enforces
+  // that, and a future trackless-but-public show would silently narrow what
+  // this harness checks without any error. Fully closing that gap means
+  // changing home-shows.json's row-inclusion criteria, which the live
+  // homepage also depends on -- out of scope here. Instead, catch the most
+  // consequential version of "the fetched catalog silently narrowed": losing
+  // stress-test coverage on HEAVY_CHECK_SLUGS.
+  const fetchedSlugs = new Set(shows.map((s) => s.slug));
+  const missingHeavy = HEAVY_CHECK_SLUGS.filter((slug) => !fetchedSlugs.has(slug));
+  if (missingHeavy.length > 0) {
+    throw new Error(
+      `home-shows.json is missing HEAVY_CHECK_SLUGS entr${missingHeavy.length === 1 ? 'y' : 'ies'}: ` +
+      `${missingHeavy.join(', ')} -- the fetched catalog silently narrowed, refusing to run a ` +
+      `smaller heavy-check set than intended.`);
+  }
+
   return shows;
 }
 
@@ -166,7 +202,14 @@ async function runParityPass(browser, allShows, heavyCheckSlugs) {
   const ctx = await browser.newContext();
   const heavySlugSet = new Set(heavyCheckSlugs);
 
-  for (const show of allShows) {
+  // A deliberately-excluded show (CONTROLLER_ENGINE_EXCLUDED_SLUGS) is never
+  // allowlisted on purpose -- asserting "controller mounted" on it would be a
+  // false failure, and checkNonAllowlistedPagesUnaffected() already covers
+  // exactly this page via pickNonAllowlistedShowPage() below.
+  const excludedSlugSet = new Set(EXCLUDED_SLUGS);
+  const showsToCheck = allShows.filter((s) => !excludedSlugSet.has(s.slug));
+
+  for (const show of showsToCheck) {
     const path = show.url;
     const isHeavy = heavySlugSet.has(show.slug);
     // Error isolation: a single page throwing (locator timeout, navigation
@@ -242,6 +285,33 @@ async function runParityPass(browser, allShows, heavyCheckSlugs) {
 
       // ── heavy checks: real playback, only on HEAVY_CHECK_SLUGS pages ────
       if (isHeavy) {
+        // jerry-19-broadway-1999-03-29 (34 tracks) is by far the largest
+        // page in the catalog, so it's the meaningful stress case for the
+        // eighth review's inactive-row DOM-churn fix -- the other 3 heavy-
+        // check pages don't have enough rows to make this worth the extra
+        // observer bookkeeping. Attach a MutationObserver to an INACTIVE
+        // row's play button (index 2, not the row about to be clicked at
+        // index 0) BEFORE playback starts, and let it observe through the
+        // playback/toggle/seek/Space sequence below -- that sequence already
+        // drives several seconds of timeupdate-triggered re-renders, so no
+        // new waits are needed, just an observer running during the window
+        // that's already there. A page.evaluate callback can't return a live
+        // observer, so results are stashed on window.__mutationLog and read
+        // back afterward in a follow-up page.evaluate.
+        const isStressTest = show.slug === 'jerry-19-broadway-1999-03-29';
+        if (isStressTest) {
+          await page.evaluate(() => {
+            window.__mutationLog = [];
+            const inactiveRow = document.querySelectorAll('.track-list [data-item]')[2];
+            const target = inactiveRow.querySelector('.play-btn') || inactiveRow;
+            const observer = new MutationObserver((records) => {
+              window.__mutationLog.push(...records.map((r) => ({ type: r.type, attributeName: r.attributeName })));
+            });
+            observer.observe(target, { attributes: true, childList: true, subtree: true });
+            window.__mutationObserver = observer;
+          });
+        }
+
         const firstRow = page.locator('.track-list [data-item]').first();
         await firstRow.locator('.play-btn').click();
         await page.waitForTimeout(3000);
@@ -269,6 +339,15 @@ async function runParityPass(browser, allShows, heavyCheckSlugs) {
         const afterSpace = await page.evaluate(() => window.PLAYER_BOOT.controller.audioElement.paused);
         record(`${path} Space bar toggles playback`, afterSpace !== beforeSpace, `before=${beforeSpace} after=${afterSpace}`);
         await page.evaluate(() => window.PLAYER_BOOT.controller.stop());
+
+        if (isStressTest) {
+          const mutationCount = await page.evaluate(() => {
+            window.__mutationObserver.disconnect();
+            return window.__mutationLog.length;
+          });
+          record(`${path} inactive row not rewritten during playback/toggle/seek/Space (DOM-churn stress test)`,
+            mutationCount === 0, `mutations=${mutationCount}`);
+        }
 
         if (await page.locator('.ws-track').count() > 0) {
           await firstRow.locator('.play-btn').click();
@@ -550,15 +629,19 @@ const NON_ALLOWLISTED_PAGES = [
 // asserting the opposite of reality, with no self-detection) the moment a
 // future step widens CONTROLLER_ENGINE_SLUGS to include it. Reuses ALL_SHOWS
 // (the full catalog fetched once from home-shows.json in the run section --
-// see fetchAllShowUrls()) as both the candidate pool AND the allowlisted-slug
-// set, since CONTROLLER_ENGINE_SLUGS is now every public show minus
-// CONTROLLER_ENGINE_EXCLUDED_SLUGS (currently empty). As of Step 5b that
-// makes the two sets identical by construction, so this always returns null
-// -- callers must handle that by skipping the show-page sub-check, not by
-// asserting on a made-up path.
+// see fetchAllShowUrls()) as the candidate pool, and EXCLUDED_SLUGS (fetched
+// from assets/controller-excluded-slugs.json in the same place) as the
+// actual non-allowlisted set -- CONTROLLER_ENGINE_SLUGS is every public show
+// minus CONTROLLER_ENGINE_EXCLUDED_SLUGS, so a show is genuinely
+// non-allowlisted exactly when its slug is in EXCLUDED_SLUGS. Since that set
+// is currently empty this still returns null today -- callers must handle
+// that by skipping the show-page sub-check, not by asserting on a made-up
+// path -- but the moment a show is actually excluded, this correctly finds
+// and verifies it instead of only ever hitting the "everyone's allowlisted"
+// skip path.
 function pickNonAllowlistedShowPage() {
-  const allowlistedSlugs = new Set(ALL_SHOWS.map((s) => s.slug));
-  const candidate = ALL_SHOWS.find((s) => !allowlistedSlugs.has(s.slug));
+  const excludedSlugSet = new Set(EXCLUDED_SLUGS);
+  const candidate = ALL_SHOWS.find((s) => excludedSlugSet.has(s.slug));
   return candidate ? candidate.url : null;
 }
 

@@ -23,6 +23,7 @@ import verify_markup  # noqa: E402  (needs the path insert above)
 from sitegen.core import *       # noqa: F401,F403
 from sitegen.fragments import *  # noqa: F401,F403
 from sitegen.pages import *      # noqa: F401,F403
+from sitegen.pages import CONTROLLER_ENGINE_EXCLUDED_SLUGS  # not in __all__ (internal to the escape hatch)
 from sitegen.feeds import *      # noqa: F401,F403
 
 def main():
@@ -64,6 +65,7 @@ def main():
     write("assets/track-spec.json", json.dumps(build_track_spec_catalog(), ensure_ascii=False))
     write("assets/song-occurrences.json", json.dumps(build_song_occurrences(), ensure_ascii=False))
     write("assets/home-shows.json", json.dumps(build_home_shows(), ensure_ascii=False))
+    write("assets/controller-excluded-slugs.json", json.dumps(sorted(CONTROLLER_ENGINE_EXCLUDED_SLUGS)))
     write("lab/wavesurfer/index.html", build_wavesurfer_lab())
     write("index.html", build_home())
     write("songs/index.html", build_songs_index())
