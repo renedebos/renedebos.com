@@ -149,6 +149,7 @@ def check():
 
     sys.path.insert(0, os.path.join(ROOT, "scripts"))
     from sitegen.pages import CONTROLLER_ENGINE_SLUGS
+    from sitegen.core import PUBLIC_SHOWS
 
     show_pages = sorted(glob.glob(os.path.join(ROOT, "shows", "*", "index.html")))
     if not show_pages:
@@ -159,6 +160,16 @@ def check():
     built = {os.path.basename(os.path.dirname(p)) for p in show_pages}
     for slug in sorted(CONTROLLER_ENGINE_SLUGS - built):
         errors.append(f"CONTROLLER_ENGINE_SLUGS lists {slug!r}, which generates no show page")
+
+    # As of Step 5b (2026-08-14) the allowlist is meant to cover every public
+    # show, computed from PUBLIC_SHOWS rather than hand-maintained -- this is
+    # now a real regression to catch (a future edit that shrinks coverage
+    # without updating CONTROLLER_ENGINE_EXCLUDED_SLUGS deliberately), not
+    # the "intentionally partial, still-incremental" state check_
+    # allowlist_covers_every_public_show()'s own docstring describes for
+    # Phase 1's earlier steps.
+    errors += check_allowlist_covers_every_public_show(
+        CONTROLLER_ENGINE_SLUGS, [s["slug"] for s in PUBLIC_SHOWS])
 
     for path in show_pages:
         rel = os.path.relpath(path, ROOT)
@@ -224,16 +235,18 @@ def check():
 
 
 def check_allowlist_covers_every_public_show(controller_engine_slugs, public_show_slugs):
-    """Not part of the default build gate -- today's allowlist is an intentional,
-    incremental subset (Phase 1). Step 5b's own work should call this once it
-    widens CONTROLLER_ENGINE_SLUGS, to confirm no public show was missed.
+    """As of Step 5b (2026-08-14) this IS part of the default build gate
+    (called from check()) -- CONTROLLER_ENGINE_SLUGS is meant to cover every
+    public show now, so a regression here is a real bug, not an expected
+    incremental-rollout state. Built during Step 4/5a while the allowlist was
+    still an intentional 3-page subset (see player-consolidation-codex.md's
+    ninth review) -- kept as a standalone function, and also reachable via
+    --check-allowlist-coverage below, since isolating this one invariant is
+    still occasionally useful on its own.
 
     This is the reverse of check()'s existing CONTROLLER_ENGINE_SLUGS - built
     invariant (an allowlisted slug that generates no page): here we check
-    whether every generated public show is actually IN the allowlist. Wiring
-    that in unconditionally today would fail every build until 5b/5c lands,
-    since the 3-page allowlist is deliberately a strict subset right now --
-    see --check-allowlist-coverage below for how a future caller invokes this.
+    whether every generated public show is actually IN the allowlist.
     """
     missing = set(public_show_slugs) - set(controller_engine_slugs)
     if missing:
@@ -278,10 +291,9 @@ def _selftest():
         assert got == [expected], f"IMPORT_RE on {src!r}: expected [{expected!r}], got {got}"
 
     # check_allowlist_covers_every_public_show() -- the reverse invariant from
-    # check()'s existing "allowlisted slug generates no page" check. Not part
-    # of check()/main()'s default path; a future Step 5b calls it explicitly
-    # (--check-allowlist-coverage below) once it's widened the allowlist and
-    # wants to assert no public show was missed.
+    # check()'s existing "allowlisted slug generates no page" check. As of
+    # Step 5b this runs inside check() itself (see there); tested here in
+    # isolation with fake data, same as every other check in this file.
     complete = check_allowlist_covers_every_public_show(
         {"show-a", "show-b"}, ["show-a", "show-b"])
     assert complete == [], f"expected no errors for a complete allowlist, got {complete}"
@@ -295,11 +307,10 @@ def _selftest():
 def main():
     _selftest()
 
-    # --check-allowlist-coverage: NOT part of the default build gate (today's
-    # CONTROLLER_ENGINE_SLUGS is an intentional, incremental Phase 1 subset --
-    # asserting full coverage unconditionally would fail every build until
-    # Step 5b/5c actually widens it). Step 5b's own implementation invokes
-    # this explicitly once it's ready to confirm no public show was missed.
+    # --check-allowlist-coverage: as of Step 5b this same invariant also runs
+    # inside check() below (the default path) -- this standalone flag is now
+    # just a convenience for checking coverage in isolation, without running
+    # the rest of check()'s markup validation.
     if "--check-allowlist-coverage" in sys.argv[1:]:
         sys.path.insert(0, os.path.join(ROOT, "scripts"))
         from sitegen.pages import CONTROLLER_ENGINE_SLUGS

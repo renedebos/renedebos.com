@@ -87,15 +87,44 @@ if (!skipWebkit) {
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const PORT = 8123;
 const BASE = baseArg ?? (isProd ? 'https://renedebos.com' : `http://127.0.0.1:${PORT}`);
-const ALLOWLIST = [
-  // Keep in sync with pages.CONTROLLER_ENGINE_SLUGS (scripts/sitegen/pages.py)
-  // -- a plain JS file can't import that Python set directly, so this is a
-  // deliberate, small, manually-synced duplication rather than machinery to
-  // avoid it.
-  '/shows/jerry-cafe-java-1999-05-27/',
-  '/shows/jerry-cafe-java-1999-03-25/',
-  '/shows/mad-sweetwater-2000-10-17/',
+
+// pages.CONTROLLER_ENGINE_SLUGS (scripts/sitegen/pages.py) now allowlists
+// every one of the 30 public shows (Step 5b) -- a plain JS file can't import
+// that Python set directly, and hardcoding 30 slugs here would just be
+// duplication with no coverage benefit, so instead the full show list is
+// fetched at runtime from assets/home-shows.json (see fetchAllShowUrls()
+// below), the same real deployed asset the homepage itself uses. That list
+// drives the LIGHT check tier (mount/view-count/dormancy/console-errors) on
+// all 30 pages.
+//
+// Running the full real-audio-playback sequence (click play, wait ~3s,
+// toggle, seek, Space, wait for canvas) on all 30 pages would be slow and,
+// for --prod runs, would mean streaming real production audio 30 times
+// instead of 3 for what's fundamentally the same engine code on every page.
+// So the HEAVY tier (everything the light tier does, plus real playback)
+// only runs on these 4 pages, chosen for genuinely different markup shapes
+// (confirmed via a prior Codex review's catalog audit -- no other show
+// introduces a different playable-row selector or controller branch, so this
+// set is exhaustive for shape coverage, not arbitrary):
+const HEAVY_CHECK_SLUGS = [
+  'jerry-cafe-java-1999-05-27', // plain: waveform rows, one Full Recording card
+  'jerry-cafe-java-1999-03-25', // two canonical Full Recording parts, two hero cards
+  'mad-sweetwater-2000-10-17',  // alternate transfer sharing a stream proxy
+  'jerry-19-broadway-1999-03-29', // largest page in the catalog: 34 tracks, 5 recording cards
 ];
+
+// Fetched once, early, in the run section below -- populated before
+// runParityPass is called. Module-scoped so pickNonAllowlistedShowPage() (a
+// prod-only check) can reuse the same fetch instead of hitting the network
+// again.
+let ALL_SHOWS = null;
+
+async function fetchAllShowUrls(context) {
+  const res = await context.request.get(BASE + '/assets/home-shows.json');
+  const shows = await res.json();
+  ALL_SHOWS = shows;
+  return shows;
+}
 
 // Cloudflare auto-injects an analytics beacon <script> into every page on
 // this site; the site's CSP (`script-src 'self' 'unsafe-inline'`, no
@@ -103,8 +132,8 @@ const ALLOWLIST = [
 // error on literally every page load, site-wide -- confirmed unrelated to
 // player-consolidation (reproduced via curl/direct testing on pages this
 // initiative never touched, e.g. /contact/). Filtered out of the "no console
-// errors" checks below so it doesn't drown real signal once more pages join
-// ALLOWLIST (5b) -- NOT a general "ignore CSP errors" policy, just this one
+// errors" checks below so it doesn't drown real signal now that all 30 pages
+// are checked (5b) -- NOT a general "ignore CSP errors" policy, just this one
 // specific, pre-existing, already-diagnosed, site-wide message.
 const KNOWN_UNRELATED_CSP_WARNING = /static\.cloudflareinsights\.com\/beacon\.min\.js/;
 
@@ -133,10 +162,13 @@ function startServer(dir, port) {
   return new Promise((resolve) => setTimeout(() => resolve(proc), 800));
 }
 
-async function runParityPass(browser) {
+async function runParityPass(browser, allShows, heavyCheckSlugs) {
   const ctx = await browser.newContext();
+  const heavySlugSet = new Set(heavyCheckSlugs);
 
-  for (const path of ALLOWLIST) {
+  for (const show of allShows) {
+    const path = show.url;
+    const isHeavy = heavySlugSet.has(show.slug);
     // Error isolation: a single page throwing (locator timeout, navigation
     // failure, anything) must not abort every remaining page's evaluation --
     // this is exactly what happened during this project's first real
@@ -154,6 +186,7 @@ async function runParityPass(browser) {
       await page.goto(BASE + path, { waitUntil: 'load' });
       await page.waitForTimeout(500);
 
+      // ── light checks: run on every one of the 30 pages ──────────────────
       const mounted = await page.evaluate(() => ({
         flag: window.PLAYER_ENGINE_MOUNTED, hasBoot: !!window.PLAYER_BOOT,
         viewCount: window.PLAYER_BOOT ? window.PLAYER_BOOT.views.length : 0,
@@ -207,40 +240,43 @@ async function runParityPass(browser) {
       const realErrors = consoleErrors.filter((e) => !KNOWN_UNRELATED_CSP_WARNING.test(e));
       record(`${path} no console errors on load`, realErrors.length === 0, realErrors.slice(0, 3).join(' | '));
 
-      const firstRow = page.locator('.track-list [data-item]').first();
-      await firstRow.locator('.play-btn').click();
-      await page.waitForTimeout(3000);
-      const playback = await page.evaluate(() => {
-        const c = window.PLAYER_BOOT.controller;
-        return { state: c.state, currentTime: c.audioElement.currentTime, paused: c.audioElement.paused };
-      });
-      record(`${path} real playback actually advances`, playback.currentTime > 0.3 && !playback.paused,
-        `state=${playback.state} t=${playback.currentTime.toFixed(2)} paused=${playback.paused}`);
-
-      await page.evaluate(() => window.PLAYER_BOOT.controller.toggle());
-      await page.waitForTimeout(300);
-      record(`${path} toggle() pauses`, await page.evaluate(() => window.PLAYER_BOOT.controller.audioElement.paused));
-
-      await page.evaluate(() => window.PLAYER_BOOT.controller.toggle());
-      await page.waitForTimeout(500);
-      await page.evaluate(() => window.PLAYER_BOOT.controller.seek(30));
-      await page.waitForTimeout(300);
-      const seekedTime = await page.evaluate(() => window.PLAYER_BOOT.controller.audioElement.currentTime);
-      record(`${path} seek() actually moves playback position`, seekedTime > 25, `t=${seekedTime.toFixed(2)}`);
-
-      const beforeSpace = await page.evaluate(() => window.PLAYER_BOOT.controller.audioElement.paused);
-      await page.keyboard.press('Space');
-      await page.waitForTimeout(300);
-      const afterSpace = await page.evaluate(() => window.PLAYER_BOOT.controller.audioElement.paused);
-      record(`${path} Space bar toggles playback`, afterSpace !== beforeSpace, `before=${beforeSpace} after=${afterSpace}`);
-      await page.evaluate(() => window.PLAYER_BOOT.controller.stop());
-
-      if (await page.locator('.ws-track').count() > 0) {
+      // ── heavy checks: real playback, only on HEAVY_CHECK_SLUGS pages ────
+      if (isHeavy) {
+        const firstRow = page.locator('.track-list [data-item]').first();
         await firstRow.locator('.play-btn').click();
-        await page.waitForTimeout(1000);
-        const canvasCount = await firstRow.locator('.ws-wave canvas').count();
-        record(`${path} real WaveSurfer canvas renders for the active row`, canvasCount > 0, `canvases=${canvasCount}`);
+        await page.waitForTimeout(3000);
+        const playback = await page.evaluate(() => {
+          const c = window.PLAYER_BOOT.controller;
+          return { state: c.state, currentTime: c.audioElement.currentTime, paused: c.audioElement.paused };
+        });
+        record(`${path} real playback actually advances`, playback.currentTime > 0.3 && !playback.paused,
+          `state=${playback.state} t=${playback.currentTime.toFixed(2)} paused=${playback.paused}`);
+
+        await page.evaluate(() => window.PLAYER_BOOT.controller.toggle());
+        await page.waitForTimeout(300);
+        record(`${path} toggle() pauses`, await page.evaluate(() => window.PLAYER_BOOT.controller.audioElement.paused));
+
+        await page.evaluate(() => window.PLAYER_BOOT.controller.toggle());
+        await page.waitForTimeout(500);
+        await page.evaluate(() => window.PLAYER_BOOT.controller.seek(30));
+        await page.waitForTimeout(300);
+        const seekedTime = await page.evaluate(() => window.PLAYER_BOOT.controller.audioElement.currentTime);
+        record(`${path} seek() actually moves playback position`, seekedTime > 25, `t=${seekedTime.toFixed(2)}`);
+
+        const beforeSpace = await page.evaluate(() => window.PLAYER_BOOT.controller.audioElement.paused);
+        await page.keyboard.press('Space');
+        await page.waitForTimeout(300);
+        const afterSpace = await page.evaluate(() => window.PLAYER_BOOT.controller.audioElement.paused);
+        record(`${path} Space bar toggles playback`, afterSpace !== beforeSpace, `before=${beforeSpace} after=${afterSpace}`);
         await page.evaluate(() => window.PLAYER_BOOT.controller.stop());
+
+        if (await page.locator('.ws-track').count() > 0) {
+          await firstRow.locator('.play-btn').click();
+          await page.waitForTimeout(1000);
+          const canvasCount = await firstRow.locator('.ws-wave canvas').count();
+          record(`${path} real WaveSurfer canvas renders for the active row`, canvasCount > 0, `canvases=${canvasCount}`);
+          await page.evaluate(() => window.PLAYER_BOOT.controller.stop());
+        }
       }
       await page.close();
     } catch (e) {
@@ -495,13 +531,13 @@ async function checkAssetHeaders(context) {
   }
 }
 
-// The 3-page canary (ALLOWLIST) is deliberately narrow -- this confirms the
-// deploy didn't leak the controller engine onto pages that were never
+// These non-show pages are deliberately narrow and fixed -- this confirms
+// the deploy didn't leak the controller engine onto pages that were never
 // switched over, and that real legacy playback still works on the pages
 // that matter most for that regression (both continuous-playback pages and
 // a song page). These 4 are structurally permanent regardless of how wide
-// CONTROLLER_ENGINE_SLUGS eventually grows (5b/5c) -- the non-allowlisted
-// SHOW page is a separate, dynamically-picked entry, below.
+// CONTROLLER_ENGINE_SLUGS eventually grows -- the non-allowlisted SHOW page
+// is a separate, dynamically-picked entry, below.
 const NON_ALLOWLISTED_PAGES = [
   '/',
   '/playlist/',
@@ -512,22 +548,22 @@ const NON_ALLOWLISTED_PAGES = [
 // Picks a real, currently-non-allowlisted show page to sample, instead of a
 // hardcoded path -- a hardcoded page would silently become WRONG (allowlisted,
 // asserting the opposite of reality, with no self-detection) the moment a
-// future step widens CONTROLLER_ENGINE_SLUGS to include it. Reads the same
-// home-shows.json the homepage itself uses (a real, already-deployed asset).
-// Returns null if every published show is currently allowlisted (e.g. after
-// a future 5b/5c full rollout) -- callers must handle that by skipping the
-// show-page sub-check, not by asserting on a made-up path.
-async function pickNonAllowlistedShowPage(context) {
-  const res = await context.request.get(BASE + '/assets/home-shows.json');
-  const shows = await res.json();
-  const allowlistedSlugs = new Set(
-    ALLOWLIST.map((p) => p.replace(/^\/shows\//, '').replace(/\/$/, '')));
-  const candidate = shows.find((s) => !allowlistedSlugs.has(s.slug));
+// future step widens CONTROLLER_ENGINE_SLUGS to include it. Reuses ALL_SHOWS
+// (the full catalog fetched once from home-shows.json in the run section --
+// see fetchAllShowUrls()) as both the candidate pool AND the allowlisted-slug
+// set, since CONTROLLER_ENGINE_SLUGS is now every public show minus
+// CONTROLLER_ENGINE_EXCLUDED_SLUGS (currently empty). As of Step 5b that
+// makes the two sets identical by construction, so this always returns null
+// -- callers must handle that by skipping the show-page sub-check, not by
+// asserting on a made-up path.
+function pickNonAllowlistedShowPage() {
+  const allowlistedSlugs = new Set(ALL_SHOWS.map((s) => s.slug));
+  const candidate = ALL_SHOWS.find((s) => !allowlistedSlugs.has(s.slug));
   return candidate ? candidate.url : null;
 }
 
 async function checkNonAllowlistedPagesUnaffected(context) {
-  const nonAllowlistedShowUrl = await pickNonAllowlistedShowPage(context);
+  const nonAllowlistedShowUrl = pickNonAllowlistedShowPage();
   if (nonAllowlistedShowUrl) {
     console.log(`    (using ${nonAllowlistedShowUrl} as the non-allowlisted show-page sample)`);
   } else {
@@ -609,12 +645,17 @@ async function checkNonAllowlistedPagesUnaffected(context) {
 
 async function runWebkitSmoke() {
   if (!webkit) return;
+  // First HEAVY_CHECK_SLUGS entry, not whatever happens to sort first in
+  // home-shows.json -- a deliberately-interesting page (waveform rows + a
+  // Full Recording card), same target used for the equivalent Chromium
+  // heavy checks in runParityPass.
+  const targetUrl = ALL_SHOWS.find((s) => s.slug === HEAVY_CHECK_SLUGS[0]).url;
   const browser = await webkit.launch();
   const page = await browser.newPage();
   const consoleErrors = [];
   page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(m.text()); });
   page.on('pageerror', (e) => consoleErrors.push('pageerror: ' + e.message));
-  await page.goto(BASE + ALLOWLIST[0], { waitUntil: 'load' });
+  await page.goto(BASE + targetUrl, { waitUntil: 'load' });
   await page.waitForTimeout(800);
   const mounted = await page.evaluate(() => ({ flag: window.PLAYER_ENGINE_MOUNTED, hasBoot: !!window.PLAYER_BOOT }));
   record('WebKit: controller mounts', mounted.flag === true && mounted.hasBoot, JSON.stringify(mounted));
@@ -656,7 +697,17 @@ if (isRemote) {
 const mainServer = isRemote ? null : await startServer(ROOT, PORT);
 const browser = await chromium.launch();
 try {
-  await runParityPass(browser);
+  // Fetch the full show catalog once, early -- works identically whether
+  // BASE is the local server or production, no special-casing needed. Uses
+  // a throwaway context.request (not a page navigation) purely to issue the
+  // HTTP GET; runParityPass opens its own context for the actual pages.
+  {
+    const preflightCtx = await browser.newContext();
+    await fetchAllShowUrls(preflightCtx);
+    await preflightCtx.close();
+  }
+
+  await runParityPass(browser, ALL_SHOWS, HEAVY_CHECK_SLUGS);
 
   if (isRemote) {
     const ctx = await browser.newContext();

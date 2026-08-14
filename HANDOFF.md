@@ -2,14 +2,15 @@
 **Date:** 2026-08-14 · **Branch:** `player-consolidation`
 (worktree `/home/renedebos/renedebos.com-player-consolidation`)
 
-**Phase 1 Step 4 is done. Step 5, sub-step 5a is done.** PR #3 merged into
-`main` (`7872882`), the deploy Action ran clean including the cache purge,
-and production verification against the real `https://renedebos.com` origin
-ran 55/58 (every player-consolidation-specific check passed; the 3
-non-passes are one known, pre-existing, unrelated console warning, checked
-on all three pages — see below). **The controller engine is now genuinely
-live** on the 3 allowlisted show pages — this is the first time any of this
-initiative's code has ever run outside a local build.
+**Phase 1 Steps 4 and 5a are done and live in production. Step 5b is
+implemented, locally verified, and PR'd — not yet merged/deployed.** PR #3
+(Step 4 + 5a) merged into `main` (`7872882`); production verification ran
+55/58 (every player-consolidation-specific check passed; the 3 non-passes
+are one known, pre-existing, unrelated console warning — see below). Step
+5b (widen the allowlist to every show) is implemented, passing locally
+(184/184), and has its own PR open — merging it and running
+`browser_check.mjs --prod` against it is the very next thing to do; see
+below.
 
 ## ✅ Done this session — Step 4 through Step 5a
 
@@ -178,16 +179,53 @@ non-passes being expected artifacts of a bare `python3 -m http.server` not
 setting Cloudflare's real cache headers, not a regression. Full disposition:
 `player-consolidation-codex.md`'s ninth review.
 
+## Step 5b — every show page, implemented and locally verified
+
+`CONTROLLER_ENGINE_SLUGS` (`pages.py`) is now
+`{s["slug"] for s in PUBLIC_SHOWS} - CONTROLLER_ENGINE_EXCLUDED_SLUGS` —
+computed from the real show catalog, not hand-listed, so a future new show
+is covered automatically. `CONTROLLER_ENGINE_EXCLUDED_SLUGS` (empty today)
+is a per-show rollback escape hatch if one specific page turns out to have
+a problem, without reverting the whole rollout.
+`verify_markup.py`'s default build gate now asserts full coverage (this
+was previously opt-in-only, back when the 3-page rollout was intentionally
+partial).
+
+**`browser_check.mjs` restructured, not just widened**, since running the
+full real-audio-playback sequence on all 30 pages would be slow and (for
+`--prod`) would stream real production audio 30 times for the same engine
+code every time. Two tiers: a light structural check (mount, real view
+count, both legacy engines' dormancy, console errors) on all 30 pages, and
+the full interactive check (real playback/toggle/seek/Space/canvas) on 4
+pages chosen for genuinely different markup shapes — the original 3 from
+5a, plus `jerry-19-broadway-1999-03-29` (the catalog's largest page: 34
+tracks, 5 recording cards — a real stress test for the eighth review's
+inactive-row DOM-churn fix). The show list itself is fetched once at
+runtime from `assets/home-shows.json`, not hardcoded — this file should
+never need manual updating again regardless of catalog size.
+
+**Local pass: 184/184.** The `isRemote` code path verified against a local
+server standing in for production (never touched real production for
+this): 192/196, the same 4 known `Cache-Control` non-passes every prior
+local-server-as-remote run has shown (a bare `http.server` doesn't set
+Cloudflare's real headers — not a regression). Confirmed the
+non-allowlisted-show-page check now correctly self-skips with a log
+message, since every show is allowlisted post-5b — the defensive design
+built for exactly this in the ninth review's fixes, exercised for real for
+the first time.
+
 ## 🔧 Next up
 
-**Step 5, sub-step 5b**: expand the allowlist to all show pages, keeping
-`wavesurfer.js` as the dormant fallback, then verify the wider rollout the
-same way as 5a (`browser_check.mjs --prod`, now hardened against the ninth
-review's findings above). Remember to run
-`verify_markup.py --check-allowlist-coverage` as part of that work. Separately,
-worth surfacing to Rene before or alongside 5b: whether to fix the
-Cloudflare-beacon CSP issue found during 5a (a `deploy-infra` task, not part
-of this initiative).
+**Merge Step 5b's PR, then run production verification** — identical
+process to 5a: watch the deploy Action (especially the cache-purge step),
+then `NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs --prod`.
+Update this file and the plan's Step 5b entry with the result once it runs.
+
+After that: **Step 5c** (delete `wavesurfer.js` as legacy fallback — its
+own, later, separate decision per the plan, only once confidence from 5b is
+established) is the last piece of Phase 1. Separately, still worth
+surfacing to Rene: whether to fix the Cloudflare-beacon CSP issue found
+during 5a (a `deploy-infra` task, not part of this initiative).
 
 ## Gotchas learned this session
 

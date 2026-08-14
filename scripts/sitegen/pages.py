@@ -679,16 +679,25 @@ def build_contact():
     )
 
 # ── shared-player rollout allowlist (plans/player-consolidation/, Phase 1
-# Step 4) ────────────────────────────────────────────────────────────────────
+# Steps 4-5b) ────────────────────────────────────────────────────────────────
 # Show pages listed here run the shared PlaybackController (player-boot.js)
-# instead of the legacy player.js/wavesurfer.js pair. Every other show page is
-# untouched. The gate (below, `if show["slug"] in CONTROLLER_ENGINE_SLUGS:`)
-# is a plain membership check, so Step 5b needs to WIDEN this set to cover
-# every public show slug (or invert the gate to an exclude-list design --
-# whoever implements 5b decides) -- emptying it would disable the controller
-# EVERYWHERE, the opposite of turning it on for everyone.
+# instead of the legacy player.js/wavesurfer.js pair; wavesurfer.js/player.js
+# stay on every page as the runtime fallback either way (5c, not this, is
+# what removes them).
 #
-# The three chosen cover the shapes that differ:
+# Step 5b (2026-08-14) widened this from an explicit 3-page allowlist to
+# every public show, computed from PUBLIC_SHOWS -- a newly added show is
+# automatically covered from here on, with no manual sync step. The
+# membership gate below (`if show["slug"] in CONTROLLER_ENGINE_SLUGS:`) is
+# unchanged; only what populates the set changed.
+# CONTROLLER_ENGINE_EXCLUDED_SLUGS is the escape hatch for a targeted
+# rollback of one specific page (a page-specific bug, not an architectural
+# one) without reverting the whole rollout -- see plan.md's Step 5a rollback
+# design for why this shape (edit the set + rebuild + PR), not a runtime flag.
+#
+# The three pages Step 4/5a's browser-pass verification specifically covered
+# for their differing shapes -- still worth knowing if a markup-shape bug
+# ever surfaces:
 #   jerry-cafe-java-1999-05-27   plain: waveform rows, one Full Recording card
 #   jerry-cafe-java-1999-03-25   two canonical Full Recording parts, so two hero
 #                                cards live on one page at once
@@ -700,11 +709,8 @@ def build_contact():
 # Not covered, because no *published* show has the shape: a page with no track
 # list at all. jerry-western-saloon-2025-07-03 is the only track-less show and
 # it's currently hidden, so it generates no page.
-CONTROLLER_ENGINE_SLUGS = {
-    "jerry-cafe-java-1999-05-27",
-    "jerry-cafe-java-1999-03-25",
-    "mad-sweetwater-2000-10-17",
-}
+CONTROLLER_ENGINE_EXCLUDED_SLUGS = set()
+CONTROLLER_ENGINE_SLUGS = {s["slug"] for s in PUBLIC_SHOWS} - CONTROLLER_ENGINE_EXCLUDED_SLUGS
 
 def build_show(show):
     artist = next(a for a in M["artists"] if a["id"] == show["artist"])

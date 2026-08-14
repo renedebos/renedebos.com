@@ -1243,7 +1243,7 @@ during migration, not removed speculatively.
        proxied origin). Reported, not fixed here — `_headers`/CSP is
        `deploy-infra` territory, per this step's own scope discipline.
 
-       5b. [ ] **Expand the allowlist to all show pages, keeping
+       5b. [x] **Expand the allowlist to all show pages, keeping
        `wavesurfer.js` as the dormant fallback.** Every show page emits the
        engine flag and `player-boot.js`; `wavesurfer.js`'s module tag keeps
        being emitted too, so a page whose controller mount fails still has
@@ -1251,6 +1251,52 @@ during migration, not removed speculatively.
        `player-views.js`/`player-controller.js` specifically — see the
        caveat below for what this does and doesn't cover). Verify the wider
        rollout the same way as 5a before treating it as settled.
+
+       **Done (2026-08-14).** `CONTROLLER_ENGINE_SLUGS` (`pages.py`) is now
+       `{s["slug"] for s in PUBLIC_SHOWS} - CONTROLLER_ENGINE_EXCLUDED_SLUGS`
+       — computed, not hand-listed, so a future new show is covered
+       automatically with no manual sync step. `CONTROLLER_ENGINE_EXCLUDED_SLUGS`
+       (currently empty) is the escape hatch for a targeted single-page
+       rollback without reverting the whole rollout. A ninth Codex review
+       (before this step started — see below) had already caught and fixed a
+       comment that got this backwards ("empties this out... flips the
+       engine on everywhere" — the gate is a membership check, so emptying
+       it would have disabled the controller everywhere).
+       `verify_markup.py`'s default build gate now also asserts full
+       coverage (previously an opt-in-only flag, since the 3-page rollout
+       was intentionally partial before this step).
+
+       **`browser_check.mjs` restructured for the full catalog, not just
+       widened.** Running the complete real-audio-playback sequence on all
+       30 pages would be slow and, for `--prod`, would mean streaming real
+       production audio 30 times for what's fundamentally the same engine
+       code on every page. Split into two tiers: a **light** check (mount,
+       real view count vs. markup, both legacy engines' dormancy, console
+       errors) on every one of the 30 pages, and the full **heavy** check
+       (real playback/toggle/seek/Space/canvas) on 4 pages chosen for
+       genuinely different markup shapes — the original 3 (plain waveform
+       rows; two hero cards; an alternate-transfer stream-proxy collision)
+       plus `jerry-19-broadway-1999-03-29`, the largest page in the whole
+       catalog (34 tracks, 5 recording cards) — a real stress test for the
+       eighth review's inactive-row-DOM-churn fix at a materially larger
+       row count. The show list itself is fetched once at runtime from
+       `assets/home-shows.json` (the same asset the homepage uses), not
+       hardcoded, so this file never needs manual updating again regardless
+       of catalog size. Local pass: **184/184**. The `isRemote` code path
+       (asset headers, non-allowlisted-page checks) verified against a local
+       server standing in for production, without touching real production:
+       **192/196** — same 4 known, pre-existing `Cache-Control` non-passes
+       as every prior local-server-as-remote run (a bare `python3 -m
+       http.server` doesn't set Cloudflare's real headers). Confirmed the
+       non-allowlisted-show-page check now correctly self-skips, logging why,
+       since every show is allowlisted post-5b — exactly the defensive
+       design built for this in the ninth review's fixes, now exercised for
+       real for the first time.
+
+       **Production verification for this step is still pending** — the
+       process is identical to 5a's (merge the PR, watch the deploy Action
+       including cache purge, then `browser_check.mjs --prod`), not a new
+       procedure; this section will be updated with the result once it runs.
 
        5c. [ ] **Delete `wavesurfer.js` as its own, later, separate
        decision** — only once confidence from 5b is established, not as part
