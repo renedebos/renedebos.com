@@ -223,6 +223,24 @@ def check():
     return errors, n_track, n_rec, n_pages
 
 
+def check_allowlist_covers_every_public_show(controller_engine_slugs, public_show_slugs):
+    """Not part of the default build gate -- today's allowlist is an intentional,
+    incremental subset (Phase 1). Step 5b's own work should call this once it
+    widens CONTROLLER_ENGINE_SLUGS, to confirm no public show was missed.
+
+    This is the reverse of check()'s existing CONTROLLER_ENGINE_SLUGS - built
+    invariant (an allowlisted slug that generates no page): here we check
+    whether every generated public show is actually IN the allowlist. Wiring
+    that in unconditionally today would fail every build until 5b/5c lands,
+    since the 3-page allowlist is deliberately a strict subset right now --
+    see --check-allowlist-coverage below for how a future caller invokes this.
+    """
+    missing = set(public_show_slugs) - set(controller_engine_slugs)
+    if missing:
+        return [f"CONTROLLER_ENGINE_SLUGS is missing public show(s): {sorted(missing)}"]
+    return []
+
+
 def _selftest():
     """In-memory checks that check_every_row_has_item() actually distinguishes
     "attribute present" from "attribute missing" — added after the Step 4
@@ -259,9 +277,44 @@ def _selftest():
         got = IMPORT_RE.findall(src)
         assert got == [expected], f"IMPORT_RE on {src!r}: expected [{expected!r}], got {got}"
 
+    # check_allowlist_covers_every_public_show() -- the reverse invariant from
+    # check()'s existing "allowlisted slug generates no page" check. Not part
+    # of check()/main()'s default path; a future Step 5b calls it explicitly
+    # (--check-allowlist-coverage below) once it's widened the allowlist and
+    # wants to assert no public show was missed.
+    complete = check_allowlist_covers_every_public_show(
+        {"show-a", "show-b"}, ["show-a", "show-b"])
+    assert complete == [], f"expected no errors for a complete allowlist, got {complete}"
+
+    incomplete = check_allowlist_covers_every_public_show(
+        {"show-a"}, ["show-a", "show-b"])
+    assert len(incomplete) == 1 and "show-b" in incomplete[0], \
+        f"expected exactly one error naming show-b, got {incomplete}"
+
 
 def main():
     _selftest()
+
+    # --check-allowlist-coverage: NOT part of the default build gate (today's
+    # CONTROLLER_ENGINE_SLUGS is an intentional, incremental Phase 1 subset --
+    # asserting full coverage unconditionally would fail every build until
+    # Step 5b/5c actually widens it). Step 5b's own implementation invokes
+    # this explicitly once it's ready to confirm no public show was missed.
+    if "--check-allowlist-coverage" in sys.argv[1:]:
+        sys.path.insert(0, os.path.join(ROOT, "scripts"))
+        from sitegen.pages import CONTROLLER_ENGINE_SLUGS
+        from sitegen.core import PUBLIC_SHOWS
+        public_show_slugs = [s["slug"] for s in PUBLIC_SHOWS]
+        errors = check_allowlist_covers_every_public_show(CONTROLLER_ENGINE_SLUGS, public_show_slugs)
+        if errors:
+            print("allowlist coverage FAILED:")
+            for e in errors:
+                print(f"  - {e}")
+            sys.exit(1)
+        print(f"allowlist coverage OK — CONTROLLER_ENGINE_SLUGS covers all "
+              f"{len(public_show_slugs)} public shows")
+        return
+
     errors, n_track, n_rec, n_pages = check()
     if errors:
         print(f"markup integrity FAILED — {len(errors)} problem(s):")

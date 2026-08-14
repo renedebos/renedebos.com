@@ -5,9 +5,11 @@
 **Phase 1 Step 4 is done. Step 5, sub-step 5a is done.** PR #3 merged into
 `main` (`7872882`), the deploy Action ran clean including the cache purge,
 and production verification against the real `https://renedebos.com` origin
-passed. **The controller engine is now genuinely live** on the 3 allowlisted
-show pages — this is the first time any of this initiative's code has ever
-run outside a local build.
+ran 55/58 (every player-consolidation-specific check passed; the 3
+non-passes are one known, pre-existing, unrelated console warning, checked
+on all three pages — see below). **The controller engine is now genuinely
+live** on the 3 allowlisted show pages — this is the first time any of this
+initiative's code has ever run outside a local build.
 
 ## ✅ Done this session — Step 4 through Step 5a
 
@@ -115,10 +117,12 @@ unaffected.
   appeared active, an unguarded locator timeout crashed the script). A
   direct `curl` of the identical URL at that same moment showed the
   correct deployed HTML (`cf-cache-status: MISS`, the real markup, the real
-  flag) — so the page itself was never wrong. A standalone diagnostic
-  script and a full second `--prod` run, both a few minutes later, came
-  back clean. Read as a cold-start/edge-propagation timing artifact
-  specific to the first request right after a fresh deploy+purge, not a
+  flag) — so *a* request at that moment got the right page (this doesn't
+  prove Playwright's specific request hit the same edge response, just that
+  the deploy itself wasn't broken). A standalone diagnostic script and a
+  full second `--prod` run, both a few minutes later, came back clean. Read
+  as a cold-start/edge-propagation timing artifact specific to the first
+  request right after a fresh deploy+purge, not a
   code defect — logged rather than discarded, since not reproducing twice
   is evidence, not proof. If this shows up again, the fix is a longer
   post-green buffer before the first production check.
@@ -135,14 +139,55 @@ unaffected.
   proxied origin). Reported to Rene, not fixed here — `_headers`/CSP is
   `deploy-infra` territory, out of this step's scope by design.
 
+## A ninth review, and prep fixes for 5b
+
+Before starting 5b, ran a Codex review (via the MCP `codex` server directly
+this time, at Rene's request, rather than `scripts/codex_review.sh` — same
+verify-then-disposition discipline either way) asking specifically whether
+the project is ready for it. Conclusion: the shared runtime is ready, but
+`browser_check.mjs` and one `pages.py` comment were not — all fixed:
+
+- **`browser_check.mjs`'s per-page loop had no error isolation** — a single
+  page crashing (exactly what happened on 5a's first production hit) used
+  to abort evaluation of every remaining page. Now catches, records a
+  synthetic failure, and moves on.
+- **The known Cloudflare-beacon CSP warning would have multiplied ~10x**
+  once every show page joins the allowlist. Now filtered out of the
+  "no console errors" checks specifically (not a general CSP-ignoring
+  policy — just this one confirmed, pre-existing, unrelated message).
+- **The wavesurfer.js dormancy check raced an async fetch** — hardened with
+  an explicit `networkidle` wait before it runs.
+- **The non-allowlisted show-page sample was hardcoded** to a page that
+  would silently become wrong (and wrongly-passing) the moment 5b allowlists
+  it. Now picked dynamically from `assets/home-shows.json` at runtime,
+  gracefully skipped if none remain non-allowlisted.
+- **A genuinely dangerous stale comment in `pages.py`** said "Step 5 empties
+  this out and flips the engine on everywhere" — backwards: the gate is a
+  membership check, so emptying the set disables the controller everywhere.
+  Corrected.
+- **Added `verify_markup.py --check-allowlist-coverage`** (not part of the
+  default build gate — today's 3-page allowlist is intentionally partial) —
+  5b's own implementation should run this once it widens
+  `CONTROLLER_ENGINE_SLUGS`, to confirm no public show was missed. Confirmed
+  today it correctly fails, listing all 27 not-yet-allowlisted shows.
+
+All verified: local `browser_check.mjs` pass still 44/44; the `isRemote`
+code path verified by pointing `--base=` at a local server standing in for
+production (never touched real production for this) — 54/58, the 4
+non-passes being expected artifacts of a bare `python3 -m http.server` not
+setting Cloudflare's real cache headers, not a regression. Full disposition:
+`player-consolidation-codex.md`'s ninth review.
+
 ## 🔧 Next up
 
 **Step 5, sub-step 5b**: expand the allowlist to all show pages, keeping
 `wavesurfer.js` as the dormant fallback, then verify the wider rollout the
-same way as 5a (`browser_check.mjs --prod` reused as-is — see plan §6 for
-why it's built to be reused, not rebuilt). Separately, worth surfacing to
-Rene before or alongside 5b: whether to fix the Cloudflare-beacon CSP issue
-found above (a `deploy-infra` task, not part of this initiative).
+same way as 5a (`browser_check.mjs --prod`, now hardened against the ninth
+review's findings above). Remember to run
+`verify_markup.py --check-allowlist-coverage` as part of that work. Separately,
+worth surfacing to Rene before or alongside 5b: whether to fix the
+Cloudflare-beacon CSP issue found during 5a (a `deploy-infra` task, not part
+of this initiative).
 
 ## Gotchas learned this session
 

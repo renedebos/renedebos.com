@@ -10,10 +10,11 @@ view layer, the `data-item` markup every show page carries, and
 song page are byte-identical to before. **Step 4 is done, including its
 browser pass** (2026-08-14, `scripts/browser_check.mjs`, 44/44 against real
 Chromium — see §6 Step 4's entry for the full record, including the
-corrected, policy-dependent framing of deep-link autoplay). That pass was
-against the **local** build only; production-origin verification is a
-separate, still-outstanding step — see Step 5's 5a. Nothing is pushed or
-deployed.
+corrected, policy-dependent framing of deep-link autoplay). **Step 5a is
+also done**: PR #3 merged (`7872882`), deployed, and verified against real
+production — see §6 Step 5's entry for the full record, including a ninth
+review's findings and fixes made after 5a shipped. The controller engine is
+genuinely live on the 3 allowlisted pages today.
 Mockup: https://claude.ai/code/artifact/71ae2166-d3ed-471d-9719-abd73fe353ba
 Reviewed by Codex eight times, all recorded in
 `player-consolidation-codex.md`: the first pass on the original proposal,

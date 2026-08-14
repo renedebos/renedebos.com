@@ -97,6 +97,17 @@ const ALLOWLIST = [
   '/shows/mad-sweetwater-2000-10-17/',
 ];
 
+// Cloudflare auto-injects an analytics beacon <script> into every page on
+// this site; the site's CSP (`script-src 'self' 'unsafe-inline'`, no
+// exception for Cloudflare's own domain) blocks it, producing one console
+// error on literally every page load, site-wide -- confirmed unrelated to
+// player-consolidation (reproduced via curl/direct testing on pages this
+// initiative never touched, e.g. /contact/). Filtered out of the "no console
+// errors" checks below so it doesn't drown real signal once more pages join
+// ALLOWLIST (5b) -- NOT a general "ignore CSP errors" policy, just this one
+// specific, pre-existing, already-diagnosed, site-wide message.
+const KNOWN_UNRELATED_CSP_WARNING = /static\.cloudflareinsights\.com\/beacon\.min\.js/;
+
 const results = [];
 function record(name, pass, detail) {
   results.push({ name, pass, detail });
@@ -126,95 +137,121 @@ async function runParityPass(browser) {
   const ctx = await browser.newContext();
 
   for (const path of ALLOWLIST) {
-    const page = await ctx.newPage();
-    const consoleErrors = [];
-    page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(m.text()); });
-    page.on('pageerror', (e) => consoleErrors.push('pageerror: ' + e.message));
+    // Error isolation: a single page throwing (locator timeout, navigation
+    // failure, anything) must not abort every remaining page's evaluation --
+    // this is exactly what happened during this project's first real
+    // production run (see plans/player-consolidation/player-consolidation-
+    // codex.md's ninth review). Only this per-page loop gets this treatment;
+    // the Hero/deep-link/alt-transfer/cross-tab sections below run once each
+    // and a crash there should still surface as an uncaught failure.
+    let page;
+    try {
+      page = await ctx.newPage();
+      const consoleErrors = [];
+      page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(m.text()); });
+      page.on('pageerror', (e) => consoleErrors.push('pageerror: ' + e.message));
 
-    await page.goto(BASE + path, { waitUntil: 'load' });
-    await page.waitForTimeout(500);
+      await page.goto(BASE + path, { waitUntil: 'load' });
+      await page.waitForTimeout(500);
 
-    const mounted = await page.evaluate(() => ({
-      flag: window.PLAYER_ENGINE_MOUNTED, hasBoot: !!window.PLAYER_BOOT,
-      viewCount: window.PLAYER_BOOT ? window.PLAYER_BOOT.views.length : 0,
-      expectedViewCount: document.querySelectorAll('.track-list [data-item]').length
-        + document.querySelectorAll('.recording-item[data-item]').length,
-    }));
-    record(`${path} controller mounted`, mounted.flag === true && mounted.hasBoot,
-      `flag=${mounted.flag} views=${mounted.viewCount}`);
-    // (a) viewCount was captured and printed but never actually compared
-    // against the real row+card count, so a boot that mounted an incomplete
-    // view set would still PASS (eighth review, finding #3).
-    record(`${path} mounted every row and hero card, not a partial set`,
-      mounted.viewCount === mounted.expectedViewCount,
-      `views=${mounted.viewCount} expected=${mounted.expectedViewCount}`);
+      const mounted = await page.evaluate(() => ({
+        flag: window.PLAYER_ENGINE_MOUNTED, hasBoot: !!window.PLAYER_BOOT,
+        viewCount: window.PLAYER_BOOT ? window.PLAYER_BOOT.views.length : 0,
+        expectedViewCount: document.querySelectorAll('.track-list [data-item]').length
+          + document.querySelectorAll('.recording-item[data-item]').length,
+      }));
+      record(`${path} controller mounted`, mounted.flag === true && mounted.hasBoot,
+        `flag=${mounted.flag} views=${mounted.viewCount}`);
+      // (a) viewCount was captured and printed but never actually compared
+      // against the real row+card count, so a boot that mounted an incomplete
+      // view set would still PASS (eighth review, finding #3).
+      record(`${path} mounted every row and hero card, not a partial set`,
+        mounted.viewCount === mounted.expectedViewCount,
+        `views=${mounted.viewCount} expected=${mounted.expectedViewCount}`);
 
-    const legacyRan = await page.evaluate(() =>
-      Array.from(document.querySelectorAll('.custom-player')).some((el) => !!el._audio));
-    record(`${path} legacy player.js stayed dormant`, legacyRan === false);
+      const legacyRan = await page.evaluate(() =>
+        Array.from(document.querySelectorAll('.custom-player')).some((el) => !!el._audio));
+      record(`${path} legacy player.js stayed dormant`, legacyRan === false);
 
-    // (b) the check above only sees player.js's own `_audio` marker on
-    // `.custom-player` elements -- it has no way to tell whether
-    // wavesurfer.js (gated by the identical PLAYER_ENGINE_MOUNTED check, but
-    // with no marker of its own) also stayed dormant. wavesurfer.js eagerly
-    // creates a real WaveSurfer instance -- with its own real <audio> element
-    // -- for every .ws-track row on page load if it ever runs (plan.md:
-    // "Today every row eagerly gets its own WaveSurfer instance on page
-    // load"). The controller engine's own shared <audio> element is never
-    // appended to the document (grepped: no appendChild/document.body.append
-    // for it anywhere) and player-views.js only builds a WaveSurfer for a row
-    // once it becomes ACTIVE, which can't happen before any interaction. So
-    // on a controller-engine page, immediately after load and BEFORE any
-    // click, findAudioDeep() finding zero real <audio> elements proves
-    // wavesurfer.js never ran -- checked here, before the play-button click
-    // further down, so it observes the true pre-interaction state.
-    if (await page.locator('.ws-track').count() > 0) {
-      const preClickAudioCount = await page.evaluate(`(() => {
-        ${findAudioDeepFn}
-        return findAudioDeep(document.body).length;
-      })()`);
-      record(`${path} legacy wavesurfer.js stayed dormant (no eager WaveSurfer before interaction)`,
-        preClickAudioCount === 0, `audioElements=${preClickAudioCount}`);
-    }
+      // (b) the check above only sees player.js's own `_audio` marker on
+      // `.custom-player` elements -- it has no way to tell whether
+      // wavesurfer.js (gated by the identical PLAYER_ENGINE_MOUNTED check, but
+      // with no marker of its own) also stayed dormant. wavesurfer.js eagerly
+      // creates a real WaveSurfer instance -- with its own real <audio> element
+      // -- for every .ws-track row on page load if it ever runs (plan.md:
+      // "Today every row eagerly gets its own WaveSurfer instance on page
+      // load"). The controller engine's own shared <audio> element is never
+      // appended to the document (grepped: no appendChild/document.body.append
+      // for it anywhere) and player-views.js only builds a WaveSurfer for a row
+      // once it becomes ACTIVE, which can't happen before any interaction. So
+      // on a controller-engine page, immediately after load and BEFORE any
+      // click, findAudioDeep() finding zero real <audio> elements proves
+      // wavesurfer.js never ran -- checked here, before the play-button click
+      // further down, so it observes the true pre-interaction state.
+      // Fix C: wait for network to settle before checking dormancy --
+      // legacy wavesurfer.js's start() fetches peaks asynchronously BEFORE
+      // build() (which actually constructs WaveSurfer/<audio> instances),
+      // so a slow-resolving fetch could otherwise let this check read
+      // "0 audio elements" before a wrongly-running legacy engine has even
+      // reached build() yet.
+      await page.waitForLoadState('networkidle');
+      if (await page.locator('.ws-track').count() > 0) {
+        const preClickAudioCount = await page.evaluate(`(() => {
+          ${findAudioDeepFn}
+          return findAudioDeep(document.body).length;
+        })()`);
+        record(`${path} legacy wavesurfer.js stayed dormant (no eager WaveSurfer before interaction)`,
+          preClickAudioCount === 0, `audioElements=${preClickAudioCount}`);
+      }
 
-    record(`${path} no console errors on load`, consoleErrors.length === 0, consoleErrors.slice(0, 3).join(' | '));
+      const realErrors = consoleErrors.filter((e) => !KNOWN_UNRELATED_CSP_WARNING.test(e));
+      record(`${path} no console errors on load`, realErrors.length === 0, realErrors.slice(0, 3).join(' | '));
 
-    const firstRow = page.locator('.track-list [data-item]').first();
-    await firstRow.locator('.play-btn').click();
-    await page.waitForTimeout(3000);
-    const playback = await page.evaluate(() => {
-      const c = window.PLAYER_BOOT.controller;
-      return { state: c.state, currentTime: c.audioElement.currentTime, paused: c.audioElement.paused };
-    });
-    record(`${path} real playback actually advances`, playback.currentTime > 0.3 && !playback.paused,
-      `state=${playback.state} t=${playback.currentTime.toFixed(2)} paused=${playback.paused}`);
-
-    await page.evaluate(() => window.PLAYER_BOOT.controller.toggle());
-    await page.waitForTimeout(300);
-    record(`${path} toggle() pauses`, await page.evaluate(() => window.PLAYER_BOOT.controller.audioElement.paused));
-
-    await page.evaluate(() => window.PLAYER_BOOT.controller.toggle());
-    await page.waitForTimeout(500);
-    await page.evaluate(() => window.PLAYER_BOOT.controller.seek(30));
-    await page.waitForTimeout(300);
-    const seekedTime = await page.evaluate(() => window.PLAYER_BOOT.controller.audioElement.currentTime);
-    record(`${path} seek() actually moves playback position`, seekedTime > 25, `t=${seekedTime.toFixed(2)}`);
-
-    const beforeSpace = await page.evaluate(() => window.PLAYER_BOOT.controller.audioElement.paused);
-    await page.keyboard.press('Space');
-    await page.waitForTimeout(300);
-    const afterSpace = await page.evaluate(() => window.PLAYER_BOOT.controller.audioElement.paused);
-    record(`${path} Space bar toggles playback`, afterSpace !== beforeSpace, `before=${beforeSpace} after=${afterSpace}`);
-    await page.evaluate(() => window.PLAYER_BOOT.controller.stop());
-
-    if (await page.locator('.ws-track').count() > 0) {
+      const firstRow = page.locator('.track-list [data-item]').first();
       await firstRow.locator('.play-btn').click();
-      await page.waitForTimeout(1000);
-      const canvasCount = await firstRow.locator('.ws-wave canvas').count();
-      record(`${path} real WaveSurfer canvas renders for the active row`, canvasCount > 0, `canvases=${canvasCount}`);
+      await page.waitForTimeout(3000);
+      const playback = await page.evaluate(() => {
+        const c = window.PLAYER_BOOT.controller;
+        return { state: c.state, currentTime: c.audioElement.currentTime, paused: c.audioElement.paused };
+      });
+      record(`${path} real playback actually advances`, playback.currentTime > 0.3 && !playback.paused,
+        `state=${playback.state} t=${playback.currentTime.toFixed(2)} paused=${playback.paused}`);
+
+      await page.evaluate(() => window.PLAYER_BOOT.controller.toggle());
+      await page.waitForTimeout(300);
+      record(`${path} toggle() pauses`, await page.evaluate(() => window.PLAYER_BOOT.controller.audioElement.paused));
+
+      await page.evaluate(() => window.PLAYER_BOOT.controller.toggle());
+      await page.waitForTimeout(500);
+      await page.evaluate(() => window.PLAYER_BOOT.controller.seek(30));
+      await page.waitForTimeout(300);
+      const seekedTime = await page.evaluate(() => window.PLAYER_BOOT.controller.audioElement.currentTime);
+      record(`${path} seek() actually moves playback position`, seekedTime > 25, `t=${seekedTime.toFixed(2)}`);
+
+      const beforeSpace = await page.evaluate(() => window.PLAYER_BOOT.controller.audioElement.paused);
+      await page.keyboard.press('Space');
+      await page.waitForTimeout(300);
+      const afterSpace = await page.evaluate(() => window.PLAYER_BOOT.controller.audioElement.paused);
+      record(`${path} Space bar toggles playback`, afterSpace !== beforeSpace, `before=${beforeSpace} after=${afterSpace}`);
       await page.evaluate(() => window.PLAYER_BOOT.controller.stop());
+
+      if (await page.locator('.ws-track').count() > 0) {
+        await firstRow.locator('.play-btn').click();
+        await page.waitForTimeout(1000);
+        const canvasCount = await firstRow.locator('.ws-wave canvas').count();
+        record(`${path} real WaveSurfer canvas renders for the active row`, canvasCount > 0, `canvases=${canvasCount}`);
+        await page.evaluate(() => window.PLAYER_BOOT.controller.stop());
+      }
+      await page.close();
+    } catch (e) {
+      // Error isolation (Fix A): a page-level crash here must not abort
+      // every remaining page -- record a single synthetic failure and move on.
+      record(`${path} page-level crash`, false, e.message);
+      if (page && !page.isClosed()) {
+        await page.close().catch(() => {});
+      }
+      continue;
     }
-    await page.close();
   }
 
   // Hero -> track -> next round trip (the queue-origin contract).
@@ -461,18 +498,46 @@ async function checkAssetHeaders(context) {
 // The 3-page canary (ALLOWLIST) is deliberately narrow -- this confirms the
 // deploy didn't leak the controller engine onto pages that were never
 // switched over, and that real legacy playback still works on the pages
-// that matter most for that regression (a show page, and both continuous-
-// playback pages).
+// that matter most for that regression (both continuous-playback pages and
+// a song page). These 4 are structurally permanent regardless of how wide
+// CONTROLLER_ENGINE_SLUGS eventually grows (5b/5c) -- the non-allowlisted
+// SHOW page is a separate, dynamically-picked entry, below.
 const NON_ALLOWLISTED_PAGES = [
   '/',
   '/playlist/',
   '/player/',
-  '/shows/jerry-cafe-java-1999-04-08/', // a non-allowlisted show page
-  '/songs/a-bunch-of-thyme/',           // a song page, exercises initCustomPlayers
+  '/songs/a-bunch-of-thyme/', // a song page, exercises initCustomPlayers
 ];
 
+// Picks a real, currently-non-allowlisted show page to sample, instead of a
+// hardcoded path -- a hardcoded page would silently become WRONG (allowlisted,
+// asserting the opposite of reality, with no self-detection) the moment a
+// future step widens CONTROLLER_ENGINE_SLUGS to include it. Reads the same
+// home-shows.json the homepage itself uses (a real, already-deployed asset).
+// Returns null if every published show is currently allowlisted (e.g. after
+// a future 5b/5c full rollout) -- callers must handle that by skipping the
+// show-page sub-check, not by asserting on a made-up path.
+async function pickNonAllowlistedShowPage(context) {
+  const res = await context.request.get(BASE + '/assets/home-shows.json');
+  const shows = await res.json();
+  const allowlistedSlugs = new Set(
+    ALLOWLIST.map((p) => p.replace(/^\/shows\//, '').replace(/\/$/, '')));
+  const candidate = shows.find((s) => !allowlistedSlugs.has(s.slug));
+  return candidate ? candidate.url : null;
+}
+
 async function checkNonAllowlistedPagesUnaffected(context) {
-  for (const path of NON_ALLOWLISTED_PAGES) {
+  const nonAllowlistedShowUrl = await pickNonAllowlistedShowPage(context);
+  if (nonAllowlistedShowUrl) {
+    console.log(`    (using ${nonAllowlistedShowUrl} as the non-allowlisted show-page sample)`);
+  } else {
+    console.log('    (every published show is currently allowlisted -- skipping the non-allowlisted show-page sub-checks)');
+  }
+  const pagesToCheck = nonAllowlistedShowUrl
+    ? [...NON_ALLOWLISTED_PAGES, nonAllowlistedShowUrl]
+    : NON_ALLOWLISTED_PAGES;
+
+  for (const path of pagesToCheck) {
     const page = await context.newPage();
     await page.goto(BASE + path, { waitUntil: 'load' });
     await page.waitForTimeout(500);
@@ -484,9 +549,9 @@ async function checkNonAllowlistedPagesUnaffected(context) {
   // Show page: same assertion runBreakageTests' A2 uses for the Full
   // Recording card -- confirms real legacy player.js playback, not just
   // that the mounted flag is absent.
-  {
+  if (nonAllowlistedShowUrl) {
     const page = await context.newPage();
-    await page.goto(BASE + '/shows/jerry-cafe-java-1999-04-08/', { waitUntil: 'load' });
+    await page.goto(BASE + nonAllowlistedShowUrl, { waitUntil: 'load' });
     await page.waitForTimeout(500);
     await page.locator('.recording-item .play-btn').first().click();
     await page.waitForTimeout(2000);
@@ -494,7 +559,7 @@ async function checkNonAllowlistedPagesUnaffected(context) {
       const el = document.querySelector('.recording-item .custom-player');
       return el && el._audio ? { found: true, t: el._audio.currentTime, paused: el._audio.paused } : { found: false };
     });
-    record('/shows/jerry-cafe-java-1999-04-08/ real legacy playback works (Full Recording card)',
+    record(`${nonAllowlistedShowUrl} real legacy playback works (Full Recording card)`,
       heroPlaying.found && heroPlaying.t > 0.3 && !heroPlaying.paused, JSON.stringify(heroPlaying));
     await page.close();
   }
@@ -553,7 +618,8 @@ async function runWebkitSmoke() {
   await page.waitForTimeout(800);
   const mounted = await page.evaluate(() => ({ flag: window.PLAYER_ENGINE_MOUNTED, hasBoot: !!window.PLAYER_BOOT }));
   record('WebKit: controller mounts', mounted.flag === true && mounted.hasBoot, JSON.stringify(mounted));
-  record('WebKit: no console errors on load', consoleErrors.length === 0, consoleErrors.slice(0, 3).join(' | '));
+  const realErrors = consoleErrors.filter((e) => !KNOWN_UNRELATED_CSP_WARNING.test(e));
+  record('WebKit: no console errors on load', realErrors.length === 0, realErrors.slice(0, 3).join(' | '));
   await page.locator('.track-list [data-item]').first().locator('.play-btn').click();
   await page.waitForTimeout(2500);
   const playback = await page.evaluate(() => {

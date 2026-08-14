@@ -682,7 +682,11 @@ def build_contact():
 # Step 4) ────────────────────────────────────────────────────────────────────
 # Show pages listed here run the shared PlaybackController (player-boot.js)
 # instead of the legacy player.js/wavesurfer.js pair. Every other show page is
-# untouched. Step 5 empties this out and flips the engine on everywhere.
+# untouched. The gate (below, `if show["slug"] in CONTROLLER_ENGINE_SLUGS:`)
+# is a plain membership check, so Step 5b needs to WIDEN this set to cover
+# every public show slug (or invert the gate to an exclude-list design --
+# whoever implements 5b decides) -- emptying it would disable the controller
+# EVERYWHERE, the opposite of turning it on for everyone.
 #
 # The three chosen cover the shapes that differ:
 #   jerry-cafe-java-1999-05-27   plain: waveform rows, one Full Recording card
