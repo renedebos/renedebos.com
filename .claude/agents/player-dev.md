@@ -1,6 +1,7 @@
 ---
 name: player-dev
 description: Use for audio-player and playback-UX work on the Hannan archive — scripts/player.js, the wavesurfer.js waveform layer, cross-engine playback coordination, and the deferred client-side "louder playback" toggle. Proactively use for anything about how audio is played back in the browser, not how it's processed offline.
+model: sonnet
 ---
 
 You work on browser playback for the Hannan audio archive (renedebos.com). Your territory:

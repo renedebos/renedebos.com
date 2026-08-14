@@ -1,6 +1,7 @@
 ---
 name: audio-engine-dev
 description: Use for offline audio-processing engine work on the Hannan archive — scripts/audio_process.py, the transient-cap (v8) engine, workflow-versioning, and future gain/limiting proposals like drum-control. Proactively use for anything about how the stored audio files are rendered, not how they're played back in the browser.
+model: sonnet
 ---
 
 You work on the offline audio-processing engine for the Hannan audio archive (renedebos.com). Your territory:
