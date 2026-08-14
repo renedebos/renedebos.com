@@ -67,6 +67,18 @@ try {
   process.exit(1);
 }
 const skipWebkit = process.argv.includes('--skip-webkit');
+// --prod / --base=<url> retarget the whole script at a real deployed site
+// instead of the local `python3 -m http.server` copy. Deliberately read
+// from process.argv, not an env var -- this has to be typed explicitly
+// every run, so a lingering env var can't silently redirect a later local
+// dev run at production.
+const isProd = process.argv.includes('--prod');
+const baseFlag = process.argv.find((a) => a.startsWith('--base='));
+const baseArg = baseFlag ? baseFlag.slice('--base='.length) : undefined;
+// Gate on "not a local server" (either flag), not literally on --prod, so
+// --base=<url> alone also skips the local server and gets the prod-only
+// checks below.
+const isRemote = isProd || baseArg !== undefined;
 if (!skipWebkit) {
   try { ({ webkit } = require('playwright-webkit')); }
   catch (e) { console.log('(playwright-webkit not found -- skipping the WebKit pass; pass --skip-webkit to silence this)'); }
@@ -74,7 +86,7 @@ if (!skipWebkit) {
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const PORT = 8123;
-const BASE = `http://127.0.0.1:${PORT}`;
+const BASE = baseArg ?? (isProd ? 'https://renedebos.com' : `http://127.0.0.1:${PORT}`);
 const ALLOWLIST = [
   // Keep in sync with pages.CONTROLLER_ENGINE_SLUGS (scripts/sitegen/pages.py)
   // -- a plain JS file can't import that Python set directly, so this is a
@@ -375,6 +387,128 @@ async function runBreakageTests(browser, copyDir, base) {
   }
 }
 
+// ── prod-only checks (--prod / --base=<url>) ────────────────────────────
+// Everything below only runs against a real deployed site (see isRemote in
+// the run section) -- it can't run against the local `python3 -m
+// http.server` copy the way runBreakageTests does.
+
+// Assets that must serve as real, correctly-typed module scripts in
+// production -- a 404 or a wrong Content-Type can fail silently in some
+// browsers, and neither would be caught by the local-server pass (a plain
+// `python3 -m http.server` doesn't set the same headers Cloudflare does).
+const PROD_ASSET_PATHS = [
+  '/assets/player-boot.js',
+  '/assets/player-controller.js',
+  '/assets/player-views.js',
+  '/assets/wavesurfer.esm.js',
+];
+const JS_CONTENT_TYPE_RE = /^(text|application)\/javascript/i;
+// Expected Cache-Control for unhashed /assets/*.js, per repo-root `_headers`:
+// that file has no explicit rule block for /assets/*.js (its "Caching."
+// comment explicitly says NOT to add a long max-age there, since these ship
+// under stable, unhashed names -- a cached copy would shadow the next
+// deploy with no way to purge it client-side), so Cloudflare's documented
+// default asset-server policy applies: "public, max-age=0, must-revalidate".
+const EXPECTED_JS_CACHE_CONTROL_RE = /^public,\s*max-age=0,\s*must-revalidate$/i;
+
+async function checkAssetHeaders(context) {
+  for (const path of PROD_ASSET_PATHS) {
+    const res = await context.request.get(BASE + path);
+    record(`${path} responds 200`, res.status() === 200, `status=${res.status()}`);
+    const headers = res.headers();
+    const contentType = headers['content-type'] || '';
+    record(`${path} Content-Type is a JS module type`, JS_CONTENT_TYPE_RE.test(contentType),
+      `content-type=${contentType}`);
+    const cacheControl = headers['cache-control'] || '';
+    record(`${path} Cache-Control matches _headers' documented default for unhashed JS`,
+      EXPECTED_JS_CACHE_CONTROL_RE.test(cacheControl), `cache-control=${cacheControl}`);
+  }
+}
+
+// The 3-page canary (ALLOWLIST) is deliberately narrow -- this confirms the
+// deploy didn't leak the controller engine onto pages that were never
+// switched over, and that real legacy playback still works on the pages
+// that matter most for that regression (a show page, and both continuous-
+// playback pages).
+const NON_ALLOWLISTED_PAGES = [
+  '/',
+  '/playlist/',
+  '/player/',
+  '/shows/jerry-cafe-java-1999-04-08/', // a non-allowlisted show page
+  '/songs/a-bunch-of-thyme/',           // a song page, exercises initCustomPlayers
+];
+
+async function checkNonAllowlistedPagesUnaffected(context) {
+  for (const path of NON_ALLOWLISTED_PAGES) {
+    const page = await context.newPage();
+    await page.goto(BASE + path, { waitUntil: 'load' });
+    await page.waitForTimeout(500);
+    const flag = await page.evaluate(() => window.PLAYER_ENGINE_MOUNTED);
+    record(`${path} controller engine NOT mounted (non-allowlisted page)`, !flag, `flag=${flag}`);
+    await page.close();
+  }
+
+  // Show page: same assertion runBreakageTests' A2 uses for the Full
+  // Recording card -- confirms real legacy player.js playback, not just
+  // that the mounted flag is absent.
+  {
+    const page = await context.newPage();
+    await page.goto(BASE + '/shows/jerry-cafe-java-1999-04-08/', { waitUntil: 'load' });
+    await page.waitForTimeout(500);
+    await page.locator('.recording-item .play-btn').first().click();
+    await page.waitForTimeout(2000);
+    const heroPlaying = await page.evaluate(() => {
+      const el = document.querySelector('.recording-item .custom-player');
+      return el && el._audio ? { found: true, t: el._audio.currentTime, paused: el._audio.paused } : { found: false };
+    });
+    record('/shows/jerry-cafe-java-1999-04-08/ real legacy playback works (Full Recording card)',
+      heroPlaying.found && heroPlaying.t > 0.3 && !heroPlaying.paused, JSON.stringify(heroPlaying));
+    await page.close();
+  }
+
+  // /playlist/: playlist.js's own <audio> is a detached `new Audio()` --
+  // never appended to the DOM (see the file's own comments), so
+  // findAudioDeep genuinely can't see it the way it sees a real wavesurfer
+  // <audio>. The DOM-visible equivalent of "currentTime advances" here is
+  // the now-playing panel's live time display, driven by the same
+  // 'timeupdate' listener that would drive a visible <audio> element's
+  // currentTime -- so this is the same assertion, adapted to how this
+  // engine actually surfaces playback state.
+  {
+    const page = await context.newPage();
+    await page.goto(BASE + '/playlist/', { waitUntil: 'load' });
+    await page.waitForFunction(() => {
+      const b = document.getElementById('pl-generate');
+      return !!b && !b.disabled;
+    }, null, { timeout: 15000 }); // catalog fetch has to land before a preset can build a queue
+    await page.locator('.pl-preset[data-preset="mixed45"]').click(); // real user gesture
+    await page.waitForTimeout(2500);
+    const timeText = (await page.locator('#pl-now .pl-time-current').textContent().catch(() => null) || '').trim();
+    record('/playlist/ real legacy playback works (preset click -> real <audio> advances)',
+      timeText !== '' && timeText !== '0:00', `time=${timeText}`);
+    await page.close();
+  }
+
+  // /player/: cue a real track via the same #p=<id> hash sendToPlayer() uses
+  // for a hand-off from /playlist/, then a real click on the play button
+  // (same "genuine user-gesture click" pattern as the deep-link Retry test
+  // in runParityPass) starts playback.
+  {
+    const tracksRes = await context.request.get(BASE + '/assets/tracks.json');
+    const tracks = await tracksRes.json();
+    const trackId = tracks[0].id;
+    const page = await context.newPage();
+    await page.goto(BASE + '/player/#p=' + trackId, { waitUntil: 'load' });
+    await page.waitForTimeout(500);
+    await page.locator('#cp-now [data-act="play"]').click(); // real user gesture
+    await page.waitForTimeout(2500);
+    const timeText = (await page.locator('#cp-now .pl-time-current').textContent().catch(() => null) || '').trim();
+    record('/player/ real legacy playback works (queued track -> real <audio> advances)',
+      timeText !== '' && timeText !== '0:00', `time=${timeText}`);
+    await page.close();
+  }
+}
+
 async function runWebkitSmoke() {
   if (!webkit) return;
   const browser = await webkit.launch();
@@ -400,35 +534,57 @@ async function runWebkitSmoke() {
 }
 
 // ── run ──────────────────────────────────────────────────────────────────
-if (!require('node:fs').existsSync(join(ROOT, 'shows'))) {
+if (!isRemote && !require('node:fs').existsSync(join(ROOT, 'shows'))) {
   console.error('No shows/ directory found -- run `python3 scripts/build.py` first.');
   process.exit(1);
 }
 
-const mainServer = await startServer(ROOT, PORT);
+if (isRemote) {
+  // Cheap pre-flight, before launching Playwright at all -- fail fast with a
+  // clear message instead of letting a bad BASE hang every subsequent
+  // navigation until Playwright's own timeout.
+  let preflightOk = false;
+  try {
+    const res = await fetch(BASE + '/');
+    preflightOk = res.status === 200;
+    if (!preflightOk) console.error(`Pre-flight check failed: GET ${BASE}/ returned ${res.status} (expected 200).`);
+  } catch (e) {
+    console.error(`Pre-flight check failed: GET ${BASE}/ -- ${e.message}`);
+  }
+  if (!preflightOk) process.exit(1);
+}
+
+const mainServer = isRemote ? null : await startServer(ROOT, PORT);
 const browser = await chromium.launch();
 try {
   await runParityPass(browser);
 
-  // Isolated copy for the breakage tests -- assets/+shows/ only (everything
-  // the generated pages actually reference), on a SEPARATE port, so this
-  // script never renames a file inside the real working tree.
-  const copyDir = mkdtempSync(join(tmpdir(), 'player-consolidation-browser-check-'));
-  cpSync(join(ROOT, 'assets'), join(copyDir, 'assets'), { recursive: true });
-  cpSync(join(ROOT, 'shows'), join(copyDir, 'shows'), { recursive: true });
-  const copyPort = PORT + 1;
-  const copyServer = await startServer(copyDir, copyPort);
-  try {
-    await runBreakageTests(browser, copyDir, `http://127.0.0.1:${copyPort}`);
-  } finally {
-    copyServer.kill();
-    rmSync(copyDir, { recursive: true, force: true });
+  if (isRemote) {
+    const ctx = await browser.newContext();
+    await checkAssetHeaders(ctx);
+    await checkNonAllowlistedPagesUnaffected(ctx);
+    await ctx.close();
+  } else {
+    // Isolated copy for the breakage tests -- assets/+shows/ only (everything
+    // the generated pages actually reference), on a SEPARATE port, so this
+    // script never renames a file inside the real working tree.
+    const copyDir = mkdtempSync(join(tmpdir(), 'player-consolidation-browser-check-'));
+    cpSync(join(ROOT, 'assets'), join(copyDir, 'assets'), { recursive: true });
+    cpSync(join(ROOT, 'shows'), join(copyDir, 'shows'), { recursive: true });
+    const copyPort = PORT + 1;
+    const copyServer = await startServer(copyDir, copyPort);
+    try {
+      await runBreakageTests(browser, copyDir, `http://127.0.0.1:${copyPort}`);
+    } finally {
+      copyServer.kill();
+      rmSync(copyDir, { recursive: true, force: true });
+    }
   }
 
   await runWebkitSmoke();
 } finally {
   await browser.close();
-  mainServer.kill();
+  if (mainServer) mainServer.kill();
 }
 
 const failed = results.filter((r) => !r.pass).length;
