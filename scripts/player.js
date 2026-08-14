@@ -170,24 +170,67 @@ function initCustomPlayers(root) {
   });
 }
 window.initCustomPlayers = initCustomPlayers;
-initCustomPlayers(document);
 
-document.addEventListener('keydown', e => {
-  if (e.code !== 'Space') return;
-  const tag = document.activeElement.tagName;
-  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'BUTTON') return;
-  e.preventDefault();
-  if (!activePlayer) return;
-  const audio = activePlayer._audio;
-  const btn = activePlayer.querySelector('.play-btn');
-  if (audio.paused) {
-    audio.play().catch(() => setPlayState(btn, false, playIcon));
-    setPlayState(btn, true, loadingIcon);
-  } else {
-    audio.pause();
-    setPlayState(btn, false, playIcon);
-  }
-});
+// ── engine selection ─────────────────────────────────────────────────────────
+// A page migrated to the shared PlaybackController (see player-boot.js and
+// plans/player-consolidation/) sets window.PLAYER_ENGINE = 'controller' inline
+// BEFORE this script, so the decision exists before any legacy code runs — a
+// guard checked later could never win, since these registrations would already
+// have happened.
+//
+// Rather than bail outright on that flag, this defers: player-boot.js is a
+// module and so runs before DOMContentLoaded, setting PLAYER_ENGINE_MOUNTED
+// only if it actually mounted. If it 404s, fails to parse, or throws, the flag
+// stays unset and everything here initializes normally. A static "don't init"
+// flag would instead leave such a page with no player at all on any module or
+// asset failure — a regression, not a fallback.
+//
+// All three playback registrations are gated, not just the mount: two live
+// deep-link handlers would both scroll and mutate .target and could both act
+// on ?autoplay=1, and the legacy Space listener would swallow Space with no
+// legacy player behind it. Downloads, share, and tooltips are untouched —
+// they aren't playback.
+//
+// (Each helper below is a hoisted function declaration, so this block can sit
+// where the original unconditional initCustomPlayers(document) call did and
+// keep the legacy path's ordering byte-for-byte identical.)
+function initLegacyPlayback() {
+  initCustomPlayers(document);
+  initLegacySpaceBar();
+  initLegacyDeepLink();
+}
+
+// DOMContentLoaded, not a readyState check: readyState is already 'interactive'
+// while deferred/module scripts run, so a "past loading, just go" shortcut would
+// initialize this before player-boot.js (a module, and later in the document)
+// ever got to claim the page. DOMContentLoaded has not fired yet under any
+// script placement, so the listener is always registered in time.
+if (window.PLAYER_ENGINE === 'controller') {
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!window.PLAYER_ENGINE_MOUNTED) initLegacyPlayback();
+  });
+} else {
+  initLegacyPlayback();
+}
+
+function initLegacySpaceBar() {
+  document.addEventListener('keydown', e => {
+    if (e.code !== 'Space') return;
+    const tag = document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'BUTTON') return;
+    e.preventDefault();
+    if (!activePlayer) return;
+    const audio = activePlayer._audio;
+    const btn = activePlayer.querySelector('.play-btn');
+    if (audio.paused) {
+      audio.play().catch(() => setPlayState(btn, false, playIcon));
+      setPlayState(btn, true, loadingIcon);
+    } else {
+      audio.pause();
+      setPlayState(btn, false, playIcon);
+    }
+  });
+}
 
 // ── downloads ────────────────────────────────────────────────────────────────
 // All downloads are password protected: every download button goes through
@@ -597,8 +640,10 @@ function focusHashTrack() {
     }
   }
 }
-window.addEventListener('load', focusHashTrack);
-window.addEventListener('hashchange', focusHashTrack);
+function initLegacyDeepLink() {
+  window.addEventListener('load', focusHashTrack);
+  window.addEventListener('hashchange', focusHashTrack);
+}
 
 // ── continuous player popup ─────────────────────────────────────────────────
 // Opening a tab/window with a fixed name and an empty URL returns a handle to

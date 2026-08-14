@@ -2,121 +2,115 @@
 **Date:** 2026-08-13 · **Branch:** `player-consolidation`
 (worktree `/home/renedebos/renedebos.com-player-consolidation`)
 
-Three commits, working tree clean, **nothing pushed and nothing deployed** —
-the new player engine exists in the build but no generated page loads it yet,
-so the live site is unaffected. The previous session's audio-processing
-handoff is in git history.
+Working tree clean, **nothing pushed and nothing deployed**. Merged
+`origin/main` at session start (one conflict, in `HANDOFF.md` itself —
+resolved in favour of this branch's handoff; the audio-processing handoff it
+replaced is in git history).
 
-- `2c841b9` — Player consolidation Phase 1 steps 1–3
-- `ccac16a` — Codex review automation
-- `053ba69` — Codex review-file consolidation (not authored this session)
+Three show pages now load the new player engine in the *built* output. The
+live site is still entirely on the legacy engines, because none of this has
+been pushed.
 
-## ✅ Done this session
+## ✅ Done this session — Phase 1 Step 4 (`player-boot.js`)
 
-### Player consolidation — Phase 1 (show pages), steps 1–3 of 5
+Plan: `plans/player-consolidation/player-consolidation-plan.md` (Step 4's
+entry there has the full record). Steps 1–3 were the previous session's.
 
-Plan is `plans/player-consolidation/player-consolidation-plan.md`, now the one
-living document for the whole initiative (architecture + concrete design +
-running checklist, revised in place — no per-phase files).
+**Engine selection: legacy defers, controller claims.** An allowlisted show
+page emits `window.PLAYER_ENGINE = 'controller'` inline before `player.js`.
+Both legacy engines then hold their playback init until `DOMContentLoaded` and
+check `window.PLAYER_ENGINE_MOUNTED`; `player-boot.js` is a module, so it runs
+first, mounts inside `try`/`catch`, and sets that flag only on success. A 404,
+a parse error, or any boot exception therefore falls back to today's working
+player at *runtime*, not just at deploy time.
 
-- **`scripts/player-controller.js`** — one `PlaybackController` per document
-  owning the sole `<audio>` element, queue, transport, shuffle/repeat, the
-  BroadcastChannel claim, Media Session, an explicit state machine, and a
-  generation token invalidating stale `play()` promises. Adds `'error'`
-  handling no existing engine has (a hard load failure previously left the row
-  spinning forever) and ports `removeAt()`'s exact legacy slide-in semantics.
-- **`scripts/player-views.js`** — compact (track row) and hero (recording card)
-  views. Only the *active* row upgrades to a WaveSurfer instance wrapping the
-  shared audio element; others draw an inert canvas from precomputed peaks,
-  replacing one WaveSurfer per row on page load.
-- **`data-item` markup** on every show page — one normalized playable item per
-  playable thing, serialized at build time (zero round trips). Purely additive:
-  stripping it reproduces the previous HTML byte for byte.
-- **`scripts/verify_markup.py`**, run from `build.py` on every build — required
-  fields, per-page id uniqueness, and `streamUrl` parity with the legacy
-  `data-src` so the new engine cannot play different audio.
-- **`validate()` now enforces per-track peaks coverage** — a show's peaks file
-  makes every row a waveform row, which has no range input, so a track missing
-  from that map would render with no seek surface at all.
-- **37 deterministic tests** (`node scripts/test-player-controller.mjs` 22/22,
-  `test-player-views.mjs` 15/15) — no browser, via a fake audio element and
-  fake DOM, with fixtures mirroring the real generated markup.
+- **`scripts/player-boot.js`** — mounts one `PlaybackController`,
+  `CompactPlayerView` per `.track-list [data-item]` row and `HeroPlayerView`
+  per `.recording-item[data-item]`, then wires peaks, Space, deep links, and a
+  debounced resize redraw.
+- **`wavesurfer.js` is gated too** — the plan said "three legacy registrations
+  in `player.js`" and that was one short. Every published show has a peaks
+  file, so every show-page track row is `.ws-track`, and `.ws-track` is
+  invisible to `player.js`. Gating only `player.js` would have made a boot
+  failure degrade to a page with a working Full Recording card and **no track
+  players at all** — the exact silent degradation this step's redesign exists
+  to prevent.
+- **Allowlist** `pages.CONTROLLER_ENGINE_SLUGS`: `jerry-cafe-java-1999-05-27`
+  (plain), `jerry-cafe-java-1999-03-25` (two hero cards), and
+  `mad-sweetwater-2000-10-17` (alternate transfer sharing a stream proxy,
+  inside a collapsed `<details>`).
+- **`verify_markup.py` now checks the handshake**, not just the markup: flag
+  and boot module travel together, only on allowlisted slugs, flag before
+  `player.js`, `player.js` still on the page (it *is* the fallback) — plus
+  that every `/assets/` script a page loads, and everything those scripts
+  import, is actually written by `build.py`.
+- **`scripts/test-player-boot.mjs`, 14 tests**, on a fake show-page document;
+  DOM fakes extracted to `scripts/test-fake-dom.mjs`, shared with the view
+  tests. Suite total 51 (22 + 15 + 14), all passing.
+- Small supporting additions: `page_shell(pre_scripts=...)`,
+  `PlayerView.setPeaks()` / `redrawWave()`, `window.PLAYER_BOOT` as a console
+  handle.
 
-### Review automation (Claude ⇄ Codex)
+## 🔧 Next up — the browser pass, before anything else
 
-- **`scripts/codex_review.sh <plan-file> [focus]`** — runs `codex exec`
-  read-only and appends the result to the plan's sibling `*-codex.md`. Pins to
-  the current worktree (`-C`), fingerprints the tree before/after so a review
-  whose code moved is flagged, locks against concurrent runs, aborts rather
-  than appending empty output. Generic path derivation, so future `plans/`
-  initiatives work unchanged.
-- **`/review-step`** (reviews, verifies each finding against the code, records
-  a disposition in the log, **stops**) and **`/apply-review`** (implements after
-  approval). Deliberately split so the judgment step stays human-gated.
+Step 4 is code-complete but **its verification gate is open**, and no browser
+exists in the environment that built it. On the three allowlisted pages:
 
-## 🔧 Next up — Phase 1 Step 4
+1. Full parity checklist (plan §3) — play/pause, seek, auto-advance, deep
+   links, downloads, cross-tab claim/pause against `/playlist/`.
+2. Exactly one engine mounted — `window.PLAYER_BOOT` in the console; no
+   duplicate listeners on a row.
+3. **Deliberately 404 the module** (rename `assets/player-boot.js`) and
+   confirm the page falls back to a *working* legacy player, waveform rows
+   included — not to an inert page.
 
-**Read the plan's Step 4 before starting; its design was materially reworked
-after review and differs from earlier drafts.**
-
-- **Legacy defers, controller claims.** `player.js` moves its init to
-  `DOMContentLoaded`; `player-boot.js` (a module, guaranteed to run first)
-  mounts inside `try`/`catch` and sets a marker; legacy checks the marker and
-  takes over if unset. A static "don't init" flag would leave the page
-  **silent** on any module/asset failure — worse than today, where a
-  wavesurfer failure still leaves Full Recording working.
-- **Gate all three legacy playback registrations**, not just the mount:
-  `initCustomPlayers` (`player.js:173`), the Space handler (`:175-190`), and
-  `focusHashTrack`'s load/hashchange listeners (`:579-601`). Downloads, share,
-  and tooltips are not playback — leave them alone.
-- Verification includes **deliberately breaking the module** (rename the asset)
-  to confirm fallback to a working legacy player.
-- Step 4 is gated to an allowlist of show slugs; Step 5 flips it on and deletes
-  only `wavesurfer.js` (**not** `initCustomPlayers` or the claim globals —
-  `songs.js` and `/playlist/` still need them until their own phases).
+Only then Step 5 (flip the allowlist on everywhere, delete `wavesurfer.js`).
+Note what Step 5 actually costs: deleting `wavesurfer.js` gives up the
+waveform half of the runtime fallback, leaving `player.js`, which can only
+drive the recording cards.
 
 ## Gotchas learned this session
 
-- **A test can pass for the wrong reason.** The retry test passed because it
-  simulated a *native* error (populating `audio.error`) while the state half of
-  the condition was dead code; a rejected `play()` promise — which sets `error`
-  without `audio.error` — was silently unprotected. The habit now: after
-  writing a regression test, **revert the fix and confirm the test fails**.
-- **Vendored WaveSurfer strips the `src` if constructed too early.** It
-  captures `options.url || getSrc()` at construction and defers `load()` to a
-  microtask; built before `audio.src` is assigned, its `setSrc("", peaks)`
-  calls `removeAttribute("src")` and kills playback. `_playIndex` therefore
-  orders: assign src → notify views → `play()`.
-- **Review claims need tracing, not trusting.** Two Codex claims this session
-  were factually wrong about repo state, several suggestions were correctly
-  declined, and the genuinely valuable findings only surfaced because claims
-  were checked against code. This is why `/review-step` stops before applying.
-- **Verify generated output, not just that the build is green.** The one-off
-  markup check caught a real recording-id collision (`mad-sweetwater-2000-10-17`
-  has a WAV *and* a FLAC transfer sharing one MP3 stream proxy) that inspection
-  had missed — hence `verify_markup.py` now runs on every build.
-- `codex exec` needs `-o` to capture a clean final message; the module-level
-  `BroadcastChannel` keeps Node alive, so the test scripts exit explicitly.
+- **`document.readyState` is not a shortcut for the DOMContentLoaded
+  barrier.** It is already `'interactive'` while deferred and module scripts
+  run, so an "if we're past loading, just initialize" branch fires the legacy
+  engine *before* a later module can claim the page — double-initializing
+  exactly what the flag prevents. Written into both gates as a comment; I
+  added that branch and had to take it straight back out.
+- **A mutation test can be vacuous.** The partial-mount teardown test passed
+  with the teardown deleted: the fixture's malformed item was on a *row*, and
+  rows are all normalized before anything mounts, so nothing had ever been
+  torn down. It has to be on a **hero** card (mounted after every row) to
+  exercise that path. Same family as last session's "test passed for the wrong
+  reason" — reverting the fix is the only way to find out.
+- **The marker must be set synchronously, so peaks can't gate the mount.**
+  DOMContentLoaded beats any fetch. Rows mount peak-less and get decorated
+  when the fetch lands.
+- **An empty peaks object is not the same as no peaks.** A `.ws-track` row has
+  no range input, so a row left with `null` peaks loses its waveform *and* its
+  only seek surface; `{}` makes WaveSurfer decode the audio to draw, which is
+  what `wavesurfer.js`'s own fetch-failure path already does.
 
 ## Durable facts (don't undo)
 
 - **`downloads.lossless` carries an R2 key, not a URL.** `/stream` hard-403s
-  every `.wav`/`.flac`, so a stream URL there is an address guaranteed to fail;
-  the legacy button's href only *looks* like one because `player.js` intercepts
-  the click. Named `lossless`, not `flac` — 64 of 747 items are WAV.
+  every `.wav`/`.flac`. Named `lossless`, not `flac` — 64 of 747 items are WAV.
 - **Recording ids key on the lossless original**, not the stream key, which is
   not unique across transfers of one tape.
 - **No BroadcastChannel wire-format change until `/playlist/` and `/player/`
   migrate** — the legacy engines still expect a bare string, and cross-tab
   claim/pause between old and new pages is real, tested behavior.
+- **Deep-link autoplay fires on initial load only**, deliberately — exact
+  parity with what the two legacy engines produce between them today.
 - Loudness control and sticky navigation remain **fully deferred**; see the
   plan's §2 and §5. The mp3TruePeak headroom data (only 18/680 tracks have
-  +4 dB of headroom) is banked there for whenever loudness is scoped.
+  +4 dB of headroom) is banked there.
 - Branch/worktree workflow is the plan's §8; sync with
-  `git fetch origin && git merge origin/main` at session start and before a PR.
-  **Not done this session.**
+  `git fetch origin && git merge origin/main` at session start and before a
+  PR. **Done this session.**
 
 ## Reference
 Runbook: `CLAUDE.md` → "Publishing a Split Show". Player work:
 `plans/player-consolidation/` (plan + `player-consolidation-codex.md`, six
-review passes with dispositions). Review loop: plan §7.
+review passes with dispositions). Review loop: plan §7. Tests:
+`node scripts/test-player-{controller,views,boot}.mjs`.

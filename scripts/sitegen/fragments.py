@@ -215,7 +215,16 @@ def recording_card(title, meta_pairs, badge, file, stream_file=None, play_label=
         {play}
       </div>'''
 
-def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main, extra_scripts="", extra_head=""):
+def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main, extra_scripts="",
+               extra_head="", pre_scripts=""):
+    """`pre_scripts` is injected immediately BEFORE player.js.
+
+    Only one thing needs that slot today: the shared-player engine flag
+    (window.PLAYER_ENGINE), which has to exist before player.js runs — player.js
+    decides at parse time whether to register its playback handlers, so a flag
+    set anywhere later could never win. Default "" keeps every other page's
+    output byte-identical.
+    """
     return f'''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -274,7 +283,7 @@ def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main,
   </span>
 </footer>
 
-<script src="/assets/player.js"></script>{extra_scripts}
+{pre_scripts}<script src="/assets/player.js"></script>{extra_scripts}
 </body>
 </html>
 '''

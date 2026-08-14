@@ -133,14 +133,38 @@ function build(PEAKS) {
 // Inline peaks (lab prototype) take precedence; show pages fetch the JSON file. On a
 // fetch failure, build with empty peaks so playback still works (waveforms then draw
 // from the audio on play).
-const inline = window.WS_PEAKS || window.LAB_PEAKS;
-if (inline) {
-  build(inline);
-} else if (window.WS_PEAKS_URL) {
-  fetch(window.WS_PEAKS_URL)
-    .then((r) => r.json())
-    .then(build)
-    .catch(() => build({}));
+function start() {
+  const inline = window.WS_PEAKS || window.LAB_PEAKS;
+  if (inline) {
+    build(inline);
+  } else if (window.WS_PEAKS_URL) {
+    fetch(window.WS_PEAKS_URL)
+      .then((r) => r.json())
+      .then(build)
+      .catch(() => build({}));
+  } else {
+    build({});
+  }
+}
+
+// Engine selection — the same defer-and-check contract player.js uses (see the
+// block there for the full rationale). On a page that asked for the shared
+// controller, this module holds off until DOMContentLoaded and then builds only
+// if player-boot.js never claimed the page. That's what makes a broken module
+// or a 404'd asset fall back to a working waveform player rather than to a page
+// with no track players at all — these rows are invisible to player.js, which
+// only knows .custom-player.
+// DOMContentLoaded is the right barrier and readyState is NOT a usable
+// shortcut here: readyState is already 'interactive' while deferred and module
+// scripts run, so a "we're past loading, just go" branch would fire this module
+// BEFORE player-boot.js (a later module) had any chance to claim the page —
+// double-initializing exactly what the flag exists to prevent. DOMContentLoaded
+// has not fired at this point under any script placement, so the listener
+// always gets registered in time.
+if (window.PLAYER_ENGINE === 'controller') {
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!window.PLAYER_ENGINE_MOUNTED) start();
+  });
 } else {
-  build({});
+  start();
 }

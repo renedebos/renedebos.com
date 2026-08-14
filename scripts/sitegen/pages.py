@@ -678,6 +678,30 @@ def build_contact():
         main=contact_block(),
     )
 
+# ── shared-player rollout allowlist (plans/player-consolidation/, Phase 1
+# Step 4) ────────────────────────────────────────────────────────────────────
+# Show pages listed here run the shared PlaybackController (player-boot.js)
+# instead of the legacy player.js/wavesurfer.js pair. Every other show page is
+# untouched. Step 5 empties this out and flips the engine on everywhere.
+#
+# The three chosen cover the shapes that differ:
+#   jerry-cafe-java-1999-05-27   plain: waveform rows, one Full Recording card
+#   jerry-cafe-java-1999-03-25   two canonical Full Recording parts, so two hero
+#                                cards live on one page at once
+#   mad-sweetwater-2000-10-17    an alternate transfer sharing the canonical
+#                                recording's MP3 stream proxy — the case that
+#                                forced recording ids to key on the lossless
+#                                original — inside a collapsed <details>
+#
+# Not covered, because no *published* show has the shape: a page with no track
+# list at all. jerry-western-saloon-2025-07-03 is the only track-less show and
+# it's currently hidden, so it generates no page.
+CONTROLLER_ENGINE_SLUGS = {
+    "jerry-cafe-java-1999-05-27",
+    "jerry-cafe-java-1999-03-25",
+    "mad-sweetwater-2000-10-17",
+}
+
 def build_show(show):
     artist = next(a for a in M["artists"] if a["id"] == show["artist"])
     canon = [r for r in show["recordings"] if not r["alternate"]]
@@ -896,6 +920,17 @@ def build_show(show):
         extra_scripts += (f'\n<script>window.WS_PEAKS_URL = "/assets/peaks/{show["slug"]}.json";</script>\n'
                           f'<script type="module" src="/assets/wavesurfer.js"></script>')
 
+    # Shared player engine, for allowlisted shows only. The flag has to be set
+    # before player.js (hence pre_scripts); player-boot.js goes last so the two
+    # legacy modules have already registered their DOMContentLoaded fallbacks by
+    # the time it claims the page. Both legacy scripts stay on the page on
+    # purpose — they are the runtime fallback if this module never mounts, not
+    # dead weight.
+    pre_scripts = ""
+    if show["slug"] in CONTROLLER_ENGINE_SLUGS:
+        pre_scripts = "<script>window.PLAYER_ENGINE = 'controller';</script>\n"
+        extra_scripts += '\n<script type="module" src="/assets/player-boot.js"></script>'
+
     if proc:
         # Open the collapsed technical-data table when linked to via #technical-data
         # (e.g. the "view data" link on the Updates page).
@@ -915,6 +950,7 @@ def build_show(show):
         main="".join(parts) + wav_note,
         extra_scripts=extra_scripts,
         extra_head=show_jsonld(show, artist),
+        pre_scripts=pre_scripts,
     )
 
 WAVESURFER_LAB_SLUG = "sean-19-broadway-unknown"
@@ -1119,4 +1155,4 @@ def build_404():
         nav=site_nav(), main=main)
 
 
-__all__ = ['WAVESURFER_LAB_SLUG', 'build_404', 'build_archive_data', 'build_contact', 'build_history', 'build_home', 'build_manual', 'build_player', 'build_playlist', 'build_process', 'build_search', 'build_show', 'build_song_page', 'build_songs_index', 'build_updates', 'build_wavesurfer_lab']
+__all__ = ['CONTROLLER_ENGINE_SLUGS', 'WAVESURFER_LAB_SLUG', 'build_404', 'build_archive_data', 'build_contact', 'build_history', 'build_home', 'build_manual', 'build_player', 'build_playlist', 'build_process', 'build_search', 'build_show', 'build_song_page', 'build_songs_index', 'build_updates', 'build_wavesurfer_lab']

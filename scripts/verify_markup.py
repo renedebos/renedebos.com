@@ -32,18 +32,98 @@ CARD_RE = re.compile(r'<div class="recording-item" data-item="([^"]*)">.*?<div c
 REQUIRED = ("id", "kind", "streamUrl", "title", "playLabel")
 
 
+ENGINE_FLAG = "window.PLAYER_ENGINE = 'controller'"
+BOOT_TAG = '<script type="module" src="/assets/player-boot.js"></script>'
+PLAYER_TAG = '<script src="/assets/player.js"></script>'
+
+
+def check_engine_wiring(rel, src, slug, allowlist):
+    """The three halves of the engine handshake have to agree.
+
+    Getting any of them wrong is silent at build time and only shows up as a
+    double-initialized or dead player in a browser, so assert them here:
+    the flag and the boot module always travel together; only allowlisted shows
+    carry them; the flag precedes player.js (a flag set after it can never win,
+    since player.js decides at parse time); and the legacy scripts stay on the
+    page, because they are the runtime fallback if the module never mounts.
+    """
+    errors = []
+    has_flag = ENGINE_FLAG in src
+    has_boot = BOOT_TAG in src
+    want = slug in allowlist
+
+    if has_flag != has_boot:
+        errors.append(f"{rel}: engine flag and player-boot.js must be emitted together "
+                      f"(flag={has_flag}, boot={has_boot})")
+    if want and not has_flag:
+        errors.append(f"{rel}: {slug!r} is in CONTROLLER_ENGINE_SLUGS but emits no engine flag")
+    if not want and has_flag:
+        errors.append(f"{rel}: {slug!r} emits the engine flag but is not in CONTROLLER_ENGINE_SLUGS")
+    if has_flag:
+        if PLAYER_TAG not in src:
+            errors.append(f"{rel}: engine flag set but player.js is missing — "
+                          "the legacy engine is the runtime fallback and must stay on the page")
+        elif src.index(ENGINE_FLAG) > src.index(PLAYER_TAG):
+            errors.append(f"{rel}: engine flag must come BEFORE player.js")
+        if has_boot and src.index(BOOT_TAG) < src.index(PLAYER_TAG):
+            errors.append(f"{rel}: player-boot.js must load after player.js")
+    return errors
+
+
+SRC_RE = re.compile(r'src="(/assets/[^"]+)"')
+IMPORT_RE = re.compile(r"from '(/assets/[^']+)'")
+
+
+def check_assets_exist(rel, src):
+    """Every /assets/ script a page loads — and everything those scripts
+    import — has to actually be written by build.py.
+
+    A missing write() line is invisible in the generated HTML and shows up only
+    as a 404 in a browser. For the migrated pages that 404 is *survivable* (it
+    is exactly the fallback path player-boot.js is built around), which is
+    precisely why it needs catching here instead of being noticed by eye.
+    """
+    errors, seen = [], set()
+    pending = list(SRC_RE.findall(src))
+    while pending:
+        asset = pending.pop()
+        if asset in seen:
+            continue
+        seen.add(asset)
+        path = os.path.join(ROOT, asset.lstrip("/"))
+        if not os.path.exists(path):
+            errors.append(f"{rel}: references {asset}, which build.py never writes")
+            continue
+        if asset.endswith(".js"):
+            pending += IMPORT_RE.findall(open(path).read())
+    return errors
+
+
 def check():
     errors, n_track, n_rec, n_pages = [], 0, 0, 0
+
+    sys.path.insert(0, os.path.join(ROOT, "scripts"))
+    from sitegen.pages import CONTROLLER_ENGINE_SLUGS
 
     show_pages = sorted(glob.glob(os.path.join(ROOT, "shows", "*", "index.html")))
     if not show_pages:
         return ["no generated show pages found — run scripts/build.py first"], 0, 0, 0
+
+    # A slug that generates no page (a hidden show, a typo) would allowlist
+    # nothing at all and pass every other check by simply not existing.
+    built = {os.path.basename(os.path.dirname(p)) for p in show_pages}
+    for slug in sorted(CONTROLLER_ENGINE_SLUGS - built):
+        errors.append(f"CONTROLLER_ENGINE_SLUGS lists {slug!r}, which generates no show page")
 
     for path in show_pages:
         rel = os.path.relpath(path, ROOT)
         src = open(path).read()
         n_pages += 1
         ids = []
+
+        errors += check_engine_wiring(rel, src, os.path.basename(os.path.dirname(path)),
+                                      CONTROLLER_ENGINE_SLUGS)
+        errors += check_assets_exist(rel, src)
 
         for raw in ITEM_RE.findall(src):
             try:

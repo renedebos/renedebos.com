@@ -38,11 +38,12 @@ def main():
     here = os.path.dirname(os.path.abspath(__file__))
     write("assets/site.css", open(os.path.join(here, "site.css")).read())
     write("assets/player.js", open(os.path.join(here, "player.js")).read())
-    # Shared PlaybackController — see plans/player-consolidation/. Not yet
-    # referenced by any generated page (that's a later migration step); just
-    # shipped alongside the rest of the JS so it's staged for player-boot.js.
+    # Shared PlaybackController — see plans/player-consolidation/. Loaded only
+    # by the show pages in pages.CONTROLLER_ENGINE_SLUGS so far (Phase 1
+    # Step 4); every other page still runs the legacy player.js/wavesurfer.js.
     write("assets/player-controller.js", open(os.path.join(here, "player-controller.js")).read())
     write("assets/player-views.js", open(os.path.join(here, "player-views.js")).read())
+    write("assets/player-boot.js", open(os.path.join(here, "player-boot.js")).read())
     write("assets/wavesurfer.esm.js", open(os.path.join(here, "vendor", "wavesurfer.esm.js")).read())
     write("assets/wavesurfer.js", open(os.path.join(here, "wavesurfer.js")).read())
     # client-zip@2.4.5 (MIT) — assembles multiple fetch() Responses into a

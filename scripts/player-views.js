@@ -99,6 +99,25 @@ export class PlayerView {
 
   onControllerUpdate(snapshot) { this._render(snapshot); }
 
+  // Peaks arrive after mount: the page bootstrap has to mount synchronously
+  // (before DOMContentLoaded, so the legacy engines stay dormant) while the
+  // peaks JSON is a fetch. A view mounted peak-less therefore renders no
+  // waveform until this lands — then draws, or upgrades on the spot if it is
+  // already the active row.
+  setPeaks(peaks) {
+    this.peaks = peaks;
+    if (!this.waveContainer || !this.controller) return;
+    if (this._isActive(this.controller)) this._upgradeWave();
+    else this._drawInertWave();
+  }
+
+  // Re-draws the inert canvas at the current container width. WaveSurfer
+  // handles its own resizing, so an upgraded row is left alone.
+  redrawWave() {
+    if (this._ws || !this.waveContainer || !this.peaks) return;
+    this._drawInertWave();
+  }
+
   // ── input ──
   _onPlayClick() {
     const c = this.controller;

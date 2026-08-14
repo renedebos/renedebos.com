@@ -16,78 +16,11 @@
 import assert from 'node:assert/strict';
 import { PlaybackController } from './player-controller.js';
 
-// ── minimal DOM ────────────────────────────────────────────────────────────
-// Just enough of the DOM surface the views touch. Building this by hand
-// (rather than pulling in jsdom) keeps the project dependency-free, matching
-// how the rest of these scripts work.
-class FakeClassList {
-  constructor() { this._set = new Set(); }
-  add(...c) { c.forEach(x => this._set.add(x)); }
-  remove(...c) { c.forEach(x => this._set.delete(x)); }
-  contains(c) { return this._set.has(c); }
-  toggle(c, force) {
-    const want = force === undefined ? !this._set.has(c) : !!force;
-    if (want) this._set.add(c); else this._set.delete(c);
-    return want;
-  }
-}
-
-class FakeElement {
-  constructor(tag, classes = [], attrs = {}) {
-    this.tagName = tag.toUpperCase();
-    this.classList = new FakeClassList();
-    classes.forEach(c => this.classList.add(c));
-    this.dataset = {};
-    this.attributes = {};
-    this.children = [];
-    this.style = {};
-    this.innerHTML = '';
-    this.textContent = '';
-    this.hidden = false;
-    this.value = 0;
-    this.clientWidth = 0;           // 0 => inert-canvas draw is skipped (no layout in Node)
-    this._listeners = {};
-    Object.assign(this, attrs);
-  }
-  // Real DOM keeps className and classList in sync; the views set className on
-  // elements they create, and querySelector then has to find them by class.
-  get className() { return [...this.classList._set].join(' '); }
-  set className(v) {
-    this.classList._set = new Set(String(v).split(/\s+/).filter(Boolean));
-  }
-  appendChild(el) { this.children.push(el); el._parent = this; return el; }
-  remove() {
-    if (!this._parent) return;
-    const i = this._parent.children.indexOf(this);
-    if (i !== -1) this._parent.children.splice(i, 1);
-    this._parent = null;
-  }
-  // Views measure the waveform to turn a click into a position. Node has no
-  // layout, so tests set _rect explicitly on the elements they click.
-  getBoundingClientRect() { return this._rect || { left: 0, width: 0, top: 0, height: 0 }; }
-  setAttribute(k, v) { this.attributes[k] = v; }
-  getAttribute(k) { return this.attributes[k]; }
-  addEventListener(type, fn) { (this._listeners[type] ||= []).push(fn); }
-  dispatch(type, evt = {}) { (this._listeners[type] || []).forEach(fn => fn(evt)); }
-  querySelector(sel) { return this._find(sel); }
-  querySelectorAll(sel) { return this._findAll(sel); }
-  _matches(sel) {
-    if (sel.startsWith('[data-act=')) {
-      const want = sel.slice('[data-act="'.length, -2);
-      return this.dataset.act === want;
-    }
-    return sel.split('.').filter(Boolean).every(c => this.classList.contains(c));
-  }
-  _findAll(sel) {
-    const out = [];
-    for (const c of this.children) {
-      if (c._matches(sel)) out.push(c);
-      out.push(...c._findAll(sel));
-    }
-    return out;
-  }
-  _find(sel) { return this._findAll(sel)[0] || null; }
-}
+// The DOM/media fakes and the module-loading trick live in test-fake-dom.mjs,
+// shared with test-player-boot.mjs.
+import {
+  FakeElement, FakeAudio, FakeWaveSurfer, wsInstances, loadPlayerViews,
+} from './test-fake-dom.mjs';
 
 // Globals player-views.js reads at module load.
 globalThis.document = {
@@ -98,31 +31,7 @@ globalThis.document = {
 globalThis.getComputedStyle = () => ({ getPropertyValue: () => '' });
 globalThis.window = { devicePixelRatio: 1 };
 
-// The views import WaveSurfer from an absolute /assets/ URL that only resolves
-// in the browser; stub the module so this file can import them in Node.
-const wsInstances = [];
-class FakeWaveSurfer {
-  static create(opts) { const ws = new FakeWaveSurfer(opts); wsInstances.push(ws); return ws; }
-  constructor(opts) { this.opts = opts; this.destroyed = false; this._on = {}; }
-  on(evt, fn) { (this._on[evt] ||= []).push(fn); }
-  emit(evt, arg) { (this._on[evt] || []).forEach(fn => fn(arg)); }
-  destroy() { this.destroyed = true; }
-}
-// The views import from absolute /assets/ URLs that only resolve in the
-// browser. Rewrite those two specifiers to what Node can resolve — the real
-// controller by absolute file: URL, and the WaveSurfer stub above — then
-// import the result as a data: URL. (Relative specifiers can't be used here:
-// a data: URL has no hierarchical base to resolve them against.)
-const viewsSrc = (await import('node:fs')).readFileSync(
-  new URL('./player-views.js', import.meta.url), 'utf8');
-const controllerUrl = new URL('./player-controller.js', import.meta.url).href;
-const stubbed = viewsSrc
-  .replace("import WaveSurfer from '/assets/wavesurfer.esm.js';",
-    'const WaveSurfer = globalThis.__FakeWaveSurfer;')
-  .replace("from '/assets/player-controller.js';", `from '${controllerUrl}';`);
-globalThis.__FakeWaveSurfer = FakeWaveSurfer;
-const viewsUrl = 'data:text/javascript;base64,' + Buffer.from(stubbed).toString('base64');
-const { CompactPlayerView, HeroPlayerView, itemFromRowElement } = await import(viewsUrl);
+const { CompactPlayerView, HeroPlayerView, itemFromRowElement } = await loadPlayerViews();
 
 // ── fixtures mirroring the real generated markup ───────────────────────────
 function trackRow({ waveform = false, num = 1, duration = '3:42' } = {}) {
@@ -164,24 +73,6 @@ function heroCard() {
   player.appendChild(wrap);
   card.appendChild(player);
   return card;
-}
-
-class FakeAudio extends EventTarget {
-  constructor() {
-    super();
-    this.preload = ''; this._src = ''; this.currentTime = 0; this.duration = NaN;
-    this.paused = true; this.error = null; this.playbackRate = 1;
-  }
-  get src() { return this._src; }
-  set src(v) { this._src = v; this.error = null; this.loadCount = (this.loadCount || 0) + 1; }
-  load() { this.error = null; }
-  play() {
-    this.paused = false;
-    queueMicrotask(() => { this.dispatchEvent(new Event('play')); this.dispatchEvent(new Event('playing')); });
-    return Promise.resolve();
-  }
-  pause() { if (this.paused) return; this.paused = true; this.dispatchEvent(new Event('pause')); }
-  simulateError(code = 4) { this.error = { code }; this.dispatchEvent(new Event('error')); }
 }
 
 const item = (id, extra = {}) => ({
