@@ -1192,11 +1192,55 @@ during migration, not removed speculatively.
        has never actually been *deployed*, so it has never done canary duty.
        Split into an explicit sequence; each sub-step gates the next.
 
-       5a. [ ] **Deploy the existing 3-page allowlist as-is** (no widening,
+       5a. [x] **Deploy the existing 3-page allowlist as-is** (no widening,
        no deletions) and verify it on the production origin — real caching,
        real asset headers, real devices/browsers, not just the local browser
        pass from Step 4. This is the first time the canary actually functions
        as one.
+
+       **Done (2026-08-14).** PR #3 merged (`7872882`), deploy Action green
+       including the cache-purge step, `scripts/browser_check.mjs --prod`
+       run against `https://renedebos.com`: **55/58 passed** on the second
+       run (see below for the first). Confirmed for real against production:
+       controller mounts with the correct view count and both legacy engines
+       stay dormant (the corrected finding-#3 checks) on all three
+       allowlisted pages; real playback/toggle/seek/Space/canvas against the
+       real production stream; Hero → track → next; deep-link + Retry
+       recovery; the `mad-sweetwater-2000-10-17` alt-transfer case; real
+       cross-tab `BroadcastChannel` claim/pause with `/playlist/`; the four
+       new JS assets serve with correct `Content-Type` and `Cache-Control`;
+       and the five non-allowlisted sample pages are unaffected, three with
+       confirmed real legacy playback.
+
+       **One transient anomaly, did not reproduce.** The very first
+       production hit (run immediately after the deploy Action's cache-purge
+       step went green) failed broadly — `views=0`, both legacy engines
+       appeared active, and the script crashed on an unguarded locator
+       timeout. A direct `curl` of the same URL at that same moment showed
+       the correct HTML (`cf-cache-status: MISS`, 21 real `data-item`
+       occurrences, the right inline flag and script tag) — so the deployed
+       page itself was never wrong; whatever the first Playwright hit saw
+       didn't match reality. A minimal standalone diagnostic script and a
+       full second `--prod` run, both a few minutes later, came back clean.
+       Likely a cold-start/edge-propagation timing artifact specific to the
+       very first request after a fresh deploy+purge, not a defect in the
+       code — but logged here rather than discarded, since "didn't reproduce
+       twice" is evidence, not proof. Worth a longer post-green buffer (the
+       plan's open judgment call #5) if this is ever seen again.
+
+       **Real, reproducible, pre-existing finding — not from this PR.** All
+       three canary pages show one console error: Cloudflare's own
+       auto-injected analytics beacon
+       (`static.cloudflareinsights.com/beacon.min.js`) is blocked by the
+       site's existing CSP (`script-src 'self' 'unsafe-inline'` has no
+       exception for it). Confirmed this is site-wide and unrelated to
+       player-consolidation by checking `/contact/` (untouched by this
+       initiative) — identical error. Never seen before because no prior
+       deploy ever ran a real-browser console-error check against the live
+       Cloudflare-proxied origin; the local `python3 -m http.server` pass
+       can't reproduce it (Cloudflare only injects the beacon on the real
+       proxied origin). Reported, not fixed here — `_headers`/CSP is
+       `deploy-infra` territory, per this step's own scope discipline.
 
        5b. [ ] **Expand the allowlist to all show pages, keeping
        `wavesurfer.js` as the dormant fallback.** Every show page emits the
