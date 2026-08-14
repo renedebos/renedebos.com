@@ -3,21 +3,24 @@
 Status: **in progress.** Rollout is incremental, one surface at a time —
 see §6. Phase 1 (show pages) Steps 1–4 are built: `PlaybackController`, the
 view layer, the `data-item` markup every show page carries, and
-`player-boot.js` — 51 passing deterministic tests across
-`test-player-controller.mjs` (22), `test-player-views.mjs` (15) and
-`test-player-boot.mjs` (14). **Three show pages now run the new engine**
+`player-boot.js` — 60 passing deterministic tests across
+`test-player-controller.mjs` (22), `test-player-views.mjs` (16) and
+`test-player-boot.mjs` (22). **Three show pages now run the new engine**
 (the allowlist in `pages.CONTROLLER_ENGINE_SLUGS`); the other 27 and every
-song page are byte-identical to before. Step 4's remaining gate is the
-manual browser pass — including deliberately 404ing the module to confirm
-the page falls back to a working legacy player — which needs a real browser
-and has **not** been done yet. Nothing is pushed or deployed.
+song page are byte-identical to before. **Step 4 is done, including its
+browser pass** (2026-08-14, `scripts/browser_check.mjs`, 38/38 against real
+Chromium — see §6 Step 4's entry for the full record, including the
+corrected, policy-dependent framing of deep-link autoplay). That pass was
+against the **local** build only; production-origin verification is a
+separate, still-outstanding step — see Step 5's 5a. Nothing is pushed or
+deployed.
 Mockup: https://claude.ai/code/artifact/71ae2166-d3ed-471d-9719-abd73fe353ba
-Reviewed by Codex six times, all recorded in
+Reviewed by Codex seven times, all recorded in
 `player-consolidation-codex.md`: the first pass on the original proposal,
-followed by reviews of the concrete plan, live controller, view layer, and
-two of the Step 3 markup. From the fifth review onward these are produced by
-`scripts/codex_review.sh` (see §7). This revision folds in the accepted
-findings from all six (noted
+followed by reviews of the concrete plan, live controller, view layer, two of
+the Step 3 markup, and the built Step 4 implementation. From the fifth review
+onward these are produced by `scripts/codex_review.sh` (see §7). This
+revision folds in the accepted findings from all seven (noted
 inline) and trims process-heavy asks (formal cross-browser test suite, full
 CI matrix) down to something proportionate for a two-person hobby project —
 while still keeping a real, re-runnable regression suite for the parts that
@@ -31,7 +34,15 @@ double-initialized players and broken untouched song pages/`/playlist/`
 §6) and the fifth/sixth's, which between them caught a dead retry condition,
 a download schema publishing guaranteed-403 URLs and mislabelling 64 WAVs as
 FLAC, an unenforced peaks invariant, an overstated test fixture, and a Step 4
-design that would have degraded to silence instead of falling back.
+design that would have degraded to silence instead of falling back. The
+seventh, against the built Step 4 code, found a destroyed controller that
+could be reactivated by a leaked listener (fixed with a real `_destroyed`
+guard plus a shared `AbortController` in `player-boot.js`, both proven
+independently necessary — see Step 4's fifth revision), an unenforced
+"every playable row carries a valid item" invariant (now a build failure,
+matching how the peaks-coverage invariant already works), and an overclaim
+about what a `wavesurfer.esm.js` failure specifically survives (corrected
+throughout Step 4 below, not just here).
 
 This single file is the project's one living plan document — architecture,
 concrete design, and the running implementation checklist all in one place,
@@ -168,8 +179,13 @@ only plays something already in the queue and no-ops if it isn't;
 `HeroPlayerView` calls for the Full Recording / alternate-transfer card.
 This is how the Hero's prev/next semantics resolve (a previously open
 question): a standalone whole-show recording collapses the queue to length
-1 via `playSingleton()`, and `HeroPlayerView` hides prev/next whenever
-`queue.length <= 1`.
+1 via `playSingleton()`. **Corrected wording (a later Codex review flagged
+this): "hides prev/next" describes conditional show/hide logic that doesn't
+exist.** `recording_card()` never emits prev/next controls in Phase 1 at
+all — there's nothing to hide, because nothing is ever rendered.
+`HeroPlayerView` itself has no prev/next-related code whatsoever. The
+`queue.length <= 1` framing below is the *contract a future non-singleton
+Hero would have to satisfy*, not a mechanism Phase 1 implements.
 
 **Queue-origin contract — what each context supplies, and how it switches.**
 Codex's second review caught a real flaw here: `playSingleton()` discards
@@ -335,9 +351,14 @@ fetch a JSON catalog for row data (same convention already used for
 `data-info` tooltips and `window.ZIP_MANIFEST`). Peaks stay out of the item
 schema as inline data — `peaksKey` is a pointer; the page fetches
 `window.WS_PEAKS_URL` once per page (unchanged from today) and passes the
-parsed map into view construction. A row missing peaks coverage falls back
-to the plain range input at *row* granularity, not *show* granularity — an
-improvement over today's all-or-nothing `has_waves` fork.
+parsed map into view construction. **Corrected (flagged by a later Codex
+review, §6 Step 4's entry has the full record): there is no per-row runtime
+fallback for missing peaks coverage.** A `.ws-track` row has no
+`.progress-range` element at all, so a row missing from the peaks map would
+render with neither a waveform nor a seek bar — silently unseekable. Peaks
+coverage is a **build-time invariant** instead: `validate()` fails the build
+if any track-listed show's peaks JSON is missing a track number (`core.py`).
+Zero shows violate it today.
 
 (`itemFromCatalogRow(row)`, mapping `assets/tracks.json` rows to the same
 shape for `/playlist/`/`/player/`, is designed now for forward-compatibility
@@ -358,8 +379,8 @@ class PlayerView {
 // Track rows. Given the show's full ordered queue, so a click re-asserts it
 // (see the queue-origin contract above) rather than playing a lone item.
 class CompactPlayerView extends PlayerView {} // (root, item, { queueItems, queueIndex, peaks })
-// Full Recording / alternate transfer: calls playSingleton(); prev/next
-// hidden whenever queue.length <= 1.
+// Full Recording / alternate transfer: calls playSingleton(). No prev/next
+// controls in Phase 1 — recording_card() never emits them.
 class HeroPlayerView extends PlayerView {}
 ```
 
@@ -667,7 +688,7 @@ Twenty-two cases against a fake `<audio>` element, all currently passing:
   constructs a working controller.
 
 **Deterministic view tests (built — `scripts/test-player-views.mjs`,
-`node scripts/test-player-views.mjs`):** fifteen cases driving real view
+`node scripts/test-player-views.mjs`):** sixteen cases driving real view
 instances against a hand-rolled fake DOM, with fixtures mirroring the actual
 generated markup (a `.ws-track` row, a `.custom-player` row, and a hero card
 built from `recording_card()`'s real shape — `.progress-wrap` and all,
@@ -687,16 +708,21 @@ re-asserting its queue, and landing at the tapped position**; range seeking
 that refuses to hijack playback from an inactive row; waveform upgrade only
 for the active row (wrapping the shared element, passing no `url`) with
 teardown of the previous one; the iOS tap-while-paused play-then-seek path;
-and unmount detaching a view from further updates.
+unmount detaching a view from further updates; and, added for the seventh
+review's finding #4, `setPeaks()` actually invoking `_upgradeWave()` on an
+active row and `_drawInertWave()` on an inactive one — not just storing the
+value, which is all the earlier "failed peaks fetch" boot test checked.
 
 **Deterministic bootstrap tests (built — `scripts/test-player-boot.mjs`,
-`node scripts/test-player-boot.mjs`):** fourteen cases, each importing
+`node scripts/test-player-boot.mjs`):** twenty-two cases, each importing
 `player-boot.js` afresh against a fake show-page document — importing it *is*
 running the bootstrap, which is the behavior under test. Covered: one
 controller mounted over every row and hero card, with the queue in DOM order;
+refusing to claim a page where the row/hero selectors found nothing to mount;
 the mounted flag being set **synchronously**, before the peaks fetch resolves
 (the load-bearing property — the legacy engines check that flag at
-DOMContentLoaded, which beats any fetch); peaks landing afterwards, and a
+DOMContentLoaded, which the same-synchronous-parse-job guarantee below always
+beats); peaks landing afterwards, and a
 failed peaks fetch still handing every waveform row an empty `{}`; a malformed
 row aborting the whole boot with the flag left unset; a failure *after* some
 views mounted tearing those views back down, proven by the markup being unable
@@ -705,11 +731,33 @@ claimed; a row click re-asserting the whole show queue; the Hero → row → nex
 round trip through the real markup; Space reaching a waveform row while
 keeping its hands off form fields (and not swallowing the keystroke there);
 `?autoplay=1#track-N` starting inside the full queue on load while a later
-`hashchange` only re-targets; and a debounced resize redrawing inert
-waveforms.
+`hashchange` only re-targets; a debounced resize redrawing inert waveforms;
+and, added for the seventh review's finding #1, `handle.destroy()` actually
+stopping a leaked Space/hashchange-load/resize listener from reaching a
+destroyed controller — plus a direct check that `PlaybackController` itself
+refuses every mutating call once destroyed, and that `mount()` on an
+already-destroyed controller never calls `onAttach`. The two halves (the
+controller's own `_destroyed` guards, and `player-boot.js`'s shared
+`AbortController`) were proven independently necessary, not just present:
+reverting either one in isolation left a different subset of these tests
+failing, never all of them.
+
+Also added for the seventh review's finding #4 — the earlier suite never
+loaded `player.js` at all, so deleting its engine gate entirely left every
+test green: two more cases execute `player.js`'s **real source** (not a
+reimplementation), sliced to exclude the download-modal/tooltip/share code
+that needs a real `innerHTML` parser our fake DOM doesn't have, run via
+`new Function(...)`. One proves the gate stays dormant once a peer boot has
+mounted; the other proves it still initializes legacy playback when nothing
+else claimed the page — together covering both directions the gate can fail
+in. `wavesurfer.js`'s gate is structurally identical (its own comment says
+so) and isn't separately covered — deliberately scoped to one file, since
+`player.js` is on every page and the review offered "player.js or
+wavesurfer.js" as sufficient.
 
 The DOM/media fakes and the module-loading trick now live in
-`scripts/test-fake-dom.mjs`, shared with `test-player-views.mjs`.
+`scripts/test-fake-dom.mjs`, shared with `test-player-views.mjs`; it also
+exports `readScript()`, used by the two `player.js`-source tests above.
 
 **What these tests do not cover** — deliberately, since they need a real
 browser and stay part of the manual parity checklist: canvas rendering
@@ -774,7 +822,7 @@ sticky-navigation project replaces it.
   genuinely separate architectural decision, not a side effect of this one.
 - ~~Runtime granularity~~ — one controller with many views; see §2.
 - ~~Hero queue semantics~~ — `playSingleton()` collapses the queue to
-  length 1; prev/next hidden whenever `queue.length <= 1`; see §2.
+  length 1; no prev/next controls exist in Phase 1 to begin with; see §2.
 - ~~Rollout structure~~ — incremental, one surface at a time, riskiest
   first (show pages, then `/playlist/`, then `/player/`); see §6.
 - ~~Loudness control, this pass~~ — fully deferred, not just weakened; see
@@ -931,22 +979,39 @@ during migration, not removed speculatively.
        degrade to a page with a working Full Recording card and *no track
        players at all* — the exact silent-degradation failure this step's
        redesign exists to avoid. `wavesurfer.js` now takes the identical
-       defer-and-check branch, so a failed boot falls back to today's complete
-       engine pair. Its build is a module and its show-page path is behind a
-       fetch, so deferring it costs nothing.
+       defer-and-check branch, so a failed `player-boot.js`/`player-views.js`/
+       `player-controller.js` falls back to today's complete engine pair. Its
+       build is a module and its show-page path is behind a fetch, so
+       deferring it costs nothing.
+       **Correction (seventh review): this is not true of every failure.**
+       `wavesurfer.js` and `player-views.js` both statically import the
+       identical vendored `/assets/wavesurfer.esm.js`. If THAT one file 404s
+       or fails to parse, both waveform engines fail together — the "complete
+       engine pair" claim above holds for a failure in the new engine's own
+       files, not for its one dependency shared with the old engine. This
+       isn't fragility Step 4 introduced: waveform rows have depended solely
+       on that module since before this initiative existed, on every show
+       page, flagged or not — the correction is to the plan's wording, not to
+       runtime behavior. See the "Still to verify" note below for what the
+       browser pass should actually test.
 
        *(ii) `document.readyState` is not a usable shortcut for the
        DOMContentLoaded barrier.* readyState is already `'interactive'` while
        deferred and module scripts execute, so an "if we're past loading, just
        initialize" branch would fire the legacy engine **before** `player-boot.js`
        (a later module) ever got the chance to claim the page — double-initializing
-       precisely what the flag prevents. DOMContentLoaded has not fired at that
-       point under any script placement, so the plain listener is always
-       registered in time. Both gates say so in a comment; don't "simplify" it back.
+       precisely what the flag prevents. **Wording corrected per the seventh
+       review's finding #6:** the actual guarantee is narrower than "any script
+       placement" — every script here is a parser-inserted `<script>` in
+       document order (build.py's own output, not a dynamically inserted one),
+       and DOMContentLoaded is only queued after that whole ordered list runs,
+       so registering the listener in that same synchronous parse job is
+       always in time. Both gates now say so precisely, not just "under any
+       script placement"; don't "simplify" it back to the vaguer claim.
 
        *(iii) Views mount peak-less and are decorated afterwards.* The marker
-       has to be set synchronously (DOMContentLoaded beats any fetch), but the
-       peaks map is a fetch — so the boot mounts first, sets the flag, then
+       has to be set synchronously in that same parse-job window described
+       above, but the peaks map is a fetch — so the boot mounts first, sets the flag, then
        applies peaks via a new `PlayerView.setPeaks()`. A row started in the
        gap simply upgrades to its waveform a moment later. A *failed* peaks
        fetch hands every waveform row an empty `{}` rather than `null`,
@@ -974,7 +1039,9 @@ during migration, not removed speculatively.
        is *not* covered — the only track-less show is hidden and generates no
        page.
 
-       *Verified:* `test-player-boot.mjs` 14/14, `test-player-views.mjs` 15/15,
+       *Verified at the time of this build* (superseded below by the seventh
+       review's fixes — see the current counts near the top of this file):
+       `test-player-boot.mjs` 14/14, `test-player-views.mjs` 15/15,
        `test-player-controller.mjs` 22/22. Each of the boot tests was
        mutation-checked — the fix reverted, the test confirmed failing — which
        is how the partial-mount teardown test got fixed: the original fixture
@@ -989,25 +1056,131 @@ during migration, not removed speculatively.
        before `player.js`, `player.js` still present (it *is* the fallback) —
        plus that every `/assets/` script a page loads, and everything those
        scripts import, is actually written by `build.py`.
+       **Extended for the seventh review's findings #2 and #5:** it now
+       enumerates every `.track-row`/`.recording-item` ELEMENT independently
+       of whether a `data-item` attribute is present, rather than only
+       validating attributes it happens to find — the earlier version would
+       have silently passed a build regression that dropped
+       `playable_item_attr()` from one row. And its import-graph scan now
+       catches dynamic `import()`, side-effect imports, and `export … from`
+       (both quote styles), not just single-quoted static `from` — the gap
+       that had already let `player.js:401`'s `await import('/assets/
+       client-zip.js')` go unchecked. Both fixes carry their own in-memory
+       self-test (`_selftest()`, run automatically on every invocation), so
+       the fix itself stays regression-tested without needing a Python test
+       framework this project doesn't otherwise have.
 
-       *Still to verify, needs a real browser (not available in the session
-       that built this):* full parity checklist (§3); exactly one engine
-       mounted (no duplicate listeners on a row); and deliberately breaking the
-       module — rename `assets/player-boot.js` — to confirm the page falls back
-       to a working legacy player, waveform rows included, rather than going
-       inert. **Step 5 must not start before that pass.**
-5. [ ] Flip the allowlist on for all show pages, and remove only what is
-       provably unreferenced. Every show page emits the engine flag and
-       `player-boot.js`; stop emitting `wavesurfer.js`'s module tag.
+       **Browser pass done (2026-08-14).** No browser was available in the
+       session that built the above; one turned out to be reachable in a
+       later session via `playwright-chromium`/`playwright-webkit` (globally
+       installed, not a project dependency — this project still has no
+       package.json). Rather than a one-off manual check, this is now a
+       permanent, reproducible, checked-in harness:
+       **`scripts/browser_check.mjs`** (dev-only, same status as
+       `test-player-*.mjs` — not part of `build.py` or any deploy gate, run
+       by hand: `NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs`).
+       It serves the real repo locally and drives real Chromium (and WebKit,
+       if `playwright-webkit` is present) against it — real production audio
+       (`streamUrl` points at the live worker, nothing mocked), real
+       `WaveSurfer` rendering, real `BroadcastChannel` delivery. The two
+       breakage scenarios run against a temp copy of `assets/`+`shows/`, so
+       the script never touches the working tree.
 
-       **Deleting `wavesurfer.js` gives up the waveform half of the runtime
-       fallback** — that is the actual cost of this step, and it should be a
-       deliberate call made *after* the Step 4 browser pass, not a formality.
-       Until then a boot failure degrades to today's full legacy pair; after
-       it, to `player.js` alone, which can only drive the recording cards.
+       **38/38 passed** (Chromium; a WebKit smoke pass — mount, a real
+       click-gesture play, canvas rendering — also passed separately, not
+       yet folded into the default run since `playwright-webkit` isn't
+       reliably available via a plain global install). Covered: controller
+       mounts and the legacy engine provably stays dormant (no `_audio`
+       marker anywhere) on all three allowlisted pages; real playback
+       actually advances, `toggle()`/`seek()`/Space all work against it; a
+       real `WaveSurfer` canvas renders (had to pierce a Shadow DOM —
+       WaveSurfer v7 uses one by default, worth knowing for future
+       debugging); the Hero → track → next round trip, with real audio at
+       each step; the `mad-sweetwater-2000-10-17` alternate-transfer case
+       (the one that originally motivated keying recording IDs on the
+       lossless file) — only the clicked card ever shows active; and real
+       cross-tab claim/pause between a controller-engine show page and
+       `/playlist/` via genuine `BroadcastChannel`.
+
+       **Both breakage tests, run for real, not just reasoned about:**
+       renaming `assets/player-boot.js` away → full legacy fallback,
+       confirmed with real playing audio in both the Full Recording card
+       (`player.js`) and a waveform row (`wavesurfer.js`). Renaming the
+       vendored `assets/wavesurfer.esm.js` away → the corrected claim from
+       the seventh review, confirmed exactly: Full Recording card keeps
+       playing real audio via classic `player.js`; every waveform row is
+       genuinely dead in both engines, because they share that one file.
+
+       **Deep-link autoplay: describe this as policy-dependent, not
+       "passed."** `?autoplay=1#track-N` reliably queues the right track and
+       highlights the right row — that part is asserted and passes
+       unconditionally. Whether the browser actually *starts* playback on
+       arrival is outside the app's control: a fresh headless session has
+       zero Media Engagement Index, so Chromium blocks the resulting
+       `play()` call. Confirmed this is a genuine browser-policy interaction
+       and not a code defect by reproducing the identical block against the
+       legacy `wavesurfer.js` engine on an unflagged page. What IS asserted
+       and passes: the controller correctly surfaces this as a visible
+       `'error'` state (not a silent hang or a crash) — the row's button
+       relabels to "Retry `<track>`" and a `role="status"` message appears —
+       and **a real user-gesture click on that Retry button successfully
+       starts playback** (confirmed: `state` goes to `'playing'`,
+       `currentTime` advances against the real stream). That recovery path,
+       not raw autoplay success, is the thing actually being guaranteed by
+       the code and now verified.
+
+       **Not covered, still needs a real device:** real Firefox, and real
+       iOS/Android — WebKit-the-engine approximates Safari but isn't
+       identical, particularly for mobile-specific autoplay/backgrounding
+       behavior. And this was all against the **local** build — the
+       production-origin verification (real caching, real headers, real
+       deployed Worker) is a separate, still-outstanding step; see Step 5's
+       5a below, which is where that belongs, not here.
+5. [ ] **Restructured per a later Codex review's recommendation** (see that
+       review's "the proposed Step 5 rollout is too compressed" concern in
+       `player-consolidation-codex.md`): the original single checklist item
+       below bundled "trust the 3-page canary enough to go site-wide" with
+       "give up the waveform fallback" into one decision — and the canary
+       has never actually been *deployed*, so it has never done canary duty.
+       Split into an explicit sequence; each sub-step gates the next.
+
+       5a. [ ] **Deploy the existing 3-page allowlist as-is** (no widening,
+       no deletions) and verify it on the production origin — real caching,
+       real asset headers, real devices/browsers, not just the local browser
+       pass from Step 4. This is the first time the canary actually functions
+       as one.
+
+       5b. [ ] **Expand the allowlist to all show pages, keeping
+       `wavesurfer.js` as the dormant fallback.** Every show page emits the
+       engine flag and `player-boot.js`; `wavesurfer.js`'s module tag keeps
+       being emitted too, so a page whose controller mount fails still has
+       its full runtime fallback (module/asset failures in `player-boot.js`/
+       `player-views.js`/`player-controller.js` specifically — see the
+       caveat below for what this does and doesn't cover). Verify the wider
+       rollout the same way as 5a before treating it as settled.
+
+       5c. [ ] **Delete `wavesurfer.js` as its own, later, separate
+       decision** — only once confidence from 5b is established, not as part
+       of the same step. This is the point at which "remove only what is
+       provably unreferenced" (below) actually applies. **What this step
+       actually costs, and one qualifier on that cost (seventh review):**
+       until this point, a `player-boot.js`/`player-views.js`/
+       `player-controller.js` failure degrades to today's full legacy pair;
+       after it, to `player.js` alone, which can only drive the recording
+       cards. But even before this step, "today's full legacy pair" was
+       never the fallback for a `wavesurfer.esm.js` failure specifically —
+       that shared dependency has always been a single point of failure for
+       waveform rows in both engines, since before this initiative existed.
+       This step doesn't create a new gap there; it just removes the code
+       (`wavesurfer.js`) that made the gap easy to describe as "the waveform
+       half" in the first place.
        (`wavesurfer.js`'s engine-selection branch goes with the file. The
        `pre_scripts` flag and `player.js`'s gate stay — `player.js` is still
        the fallback, and still serves song pages and `/playlist/`.)
+
+       The verification/cleanup notes below were written for the original,
+       unsplit step and still apply — read them as covering 5b (the allowlist
+       widening) and 5c (the `wavesurfer.js` deletion) together.
 
        **Do NOT delete `initCustomPlayers` or the claim globals from
        `player.js` in this phase** (Codex catch — an earlier draft of this
@@ -1057,13 +1230,15 @@ review):**
       engine flag — **no bridge/facade is built**, since nothing on a migrated
       page calls the legacy globals (§3, Step 4)
 - [x] literal parity checklist exists (§3)
-- [~] the shared controller works with existing show-page markup (Step 4) —
-      built and covered by deterministic tests; the browser pass that actually
-      closes this gate is still outstanding
+- [x] the shared controller works with existing show-page markup (Step 4) —
+      built, covered by deterministic tests, and confirmed against real
+      Chromium/WebKit (`scripts/browser_check.mjs`, 2026-08-14, 38/38)
 - [x] stale-play and queue-transition tests pass
-      (`test-player-controller.mjs` 22/22, `test-player-views.mjs` 15/15)
-- [ ] the old engine remains available as a fallback during the allowlist
-      step (by design — Step 4 keeps both live until Step 5)
+      (`test-player-controller.mjs` 22/22, `test-player-views.mjs` 16/16)
+- [x] the old engine remains available as a fallback during the allowlist
+      step — by design (Step 4 keeps both live until Step 5), and now
+      confirmed for real by the two breakage tests in
+      `scripts/browser_check.mjs`, not just reasoned about
 
 **Explicitly not touched this phase:** song pages (`_song_occ_html`,
 `songs.js`'s `initCustomPlayers` re-invocation for lazily-inserted rows),
@@ -1114,6 +1289,16 @@ mp3TruePeak headroom data. Genuinely unscoped until deliberately picked up.
       controller-level mechanisms that already exist
 - [ ] Manual spot-check on Safari/Chrome/Firefox, mobile and desktop, once
       each phase has something to check
+- [ ] **Wire the deterministic Node suites into an actual deployment gate**
+      (a later Codex review's suggestion). `build.py` already runs
+      `verify_markup.py` automatically as a build-integrity gate — running
+      `node scripts/test-*.mjs` alongside it before deploy is the same
+      philosophy one step further. A full cross-browser matrix stays
+      disproportionate for this project (§3 already declines that); running
+      the 60+ already-written, already-fast, already-passing tests before
+      shipping is not. Not urgent while Phase 1 is still mid-rollout, but
+      worth doing once Step 5 stabilizes rather than continuing to run them
+      by hand.
 
 ## 7. Review loop
 
@@ -1128,9 +1313,16 @@ derivation is generic (`*-plan.md` → `*-codex.md`), so it works for future
 scripts/codex_review.sh plans/<initiative>/<topic>-plan.md "<what to focus on>"
 ```
 
-`/review-step` (`.claude/commands/review-step.md`) runs that script and then
-verifies each finding against the code, applies what holds, and explicitly
-declines what doesn't — replacing a four-message manual relay.
+`/review-step` (`.claude/commands/review-step.md`) runs that script, verifies
+each finding against the code, and records a disposition (confirmed / declined
+/ already handled) in the review log — **then stops**, deliberately. It never
+applies anything itself. `/apply-review` is the separate command that
+implements the confirmed findings, run only after a human has seen the
+disposition and approved acting on it. This split (corrected here — an earlier
+draft of this section described a single command that both verified and
+applied) is what keeps the judgment step human-gated: replacing what used to
+be a four-message manual relay with two commands, not one that quietly does
+both jobs.
 
 **Deciding which findings hold is deliberately not automated.** Several Codex
 suggestions here have been correctly declined (a separate `downloads.js`, a

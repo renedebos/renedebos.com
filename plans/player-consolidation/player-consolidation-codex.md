@@ -1014,3 +1014,87 @@ None of this blocks the still-outstanding browser pass from the previous
 session's plan — it's the item ordering that changes: #1 and #3 above are
 worth fixing before that pass, since #3 changes what the pass should
 actually be testing for the waveform-asset-failure case.
+
+### Fixes applied (Claude, 2026-08-14)
+
+All six findings fixed. Every behavioral fix got a regression test, and every
+one of those tests was proven meaningful the same way — the fix reverted,
+the test confirmed **failing**, the fix restored, full suite confirmed green
+again — not just written and assumed to work.
+
+- **#1 (fixed).** `PlaybackController` gained a `_destroyed` guard on every
+  mutating method (`setQueue`, `appendQueue`, `removeAt`, `reorder`, `play`,
+  `playSingleton`, `pause`, `toggle`, `stop`, `seek`, `seekBy`, `next`,
+  `prev`, `setRepeatOne`, `toggleShuffle`, `mount`) and `destroy()` itself is
+  now idempotent. `player-boot.js` gained one `AbortController` shared by
+  mounting AND decoration (previously two separate try/catch boundaries —
+  the finding's second half, a decoration throw leaving a mounted-but-
+  unclaimed controller, is fixed by merging them into one), with
+  `handle.destroy()` aborting it before destroying the controller.
+  `test-fake-dom.mjs`'s `FakeElement`/`FakeWindow` gained real `{ signal }`
+  support (mirroring the DOM) so this is exercised in Node, not just by
+  inspection. Five new tests in `test-player-boot.mjs` (destroy() stopping a
+  leaked Space/hashchange-load/resize listener; the controller refusing
+  every mutating call directly; `mount()` refusing to attach post-destroy).
+  **Both halves proven independently necessary**, not just both present:
+  reverting only the controller guards left the two controller-state-backed
+  tests failing (Space, hashchange) but NOT the resize test (proving resize
+  isn't backstopped by controller state); reverting only the boot-level
+  abort left only the two controller-direct tests failing. Neither fix alone
+  covers what the other does.
+- **#2 (fixed).** `verify_markup.py` gained `check_every_row_has_item()`,
+  enumerating `.track-row`/`.recording-item` ELEMENTS independently of
+  whether `data-item` is present (the old `ITEM_RE`-only approach structurally
+  cannot notice an absent attribute — proven by running it against a
+  real mutated page, where it found 0 errors). Carries its own in-memory
+  `_selftest()`, run automatically every invocation. `player-boot.js` also
+  refuses to claim a page where its selectors found zero rows/heroes to
+  mount, as a runtime backstop for the same invariant — new test in
+  `test-player-boot.mjs`.
+- **#3 (fixed — wording only, no behavior changed).** The "falls back to the
+  complete legacy engine pair" claim is corrected everywhere it appeared
+  (the plan's intro, Step 4's build-notes, Step 4's "still to verify" note,
+  Step 5's cost description) to name `wavesurfer.esm.js` as the one
+  dependency shared by both engines, whose failure neither survives — not
+  new fragility Step 4 introduced, just a claim that needed the exception
+  carved out. The still-outstanding browser pass now has the corrected
+  claim to test against.
+- **#4 (fixed).** Two real gaps, both closed. `PlayerView.setPeaks()` now has
+  a dedicated test in `test-player-views.mjs` asserting `_upgradeWave()`/
+  `_drawInertWave()` was actually CALLED (keyed on active/inactive), not just
+  that `.peaks` was stored — reproduced the named mutation (strip the two
+  calls, keep the assignment) and confirmed it used to pass. `player.js`
+  itself is now loaded and executed for real in two new
+  `test-player-boot.mjs` cases (`readScript()`, exported from
+  `test-fake-dom.mjs`) — sliced to exclude the download-modal/tooltip/share
+  code that needs a real `innerHTML` parser, spliced back together with the
+  deep-link section further down whose `initLegacyDeepLink()` the gate calls.
+  One proves the gate stays dormant once a peer boot mounted; the other
+  proves it still initializes legacy playback when nothing else claimed the
+  page. Reverting the real gate in `player.js` (the same mutation used to
+  verify the finding) now fails the first of these two.
+  `wavesurfer.js`'s identical gate is deliberately NOT separately covered —
+  scoped to one file since the finding itself offered "player.js or
+  wavesurfer.js" as sufficient, and `player.js` is the one on every page.
+- **#5 (fixed).** `IMPORT_RE` rewritten to catch dynamic `import()`,
+  side-effect imports, and `export … from`, both quote styles — not just
+  single-quoted static `from`. Confirmed it now catches `player.js:401`'s
+  `await import('/assets/client-zip.js')` (previously invisible to this
+  check), and confirmed end-to-end by temporarily removing
+  `assets/client-zip.js` and observing 30 fresh failures where there were
+  previously zero. Carries its own `_selftest()` cases for each import shape.
+- **#6 (fixed — wording only).** The "beats any fetch" / "under any script
+  placement" comments in `player.js`, `wavesurfer.js`, and the plan are
+  rewritten to state the actual guarantee: every script here is a
+  parser-inserted `<script>` in document order (`build.py`'s own output),
+  and the flag check runs in that same synchronous parse job, before
+  `DOMContentLoaded` is even queued — narrower than, and not equivalent to,
+  a universal claim about fetches or script placement.
+
+**Verification:** `python3 scripts/build.py --check` (31 shows, 680 tracks),
+`python3 scripts/build.py` (includes `verify_markup.py`, 747 items across 30
+pages, clean), and all three suites — `test-player-controller.mjs` 22/22,
+`test-player-views.mjs` 16/16 (+1), `test-player-boot.mjs` 22/22 (+8) — 60
+tests total, up from 51 at the start of the review. Nothing pushed or
+deployed; the browser pass from the previous session's plan is still
+outstanding and still gates Step 5.
