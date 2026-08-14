@@ -844,3 +844,173 @@ Six findings; five confirmed and fixed, one factually wrong.
   fixture-fidelity and Step 4 fallback findings already fixed above. The review
   appears to have read a snapshot taken before the append landed. Noted rather
   than actioned.
+
+---
+
+## Step 4 player boot and engine-gating review — 2026-08-13
+
+1. **High — Bootstrap teardown is incomplete and can reactivate a destroyed controller or leave two engines live.**  
+   Evidence: [player-boot.js](/home/renedebos/renedebos.com-player-consolidation/scripts/player-boot.js:65) catches and destroys only failures during view mounting. The keyboard, deep-link, and resize listeners are installed afterward at lines 80–83 and never removed; `handle.destroy()` at line 75 destroys only the controller. [player-controller.js](/home/renedebos/renedebos.com-player-consolidation/scripts/player-controller.js:422) leaves `_idx` and the queue intact, while transport methods do not check `_destroyed`. Consequently, after `window.PLAYER_BOOT.destroy()`, Space or a later `load`/`hashchange` can call `toggle()`/`setQueue(...autoplay)` and start the detached audio again. Separately, if a synchronous decoration step throws after some listeners are installed, the outer auto-run catch leaves the mounted controller/listeners alive but the flag unset; `DOMContentLoaded` then starts legacy playback too. This contradicts the plan’s claim at [player-consolidation-plan.md](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:903) that any bootstrap failure tears down partial work.  
+   Why it matters: this is a concrete lifecycle path to an invisible engine and a transactional-error path to two engines.  
+   Suggested fix: create one boot-level `AbortController`, register all document/window listeners with its signal, and make `handle.destroy()` abort it before destroying the controller. Put all synchronous boot wiring inside the same cleanup boundary, and make controller transport methods no-op after destruction or clear the queue/index in `destroy()`. Add tests that destroy a successful boot and then dispatch Space, `load`, `hashchange`, and resize, plus a forced post-mount wiring exception followed by legacy initialization.
+
+2. **Medium — A missing `data-item` silently suppresses legacy playback while leaving that row unwired.**  
+   Evidence: [player-boot.js](/home/renedebos/renedebos.com-player-consolidation/scripts/player-boot.js:28) discovers only `.track-list [data-item]` and `.recording-item[data-item]`; absent attributes are skipped rather than rejected. The module nevertheless sets `PLAYER_ENGINE_MOUNTED` at lines 170–176, even if one playable row—or every playable element—was skipped. [verify_markup.py](/home/renedebos/renedebos.com-player-consolidation/scripts/verify_markup.py:128) validates only attributes it finds; it never compares all `.track-row`/`.recording-item` elements with the `data-item` population. The invented fixtures always supply the attribute.  
+   Why it matters: one generator regression can produce zero engines for a row while all current checks pass; deleting every `data-item` from an allowlisted page can make the empty controller claim the whole page.  
+   Suggested fix: enumerate all expected `.track-list .track-row` and `.recording-item` elements, then throw if any lacks valid item data or required controls. Extend `verify_markup.py` to assert one valid `data-item` per playable element and require at least one mounted view before setting the flag.
+
+3. **Medium — “A module/asset failure falls back to the complete legacy engine pair” is overbroad.**  
+   Evidence: `player-boot.js` and [player-views.js](/home/renedebos/renedebos.com-player-consolidation/scripts/player-views.js:13) statically import the same `/assets/wavesurfer.esm.js` used by [wavesurfer.js](/home/renedebos/renedebos.com-player-consolidation/scripts/wavesurfer.js:8). The actual outcomes are:
+
+   - `player-boot.js` 404/parse error: legacy `player.js` and `wavesurfer.js` initialize; waveform rows work.
+   - `player-views.js` or `player-controller.js` 404: the boot graph fails, but the independent legacy WaveSurfer graph still initializes; waveform rows work.
+   - `wavesurfer.esm.js` 404/parse error: both module graphs fail. Classic `player.js` restores Full Recording cards, but every `.ws-track` row is dead.
+   - Exception during the guarded mount loop: mounted views are destroyed and both legacy engines initialize; waveform rows work.
+   - No module support: neither WaveSurfer module nor boot module executes. Classic Full Recording cards work, but waveform rows are dead.
+
+   The last two dead-row cases are no worse than an unflagged page today—those pages already require module support and the same WaveSurfer asset—but they are not the “complete engine pair” promised at [player-consolidation-plan.md](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:925).  
+   Why it matters: later work may treat the fallback as broader than it is and remove the remaining native escape hatch.  
+   Suggested fix: narrow the plan and comments to “boot-only dependency failures fall back”; explicitly document the shared WaveSurfer dependency and unsupported-module baseline. If waveform fallback must survive that dependency failing, it needs a native range/player path independent of WaveSurfer.
+
+4. **Medium — The 14 boot tests do not exercise the engine handshake or generated markup, and the mutation-check claim is unsupported.**  
+   Evidence: [test-player-boot.mjs](/home/renedebos/renedebos.com-player-consolidation/scripts/test-player-boot.mjs:29) hand-builds convenient rows/cards rather than invoking `build_show()` or parsing generated HTML. It never loads `player.js` or `wavesurfer.js`, never fires `DOMContentLoaded`, and therefore cannot detect legacy double initialization. [test-fake-dom.mjs](/home/renedebos/renedebos.com-player-consolidation/scripts/test-fake-dom.mjs:65) has no bubbling, capture, `once`, AbortSignal removal, readiness state, or browser event scheduling. Its `FakeAudio` at line 131 always plays successfully without user activation, loading, source-reset, metadata, or rejection semantics. Its `FakeWaveSurfer` at line 149 merely stores options, while the loader at lines 170–192 replaces the real vendored implementation. Two harmful mutations that would still leave the boot suite green are removing the flagged-page gate from either `player.js` or `wavesurfer.js`, and changing late `setPeaks()` to store the object without drawing/upgrading—the failed-peaks test checks only the stored property. This directly undercuts the “each boot test was mutation-checked” and “through the real markup” claims at [player-consolidation-plan.md](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:692) and line 977.  
+   Why it matters: the suite proves selected bootstrap/controller behavior, but gives no evidence for the load-order gate, fallback, real event teardown, browser media behavior, or generated-markup integration. The late-peaks adoption path appears sound by source audit—the vendored WaveSurfer marks `options.media` external, detects the already-playing element, and its same-source check avoids removing/reassigning `src`—but the fake tests exercise none of those operations.  
+   Suggested fix: add a browser test served from actual generated `build_show()` output. Instrument `Audio`, break each module URL independently, fire real lifecycle events, and assert which listeners/media elements own every row. At minimum, parse a real generated page in the non-browser test instead of constructing parallel fixtures.
+
+5. **Low — The asset graph checker does not cover everything scripts import.**  
+   Evidence: [verify_markup.py](/home/renedebos/renedebos.com-player-consolidation/scripts/verify_markup.py:73) recognizes only single-quoted static `from '/assets/…'` imports. It misses dynamic imports, side-effect imports, double-quoted imports, and re-exports. There is already a missed real edge: [player.js](/home/renedebos/renedebos.com-player-consolidation/scripts/player.js:401) dynamically imports `/assets/client-zip.js`. The file currently exists, but deleting its build write would not fail this check despite the plan’s assertion at line 990 that all imports are covered.  
+   Why it matters: a build can pass while shipping a broken lazily loaded feature.  
+   Suggested fix: parse JavaScript imports with a small JS parser, or conservatively scan static `from`, side-effect `import`, `export … from`, and literal `import()` forms with both quote styles. Add a test fixture for each supported form.
+
+6. **Low — The timing rationale contains two inaccurate guarantees, although the emitted parser-inserted order itself is valid.**  
+   Evidence: the plan says `DOMContentLoaded` “beats any fetch” and that the listener is timely “under any script placement” at [player-consolidation-plan.md](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:697) and line 943. A fetch completion is not ordered behind `DOMContentLoaded` in that general way, and a dynamically inserted module can run after the event. The actual page is safe for a narrower reason: [the generated page](/home/renedebos/renedebos.com-player-consolidation/shows/jerry-cafe-java-1999-05-27/index.html:361) uses parser-inserted modules in document order, and the flag assignment happens in the same JavaScript job before any fetch promise continuation. The HTML Standard sets readiness to `interactive`, executes the ordered deferred/module list, and only then queues `DOMContentLoaded`. [HTML parsing algorithm](https://html.spec.whatwg.org/multipage/parsing.html#the-end), [script processing model](https://html.spec.whatwg.org/multipage/scripting.html#processing-model).  
+   Why it matters: overstated timing folklore invites unsafe reuse in dynamically loaded or reordered contexts.  
+   Suggested fix: document the precise parser-inserted ordering and synchronous-job guarantee; remove “any fetch” and “any script placement.”
+
+**Verification during this review**
+
+- `for f in scripts/test-*.mjs; do node "$f" || exit $?; done` — passed: boot 14/14, controller 22/22, views 15/15.
+- `python3 scripts/build.py --check` — passed: 31 shows, 680 curated tracks.
+- `python3 scripts/verify_markup.py` — passed: 747 items across 30 generated show pages.
+- Two-direction `BroadcastChannel` probe — passed: controller bare-string claims reached a legacy peer, and a legacy claim paused the controller.
+- `git diff --name-only 6b05a79^ 6b05a79` — only the three allowlisted generated show pages changed; song, `/playlist/`, `/player/`, and lab HTML did not.
+- Source trace confirmed unflagged `player.js` and `wavesurfer.js` still take their immediate branches, and `songs.js` still calls the exposed `initCustomPlayers(container)`.
+- Source/asset `cmp` checks — all five player assets match their script sources.
+- `git diff --check` and `bash -n scripts/codex_review.sh` — passed. The uncommitted lock fix correctly resolves the linked worktree’s absolute git directory.
+- No browser executable was available, so actual module-404 and real WaveSurfer/media tests remain unperformed.
+_Review generated 2026-08-13 23:08:08 PDT by `scripts/codex_review.sh` (codex exec, read-only)._
+
+### Disposition (Claude, 2026-08-13)
+
+All six findings confirmed — no factually wrong claims this pass. Three were
+reproduced directly (not just read and agreed with).
+
+- **#1 High, destroyed-controller reactivation — confirmed, reproduced.**
+  Built a repro against the real modules (not a hypothetical): started
+  playback through a mounted `CompactPlayerView`, called
+  `handle.destroy()`, then dispatched a `keydown` Space event on the
+  document. The controller's audio resumed playing — `paused` went from
+  `true` right after `destroy()` back to `false` after the leaked
+  `wireKeyboard` listener fired `toggle()`. `player-controller.js` sets
+  `_destroyed = true` (line 435) but the string never appears again in the
+  file — no transport method checks it. Real defect.
+  **Mitigating fact Codex's finding didn't state:** `handle.destroy()` is
+  called from exactly nowhere in shipped code today (only defined, and
+  exposed via `window.PLAYER_BOOT.destroy()` for console/future use) — this
+  site is static multi-page, so a full navigation already tears everything
+  down and nothing currently invokes it in production. Still a real bug: it's
+  public API, the plan explicitly reserves a future SPA-navigation phase
+  where teardown becomes load-bearing, and an API that's silently broken
+  until someone needs it is worse than one that visibly doesn't exist.
+- **#2 Medium, unmarked missing data-item — confirmed.** Traced
+  `verify_markup.py`'s `ITEM_RE.findall(src)` (line 128): it validates every
+  `data-item` attribute it finds and never counts `.track-row`/
+  `.recording-item` elements independently to compare. A regression in
+  `build_show()` that dropped the attribute from one row would produce a
+  silently unmounted row — invisible to `ROW_SELECTOR` too
+  (`'.track-list [data-item]'`), so on a flagged page that row would get
+  neither engine, since legacy is suppressed. No live path produces this
+  today (every row in the loop unconditionally gets `playable_item_attr()`),
+  but the same "structural invariant, not just a snapshot of current output"
+  argument that made peaks-coverage a build failure in the sixth review
+  applies here too.
+- **#3 Medium, "complete legacy pair" overclaim — confirmed, and the most
+  important finding.** Traced the import graphs: `wavesurfer.js` and
+  `player-views.js` both statically import the identical
+  `/assets/wavesurfer.esm.js`. If that one shared file 404s or fails to
+  parse, BOTH graphs fail — not just the new engine. Verified all five
+  failure modes in the finding by tracing each import chain by hand; all
+  five check out, including the "no module support" case matching today's
+  UNFLAGGED-page baseline exactly (waveform rows there already depend
+  entirely on `wavesurfer.js` as a module script — this isn't new fragility
+  Step 4 introduced, it's fragility that already existed and my language
+  didn't carve out). This directly contradicts language I used repeatedly
+  this session — in the plan, in HANDOFF.md, and in chat replies ("confirm
+  the page falls back to a working legacy player, waveform rows included").
+  That claim is false for exactly one dependency: the vendored WaveSurfer
+  asset itself. **Action: fix the wording in the plan and HANDOFF before the
+  browser pass**, so whoever runs it (there's no browser in this
+  environment) tests the right claim — module/asset failures in
+  `player-boot.js`/`player-views.js`/`player-controller.js` fall back
+  completely; a `wavesurfer.esm.js` failure does not, and never has.
+- **#4 Medium, test-quality/mutation-check overclaim — confirmed, reproduced
+  both named mutations.** (a) Deleted the entire engine-gate block from
+  `player.js` (reverting to unconditional `initLegacyPlayback()`) — all 51
+  tests across the three suites still passed, because none of them ever
+  loads `player.js`. Same result deleting `wavesurfer.js`'s gate. (b) Removed
+  the `_upgradeWave()`/`_drawInertWave()` calls from `PlayerView.setPeaks()`,
+  leaving only `this.peaks = peaks` — all 51 tests still passed; the "failed
+  peaks fetch" test only asserts the stored `.peaks` property, never that
+  drawing was invoked. **Correction to my own prior claim:** "each boot test
+  was mutation-checked" was true for the specific behaviors I actually
+  checked this session (hashchange-not-autoplaying, the Space form-field
+  guard, row-click queue-scoping, the peaks-fetch-failure fallback *value*,
+  and the partial-mount teardown, all independently reverted and confirmed
+  failing) — but it was not exhaustive, and these two gaps are real. Neither
+  is close to the modules I mutation-checked; they're the two pieces of
+  Step 4 that were never checked at all.
+- **#5 Low, asset-import-graph checker gap — confirmed, already known.** I'd
+  flagged this exact gap (`IMPORT_RE`'s dynamic-`import()` blind spot,
+  concretely `player.js:401`'s `await import('/assets/client-zip.js')`) to
+  the user before this review ran, specifically left unfixed as a live test
+  of whether the review would catch it. It did. The double-quote/side-effect/
+  re-export sub-gaps are currently latent — no shipped script uses those
+  forms — but the checker is still narrower than its docstring claims.
+- **#6 Low, timing-comment wording — confirmed.** "Beats any fetch" and
+  "under any script placement" (both phrases appear verbatim, in
+  `wavesurfer.js:162` and twice in the plan) overstate a general guarantee
+  that doesn't hold outside this architecture's specific case. The actual
+  page is safe for the narrower reason Codex traced against spec: emitted
+  scripts are parser-inserted modules in document order, and the flag check
+  runs synchronously in that same job, before any fetch continuation could
+  interleave. Wording-only; no code behavior is wrong.
+
+**What I'd change if approved (not done — `/apply-review`'s job):**
+1. Give `PlaybackController` a real `_destroyed` guard on every transport
+   method, and have `player-boot.js`'s `handle.destroy()` remove the
+   keyboard/deep-link/resize listeners it installed (one boot-level
+   `AbortController`, matching the pattern `PlayerView` already uses).
+2. Extend `verify_markup.py` to enumerate `.track-row`/`.recording-item`
+   elements independently and require a valid `data-item` on each, on
+   allowlisted pages — not just validate whatever it happens to find.
+3. Rewrite the "complete legacy engine pair" framing in the plan and
+   HANDOFF.md to name `wavesurfer.esm.js` as the one dependency shared by
+   both engines, whose failure is not survived by either.
+4. Add the two missing mutation-guarded assertions: a boot test that loads
+   real `player.js`/`wavesurfer.js` source and confirms the engine gate
+   actually suppresses their init when a peer boot succeeds (this needs
+   either a minimal DOM capable of executing classic scripts, or a
+   source-level assertion that the gate exists and wraps the right calls);
+   and a `setPeaks()` test asserting `_upgradeWave`/`_drawInertWave` was
+   actually invoked, not just that `.peaks` was stored.
+5. Tighten `IMPORT_RE` to also catch `import(` dynamic calls (at minimum);
+   double-quote and side-effect forms can wait until something actually uses
+   them.
+6. Reword the two timing comments to state the actual guarantee (parser-
+   inserted module ordering, same-job synchronicity) instead of "any fetch"
+   / "any script placement."
+
+None of this blocks the still-outstanding browser pass from the previous
+session's plan — it's the item ordering that changes: #1 and #3 above are
+worth fixing before that pass, since #3 changes what the pass should
+actually be testing for the waveform-asset-failure case.
