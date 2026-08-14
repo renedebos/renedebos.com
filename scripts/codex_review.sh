@@ -41,7 +41,13 @@ LOG="${PLAN%-plan.md}-codex.md"
 [ "$LOG" != "$PLAN" ] || { echo "plan file must end in -plan.md: $PLAN" >&2; exit 1; }
 
 # One review at a time — two concurrent runs would interleave their appends.
-LOCK="$REPO_ROOT/.git/codex-review.lock"
+# Must resolve the git dir rather than assume "$REPO_ROOT/.git" is a directory:
+# in a linked worktree (which is how this project is always worked — plan §8)
+# .git is a FILE containing a gitdir: pointer, so mkdir there fails with ENOTDIR
+# and every run reports a phantom concurrent review. Per-worktree dir, not
+# --git-common-dir: the log being appended to lives in this worktree, so two
+# different worktrees reviewing different plans may safely run at once.
+LOCK="$(git rev-parse --absolute-git-dir)/codex-review.lock"
 if ! mkdir "$LOCK" 2>/dev/null; then
   echo "another codex review is already running (remove $LOCK if stale)" >&2
   exit 1
