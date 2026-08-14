@@ -96,7 +96,7 @@ tabs/fuzzy-open distinguishable once there are several). First one:
   protection) and a small functions list (share-timestamp, repeat,
   keyboard shortcuts — speed control and loop-region explicitly rejected,
   don't fit this archive's material).
-- `player_consolidation_codex.md` — Codex's review of the plan. Verified
+- `player-consolidation-codex.md` — Codex's consolidated reviews of the plan. Verified
   its specific claims against the real code (shuffle/endless-queue/saved
   playlists/Media Session all genuinely exist, confirmed via grep) before
   accepting them. Folded the real findings in (controller-per-document,
