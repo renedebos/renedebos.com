@@ -2,152 +2,285 @@
 **Date:** 2026-08-14 · **Branch:** `player-consolidation`
 (worktree `/home/renedebos/renedebos.com-player-consolidation`)
 
-Working tree has uncommitted changes, **nothing committed, nothing pushed,
-nothing deployed**. Merged `origin/main` earlier this session (one conflict,
-in `HANDOFF.md` itself — resolved in favour of this branch's handoff).
+**Phase 1 Steps 4 and 5a are done and live in production. Step 5b is
+implemented, locally verified, and PR'd — not yet merged/deployed.** PR #3
+(Step 4 + 5a) merged into `main` (`7872882`); production verification ran
+55/58 (every player-consolidation-specific check passed; the 3 non-passes
+are one known, pre-existing, unrelated console warning — see below). Step
+5b (widen the allowlist to every show) is implemented, passing locally
+(185/185 — a tenth review found and fixed a real bug in the rollback
+mechanism first, see below), and has its own PR open — merging it and
+running `browser_check.mjs --prod` against it is the very next thing to do;
+see below.
 
-**Phase 1 Step 4 is done, including its browser pass.** Three show pages run
-the new player engine in the *built* output; the live site is still entirely
-on the legacy engines, because none of this has been pushed.
-
-## ✅ Done this session — Phase 1 Step 4, start to finish
+## ✅ Done this session — Step 4 through Step 5a
 
 Plan: `plans/player-consolidation/player-consolidation-plan.md` (Step 4's
-entry has the full record — architecture, all corrections, and the browser
-pass results). Steps 1–3 were an earlier session's.
+entry has the full architecture record and all corrections; Step 5's entry
+has the 5a/5b/5c split and 5a's full result). Steps 1–3 were an earlier
+session's.
 
-### The implementation
+### Phase 1 Step 4 — build, seventh review, browser pass
 
-**Engine selection: legacy defers, controller claims.** An allowlisted show
-page emits `window.PLAYER_ENGINE = 'controller'` inline before `player.js`.
-Both legacy engines hold their playback init until `DOMContentLoaded` and
-check `window.PLAYER_ENGINE_MOUNTED`; `player-boot.js` is a module, so it runs
-first, mounts inside `try`/`catch`, and sets that flag only on success. A 404,
-a parse error, or any boot exception falls back to today's working player at
-*runtime*, not just at deploy time — confirmed for real this session (below).
+Unchanged from where this session started: `player-boot.js` mounts the
+shared controller behind a runtime engine-selection gate (legacy defers,
+controller claims; a 404/parse error/boot exception falls back to the
+legacy pair at *runtime*, not just deploy time), gating both `player.js`
+*and* `wavesurfer.js` since they're independently loaded on show pages. A
+seventh Codex review's six findings were all confirmed and fixed with
+proven regression tests (destroyed-controller reactivation via a leaked
+listener, a silently-unmarked missing `data-item`, an overclaimed fallback
+description, two real test gaps, a missed dynamic `import()` case). A real
+local browser pass (`scripts/browser_check.mjs`, built this session,
+checked in permanently) hit 38/38 against real Chromium/WebKit — real
+production audio, real WaveSurfer, real `BroadcastChannel`, two breakage
+scenarios against an isolated temp copy so the working tree was never at
+risk.
 
-- **`scripts/player-boot.js`** mounts one `PlaybackController`,
-  `CompactPlayerView` per `.track-list [data-item]` row, `HeroPlayerView` per
-  `.recording-item[data-item]`, wires peaks/Space/deep-links/resize, and
-  refuses to claim a page where it mounted nothing.
-- **`wavesurfer.js` is gated too**, not just `player.js` — every show-page
-  track row is `.ws-track`, invisible to `player.js`'s `.custom-player`-only
-  `initCustomPlayers`, so gating just `player.js` would leave waveform rows
-  dead on any boot failure.
-- **Allowlist** `pages.CONTROLLER_ENGINE_SLUGS`: `jerry-cafe-java-1999-05-27`,
-  `jerry-cafe-java-1999-03-25` (two hero cards), `mad-sweetwater-2000-10-17`
-  (alternate transfer sharing a stream proxy).
-- **`verify_markup.py`** checks the whole engine handshake (flag/boot travel
-  together, only on allowlisted slugs, ordering vs. `player.js`), every
-  `.track-row`/`.recording-item` element has a valid `data-item` (not just
-  validating whichever attributes happen to be present), and every `/assets/`
-  script a page loads — plus everything those scripts import, including
-  dynamic `import()` — is actually written by `build.py`.
+### PR #3, an eighth review, and its fixes
 
-### The seventh Codex review, and its fixes
+Opened **https://github.com/renedebos/renedebos.com/pull/3** (branch
+`player-consolidation` → `main`), following the `home-page` project's
+established precedent — a real merge commit, not squash, so this branch's
+individual history (including all seven review dispositions) stays visible
+on `main`.
 
-A review ran during a usage-interrupted pause in this session (focused on the
-built Step 4 code, not just the plan). All six findings confirmed on
-independent verification and fixed, each with a regression test proven to
-fail without the fix:
+Before merging, ran `/review-step` focused on the PR's readiness and the
+`--prod` extension built for Step 5a (below). Codex didn't flag anything in
+that new code, but surfaced three real, **pre-existing** issues in Step 4's
+original implementation:
 
-1. **High — a destroyed controller could be reactivated** by a leaked
-   document/window listener `player-boot.js` never removed. Fixed: a
-   `_destroyed` guard on every mutating `PlaybackController` method, plus one
-   shared `AbortController` in `player-boot.js` so `handle.destroy()`
-   actually removes what it installed. Both halves proven independently
-   necessary (reverting either alone left a different subset of tests
-   failing).
-2. **Medium — a missing `data-item` would pass silently.** Fixed:
-   `verify_markup.py` now enumerates elements, not just attributes it finds.
-3. **Medium — "falls back to the complete legacy engine pair" overclaimed
-   one case.** `wavesurfer.js` and `player-views.js` share one vendored
-   dependency (`wavesurfer.esm.js`); if THAT fails, both waveform engines die
-   together. Not new fragility — always true, on every page, before this
-   phase existed — just a claim that needed the exception carved out.
-   Corrected everywhere it appeared.
-4. **Medium — two real test-coverage gaps**, both closed: `setPeaks()` now
-   has a test asserting it actually draws/upgrades, not just stores the
-   value; `player.js`'s real source (not a reimplementation) is now loaded
-   and executed in two tests proving its gate both suppresses and allows
-   legacy init correctly.
-5. **Low — the asset-import checker missed dynamic `import()`.** Fixed,
-   confirmed against the real, previously-invisible `client-zip.js` case.
-6. **Low — imprecise timing-guarantee wording.** Corrected in code comments
-   and the plan.
+1. **High-churn bug, not just cosmetic.** `player-views.js`'s `_render()`
+   only gated the progress/canvas paint path on active state — a row's play
+   button icon (`innerHTML`) and `aria-label` were being rewritten
+   unconditionally on *every* `timeupdate` tick, for every row, active or
+   not. Contradicted the plan's own "doesn't churn on inactive rows" claim;
+   a test only ever watched the time label, missing it entirely. Fixed with
+   one early return, gated on the same condition the progress block already
+   used.
+2. **A real unhandled-rejection path.** `player-boot.js`'s async peaks
+   decoration runs after the page is already claimed, outside the
+   synchronous boot try/catch — one row's `setPeaks()` throwing could abort
+   the whole per-view decoration loop and, on retry, throw again into a
+   genuinely unhandled rejection. Fixed with per-view exception isolation
+   and a trailing catch; corrected two code comments that overclaimed what
+   the shared try/catch actually protects.
+3. **The verification harness didn't prove what it claimed.** View count
+   was recorded but never compared to the real markup count; "legacy
+   engine stayed dormant" only checked `player.js`'s marker, never
+   `wavesurfer.js`'s. Fixed with a real `expectedViewCount` assertion and a
+   pre-interaction `findAudioDeep()` check (zero real `<audio>` elements
+   should exist anywhere before the first click, on a controller-engine
+   page).
 
-Test suite grew from 51 to 60 (`test-player-controller.mjs` 22,
-`test-player-views.mjs` 16, `test-player-boot.mjs` 22), plus five
-documentation-drift issues Codex's review separately flagged (a stale
-missing-peaks contradiction, stale "hides prev/next" language describing a
-mechanism that doesn't exist, a stale `/review-step` description, two stale
-test counts) — all fixed. Step 5 was also restructured into an explicit
-5a/5b/5c sequence per that review's recommendation (deploy-and-verify the
-canary on production *before* expanding it; expand the allowlist and delete
-the legacy fallback as two separate decisions, not one step).
+Each fix has a regression test independently proven to fail on the unfixed
+code before being restored to passing (full detail:
+`player-consolidation-codex.md`'s "Fixes applied" section). Local suite grew
+to 61 (`test-player-controller.mjs` 22, `test-player-views.mjs` 16,
+`test-player-boot.mjs` 23); local browser pass grew to 44/44 (the extra 6
+are the new finding-#3 checks, now running for real on all three pages).
+Committed as `f784a0f`, pushed, PR commented with a summary. Rene merged
+the PR himself.
 
-### The browser pass — done for real, not just reasoned about
+### Step 5a — deployed and verified on production, for real
 
-No browser existed in the environment for most of this session. One turned
-out to be reachable later via `playwright-chromium`/`playwright-webkit`
-(globally installed, not a project dependency this repo carries). Built a
-permanent, reproducible, checked-in harness:
+The deploy Action (`.github/workflows/deploy.yml`) ran clean on the merge
+commit: both integrity gates, `wrangler deploy`, and the Cloudflare cache
+purge all green.
 
-**`scripts/browser_check.mjs`** — dev-only (same status as
-`test-player-*.mjs`, not wired into `build.py` or any deploy gate). Run with:
-```
-python3 scripts/build.py   # make sure shows/ is current
-NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs
-```
-Serves the real repo locally and drives real Chromium against it — real
-production audio (`streamUrl` points at the live worker, nothing mocked),
-real `WaveSurfer` rendering, real `BroadcastChannel` delivery. The two
-breakage tests copy `assets/`+`shows/` into a temp directory and manipulate
-the copy, so the script never touches the working tree.
+**`scripts/browser_check.mjs` grew a `--prod` flag** (this session, part of
+the PR): `--prod` (or `--base=<url>`) retargets the whole harness at a real
+origin instead of the local `python3 -m http.server` copy, skipping only
+the two breakage tests (they manipulate a local filesystem copy — no live
+equivalent) and adding two checks a local server can't meaningfully run:
+asset `Content-Type`/`Cache-Control` against `_headers`' documented policy,
+and confirmation that five representative non-allowlisted pages (covering
+every architecturally distinct template/engine) are unaffected, three with
+confirmed real legacy playback. Default (no-flag) behavior is unchanged —
+this stays the same tool 5b will reuse against a much larger page set.
 
-**38/38 passed.** Controller mounts and legacy stays dormant on all three
-allowlisted pages; real playback actually advances and responds to
-toggle/seek/Space; a real `WaveSurfer` canvas renders; the Hero → track →
-next round trip works with real audio at each step; the
-`mad-sweetwater-2000-10-17` alternate-transfer case shows only one card
-active at a time; real cross-tab claim/pause between a show page and
-`/playlist/`; both breakage scenarios confirmed with real playing audio
-(player-boot.js missing → full fallback; wavesurfer.esm.js missing → Full
-Recording works, waveform rows correctly dead in both engines). A WebKit
-smoke pass (mount, real click-gesture playback, canvas render) also passed,
-run separately since `playwright-webkit` isn't reliably available via a
-plain global install.
+**Run against `https://renedebos.com`: 55/58 passed on the second run.**
+Everything player-consolidation actually built checked out for real on
+production: controller mounts with the correct view count and both legacy
+engines provably stay dormant (the corrected finding-#3 checks) on all
+three allowlisted pages; real playback/toggle/seek/Space/canvas against the
+live stream; Hero → track → next; deep-link + a real user-gesture Retry
+click recovering from a policy-blocked autoplay; the
+`mad-sweetwater-2000-10-17` alt-transfer case; real cross-tab
+`BroadcastChannel` claim/pause with `/playlist/`; correct headers on all
+four new JS assets; and the five non-allowlisted sample pages correctly
+unaffected.
 
-**Deep-link autoplay is policy-dependent — described that way, not as a pass
-or fail.** `?autoplay=1#track-N` reliably queues the right track and
-highlights the right row. Whether the browser actually starts playback on
-arrival depends on Media Engagement, which a fresh session has none of —
-Chromium blocked it here, confirmed identical against the legacy engine
-(not a regression). What's actually asserted: the controller surfaces this
-as a visible `'error'` state with a "Retry `<track>`"-labeled button and a
-`role="status"` message, and **a real user-gesture click on Retry
-successfully starts playback** — confirmed directly.
+**Two things worth knowing about, neither a defect in this PR's code:**
 
-**Not covered, still needs real hardware:** actual Firefox, actual
-iOS/Android devices (WebKit-the-engine approximates but isn't identical to
-Safari, especially for mobile autoplay/backgrounding). And this was all
-against the **local** build — production-origin verification (real caching,
-real headers, the real deployed Worker) is Step 5's 5a, still outstanding.
+- **A transient anomaly on the very first production hit, which did not
+  reproduce.** Immediately after the deploy Action's purge step went green,
+  the very first `--prod` run failed broadly (`views=0`, legacy engines
+  appeared active, an unguarded locator timeout crashed the script). A
+  direct `curl` of the identical URL at that same moment showed the
+  correct deployed HTML (`cf-cache-status: MISS`, the real markup, the real
+  flag) — so *a* request at that moment got the right page (this doesn't
+  prove Playwright's specific request hit the same edge response, just that
+  the deploy itself wasn't broken). A standalone diagnostic script and a
+  full second `--prod` run, both a few minutes later, came back clean. Read
+  as a cold-start/edge-propagation timing artifact specific to the first
+  request right after a fresh deploy+purge, not a
+  code defect — logged rather than discarded, since not reproducing twice
+  is evidence, not proof. If this shows up again, the fix is a longer
+  post-green buffer before the first production check.
+- **A real, reproducible, pre-existing console error, unrelated to this
+  PR.** All three canary pages (and, confirmed by checking `/contact/`,
+  every other page on the site too) show one CSP violation: Cloudflare's
+  own auto-injected analytics beacon
+  (`static.cloudflareinsights.com/beacon.min.js`) is blocked by the site's
+  existing `script-src 'self' 'unsafe-inline'` CSP, which has no exception
+  for it. This has presumably always been true — it was never caught before
+  because no prior deploy ever ran a real-browser console-error check
+  against the live Cloudflare-proxied origin (the local `http.server` pass
+  can't reproduce it; Cloudflare only injects the beacon on the real
+  proxied origin). Reported to Rene, not fixed here — `_headers`/CSP is
+  `deploy-infra` territory, out of this step's scope by design.
+
+## A ninth review, and prep fixes for 5b
+
+Before starting 5b, ran a Codex review (via the MCP `codex` server directly
+this time, at Rene's request, rather than `scripts/codex_review.sh` — same
+verify-then-disposition discipline either way) asking specifically whether
+the project is ready for it. Conclusion: the shared runtime is ready, but
+`browser_check.mjs` and one `pages.py` comment were not — all fixed:
+
+- **`browser_check.mjs`'s per-page loop had no error isolation** — a single
+  page crashing (exactly what happened on 5a's first production hit) used
+  to abort evaluation of every remaining page. Now catches, records a
+  synthetic failure, and moves on.
+- **The known Cloudflare-beacon CSP warning would have multiplied ~10x**
+  once every show page joins the allowlist. Now filtered out of the
+  "no console errors" checks specifically (not a general CSP-ignoring
+  policy — just this one confirmed, pre-existing, unrelated message).
+- **The wavesurfer.js dormancy check raced an async fetch** — hardened with
+  an explicit `networkidle` wait before it runs.
+- **The non-allowlisted show-page sample was hardcoded** to a page that
+  would silently become wrong (and wrongly-passing) the moment 5b allowlists
+  it. Now picked dynamically from `assets/home-shows.json` at runtime,
+  gracefully skipped if none remain non-allowlisted.
+- **A genuinely dangerous stale comment in `pages.py`** said "Step 5 empties
+  this out and flips the engine on everywhere" — backwards: the gate is a
+  membership check, so emptying the set disables the controller everywhere.
+  Corrected.
+- **Added `verify_markup.py --check-allowlist-coverage`** (not part of the
+  default build gate — today's 3-page allowlist is intentionally partial) —
+  5b's own implementation should run this once it widens
+  `CONTROLLER_ENGINE_SLUGS`, to confirm no public show was missed. Confirmed
+  today it correctly fails, listing all 27 not-yet-allowlisted shows.
+
+All verified: local `browser_check.mjs` pass still 44/44; the `isRemote`
+code path verified by pointing `--base=` at a local server standing in for
+production (never touched real production for this) — 54/58, the 4
+non-passes being expected artifacts of a bare `python3 -m http.server` not
+setting Cloudflare's real cache headers, not a regression. Full disposition:
+`player-consolidation-codex.md`'s ninth review.
+
+## Step 5b — every show page, implemented and locally verified
+
+`CONTROLLER_ENGINE_SLUGS` (`pages.py`) is now
+`{s["slug"] for s in PUBLIC_SHOWS} - CONTROLLER_ENGINE_EXCLUDED_SLUGS` —
+computed from the real show catalog, not hand-listed, so a future new show
+is covered automatically. `CONTROLLER_ENGINE_EXCLUDED_SLUGS` (empty today)
+is a per-show rollback escape hatch if one specific page turns out to have
+a problem, without reverting the whole rollout.
+`verify_markup.py`'s default build gate now asserts full coverage (this
+was previously opt-in-only, back when the 3-page rollout was intentionally
+partial).
+
+**`browser_check.mjs` restructured, not just widened**, since running the
+full real-audio-playback sequence on all 30 pages would be slow and (for
+`--prod`) would stream real production audio 30 times for the same engine
+code every time. Two tiers: a light structural check (mount, real view
+count, both legacy engines' dormancy, console errors) on all 30 pages, and
+the full interactive check (real playback/toggle/seek/Space/canvas) on 4
+pages chosen for genuinely different markup shapes — the original 3 from
+5a, plus `jerry-19-broadway-1999-03-29` (the catalog's largest page: 34
+tracks, 5 recording cards). This page's heavy check now genuinely stress
+tests the eighth review's inactive-row DOM-churn fix — a real
+`MutationObserver` watches an inactive row through the whole
+playback/toggle/seek/Space sequence and asserts zero mutations, not just
+"other checks passed so it's probably fine" (added in the tenth review's
+fixes, below). The show list itself is fetched once at runtime from
+`assets/home-shows.json`, not hardcoded — this file should never need
+manual updating again regardless of catalog size.
+
+**Local pass: 185/185.** The `isRemote` code path verified against a local
+server standing in for production (never touched real production for
+this): same 4 known `Cache-Control` non-passes every prior
+local-server-as-remote run has shown (a bare `http.server` doesn't set
+Cloudflare's real headers — not a regression). Confirmed the
+non-allowlisted-show-page check now correctly self-skips with a log
+message, since every show is allowlisted post-5b — the defensive design
+built for exactly this in the ninth review's fixes, exercised for real for
+the first time.
+
+## A tenth review — on the 5b implementation itself, not just readiness
+
+Run before merging PR #4, same `/review-step` discipline. Found one real bug
+and two lower-stakes gaps:
+
+- **The rollback escape hatch was broken by its own build gate — the
+  important finding.** `CONTROLLER_ENGINE_EXCLUDED_SLUGS` is supposed to let
+  one show be rolled back without reverting the whole thing, but
+  `verify_markup.py`'s coverage check (added for 5b, wired into the default
+  gate) only checked `public - allowlisted`, so excluding any show
+  immediately made the gate report it as "missing." Reproduced directly
+  before fixing: simulating one exclusion produced exactly that error,
+  meaning `build.py --check` — CI's real gate — would have failed the
+  moment the escape hatch was ever actually used. Fixed with a three-way
+  check (allowlisted, or deliberately excluded, or a genuine gap) plus a new
+  `assets/controller-excluded-slugs.json` asset so `browser_check.mjs` can
+  tell an intentional exclusion apart from a broken page. Simulated a real
+  exclusion end-to-end (edited the generated asset, then a show page
+  directly) to confirm the fix actually works before reverting the
+  simulation cleanly.
+- **`browser_check.mjs` trusted `home-shows.json` blindly.** Now asserts all
+  4 `HEAVY_CHECK_SLUGS` are actually present in the fetched catalog, failing
+  loudly instead of silently running a smaller stress-test set. The deeper
+  gap — `home-shows.json` only includes track-listed shows, while
+  `CONTROLLER_ENGINE_SLUGS` covers every public show — is documented but not
+  fixed (they coincide today; fixing it properly means changing
+  `home-shows.json`'s row-inclusion criteria, which the live homepage also
+  depends on — a separate decision).
+- **The "DOM-churn stress test" claim was overstated** until the
+  `MutationObserver` addition above made it true instead of just softening
+  the wording.
+
+Full record, all findings independently verified (not taken on the review's
+word — one reproduced by simulation): `player-consolidation-codex.md`'s
+tenth review.
 
 ## 🔧 Next up
 
-**Step 5, sub-step 5a**: deploy the existing 3-page allowlist as-is (no
-widening, no deletions) and verify it on the production origin — this is the
-first time the canary actually does canary duty, since it's never been
-deployed. See the plan's Step 5 entry for the full 5a/5b/5c sequence and why
-it's split that way.
+**Merge Step 5b's PR, then run production verification** — identical
+process to 5a: watch the deploy Action (especially the cache-purge step),
+then `NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs --prod`.
+Update this file and the plan's Step 5b entry with the result once it runs.
 
-Before that: review and decide whether to commit/push what's sitting
-uncommitted in this worktree right now (all of Step 4 + the seventh review's
-fixes + the browser pass + this handoff).
+After that: **Step 5c** (delete `wavesurfer.js` as legacy fallback — its
+own, later, separate decision per the plan, only once confidence from 5b is
+established) is the last piece of Phase 1. Separately, still worth
+surfacing to Rene: whether to fix the Cloudflare-beacon CSP issue found
+during 5a (a `deploy-infra` task, not part of this initiative).
 
 ## Gotchas learned this session
 
+- **A production-origin browser check finds real things a local
+  `python3 -m http.server` pass structurally cannot** — the Cloudflare
+  beacon/CSP finding above is invisible locally by construction (Cloudflare
+  only injects it on the real proxied origin).
+- **A transient failure immediately after a fresh deploy+purge is a real
+  possibility worth planning around**, not just a theoretical footnote —
+  this session hit one on the very first post-deploy hit. Don't treat a
+  single anomalous run as proof of a code defect without checking whether
+  it reproduces; also don't wave away a single clean re-run as sufficient
+  before checking whether the *page itself* (via a plain `curl`, no
+  browser) was ever actually wrong at that moment.
 - **`document.readyState` is not a shortcut for the DOMContentLoaded
   barrier.** Already `'interactive'` while deferred/module scripts run, so a
   "past loading, just go" branch would fire the legacy engine before a later
@@ -173,13 +306,19 @@ fixes + the browser pass + this handoff).
   not unique across transfers of one tape.
 - **No BroadcastChannel wire-format change until `/playlist/` and `/player/`
   migrate** — the legacy engines still expect a bare string; cross-tab
-  claim/pause between old and new pages is real, confirmed behavior.
+  claim/pause between old and new pages is real, confirmed behavior (now
+  confirmed on production too, not just locally).
 - **Deep-link autoplay fires on initial load only**, deliberately — exact
   parity with the two legacy engines. Whether it actually plays depends on
-  browser autoplay policy, not app logic (see above).
+  browser autoplay policy, not app logic.
 - **A `wavesurfer.esm.js` failure kills waveform rows in BOTH engines** — it's
   the one dependency `wavesurfer.js` and `player-views.js` share. Not new,
-  not a regression Step 4 introduced — true since before this initiative.
+  not a regression this initiative introduced — true since before it existed.
+- **The controller's shared `<audio>` element is never appended to the
+  document** — it's only inserted (by `WaveSurfer.create({ media: ... })`)
+  once a row is upgraded on activation. This is what makes the
+  pre-interaction `findAudioDeep()` dormancy check in `browser_check.mjs`
+  valid: zero results before any click is the expected, correct state.
 - Loudness control and sticky navigation remain **fully deferred**; see the
   plan's §2 and §5.
 - Branch/worktree workflow is the plan's §8; sync with
@@ -188,8 +327,9 @@ fixes + the browser pass + this handoff).
 
 ## Reference
 Runbook: `CLAUDE.md` → "Publishing a Split Show". Player work:
-`plans/player-consolidation/` (plan + `player-consolidation-codex.md`, seven
+`plans/player-consolidation/` (plan + `player-consolidation-codex.md`, eight
 review passes with dispositions). Review loop: plan §7. Tests:
 `node scripts/test-player-{controller,views,boot}.mjs`. Real-browser
-verification: `scripts/browser_check.mjs` (needs `playwright-chromium`,
-see its header for setup).
+verification: `scripts/browser_check.mjs` (needs `playwright-chromium`; add
+`--prod` to point it at `https://renedebos.com` instead of a local copy —
+see its header for setup and flags).

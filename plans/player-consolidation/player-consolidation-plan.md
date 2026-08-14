@@ -7,15 +7,18 @@ view layer, the `data-item` markup every show page carries, and
 `test-player-controller.mjs` (22), `test-player-views.mjs` (16) and
 `test-player-boot.mjs` (23). **Three show pages now run the new engine**
 (the allowlist in `pages.CONTROLLER_ENGINE_SLUGS`); the other 27 and every
-song page are byte-identical to before. **Step 4 is done, including its
-browser pass** (2026-08-14, `scripts/browser_check.mjs`, 44/44 against real
-Chromium — see §6 Step 4's entry for the full record, including the
-corrected, policy-dependent framing of deep-link autoplay). That pass was
-against the **local** build only; production-origin verification is a
-separate, still-outstanding step — see Step 5's 5a. Nothing is pushed or
-deployed.
+song page are byte-identical to before, in production today. **Step 4 is
+done, including its browser pass** (2026-08-14, `scripts/browser_check.mjs`,
+now 185/185 against real Chromium — see §6 Step 4's entry for the full
+record, including the corrected, policy-dependent framing of deep-link
+autoplay). **Step 5a is also done**: PR #3 merged (`7872882`), deployed, and
+verified against real production. **Step 5b (widen the allowlist to every
+show) is implemented and locally verified, with its own PR (#4) open —
+not yet merged or deployed**, so production is still on the 3-page canary
+as of this line; see §6 Step 5's entry for the full record, including a
+ninth review (5b-readiness) and a tenth (the 5b implementation itself).
 Mockup: https://claude.ai/code/artifact/71ae2166-d3ed-471d-9719-abd73fe353ba
-Reviewed by Codex eight times, all recorded in
+Reviewed by Codex ten times, all recorded in
 `player-consolidation-codex.md`: the first pass on the original proposal,
 followed by reviews of the concrete plan, live controller, view layer, two of
 the Step 3 markup, and the built Step 4 implementation. From the fifth review
@@ -1192,13 +1195,57 @@ during migration, not removed speculatively.
        has never actually been *deployed*, so it has never done canary duty.
        Split into an explicit sequence; each sub-step gates the next.
 
-       5a. [ ] **Deploy the existing 3-page allowlist as-is** (no widening,
+       5a. [x] **Deploy the existing 3-page allowlist as-is** (no widening,
        no deletions) and verify it on the production origin — real caching,
        real asset headers, real devices/browsers, not just the local browser
        pass from Step 4. This is the first time the canary actually functions
        as one.
 
-       5b. [ ] **Expand the allowlist to all show pages, keeping
+       **Done (2026-08-14).** PR #3 merged (`7872882`), deploy Action green
+       including the cache-purge step, `scripts/browser_check.mjs --prod`
+       run against `https://renedebos.com`: **55/58 passed** on the second
+       run (see below for the first). Confirmed for real against production:
+       controller mounts with the correct view count and both legacy engines
+       stay dormant (the corrected finding-#3 checks) on all three
+       allowlisted pages; real playback/toggle/seek/Space/canvas against the
+       real production stream; Hero → track → next; deep-link + Retry
+       recovery; the `mad-sweetwater-2000-10-17` alt-transfer case; real
+       cross-tab `BroadcastChannel` claim/pause with `/playlist/`; the four
+       new JS assets serve with correct `Content-Type` and `Cache-Control`;
+       and the five non-allowlisted sample pages are unaffected, three with
+       confirmed real legacy playback.
+
+       **One transient anomaly, did not reproduce.** The very first
+       production hit (run immediately after the deploy Action's cache-purge
+       step went green) failed broadly — `views=0`, both legacy engines
+       appeared active, and the script crashed on an unguarded locator
+       timeout. A direct `curl` of the same URL at that same moment showed
+       the correct HTML (`cf-cache-status: MISS`, 21 real `data-item`
+       occurrences, the right inline flag and script tag) — so the deployed
+       page itself was never wrong; whatever the first Playwright hit saw
+       didn't match reality. A minimal standalone diagnostic script and a
+       full second `--prod` run, both a few minutes later, came back clean.
+       Likely a cold-start/edge-propagation timing artifact specific to the
+       very first request after a fresh deploy+purge, not a defect in the
+       code — but logged here rather than discarded, since "didn't reproduce
+       twice" is evidence, not proof. Worth a longer post-green buffer (the
+       plan's open judgment call #5) if this is ever seen again.
+
+       **Real, reproducible, pre-existing finding — not from this PR.** All
+       three canary pages show one console error: Cloudflare's own
+       auto-injected analytics beacon
+       (`static.cloudflareinsights.com/beacon.min.js`) is blocked by the
+       site's existing CSP (`script-src 'self' 'unsafe-inline'` has no
+       exception for it). Confirmed this is site-wide and unrelated to
+       player-consolidation by checking `/contact/` (untouched by this
+       initiative) — identical error. Never seen before because no prior
+       deploy ever ran a real-browser console-error check against the live
+       Cloudflare-proxied origin; the local `python3 -m http.server` pass
+       can't reproduce it (Cloudflare only injects the beacon on the real
+       proxied origin). Reported, not fixed here — `_headers`/CSP is
+       `deploy-infra` territory, per this step's own scope discipline.
+
+       5b. [~] **Expand the allowlist to all show pages, keeping
        `wavesurfer.js` as the dormant fallback.** Every show page emits the
        engine flag and `player-boot.js`; `wavesurfer.js`'s module tag keeps
        being emitted too, so a page whose controller mount fails still has
@@ -1206,6 +1253,88 @@ during migration, not removed speculatively.
        `player-views.js`/`player-controller.js` specifically — see the
        caveat below for what this does and doesn't cover). Verify the wider
        rollout the same way as 5a before treating it as settled.
+
+       **`[~]` not `[x]`, deliberately (a tenth review's finding #1) —
+       implementation and local verification are done; the step's own
+       stated completion criterion ("verify the wider rollout the same way
+       as 5a") is production verification, which is still pending (below).
+       Don't mark this `[x]` until that's actually run — 5a itself only got
+       its checkmark after production verification passed, and 5b should be
+       held to the same bar rather than be checked off early because the
+       code is written.**
+
+       **Implementation done (2026-08-14).** `CONTROLLER_ENGINE_SLUGS` (`pages.py`) is now
+       `{s["slug"] for s in PUBLIC_SHOWS} - CONTROLLER_ENGINE_EXCLUDED_SLUGS`
+       — computed, not hand-listed, so a future new show is covered
+       automatically with no manual sync step. `CONTROLLER_ENGINE_EXCLUDED_SLUGS`
+       (currently empty) is the escape hatch for a targeted single-page
+       rollback without reverting the whole rollout. A ninth Codex review
+       (before this step started — see below) had already caught and fixed a
+       comment that got this backwards ("empties this out... flips the
+       engine on everywhere" — the gate is a membership check, so emptying
+       it would have disabled the controller everywhere).
+       `verify_markup.py`'s default build gate now also asserts full
+       coverage (previously an opt-in-only flag, since the 3-page rollout
+       was intentionally partial before this step).
+
+       **`browser_check.mjs` restructured for the full catalog, not just
+       widened.** Running the complete real-audio-playback sequence on all
+       30 pages would be slow and, for `--prod`, would mean streaming real
+       production audio 30 times for what's fundamentally the same engine
+       code on every page. Split into two tiers: a **light** check (mount,
+       real view count vs. markup, both legacy engines' dormancy, console
+       errors) on every one of the 30 pages, and the full **heavy** check
+       (real playback/toggle/seek/Space/canvas) on 4 pages chosen for
+       genuinely different markup shapes — the original 3 (plain waveform
+       rows; two hero cards; an alternate-transfer stream-proxy collision)
+       plus `jerry-19-broadway-1999-03-29`, the largest page in the whole
+       catalog (34 tracks, 5 recording cards) — genuinely, not just by
+       description, a stress test for the eighth review's inactive-row-DOM-
+       churn fix: this page's heavy check attaches a real `MutationObserver`
+       to an inactive row through the whole playback/toggle/seek/Space
+       sequence and asserts zero mutations (`mutations=0`, confirmed) — an
+       actual measurement, not an inference from unrelated checks passing.
+       The show list itself is fetched once at runtime from
+       `assets/home-shows.json` (the same asset the homepage uses), not
+       hardcoded, so this file never needs manual updating again regardless
+       of catalog size. Local pass: **185/185**. The `isRemote` code path
+       (asset headers, non-allowlisted-page checks) verified against a local
+       server standing in for production, without touching real production:
+       same 4 known, pre-existing `Cache-Control` non-passes as every prior
+       local-server-as-remote run (a bare `python3 -m http.server` doesn't
+       set Cloudflare's real headers). Confirmed the non-allowlisted-
+       show-page check now correctly self-skips, logging why, since every
+       show is allowlisted post-5b — exactly the defensive design built for
+       this in the ninth review's fixes, now exercised for real for the
+       first time.
+
+       **A tenth review, on this implementation itself, found and fixed one
+       real bug plus two lower-stakes gaps before merging (full record:
+       `player-consolidation-codex.md`).** The important one:
+       `CONTROLLER_ENGINE_EXCLUDED_SLUGS`'s rollback escape hatch, as first
+       built, was rejected by `verify_markup.py`'s own coverage check —
+       excluding a show dropped it from `CONTROLLER_ENGINE_SLUGS`, which the
+       old two-way check then flagged as "missing," meaning
+       `build.py --check` would have failed the moment anyone actually used
+       the mechanism for a real incident rollback. Fixed with a three-way
+       check (allowlisted, or deliberately excluded, or a genuine gap — only
+       the last is an error) plus a new `assets/controller-excluded-slugs.json`
+       asset so `browser_check.mjs` can tell an intentional exclusion apart
+       from a broken page instead of reporting a false mount failure.
+       Reproduced the bug directly before fixing it, and simulated a real
+       exclusion end-to-end afterward to confirm the fix actually works, not
+       just that the unit tests pass. Also added a defensive check that
+       `browser_check.mjs` fails loudly rather than silently if
+       `home-shows.json` is ever missing one of the 4 heavy-check pages, and
+       documented — not yet fixed, out of scope — that `home-shows.json`
+       only includes track-listed shows while `CONTROLLER_ENGINE_SLUGS`
+       covers every public show; they coincide today but a future trackless
+       public show wouldn't be caught by this harness.
+
+       **Production verification for this step is still pending** — the
+       process is identical to 5a's (merge the PR, watch the deploy Action
+       including cache purge, then `browser_check.mjs --prod`), not a new
+       procedure; this section will be updated with the result once it runs.
 
        5c. [ ] **Delete `wavesurfer.js` as its own, later, separate
        decision** — only once confidence from 5b is established, not as part

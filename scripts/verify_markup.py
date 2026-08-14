@@ -148,7 +148,8 @@ def check():
     errors, n_track, n_rec, n_pages = [], 0, 0, 0
 
     sys.path.insert(0, os.path.join(ROOT, "scripts"))
-    from sitegen.pages import CONTROLLER_ENGINE_SLUGS
+    from sitegen.pages import CONTROLLER_ENGINE_SLUGS, CONTROLLER_ENGINE_EXCLUDED_SLUGS
+    from sitegen.core import PUBLIC_SHOWS
 
     show_pages = sorted(glob.glob(os.path.join(ROOT, "shows", "*", "index.html")))
     if not show_pages:
@@ -159,6 +160,16 @@ def check():
     built = {os.path.basename(os.path.dirname(p)) for p in show_pages}
     for slug in sorted(CONTROLLER_ENGINE_SLUGS - built):
         errors.append(f"CONTROLLER_ENGINE_SLUGS lists {slug!r}, which generates no show page")
+
+    # As of Step 5b (2026-08-14) the allowlist is meant to cover every public
+    # show, computed from PUBLIC_SHOWS rather than hand-maintained -- this is
+    # now a real regression to catch (a future edit that shrinks coverage
+    # without updating CONTROLLER_ENGINE_EXCLUDED_SLUGS deliberately), not
+    # the "intentionally partial, still-incremental" state check_
+    # allowlist_covers_every_public_show()'s own docstring describes for
+    # Phase 1's earlier steps.
+    errors += check_allowlist_covers_every_public_show(
+        CONTROLLER_ENGINE_SLUGS, CONTROLLER_ENGINE_EXCLUDED_SLUGS, [s["slug"] for s in PUBLIC_SHOWS])
 
     for path in show_pages:
         rel = os.path.relpath(path, ROOT)
@@ -223,6 +234,52 @@ def check():
     return errors, n_track, n_rec, n_pages
 
 
+def check_allowlist_covers_every_public_show(controller_engine_slugs, excluded_slugs, public_show_slugs):
+    """As of Step 5b (2026-08-14) this IS part of the default build gate
+    (called from check()) -- CONTROLLER_ENGINE_SLUGS is meant to cover every
+    public show now, so a regression here is a real bug, not an expected
+    incremental-rollout state. Built during Step 4/5a while the allowlist was
+    still an intentional 3-page subset (see player-consolidation-codex.md's
+    ninth review) -- kept as a standalone function, and also reachable via
+    --check-allowlist-coverage below, since isolating this one invariant is
+    still occasionally useful on its own.
+
+    This is the reverse of check()'s existing CONTROLLER_ENGINE_SLUGS - built
+    invariant (an allowlisted slug that generates no page): here we check
+    whether every generated public show is actually accounted for -- either
+    allowlisted OR deliberately excluded via CONTROLLER_ENGINE_EXCLUDED_SLUGS.
+
+    Fixed 2026-08-14 (Codex review of Step 5b): the original two-way check
+    (public_show_slugs - controller_engine_slugs) broke the rollback escape
+    hatch it was supposed to leave alone -- the moment a slug is added to
+    CONTROLLER_ENGINE_EXCLUDED_SLUGS, CONTROLLER_ENGINE_SLUGS's own set-
+    subtraction construction drops that slug, and the old two-way check then
+    flagged it as "missing" even though the exclusion was deliberate. This
+    three-way version treats "allowlisted" and "deliberately excluded" as the
+    two ways a public show can be accounted for, and only flags a genuine gap
+    (neither).
+    """
+    controller_engine_slugs = set(controller_engine_slugs)
+    excluded_slugs = set(excluded_slugs)
+    public_show_slugs = set(public_show_slugs)
+
+    errors = []
+
+    bad_excluded = excluded_slugs - public_show_slugs
+    if bad_excluded:
+        errors.append(f"CONTROLLER_ENGINE_EXCLUDED_SLUGS names non-public show(s): {sorted(bad_excluded)}")
+
+    overlap = controller_engine_slugs & excluded_slugs
+    if overlap:
+        errors.append(f"CONTROLLER_ENGINE_SLUGS and CONTROLLER_ENGINE_EXCLUDED_SLUGS overlap: {sorted(overlap)}")
+
+    missing = public_show_slugs - controller_engine_slugs - excluded_slugs
+    if missing:
+        errors.append(f"CONTROLLER_ENGINE_SLUGS is missing public show(s): {sorted(missing)}")
+
+    return errors
+
+
 def _selftest():
     """In-memory checks that check_every_row_has_item() actually distinguishes
     "attribute present" from "attribute missing" — added after the Step 4
@@ -259,9 +316,62 @@ def _selftest():
         got = IMPORT_RE.findall(src)
         assert got == [expected], f"IMPORT_RE on {src!r}: expected [{expected!r}], got {got}"
 
+    # check_allowlist_covers_every_public_show() -- the reverse invariant from
+    # check()'s existing "allowlisted slug generates no page" check. As of
+    # Step 5b this runs inside check() itself (see there); tested here in
+    # isolation with fake data, same as every other check in this file.
+    complete = check_allowlist_covers_every_public_show(
+        {"show-a", "show-b"}, set(), ["show-a", "show-b"])
+    assert complete == [], f"expected no errors for a complete allowlist, got {complete}"
+
+    # A genuinely missing slug (neither allowlisted nor excluded) is still a
+    # real gap -- exactly one error naming it.
+    incomplete = check_allowlist_covers_every_public_show(
+        {"show-a"}, set(), ["show-a", "show-b"])
+    assert len(incomplete) == 1 and "show-b" in incomplete[0], \
+        f"expected exactly one error naming show-b, got {incomplete}"
+
+    # The regression this fix exists for: a slug deliberately dropped from
+    # CONTROLLER_ENGINE_SLUGS via CONTROLLER_ENGINE_EXCLUDED_SLUGS (the
+    # rollback escape hatch) must produce ZERO errors -- it's accounted for,
+    # just not allowlisted. Against the old two-arg logic this case fails
+    # (see the fail-then-pass proof run before this fix landed).
+    deliberate_exclusion = check_allowlist_covers_every_public_show(
+        {"show-a"}, {"show-b"}, ["show-a", "show-b"])
+    assert deliberate_exclusion == [], \
+        f"expected no errors for a deliberately excluded slug, got {deliberate_exclusion}"
+
+    # An excluded slug that isn't actually a public show at all (a typo in
+    # CONTROLLER_ENGINE_EXCLUDED_SLUGS) must be flagged, naming it.
+    bad_exclusion = check_allowlist_covers_every_public_show(
+        {"show-a"}, {"show-does-not-exist"}, ["show-a", "show-b"])
+    assert any("show-does-not-exist" in e for e in bad_exclusion), \
+        f"expected an error naming show-does-not-exist, got {bad_exclusion}"
+
 
 def main():
     _selftest()
+
+    # --check-allowlist-coverage: as of Step 5b this same invariant also runs
+    # inside check() below (the default path) -- this standalone flag is now
+    # just a convenience for checking coverage in isolation, without running
+    # the rest of check()'s markup validation.
+    if "--check-allowlist-coverage" in sys.argv[1:]:
+        sys.path.insert(0, os.path.join(ROOT, "scripts"))
+        from sitegen.pages import CONTROLLER_ENGINE_SLUGS, CONTROLLER_ENGINE_EXCLUDED_SLUGS
+        from sitegen.core import PUBLIC_SHOWS
+        public_show_slugs = [s["slug"] for s in PUBLIC_SHOWS]
+        errors = check_allowlist_covers_every_public_show(
+            CONTROLLER_ENGINE_SLUGS, CONTROLLER_ENGINE_EXCLUDED_SLUGS, public_show_slugs)
+        if errors:
+            print("allowlist coverage FAILED:")
+            for e in errors:
+                print(f"  - {e}")
+            sys.exit(1)
+        print(f"allowlist coverage OK — CONTROLLER_ENGINE_SLUGS covers all "
+              f"{len(public_show_slugs)} public shows")
+        return
+
     errors, n_track, n_rec, n_pages = check()
     if errors:
         print(f"markup integrity FAILED — {len(errors)} problem(s):")

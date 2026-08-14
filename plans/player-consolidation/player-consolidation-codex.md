@@ -1291,3 +1291,344 @@ Nothing here touches PR #3's actual new commit (the `--prod` extension
 itself) — that code was independently checked before it was committed and
 nothing in this pass changed the assessment. PR #3 is ready to merge as far
 as this review is concerned.
+
+## Ninth review — Step 5b readiness — 2026-08-14
+
+Run via the Codex MCP server directly (`mcp__codex__codex`, sandbox
+`read-only`), not `scripts/codex_review.sh` — a different invocation path
+than every prior review in this log, at Rene's explicit request. Focus:
+whether the current code and Step 5a's record actually support proceeding
+to Step 5b (widening `CONTROLLER_ENGINE_SLUGS` to all show pages).
+
+**Conclusion:** the shared runtime (`player-controller.js`/`player-views.js`/
+`player-boot.js`) looks capable of handling all 30 published show pages, and
+the eighth review's three fixes hold up. Not ready to *start implementing*
+5b as a one-line allowlist edit, though — the verification tooling and two
+pieces of documentation need to catch up first.
+
+1. **High — `browser_check.mjs` cannot be reused unchanged for 5b.** `ALLOWLIST`
+   (line 90-98) is hardcoded to the 3 current slugs. `NON_ALLOWLISTED_PAGES`
+   (line 466-470) explicitly includes `/shows/jerry-cafe-java-1999-04-08/` as
+   a page that must NOT have the controller mounted — after 5b widens the
+   allowlist to all shows, that page WOULD be allowlisted, so this exact
+   check would assert the opposite of what would then be true.
+2. **Medium — nothing enforces that 5b actually covers every generated show,
+   and there's a dangerous stale comment.** `verify_markup.py`'s `check()`
+   (line 151-157) only catches an allowlisted slug that generates no page —
+   never the reverse (a generated public show missing from the set).
+   Separately, `pages.py:684` says "Step 5 empties this out and flips the
+   engine on everywhere" — but the actual gate (`pages.py:930`,
+   `if show["slug"] in CONTROLLER_ENGINE_SLUGS:`) is a membership check.
+   Literally emptying the set would disable the controller **everywhere**,
+   the opposite of what the comment says. Read that comment as wrong, not
+   as a spec — 5b needs the set actually filled with every public show slug
+   (or the gate inverted to an exclude-list), not emptied.
+3. **Medium — the new wavesurfer.js dormancy check is timing-dependent.**
+   `browser_check.mjs` waits a fixed 500ms after load (line 135) then checks
+   for zero real `<audio>` elements. Legacy `wavesurfer.js`'s `start()`
+   (`wavesurfer.js:136-146`) fetches peaks asynchronously before calling
+   `build()` (which is what actually constructs the WaveSurfer/`<audio>`
+   instances) — on a slow response, the check could read "dormant" before a
+   wrongly-running legacy engine has even reached `build()` yet. Not an
+   active bug (the gate itself is provably correct via the identical
+   `PLAYER_ENGINE_MOUNTED` check both engines share), but a real soundness
+   gap in the check *as a regression detector*.
+4. **Low, but concretely already demonstrated — the wider run can't
+   currently be green, and one bad page can abort the whole thing.** The
+   known Cloudflare-beacon CSP console warning (confirmed site-wide, see
+   Step 5a's record) would produce ~30 failures instead of 3 once every show
+   page is checked. Separately, the per-page loop (`for (const path of
+   ALLOWLIST)`, line 128) has no try/catch — a single page's failure throws
+   and aborts evaluation of every remaining page. This is not hypothetical:
+   it's exactly what happened on Step 5a's first, non-reproducing production
+   hit (see that record above) — becomes far more costly at 30 pages than 3.
+5. **Documentation drift, confirmed on inspection:**
+   - `player-consolidation-plan.md:14-16` still says production verification
+     is "a separate, still-outstanding step" and "nothing is pushed or
+     deployed" — stale; missed when the Step 5a record was added further
+     down in the same document.
+   - `HANDOFF.md:8` says production verification "passed" — true for every
+     player-consolidation-specific check, but the harness's actual exit
+     code was 1 (3 of 58 checks failed, all the known unrelated CSP
+     warning). Imprecise, not false, but worth tightening.
+   - `HANDOFF.md`'s claim that a contemporaneous `curl` proved "the page
+     itself was never wrong" overclaims what one `curl` request can prove —
+     it shows *a* request got the correct HTML at that moment, not
+     necessarily that Playwright's specific request hit the same edge
+     response. Fair correction.
+
+### Disposition (Claude, 2026-08-14)
+
+All five findings confirmed by reading the actual code/docs directly, not
+taken on the review's word:
+
+- **#1 confirmed** — read `browser_check.mjs:90-98` and `:466-470` myself;
+  exactly as described.
+- **#2 confirmed, and the more important of the two Medium findings** — read
+  `verify_markup.py:151-157` (no reverse check) and `pages.py:678-686` /
+  `:930` directly. The stale comment is a real hazard: a future
+  implementation of 5b that took "empties this out" literally would silently
+  revert the entire site to 100% legacy while looking, on a quick read, like
+  the rollout had completed. Treating this as the highest-priority item to
+  fix before 5b, comment severity notwithstanding.
+- **#3 confirmed** — read `wavesurfer.js:136-146`; the async fetch-before-
+  `build()` sequence is exactly as described. Agree it's not an active bug
+  today (the underlying gate is sound) but is worth hardening before relying
+  on this check across a much larger, less-audited page set.
+- **#4 confirmed on both counts** — grepped for `try`/`catch` around the
+  `ALLOWLIST` loop (`browser_check.mjs:128`), none exists; and the
+  CSP-multiplication math is straightforward given Step 5a's own record
+  that the warning is site-wide. The "one bad page aborts everything" part
+  isn't theoretical — it's the same failure mode as Step 5a's first,
+  non-reproducing production hit, now recognized as a real gap rather than
+  a one-off.
+- **#5 confirmed, all three sub-points** — read the exact lines named in
+  each. `plan.md:14-16` is a genuine miss (I updated Step 4/5a's own
+  sections but not this earlier summary paragraph). The `HANDOFF.md`
+  wording issues are fair precision corrections, not factual errors.
+
+**Recommendation, not yet actioned:** fix items #2 (the stale/dangerous
+comment plus a real completeness check) and #5 (documentation) essentially
+for free — they're small and unambiguous. Items #1, #3, #4 are real
+prerequisites for 5b specifically (updating `browser_check.mjs` for a wider
+allowlist, a robustness pass on the per-page loop, and deciding how to
+handle the known CSP warning at scale) rather than blockers on the
+already-shipped Step 5a. Whether to fix all of this via `/apply-review`
+before starting 5b's implementation, or fold some of it into 5b's own work
+directly, is Rene's call — reporting rather than deciding here.
+
+### Fixes applied (Claude, 2026-08-14)
+
+Rene approved fixing all five findings as prep work before starting 5b's
+actual implementation (`CONTROLLER_ENGINE_SLUGS` itself is untouched — that
+remains 5b's own, separate, not-yet-approved step). All fixed, independently
+re-verified myself rather than only trusting the implementing pass's report:
+
+1. **Fixed.** `runParityPass`'s per-page loop (`browser_check.mjs`) now
+   wraps each page's body in try/catch; a crash records
+   `${path} page-level crash` with the error message and moves to the next
+   page instead of aborting the whole run. Lives in a manual dev-only
+   harness with no unit-test coverage (same situation as several eighth-
+   review fixes), so verified with real runs instead: local pass still
+   44/44; the `isRemote` code path exercised by pointing `--base=` at a
+   local `python3 -m http.server` standing in for production (never hit
+   real production for this) — 54/58.
+2. **Fixed.** The known Cloudflare-beacon CSP console message is now
+   filtered out of every "no console errors" check (both the per-page loop
+   and `runWebkitSmoke()`) via one narrowly-scoped regex, with a comment
+   making clear this is one specific, confirmed, pre-existing, site-wide
+   message — not a general CSP-ignoring policy.
+3. **Fixed.** Added `await page.waitForLoadState('networkidle')`
+   immediately before the wavesurfer.js dormancy check, so an in-flight
+   peaks fetch (in either engine) has resolved either way before the check
+   reads the DOM. Left the earlier, unrelated fixed timeout alone since
+   other checks depend on it.
+4. **Fixed.** `checkNonAllowlistedPagesUnaffected`'s non-allowlisted
+   show-page sample is no longer hardcoded — `pickNonAllowlistedShowPage()`
+   fetches the real `assets/home-shows.json` (the same asset the homepage
+   itself uses) and picks the first show not in `ALLOWLIST`, gracefully
+   skipping that one sub-check if none remain (a future full rollout).
+   Verified for real: against the local-server-as-remote-target run above,
+   it correctly picked `/shows/mad-marin-brewing-co-1998-04-01/` — a
+   different page than the old hardcoded one, confirming the logic is
+   genuinely dynamic, not coincidentally landing on the same value.
+5. **Fixed.** `pages.py`'s backwards "Step 5 empties this out and flips the
+   engine on everywhere" comment corrected to state plainly that the gate is
+   a membership check, so 5b needs to widen the set (or invert to an
+   exclude-list) — never empty it.
+
+**Also added, beyond a strict reading of "fix the finding":**
+`verify_markup.py --check-allowlist-coverage` — a new function
+(`check_allowlist_covers_every_public_show`), deliberately **not** wired
+into the default `check()`/`main()` path (today's 3-page allowlist is an
+intentional partial rollout; wiring this in unconditionally would fail
+every build until 5b/5c lands). Covered by two new cases in the existing
+`_selftest()`. Confirmed independently: `build.py --check` and
+`verify_markup.py`'s default path are genuinely unaffected, while
+`--check-allowlist-coverage` correctly fails today, listing all 27
+not-yet-allowlisted public shows by name — real tooling ready for 5b to
+invoke once it's actually widened the set, not just a comment fix.
+
+**Documentation** (`player-consolidation-plan.md`'s opening paragraph,
+`HANDOFF.md`'s "passed" framing and the `curl` overclaim) corrected to
+match the disposition above — see those files directly rather than
+duplicating the wording here.
+
+**Re-verification (run independently):**
+```
+python3 scripts/build.py --check        → integrity OK — 31 shows, 680 curated tracks
+python3 scripts/build.py                → markup OK — 747 items across 30 generated show pages
+python3 scripts/verify_markup.py        → markup OK (self-test included, unaffected by the new function)
+python3 scripts/verify_markup.py --check-allowlist-coverage → correctly FAILS, 27 shows listed
+NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs --skip-webkit → 44/44
+node scripts/browser_check.mjs --base=http://127.0.0.1:8123 --skip-webkit (local server standing in for prod) → 54/58, all 4 non-passes expected (bare http.server doesn't set Cloudflare's real Cache-Control headers)
+```
+
+Nothing here touches `CONTROLLER_ENGINE_SLUGS` or widens the rollout —
+Step 5b's actual implementation is still a separate, not-yet-started step.
+
+---
+
+## Step 5b implementation review — 2026-08-14
+
+1. **High — Step 5b is marked complete before its required production verification.**  
+   Evidence: [player-consolidation-plan.md](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:1246) marks 5b `[x]` and calls it “Done,” although the step itself requires production-equivalent verification before it is settled at line 1252, and lines 1296–1299 explicitly say production verification is pending. [HANDOFF.md](/home/renedebos/renedebos.com-player-consolidation/HANDOFF.md:5) likewise says it is not merged or deployed.  
+   Why it matters: the checklist says the rollout gate passed when only local implementation passed. A later agent could proceed to 5c and delete the fallback before the site-wide rollout has been exercised against production caching and headers.  
+   Suggested fix: split 5b into “implementation/local verification” `[x]` and “merge/deploy/production verification” `[ ]`, leaving the parent incomplete until `browser_check.mjs --prod` succeeds and its result is recorded.
+
+2. **Medium — The advertised single-page rollback escape hatch is rejected by both the build gate and browser harness.**  
+   Evidence: [pages.py](/home/renedebos/renedebos.com-player-consolidation/scripts/sitegen/pages.py:693) describes `CONTROLLER_ENGINE_EXCLUDED_SLUGS` as a targeted rollback mechanism, and line 713 subtracts it from the allowlist. However, [verify_markup.py](/home/renedebos/renedebos.com-player-consolidation/scripts/verify_markup.py:164) unconditionally requires every public slug to remain in `CONTROLLER_ENGINE_SLUGS`; simulating one exclusion produces `CONTROLLER_ENGINE_SLUGS is missing public show(s)`. The production harness also constructs its “allowlisted” set from every `ALL_SHOWS` entry and therefore can never discover an exclusion ([browser_check.mjs](/home/renedebos/renedebos.com-player-consolidation/scripts/browser_check.mjs:548)); its main loop would instead report the intentionally excluded page as a mount failure.  
+   Why it matters: during a page-specific incident, the documented rollback edit cannot pass the normal build or verification process.  
+   Suggested fix: validate that `allowlisted ∪ excluded == PUBLIC_SHOWS`, that the two sets are disjoint, and that exclusions are valid public slugs. Export an explicit rollout manifest to the browser harness so excluded pages are tested for working legacy fallback rather than controller mounting.
+
+3. **Medium — The full-catalog browser check lets the deployed catalog define its own test scope.**  
+   Evidence: [browser_check.mjs](/home/renedebos/renedebos.com-player-consolidation/scripts/browser_check.mjs:122) trusts the target origin’s `home-shows.json` without checking its status, schema, uniqueness, expected slug set, or presence of all four heavy-test slugs; line 169 visits only entries returned by that response, while lines 740–742 fail only recorded negative results. A stale or truncated but valid JSON array can therefore omit pages and still produce a green exit with fewer checks. Moreover, [feeds.py](/home/renedebos/renedebos.com-player-consolidation/scripts/sitegen/feeds.py:94) intentionally puts only shows with tracks into `home-shows.json`, while the controller allowlist covers every public show.  
+   Why it matters: the pending production verification can falsely report success without checking every page Step 5b claims to cover. A future public hero-only show would be enabled but never enter this harness.  
+   Suggested fix: derive an expected rollout manifest from local `PUBLIC_SHOWS`, compare the deployed manifest against it exactly, assert unique slugs/URLs and that every heavy slug exists, then iterate the expected set rather than the target response’s set.
+
+4. **Low — The largest-page browser run does not test the DOM-churn regression it is claimed to stress.**  
+   Evidence: the plan calls the 34-track page a real stress test for inactive-row churn at [player-consolidation-plan.md](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:1279), but the heavy browser path only checks playback, toggle, seek, Space, and canvas presence ([browser_check.mjs](/home/renedebos/renedebos.com-player-consolidation/scripts/browser_check.mjs:243)). It never observes mutations or DOM writes. The actual churn assertion remains a two-row synthetic fixture in [test-player-views.mjs](/home/renedebos/renedebos.com-player-consolidation/scripts/test-player-views.mjs:300).  
+   Why it matters: the browser test would still pass if every inactive row were rewritten on every tick, so the plan overstates what 184/184 establishes.  
+   Suggested fix: either remove the “stress test” claim or attach a `MutationObserver` to inactive controls on the large real page and assert zero relevant mutations across repeated `timeupdate` events.
+
+**Verification during this review**
+
+- `python3 scripts/build.py --check` — passed: 31 shows, 680 curated tracks.
+- `python3 scripts/verify_markup.py` — passed: 747 items across 30 generated show pages.
+- `python3 scripts/verify_markup.py --check-allowlist-coverage` — passed: all 30 public shows.
+- Player Node suites — passed: controller 22/22, views 16/16, boot 23/23.
+- Generated-markup audit — all 30 pages contain exactly one controller flag, boot module, and dormant `wavesurfer.js` tag; largest page is correctly 34 tracks plus 5 recording cards.
+- `NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs --skip-webkit` — could not run in this read-only environment: Playwright failed creating `/tmp/playwright-artifacts-*` with `EROFS`; the recorded 184/184 result was therefore not independently reproduced.
+- `git diff --check HEAD^..HEAD` — passed.
+_Review generated 2026-08-14 11:35:29 PDT by `scripts/codex_review.sh` (codex exec, read-only)._
+
+### Disposition (Claude, 2026-08-14)
+
+All four findings confirmed. #2 was independently reproduced, not just read
+and agreed with — it's the most important finding in this review.
+
+- **#1 confirmed.** `player-consolidation-plan.md:1246` marks 5b `[x]` and
+  a "Done" note follows immediately, even though 5b's own text (line 1252)
+  defines "verify the wider rollout the same way as 5a" as part of being
+  settled, and the very next paragraph in that same edit says production
+  verification is still pending. `HANDOFF.md:5` is consistent (correctly
+  says not yet merged), so the drift is localized to the plan checkbox —
+  still a real overclaim worth fixing.
+- **#2 confirmed, reproduced directly, the important one.** Ran
+  `check_allowlist_covers_every_public_show` myself with one slug removed
+  from a simulated `CONTROLLER_ENGINE_SLUGS` (exactly what setting
+  `CONTROLLER_ENGINE_EXCLUDED_SLUGS = {"some-slug"}` would produce):
+  ```
+  Coverage check errors: ["CONTROLLER_ENGINE_SLUGS is missing public show(s): ['jerry-19-broadway-1999-02-01']"]
+  ```
+  Since this function now runs inside `check()`'s default gate, `python3
+  scripts/build.py --check` — the exact gate CI runs before every deploy —
+  would **fail** the instant the escape hatch is used for its documented
+  purpose. The rollback mechanism I built in the same commit as the gate
+  that rejects it. Separately confirmed `browser_check.mjs`'s
+  `pickNonAllowlistedShowPage`/main loop treat every entry in
+  `ALL_SHOWS` (fetched from `home-shows.json`) as expected-allowlisted, so
+  an excluded page would show up as a `controller mounted` FAILURE with no
+  way to tell "correctly excluded" apart from "actually broken." Real,
+  active, load-bearing bug — this is exactly the mechanism Rene would reach
+  for during a real incident, and it doesn't work.
+- **#3 confirmed.** Grepped `feeds.py:94-96` directly:
+  `build_home_shows()` iterates `[s for s in PUBLIC_SHOWS if s.get("tracks")]`
+  — "one row per **track-listed** show," per its own docstring. So
+  `home-shows.json` ⊆ `PUBLIC_SHOWS`, not `==`, while `CONTROLLER_ENGINE_SLUGS`
+  (this step's own change) is computed from all of `PUBLIC_SHOWS`. They
+  happen to coincide today (the one trackless public show is hidden), so
+  this isn't an active bug, but it's a real, currently-latent gap: a future
+  public show without a track list yet (the runbook's "whole-show entry,
+  `tracks: null`" state) would get the controller engine but never be
+  exercised by this harness, silently. Confirmed as described.
+- **#4 confirmed.** My own wording in `plan.md`/`HANDOFF.md` called the
+  34-track heavy-check page "a real stress test for the eighth review's
+  inactive-row DOM-churn fix" — but the heavy tier only checks
+  playback/toggle/seek/Space/canvas, never counts DOM writes on inactive
+  rows. The actual churn assertion is still only the synthetic 2-row unit
+  test. Fair correction — I overclaimed what 184/184 demonstrates.
+
+**Recommendation:** #2 should be fixed before merging PR #4 — an
+unusable-under-fire rollback mechanism is worse than not advertising one at
+all, and it's a small, well-scoped fix (validate
+`allowlisted ∪ excluded == public`, not `allowlisted == public`; give
+`browser_check.mjs` a way to know about exclusions instead of assuming
+every fetched show should be mounted). #1 and #4 are one-line documentation
+corrections. #3 is real but lower-priority — proposing a scoped defensive
+fix (assert the fetched catalog actually contains all `HEAVY_CHECK_SLUGS`,
+fail loudly if not) rather than a full independent-manifest redesign, since
+no trackless public show exists today and a fuller fix would mean changing
+`home-shows.json`'s row-inclusion criteria, which the homepage itself also
+depends on — a bigger, separate decision. Not yet implemented — reporting
+per `/review-step`'s stop-before-applying discipline.
+
+### Fixes applied (Claude, 2026-08-14)
+
+Rene approved fixing all four before merging PR #4. All fixed, independently
+re-verified myself (not just trusted the implementing pass's report):
+
+1. **Fixed.** `player-consolidation-plan.md`'s 5b checkbox changed from
+   `[x]` to `[~]` with an explicit note explaining why (implementation and
+   local verification done; production verification — 5b's own stated
+   completion criterion — still pending). Held to the same bar 5a was: 5a
+   only got its `[x]` after production verification actually passed.
+2. **Fixed, the important one, reproduced twice — once as the bug, once as
+   the fix.** `check_allowlist_covers_every_public_show()` (`verify_markup.py`)
+   now takes `(controller_engine_slugs, excluded_slugs, public_show_slugs)`
+   and validates the real three-way relationship: an excluded slug that
+   isn't actually public is an error; overlap between allowlisted and
+   excluded is an error; a slug in neither is the real gap. Both call sites
+   updated to pass `CONTROLLER_ENGINE_EXCLUDED_SLUGS`. New `_selftest()`
+   cases: a deliberate exclusion now produces zero errors (**ran this
+   exact case against the old two-arg logic first — it failed with
+   `CONTROLLER_ENGINE_SLUGS is missing public show(s): ['show-b']`,
+   confirming the bug precisely** — then applied the fix and confirmed it
+   passes), and an invalid excluded slug (a typo) is still flagged by name.
+   `browser_check.mjs` now fetches a new `assets/controller-excluded-slugs.json`
+   (written by `build.py` from `CONTROLLER_ENGINE_EXCLUDED_SLUGS`, a
+   dedicated small asset — deliberately not folded into `home-shows.json`,
+   whose shape the live homepage also depends on) and uses it to skip
+   excluded pages in the main mount-check loop and to let
+   `pickNonAllowlistedShowPage()` find a real excluded page instead of only
+   ever hitting the "everyone's allowlisted" null path. **Verified end-to-end
+   with a real simulated exclusion**, not just the unit test: temporarily
+   set the excluded-slugs asset to one real slug and ran the full harness
+   (185→180 checks, that show's assertions cleanly absent, no false
+   failure); then also stripped that show's actual generated page's engine
+   flag/boot tag to simulate a truly-excluded page — still clean, no crash.
+   Reverted both afterward and confirmed `git diff --stat -- shows/` was
+   empty and the default full-allowlist run was back to 185/185.
+3. **Fixed, scoped as proposed (not a full manifest redesign).**
+   `fetchAllShowUrls()` now asserts every `HEAVY_CHECK_SLUGS` entry is
+   present in the fetched `home-shows.json`, throwing immediately if not.
+   The residual gap (`home-shows.json` ⊆ `PUBLIC_SHOWS`, could silently
+   narrow the light-tier's scope for a future trackless public show) is
+   documented in a comment at the fetch site, not fixed — correctly out of
+   scope, since a real fix means changing `home-shows.json`'s row-inclusion
+   criteria and that asset's shape is also load-bearing for the live
+   homepage listing.
+4. **Fixed properly, not just reworded.** The `jerry-19-broadway-1999-03-29`
+   heavy check now attaches a real `MutationObserver` (via `page.evaluate`,
+   results read back from `window.__mutationLog`) to an inactive row before
+   playback starts, observing through the existing playback/toggle/seek/
+   Space sequence with no new waits needed, and asserts zero mutations.
+   Confirmed passing for real: `PASS - .../jerry-19-broadway-1999-03-29/
+   inactive row not rewritten during playback/toggle/seek/Space (DOM-churn
+   stress test) :: mutations=0`. The plan/HANDOFF language now describes
+   what this check actually measures instead of what it was hoped to imply.
+
+**Re-verification (run independently):**
+```
+python3 scripts/build.py --check              → integrity OK — 31 shows, 680 curated tracks
+python3 scripts/build.py                       → markup OK — 747 items across 30 generated show pages
+python3 scripts/verify_markup.py               → markup OK (self-test included)
+python3 scripts/verify_markup.py --check-allowlist-coverage → OK, all 30 public shows
+node scripts/test-player-controller.mjs        → 22/22
+node scripts/test-player-views.mjs             → 16/16
+node scripts/test-player-boot.mjs              → 23/23
+NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs --skip-webkit → 185/185
+```
+
+PR #4 is ready to merge as far as this review is concerned; production
+verification (`browser_check.mjs --prod`) remains the next real gate.
