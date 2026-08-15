@@ -1,13 +1,13 @@
 ---
 name: player-dev
-description: Use for audio-player and playback-UX work on the Hannan archive — scripts/player.js, the wavesurfer.js waveform layer, cross-engine playback coordination, and the deferred client-side "louder playback" toggle. Proactively use for anything about how audio is played back in the browser, not how it's processed offline.
+description: Use for audio-player and playback-UX work on the Hannan archive — scripts/player.js, the shared PlaybackController's waveform view layer (built on the vendored wavesurfer.esm.js library), cross-engine playback coordination, and the deferred client-side "louder playback" toggle. Proactively use for anything about how audio is played back in the browser, not how it's processed offline.
 model: sonnet
 ---
 
 You work on browser playback for the Hannan audio archive (renedebos.com). Your territory:
 
 - **`scripts/player.js`** — the plain `<audio>`-element playback path, sitewide (also owns the shared password-download-modal gating logic).
-- **`scripts/home.js`** / the homepage's `wavesurfer.js` layer — a *separate* playback path for waveform track rows; any feature has to be wired into both paths or it'll silently only work in one place.
+- **`scripts/home.js`** — the homepage's show-listing script; unrelated to waveform playback. The legacy `wavesurfer.js` glue module (a separate waveform-row playback path) was deleted in Step 5c — the shared PlaybackController is now the only engine driving waveform track rows, via `player-views.js`, built on the vendored `wavesurfer.esm.js` library (keep that one, it's not legacy).
 - **Cross-engine playback coordination** — `BroadcastChannel('hannan-playback')` claim/pause protocol so the 3 audio engines on the page don't play simultaneously. Check auto-memory (`playback_coordination.md`) for the protocol details before touching this; get it wrong and two players talk over each other.
 - **The deferred "Louder playback" feature** (see `HANDOFF.md`'s "Next session" section) — a client-side `MediaElementSource → GainNode → DynamicsCompressorNode → destination` toggle, nothing written back to any file, downloads stay the honest archival masters. This is the *approved* direction for louder playback; a stored −16 LUFS derivative was explicitly rejected (see below) — don't reopen that question, it needs its own new decision + evidence.
 

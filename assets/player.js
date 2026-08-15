@@ -25,9 +25,12 @@ let activePlayer = null;
 const RANGE_MAX = 1000;
 
 // ── playback coordination (same page + other tabs/windows) ──────────────────
-// Show/song-page track players, waveform rows (wavesurfer.js), /playlist/,
-// and the /player/ popup each own an independent <audio> element with no
-// shared engine, so playing one doesn't pause the others. A claim announces
+// Show/song-page track players, waveform rows (driven by the shared
+// PlaybackController where mounted, or dormant otherwise — wavesurfer.js,
+// the module that used to drive them here, was removed in Step 5c),
+// /playlist/, and the /player/ popup each own an independent <audio>
+// element with no shared engine, so playing one doesn't pause the others.
+// A claim announces
 // "I'm playing now": it's broadcast to every other tab/window AND delivered
 // to every other player on the same page — BroadcastChannel never delivers
 // to the posting page itself, and a show page mixes two independent systems
@@ -637,9 +640,13 @@ function focusHashTrack() {
     document.querySelectorAll('.track-row.target').forEach(r => { if (r !== el) r.classList.remove('target'); });
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     el.classList.add('target');
-    // Waveform rows (.ws-track) are wired up asynchronously by wavesurfer.js,
-    // which handles its own hash-autoplay once its rows are actually ready —
-    // clicking here before then would silently do nothing.
+    // Waveform rows (.ws-track) never autoplay here on purpose. On a
+    // controller-engine page (every public show today) player-boot.js's own
+    // deep-link handling covers them instead (see its header comment). On a
+    // page rolled back via CONTROLLER_ENGINE_EXCLUDED_SLUGS, no engine
+    // drives waveform rows at all since wavesurfer.js was removed in Step
+    // 5c — clicking here would silently do nothing, same as before, just
+    // for a different reason now.
     if (el.classList.contains('custom-player') && new URLSearchParams(location.search).get('autoplay') === '1') {
       const btn = el.querySelector('.play-btn');
       if (btn) btn.click();

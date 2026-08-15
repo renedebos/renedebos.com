@@ -41,12 +41,11 @@ def main():
     write("assets/player.js", open(os.path.join(here, "player.js")).read())
     # Shared PlaybackController — see plans/player-consolidation/. Loaded only
     # by the show pages in pages.CONTROLLER_ENGINE_SLUGS so far (Phase 1
-    # Step 4); every other page still runs the legacy player.js/wavesurfer.js.
+    # Step 4); every other page still runs the legacy player.js.
     write("assets/player-controller.js", open(os.path.join(here, "player-controller.js")).read())
     write("assets/player-views.js", open(os.path.join(here, "player-views.js")).read())
     write("assets/player-boot.js", open(os.path.join(here, "player-boot.js")).read())
     write("assets/wavesurfer.esm.js", open(os.path.join(here, "vendor", "wavesurfer.esm.js")).read())
-    write("assets/wavesurfer.js", open(os.path.join(here, "wavesurfer.js")).read())
     # client-zip@2.4.5 (MIT) — assembles multiple fetch() Responses into a
     # streamed ZIP Response in the browser, no server-side buffering.
     write("assets/client-zip.js", open(os.path.join(here, "vendor", "client-zip.js")).read())
@@ -66,7 +65,6 @@ def main():
     write("assets/song-occurrences.json", json.dumps(build_song_occurrences(), ensure_ascii=False))
     write("assets/home-shows.json", json.dumps(build_home_shows(), ensure_ascii=False))
     write("assets/controller-excluded-slugs.json", json.dumps(sorted(CONTROLLER_ENGINE_EXCLUDED_SLUGS)))
-    write("lab/wavesurfer/index.html", build_wavesurfer_lab())
     write("index.html", build_home())
     write("songs/index.html", build_songs_index())
     write("search/index.html", build_search())

@@ -2,16 +2,16 @@
 **Date:** 2026-08-14 · **Branch:** `player-consolidation`
 (worktree `/home/renedebos/renedebos.com-player-consolidation`)
 
-**Phase 1 Steps 4 and 5a are done and live in production. Step 5b is
-implemented, locally verified, and PR'd — not yet merged/deployed.** PR #3
-(Step 4 + 5a) merged into `main` (`7872882`); production verification ran
-55/58 (every player-consolidation-specific check passed; the 3 non-passes
-are one known, pre-existing, unrelated console warning — see below). Step
-5b (widen the allowlist to every show) is implemented, passing locally
-(185/185 — a tenth review found and fixed a real bug in the rollback
-mechanism first, see below), and has its own PR open — merging it and
-running `browser_check.mjs --prod` against it is the very next thing to do;
-see below.
+**Phase 1 Steps 4, 5a, and 5b are all done and live in production — every
+public show page now runs the shared controller.** PR #3 (Step 4 + the
+3-page canary, `7872882`) and PR #4 (Step 5b's full rollout, `fd0a68e`)
+both merged, deployed, and verified against real production. Most recent
+production run: `browser_check.mjs --prod` across all 30 live show pages,
+**197/197 passed** — clean, no failures at all (not even the known
+Cloudflare-beacon CSP warning, now filtered), no repeat of 5a's transient
+first-hit anomaly. A tenth review found and fixed a real bug in Step 5b's
+rollback mechanism before this merged (see below) — worth knowing about
+even though it doesn't affect anything currently live.
 
 ## ✅ Done this session — Step 4 through Step 5a
 
@@ -257,16 +257,21 @@ tenth review.
 
 ## 🔧 Next up
 
-**Merge Step 5b's PR, then run production verification** — identical
-process to 5a: watch the deploy Action (especially the cache-purge step),
-then `NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs --prod`.
-Update this file and the plan's Step 5b entry with the result once it runs.
+**Step 5c**: `scripts/wavesurfer.js` (the legacy waveform-row engine) and
+its `/lab/wavesurfer/` prototype page are deleted, implemented and locally
+verified (build/`--check` clean, 23/23 + 22/22 + 16/16 deterministic tests,
+`browser_check.mjs` 155/155). Two Codex review passes ran against this
+diff; all confirmed findings fixed, including a real test-quality gap
+(breakage Test A3 could false-pass against a detached-audio regression —
+hardened with a `play()`-spy, proved fail-then-pass by injecting a fake
+regression and confirming the old assertion missed it). **Not yet
+pushed/merged/deployed** — same production-verification bar as 5a/5b still
+applies before this is done. `player.js` stays either way (it's still the
+legacy fallback and still serves song pages and `/playlist/`).
 
-After that: **Step 5c** (delete `wavesurfer.js` as legacy fallback — its
-own, later, separate decision per the plan, only once confidence from 5b is
-established) is the last piece of Phase 1. Separately, still worth
-surfacing to Rene: whether to fix the Cloudflare-beacon CSP issue found
-during 5a (a `deploy-infra` task, not part of this initiative).
+Separately, still worth surfacing to Rene: whether to fix the
+Cloudflare-beacon CSP issue found during 5a (a `deploy-infra` task, not
+part of this initiative).
 
 ## Gotchas learned this session
 

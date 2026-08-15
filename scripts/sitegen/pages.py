@@ -681,9 +681,9 @@ def build_contact():
 # ── shared-player rollout allowlist (plans/player-consolidation/, Phase 1
 # Steps 4-5b) ────────────────────────────────────────────────────────────────
 # Show pages listed here run the shared PlaybackController (player-boot.js)
-# instead of the legacy player.js/wavesurfer.js pair; wavesurfer.js/player.js
-# stay on every page as the runtime fallback either way (5c, not this, is
-# what removes them).
+# instead of the legacy player.js. player.js stays on every page as the
+# runtime fallback either way. (The legacy wavesurfer.js waveform-row engine
+# that used to pair with it was removed in Step 5c — see plan.md.)
 #
 # Step 5b (2026-08-14) widened this from an explicit 3-page allowlist to
 # every public show, computed from PUBLIC_SHOWS -- a newly added show is
@@ -830,7 +830,7 @@ def build_show(show):
             )
             if has_waves:
                 # waveform replaces the progress bar; the download (if any) keeps the
-                # .ws-dl wrapper so the mobile grouping styles apply (matches the lab page).
+                # .ws-dl wrapper so the mobile grouping styles apply.
                 dl = ('\n        <div class="ws-dl">' +
                       "".join("\n          " + b for b in dl_btns) +
                       "\n        </div>") if dl_btns else ""
@@ -924,18 +924,17 @@ def build_show(show):
 
     extra_scripts = '\n<script src="/assets/track-select.js"></script>'
     if has_waves:
-        # Emit the peaks to a served, cacheable path (data/ is .assetsignore'd) and
-        # point wavesurfer.js at it, rather than inlining ~58 KB into every page.
+        # Emit the peaks to a served, cacheable path (data/ is .assetsignore'd),
+        # rather than inlining ~58 KB into every page. Fetched by the shared
+        # controller's player-boot.js (attachPeaks()) via WS_PEAKS_URL.
         write(f"assets/peaks/{show['slug']}.json", open(peaks_path).read())
-        extra_scripts += (f'\n<script>window.WS_PEAKS_URL = "/assets/peaks/{show["slug"]}.json";</script>\n'
-                          f'<script type="module" src="/assets/wavesurfer.js"></script>')
+        extra_scripts += f'\n<script>window.WS_PEAKS_URL = "/assets/peaks/{show["slug"]}.json";</script>'
 
     # Shared player engine, for allowlisted shows only. The flag has to be set
-    # before player.js (hence pre_scripts); player-boot.js goes last so the two
-    # legacy modules have already registered their DOMContentLoaded fallbacks by
-    # the time it claims the page. Both legacy scripts stay on the page on
-    # purpose — they are the runtime fallback if this module never mounts, not
-    # dead weight.
+    # before player.js (hence pre_scripts); player-boot.js goes last so
+    # player.js has already registered its DOMContentLoaded fallback by the
+    # time it claims the page. player.js stays on the page on purpose — it's
+    # the runtime fallback if this module never mounts, not dead weight.
     pre_scripts = ""
     if show["slug"] in CONTROLLER_ENGINE_SLUGS:
         pre_scripts = "<script>window.PLAYER_ENGINE = 'controller';</script>\n"
@@ -961,67 +960,6 @@ def build_show(show):
         extra_scripts=extra_scripts,
         extra_head=show_jsonld(show, artist),
         pre_scripts=pre_scripts,
-    )
-
-WAVESURFER_LAB_SLUG = "sean-19-broadway-unknown"
-
-def build_wavesurfer_lab():
-    """Standalone prototype page rendering one show's tracks with wavesurfer.js
-    waveforms (drawn from pre-computed peaks). Non-destructive: not in nav, the
-    real show page is untouched."""
-    show = next(s for s in M["shows"] if s["slug"] == WAVESURFER_LAB_SLUG)
-    artist = next(a for a in M["artists"] if a["id"] == show["artist"])
-    peaks_json = open(os.path.join(ROOT, "data", "peaks", f"{WAVESURFER_LAB_SLUG}.json")).read()
-
-    rows = []
-    for t in show["tracks"]:
-        stream = stream_url(t["file"])
-        track_artist = t.get("artist") or artist["name"]
-        info = esc(json.dumps([
-            ["Artist", track_artist],
-            ["Song", t["title"]],
-            ["Venue", show["venue"] or "—"],
-            ["Date", show["date"] or "Unknown date"],
-        ], ensure_ascii=False))
-        dl_btns = []
-        if t.get("flac"):
-            flac_title = "Download FLAC (password protected)" + (f" · {t['flac_size_mb']} MB" if t.get("flac_size_mb") else "")
-            dl_btns.append(dl_button(t["flac"], title=flac_title))
-        dl_inner = "".join("\n          " + b for b in dl_btns)
-        dl = f'\n        <div class="ws-dl">{dl_inner}\n        </div>' if dl_btns else ""
-        play_label = esc(f'{t["title"]}, {track_artist}, {date_with_subtitle(show)}')
-        rows.append(f'''      <div class="ws-row" id="track-{t["num"]}" data-trackid="{t["num"]}" data-src="{esc(stream)}">
-        <button class="play-btn" aria-label="Play {play_label}" data-play-label="{play_label}">{PLAY_SVG}</button>
-        <span class="track-num">{t["num"]:02d}</span>
-        <span class="track-title" data-info="{info}">{esc(t["title"])}</span>
-        <div class="ws-wave"></div>
-        <span class="time-label current" data-duration="{esc(t["duration"])}">0:00 / {esc(t["duration"])}</span>{dl}
-      </div>''')
-
-    main = f'''
-  <section class="about">
-    <h2>wavesurfer.js prototype</h2>
-    <p>Experimental waveform player for the track rows. Compare it with the current player on the <a href="{show_url(show)}">live show page</a>. Each waveform is drawn instantly from pre-computed peaks; the audio itself only streams once you press play.</p>
-  </section>
-  <section>
-    <div class="ws-list" data-autoplay-next>
-{chr(10).join(rows)}
-    </div>
-  </section>'''
-
-    extra = (f'\n<script>window.WS_PEAKS = {peaks_json};</script>\n'
-             f'<script type="module" src="/assets/wavesurfer.js"></script>')
-
-    return page_shell(
-        title="Waveform prototype — The Hannan Tapes",
-        description="Experimental wavesurfer.js waveform player prototype.",
-        url="https://renedebos.com/lab/wavesurfer/",
-        eyebrow="Lab &middot; Prototype",
-        heading="Waveform <em>prototype</em>",
-        tagline=esc(show_title(show)),
-        nav=site_nav(),
-        main=main,
-        extra_scripts=extra,
     )
 
 def build_songs_index():
@@ -1165,4 +1103,4 @@ def build_404():
         nav=site_nav(), main=main)
 
 
-__all__ = ['CONTROLLER_ENGINE_SLUGS', 'WAVESURFER_LAB_SLUG', 'build_404', 'build_archive_data', 'build_contact', 'build_history', 'build_home', 'build_manual', 'build_player', 'build_playlist', 'build_process', 'build_search', 'build_show', 'build_song_page', 'build_songs_index', 'build_updates', 'build_wavesurfer_lab']
+__all__ = ['CONTROLLER_ENGINE_SLUGS', 'build_404', 'build_archive_data', 'build_contact', 'build_history', 'build_home', 'build_manual', 'build_player', 'build_playlist', 'build_process', 'build_search', 'build_show', 'build_song_page', 'build_songs_index', 'build_updates']
