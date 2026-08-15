@@ -1474,23 +1474,196 @@ adaptation work rather than a drop-in. `songs.js`'s lazy re-mount becomes
 call-repeatedly-safely contract as today's `if (player._audio) return;`
 guard.
 
-### Phase 2 — `/playlist/` (not started)
+### Phase 2 — `/playlist/` (scoped, not started)
 
-Migrate onto the same `PlaybackController`/view classes without losing
-shuffle, saved queues (`localStorage['savedPlaylists']`), restore, or Media
-Session behavior. `itemFromCatalogRow(row)` (mapping `assets/tracks.json`
-rows to the playable-item schema) gets built here. Not detailed further
-until Phase 1 proves the controller/view split end-to-end.
+**Scoping/test-prep pass completed 2026-08-15** (see
+`~/.claude/plans/read-handoff-md-fuzzy-rossum.md` for the working copy this
+was folded from — full assertion tables, exact `itemFromCatalogRow`
+field-by-field mapping, and all `checkPlaylistPage()` checks live there in
+more detail than reproduced here). Two agents did the underlying research
+(an Explore pass mapping current `scripts/playlist.js` against the Phase 1
+architecture; an Opus Plan pass turning that into a design), then a Codex
+review of the resulting design was verified line-by-line against the
+actual source and found five real, confirmed defects — corrected in place
+below, not just noted. Ready to code once a session picks up Stage 2a.
 
-Known parity work waiting for this phase, rather than assumed-free:
-`removeAt()`'s legacy slide-in semantics are already ported and tested, but
-the rest of the queue-editing surface (`reorder()`, endless-mode reshuffle,
-`#p=` hash resync, saved-playlist round trips) has **not** been demonstrated
-against the real `playlist.js` behavior — treat the controller as the
-intended foundation, not a proven drop-in. This is also where the
-`localStorage` state shape gets versioned (with invalid/future versions
-degrading to a clean queue rather than partially restoring), and where
-queue length from persisted/URL-derived sources needs an explicit bound.
+**What has to move.** `scripts/playlist.js` (868 lines) does eight
+separable jobs; only two are the actual migration:
+
+| Job | Current location | Disposition |
+|---|---|---|
+| Catalog fetch + facet filters | `playlist.js:60–270` | Moves unchanged into new boot module |
+| Queue building (dedupe/modes/amounts) | 279–295 | Moves unchanged, stays in catalog space |
+| Hash sync/hydration | `syncHash` (317), `hydrateFromHash` (544) | Re-homed, inverted: hash becomes a projection of controller state |
+| Saved playlists (localStorage) | 444–536 | Moves; validation/degrade added to the existing flat shape (versioning deferred, see below) |
+| Share link / ZIP manifest / popup | 340–443 | Moves nearly unchanged, reads from `controller.*` instead of local vars |
+| Playback engine (`<audio>`, transport, claim/pause, Media Session) | 564–680 | **Deleted**, replaced by `PlaybackController` — the actual migration |
+| Queue/now-playing DOM (`renderQueue`, `renderNow`, `removeAt`, `toggleShuffle`) | 703–830 | **Becomes two new view classes** — the genuinely new capability |
+| `track-select.js` integration | 792, 779 | Preserved verbatim (string-level class-name contract) |
+
+**Stage plan — 3 stages**, using a `?engine=controller` query-param canary
+(there's only one page, so no slug allowlist applies):
+- **2a** — ship the whole new engine live, gated OFF by default, reachable
+  only via `?engine=controller`. `playlist.js`'s deferral must mirror
+  `player.js`'s actual conditional (`player.js:217-223`: defer-and-check
+  only when the engine flag could be `'controller'`, otherwise still init
+  immediately at parse time — not an unconditional defer, which would
+  change 2a's own no-param behavior). New `scripts/playlist-boot.js` mirrors
+  `player-boot.js`'s transactional mount-or-teardown (`player-boot.js:59-127`
+  — try/catch + `controller.destroy()` on any throw, not just a flag gate;
+  test with an injected mid-mount failure, not only a missing asset). Flag
+  set synchronously on shell mount, not catalog arrival (catalog fetch is
+  async — a deliberate divergence from `player-boot.js`). `pages.py`
+  `build_playlist()` gets `PLAYLIST_CONTROLLER_ENGINE`, the resolver script,
+  and a `window.WORKER_ORIGIN` emit (`player.js`'s `WORKER` const is a
+  lexical binding, not on `window`). `scripts/build.py` needs new
+  `write("assets/playlist-boot.js", ...)` and `write("assets/playlist-views.js", ...)`
+  lines (every asset there is hand-listed, no directory-copy fallback).
+  Done when parity tests pass locally and `--prod`+param, no-param behavior
+  (including load-time ordering) is unchanged, and Rene has done a manual
+  prod pass.
+- **2b** — flip `PLAYLIST_CONTROLLER_ENGINE = True`. `playlist.js` stays as
+  dormant fallback; `?engine=legacy` is the manual escape hatch. Done when
+  `browser_check.mjs --prod` passes with no param and the legacy path still
+  works via the param.
+- **2c** — delete `scripts/playlist.js`, after **2+ weeks** of default-on
+  production (longer than Phase 1's one-week precedent — saved-playlist
+  failure is silent data loss, not a visible error a quick check catches)
+  plus a clean `--prod` run.
+
+**View layer.** `PlayerView` is the wrong base class — both `#pl-now` and
+`#pl-queue` are queue-scoped, not item-scoped (`PlayerView` binds `this.item`
+at construction). New **`scripts/playlist-views.js`** (a separate file, not
+an addition to `player-views.js` — that file unconditionally imports
+WaveSurfer at `player-views.js:13`, which `/playlist/` must never depend
+on) gets: `QueueView` (new base implementing the real 3-method mount
+contract — `onAttach`/`onDetach`/`onControllerUpdate`), `PlaylistQueueView`
+(owns `#pl-queue`), `PlaylistNowPlayingView` (owns `#pl-now`, and must
+**patch in place** on state changes rather than rebuild — `state` changes
+on every `loading→playing→paused` transition, so gating a full rebuild on
+it would discard the play button's keyboard focus constantly; rebuild
+structure only on `currentItem.id` change), and `itemFromCatalogRow(row)`
+(converts a `tracks.json` row to a raw item at exactly one boundary, the
+`setQueue()` call — filtering/dedupe/hash/ZIP manifest all stay in catalog
+space via a `catalogById` map, the item schema isn't widened). Hash sync
+lives in `playlist-boot.js` as a controller-observing boot concern, not
+inside a view.
+
+**Controller additions needed** (small, self-contained, show-page-neutral —
+existing suites must pass unmodified):
+- `onQueueExhausted` constructor option — endless-mode rollover currently
+  has no working hook (the controller's `ended`/`stop()` terminal states
+  are indistinguishable from a real Stop, and Media Session's `nexttrack`
+  is handled inside the controller where the page can't intercept it).
+- `onExternalClaim` constructor option — nothing today lets a page
+  distinguish an external-claim pause from a user pause
+  (`player-controller.js:127-129`), needed to reproduce legacy's "Paused —
+  playback started somewhere else" message without calling the ambient
+  legacy global.
+- `_queueRevision` counter, incremented in `setQueue`/`appendQueue`/
+  `removeAt`/`reorder`/`toggleShuffle`, exposed on `snapshot()`. **Required
+  correction**: `removeAt()` (`player-controller.js:246`) and `reorder()`
+  (278-279) both mutate `this._queue` in place via `.splice()` — a
+  "recompute only when the queue array reference changes" check (the
+  original design) would silently miss both. A revision counter is the
+  correct O(1) signal.
+  `PlaylistQueueView` gates its re-render on this, not on identity.
+- Explicit `'idle'` state on `setQueue()`'s cued-but-not-playing branch
+  (`player-controller.js:196-217` never calls `_setState()` there today, so
+  a hash-hydration `setQueue()` arriving after a queue ended/errored
+  inherits the stale terminal state).
+- Queue-length bound applied to **both** `setQueue()` and `appendQueue()`
+  (not just `setQueue()` — `appendQueue()` needs the same bound to actually
+  bound anything).
+
+**Parity tests** (`test-playlist-views.mjs`, `test-playlist-state.mjs` +
+`browser_check.mjs`'s `checkPlaylistPage()`): hash hydration round-trip
+(write/read/round-trip, empty-queue UI state, same-hash special case);
+saved playlists (save/load/delete/rename, cross-tab `storage` sync, quota
+handling); endless-mode reshuffle-on-rollover via all three entry points
+(`ended`, Next, Media Session `nexttrack`); shuffle on/off restoration
+(exact restore-by-id of the currently-playing index); `removeAt()`
+regression at the page level (**index-shift direction, corrected**: an
+earlier-index removal decrements `currentIndex`, a later-index removal
+leaves it unchanged — the reverse of the first draft, verified against
+`player-controller.js:253-257`); `reorder()` first-time verification (API
+tested, no drag-to-reorder UI ships this phase); cross-cutting lift-and-
+shift checks (share link, ZIP manifest, popup, status messages).
+
+Two assertions from the first draft were wrong and are corrected: the hash
+regex `/^#p=([\w.,-]+)/` (`playlist.js:545`) is a **prefix match**, not a
+full match — `#p=validid!junk` hydrates the valid prefix, it doesn't
+hydrate nothing; and "shuffle off when never on" isn't a reachable
+state — `toggleShuffle()` is a single toggle with no separate off op,
+calling it while off turns shuffle **on**.
+
+An all-unknown-id hash (`playlist.js:546-548`) is a genuine bug today (an
+inconsistent partial-clear, not a clean wipe), and Phase 2 **fixes it**
+rather than reproducing it: clear queue/audio/hash consistently and show a
+message.
+
+`prev()` at queue start **restarts track 1**, matching legacy exactly
+(decided over the controller's own no-op behavior, for migration-phase
+simplicity).
+
+**Untrusted-input hardening.** `MAX_HASH_LENGTH` **must be ~64 KiB, not
+8192** — `track-select.js`'s `goToPlaylist()` (~line 130) has no selection
+cap, and a full-catalog share link (680 tracks × ~30 chars) already runs to
+~20K characters. `MAX_QUEUE_IDS`/`MAX_QUEUE_ITEMS` 1000 (applied to both
+`setQueue()` and `appendQueue()`), `MAX_SAVED_PLAYLISTS` 100,
+`MAX_PLAYLIST_NAME` 120 chars. Duplicate ids in a hash get deduped at
+parse (fixes two latent legacy bugs in `toggleShuffle`/`removeAt`'s
+snapshot handling).
+
+**localStorage schema — kept flat through 2a–2c, versioning deferred.**
+The original two-key dual-write design (new `savedPlaylists.v2` preferred
+whenever present, mirrored to the legacy key) is **not lossless**: during
+2a/2b, a `?engine=legacy` tab can still write only the flat key, and the
+controller-engine tab would keep trusting a now-stale v2 snapshot and
+overwrite the legacy write on its own next mutation. **Fix:** keep the
+existing flat `savedPlaylists` array canonical through all three stages
+(both engines read/write the same key, no reconciliation problem); add
+validation/degrade behavior to that existing shape. Defer the actual `v2`
+envelope + version field to a stage **after** `playlist.js` is deleted,
+when there's only one writer and no reconciliation problem left to solve.
+
+**BroadcastChannel: no change this phase.** All four current
+implementations already agree on the bare-string wire format
+(`postMessage(randomId)`, compare-on-receipt); the structured
+`{version, type, senderId}` upgrade stays in Phase 3, when `/player/` also
+migrates and every participant can change together. Verify: `/playlist/`
+will have two `BroadcastChannel` objects open at once (controller's and
+`player.js`'s, which stays loaded for the password modal) — a self-claim
+must not pause the page's own playback.
+
+**Test infrastructure.** `verify_markup.py` gets
+`check_playlist_engine_wiring()` as plain booleans, not the N-page
+set/coverage machinery Phase 1 built — and the invariant needs two
+**separate** checks, not one: (1) resolver + boot-module script always
+present together, true through 2a/2b/2c-inverted; (2) the resolver's
+**default decision** (what it emits with no `?engine=` param) matches
+`PLAYLIST_CONTROLLER_ENGINE` — a check on the resolver's default, not on
+asset presence, since at 2a both assets are present (for the canary) while
+the constant is still `False`. `browser_check.mjs` gets one dedicated
+`checkPlaylistPage()` (not a `HEAVY_CHECK_SLUGS` slot — that tiering
+exists for 30 interchangeable show pages, not one architecturally distinct
+one), covering mount, dormancy, real playback, hash round-trip,
+saved-playlist ops, cross-tab sync, endless rollover, shuffle, remove,
+console-clean, self-claim non-pause, `track-select.js` wiring, and a
+breakage test proving the runtime fallback. The existing cross-tab
+claim/pause check (`browser_check.mjs:436-454`) and non-allowlisted-page
+legacy-playback check (672-690) both currently treat `/playlist/` as a
+legacy reference point and need retargeting at 2a/2b respectively — left
+as-is they'd keep *passing* while proving nothing once 2b ships.
+
+**Deferred, not resolved this phase:** mini-bar scope / which features
+surface in mini vs. expanded state (no mini bar ships; the new
+`QueueView`/`PlaylistNowPlayingView` split is the affordance that makes
+one cheap later); timestamp URL grammar (`#p=`'s shape doesn't change this
+phase, giving a future grammar design a stable baseline); repeat-one/
+keyboard-shortcut UI and drag-to-reorder UI (mechanisms exist or get
+verified, no new UI ships — this stays a migration, not a feature phase);
+loudness (unchanged).
 
 ### Phase 3 — `/player/` popup (not started)
 
