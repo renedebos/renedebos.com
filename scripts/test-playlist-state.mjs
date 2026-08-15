@@ -19,6 +19,16 @@ globalThis.Audio = class extends FakeAudio {
   constructor() { super(); audios.push(this); }
 };
 
+// Node >=21 defines a getter-only `navigator` global -- plain
+// `globalThis.navigator = {...}` throws ("which has only a getter"). See
+// test-player-controller.mjs's setGlobalNavigator (added for the same CI
+// failure, commit 5078e47).
+function setGlobalNavigator(value) {
+  Object.defineProperty(globalThis, 'navigator', {
+    value, configurable: true, writable: true, enumerable: true,
+  });
+}
+
 // ── localStorage fake ──────────────────────────────────────────────────
 function fakeStorage(initial = {}) {
   const store = { ...initial };
@@ -75,7 +85,7 @@ async function boot({ hash = '', search = '', storage = {}, catalogFail = false 
   globalThis.document = doc;
   globalThis.window = win;
   globalThis.localStorage = fakeStorage(storage);
-  globalThis.navigator = {}; // no 'mediaSession' key at all -- `'mediaSession' in navigator` must be false
+  setGlobalNavigator({}); // no 'mediaSession' key at all -- `'mediaSession' in navigator` must be false
   const CATALOG = ['a', 'b', 'c', 'd', 'e'].map((id) => catalogRow(id));
   globalThis.fetch = (url) => {
     if (String(url).includes('tracks.json')) {
@@ -132,7 +142,7 @@ test('a mount failure AFTER views are already mounted still tears everything dow
   globalThis.document = doc;
   globalThis.window = win;
   globalThis.localStorage = fakeStorage();
-  globalThis.navigator = {};
+  setGlobalNavigator({});
   globalThis.fetch = () => Promise.resolve({ json: () => Promise.resolve([]) });
 
   // Injected failure: the presets panel exists (so its wiring is reached,
