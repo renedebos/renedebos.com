@@ -1760,3 +1760,53 @@ Also spot-checked: `curl -sI https://renedebos.com/lab/wavesurfer/` → 404
 contains no reference to `/assets/wavesurfer.js`.
 
 **Step 5c is done.**
+
+### Fixes applied and production-verified (Claude, 2026-08-15)
+
+All six items from the "Phase 1's normal production path is healthy" review
+fixed (PR #6, `294e007`) and shipped:
+
+1. `_notify()` isolates each view's exception (per-view try/catch, matching
+   `attachPeaks()`'s existing pattern); `_upgradeWave()` guards
+   `WaveSurfer.create()` with a fallback to the inert canvas. A
+   WaveSurfer construction failure can no longer block `audio.play()`.
+2. `appendQueue()` now also updates `_unshuffledQueue` — an item appended
+   while shuffled no longer vanishes when shuffle is toggled off.
+3. `destroy()` explicitly sets `navigator.mediaSession.playbackState =
+   'none'` — teardown no longer leaves the OS lock screen stuck reporting
+   "playing".
+4. `pages.py`'s `CONTROLLER_ENGINE_EXCLUDED_SLUGS` comment now documents
+   the post-5c reality: an excluded page's waveform rows stay dead, only
+   the Full Recording card recovers.
+5. The four deterministic Node suites are wired into the deploy workflow
+   as Gate 3.
+6. Fixed the real Phase-1-completion documentation contradiction (heading
+   said "in progress", Step 5's parent checkbox unchecked, despite the
+   plan's own opening paragraph claiming completion).
+
+**Shipping Gate 3 broke deploy twice before landing** — both incidents
+independently root-caused and fixed, not guessed at:
+- PR #7: `actions/setup-node` pinned to Node 20 for the new test step,
+  which silently downgraded Node for the rest of the job too, including
+  `wrangler deploy` (needs >=22). Fixed by removing the pin entirely —
+  the runner's own default (Node 24) already satisfies both steps.
+- PR #8: Node >=21's built-in getter-only `navigator` global broke the
+  two new Media-Session tests' plain `globalThis.navigator = {...}`
+  assignment — invisible on local dev Node 20, which has no such global.
+  Given this was the second broken deploy in a row, verified the fix
+  against a real downloaded Node 24.19.0 binary rather than guessing a
+  third time: confirmed the actual failure reproduces, confirmed
+  `Object.defineProperty` resolves it, reran all 4 suites AND
+  `wrangler --version` under that real binary before pushing.
+
+**Final production verification (2026-08-15):** deploy run 31860440965
+green (29s, includes the new test gate passing for real in CI), then
+`browser_check.mjs --prod --skip-webkit` against all 30 live show pages:
+**167/167**, fully clean — including `/playlist/`'s previously-flagged
+timing-flake check now passing normally (`time=0:01`), consistent with
+the earlier diagnosis that it was a timing coincidence, not a bug.
+
+Phase 1 for show pages is complete, its production-healthy state is
+independently confirmed post-fix, and the deploy pipeline itself is
+verified working end-to-end again after two self-inflicted regressions
+along the way.
