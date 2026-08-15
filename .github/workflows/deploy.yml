@@ -30,10 +30,15 @@ jobs:
       # item, finally done once Phase 1 for show pages went live everywhere).
       # No npm dependency to install — these import only relative/node: specs
       # (test-fake-dom.mjs hand-rolls the DOM/media surface they touch) — so
-      # runs/exits clean with nothing but the runner's preinstalled Node.
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: '20'
+      # this deliberately does NOT add an actions/setup-node step: the runner
+      # already ships a current Node (checked 2026-08-15: 24, ubuntu-latest's
+      # default), and pinning it here to satisfy this step would silently
+      # downgrade Node for the REST of the job too, including the "Deploy
+      # renedebos-site Worker" step below — which is exactly what broke it
+      # the first time this gate was added: wrangler 4.110.0 requires Node
+      # >=22, and an explicit pin to '20' here took the whole job down with
+      # it. Let the runner's own Node serve both steps instead of pinning
+      # one and silently breaking the other.
       - name: Player engine test suites
         run: |
           for f in scripts/test-*.mjs; do
