@@ -8,18 +8,19 @@ view layer, the `data-item` markup every show page carries, and
 `test-player-boot.mjs` (23), plus `scripts/browser_check.mjs`'s real-browser
 pass (185/185 locally, see below). **Every public show page now runs the
 new engine** (Step 5b, `pages.CONTROLLER_ENGINE_SLUGS`); only song pages
-stay on the legacy engine this phase. **Steps 4, 5a, and 5b are all done,
-including production verification for each**: PR #3 (Step 4 + the 3-page
-canary, `7872882`) and PR #4 (Step 5b's full rollout, `fd0a68e`) both
-merged, deployed, and verified against real production —
-`scripts/browser_check.mjs --prod` most recently ran 197/197 against all 30
-live show pages. **Step 5c (deleting the legacy `wavesurfer.js` engine and
-its `/lab/wavesurfer/` prototype) is implemented and locally verified
-(155/155 browser-check, two Codex review passes, all findings fixed) but
-not yet merged/deployed** — production verification is the remaining gate,
-same bar every prior step in this phase was held to. See §6 Step 5's entry
-for the full record, including a ninth review (5b-readiness), a tenth (the
-5b implementation itself), and two more for 5c's implementation.
+stay on the legacy engine this phase. **Steps 4, 5a, 5b, and 5c are all
+done, including production verification for each — Phase 1 for show pages
+is complete**: PR #3 (Step 4 + the 3-page canary, `7872882`), PR #4 (Step
+5b's full rollout, `fd0a68e`), and PR #5 (Step 5c, deleting the legacy
+`wavesurfer.js` engine and its `/lab/wavesurfer/` prototype, `1a19160`) all
+merged, deployed, and verified against real production.
+`scripts/browser_check.mjs --prod` most recently ran 166/167 against all 30
+live show pages (the one failure is a pre-existing check-script timing
+flake in an unrelated `/playlist/` assertion, investigated and confirmed
+not a regression — see Step 5's entry). `player.js` is now the sole legacy
+fallback on every show page. See §6 Step 5's entry for the full record,
+including a ninth review (5b-readiness), a tenth (the 5b implementation
+itself), and two more for 5c's implementation and production verification.
 Mockup: https://claude.ai/code/artifact/71ae2166-d3ed-471d-9719-abd73fe353ba
 Reviewed by Codex ten times, all recorded in
 `player-consolidation-codex.md`: the first pass on the original proposal,
@@ -1341,7 +1342,7 @@ during migration, not removed speculatively.
        unaffected. **The controller engine is now genuinely live on every
        public show page**, not just the original 3-page canary.
 
-       5c. [~] **Delete `wavesurfer.js` as its own, later, separate
+       5c. [x] **Delete `wavesurfer.js` as its own, later, separate
        decision** — only once confidence from 5b is established, not as part
        of the same step. Implementation and local verification done
        (2026-08-14): `scripts/wavesurfer.js` and `/lab/wavesurfer/` deleted
@@ -1360,10 +1361,23 @@ during migration, not removed speculatively.
        comments and `pages.py` corrected. Local: build/`--check` clean, all
        4 test suites pass (23/23, 22/22, 16/16, plus build's own markup
        check), `browser_check.mjs` 155/155. Two Codex review passes done,
-       all confirmed findings fixed (see codex.md for both). **Not yet
-       marked done** — production verification (push/PR/merge/deploy/
-       `browser_check.mjs --prod`) is still pending, same bar 5a/5b were
-       held to.
+       all confirmed findings fixed (see codex.md for both). **Production
+       verification: done (2026-08-15).** PR #5 (`88df4f8`/`9461e48`, merge
+       commit `1a19160`) merged, Action `31857142955` green,
+       `browser_check.mjs --prod` against all 30 live show pages: 166/167 —
+       the one failure (`/playlist/ real legacy playback works`) was
+       investigated directly (a standalone Playwright reproduction against
+       production) and confirmed to be a pre-existing tight-timing
+       assertion in the check script itself (playback genuinely starts and
+       advances, just crosses `0:00` slightly after the check's 2.5s wait
+       on a colder run) — `/playlist/`/`playlist.js` are untouched by this
+       step's diff, so this isn't a regression; tracked as a known flake,
+       not fixed as part of this step. Also confirmed:
+       `curl -sI https://renedebos.com/lab/wavesurfer/` → 404 (expected);
+       no live show page's HTML references `/assets/wavesurfer.js`;
+       `WS_PEAKS_URL` correctly still present. **Phase 1 for show pages is
+       now fully complete** — every public show page runs the shared
+       controller with `player.js` as the sole legacy fallback.
 
        This is the point at which "remove only what is
        provably unreferenced" (below) actually applies. **What this step

@@ -1,17 +1,25 @@
 # Session Handoff — Hannan Recordings (renedebos.com)
-**Date:** 2026-08-14 · **Branch:** `player-consolidation`
+**Date:** 2026-08-15 · **Branch:** `player-consolidation`
 (worktree `/home/renedebos/renedebos.com-player-consolidation`)
 
-**Phase 1 Steps 4, 5a, and 5b are all done and live in production — every
-public show page now runs the shared controller.** PR #3 (Step 4 + the
-3-page canary, `7872882`) and PR #4 (Step 5b's full rollout, `fd0a68e`)
-both merged, deployed, and verified against real production. Most recent
-production run: `browser_check.mjs --prod` across all 30 live show pages,
-**197/197 passed** — clean, no failures at all (not even the known
-Cloudflare-beacon CSP warning, now filtered), no repeat of 5a's transient
-first-hit anomaly. A tenth review found and fixed a real bug in Step 5b's
-rollback mechanism before this merged (see below) — worth knowing about
-even though it doesn't affect anything currently live.
+**Phase 1 for show pages is complete — Steps 4, 5a, 5b, and 5c are all
+done and live in production.** Every public show page runs the shared
+controller, and the legacy `wavesurfer.js` waveform engine (plus its
+`/lab/wavesurfer/` prototype) is deleted; `player.js` is now the sole
+legacy fallback. PR #3 (Step 4 + the 3-page canary, `7872882`), PR #4 (Step
+5b's full rollout, `fd0a68e`), and PR #5 (Step 5c, `1a19160`) all merged,
+deployed, and verified against real production. Most recent production
+run: `browser_check.mjs --prod` across all 30 live show pages, **166/167
+passed** — the one failure (`/playlist/ real legacy playback works`) was
+investigated directly (a standalone Playwright reproduction against
+production) and confirmed to be a pre-existing check-script timing flake,
+not a regression: playback genuinely starts and advances, it just crosses
+the `0:00` display slightly after the check's 2.5s wait on a colder run.
+`/playlist/`/`playlist.js` are untouched by Step 5c's diff. A tenth review
+found and fixed a real bug in Step 5b's rollback mechanism, and the "Step
+5c deletion review" found and fixed a real test-quality gap in Step 5c's
+breakage test (see below) — worth knowing about even though neither
+affects anything currently live.
 
 ## ✅ Done this session — Step 4 through Step 5a
 
@@ -257,21 +265,21 @@ tenth review.
 
 ## 🔧 Next up
 
-**Step 5c**: `scripts/wavesurfer.js` (the legacy waveform-row engine) and
-its `/lab/wavesurfer/` prototype page are deleted, implemented and locally
-verified (build/`--check` clean, 23/23 + 22/22 + 16/16 deterministic tests,
-`browser_check.mjs` 155/155). Two Codex review passes ran against this
-diff; all confirmed findings fixed, including a real test-quality gap
-(breakage Test A3 could false-pass against a detached-audio regression —
-hardened with a `play()`-spy, proved fail-then-pass by injecting a fake
-regression and confirming the old assertion missed it). **Not yet
-pushed/merged/deployed** — same production-verification bar as 5a/5b still
-applies before this is done. `player.js` stays either way (it's still the
-legacy fallback and still serves song pages and `/playlist/`).
+**Phase 1 for show pages is complete.** No further steps are defined in
+this plan for show pages — `player.js` remains as the permanent legacy
+fallback (it still serves song pages and `/playlist/` directly, and that's
+out of scope for this initiative). Whether/when to start a Phase 2 (song
+pages, `/playlist/`, or `/player/` onto the shared controller) is an open
+question for Rene, not something to assume.
 
-Separately, still worth surfacing to Rene: whether to fix the
-Cloudflare-beacon CSP issue found during 5a (a `deploy-infra` task, not
-part of this initiative).
+Two things still worth surfacing to Rene, neither urgent:
+- The Cloudflare-beacon CSP issue found during 5a (a `deploy-infra` task,
+  not part of this initiative).
+- The pre-existing `/playlist/` timing flake in `browser_check.mjs` found
+  during 5c's production verification (2.5s wait is occasionally too tight
+  for the now-playing time display to have ticked past `0:00` — a
+  check-script issue, not a site bug; a one-line fix if anyone wants to
+  bump the wait).
 
 ## Gotchas learned this session
 
