@@ -270,7 +270,34 @@ def _curated_playlists_html():
       </div>
     </div>'''
 
+
+# ── /playlist/ shared-player rollout (Phase 2 of plans/player-consolidation/,
+# Stage 2a) ───────────────────────────────────────────────────────────────
+# Stays False through Stage 2a: the whole new engine ships live, but only a
+# `?engine=controller` query param (the resolver below) actually activates
+# it -- a real-production canary with zero default-visitor exposure, the
+# single-page equivalent of Step 4/5a's slug allowlist. Flips to True in
+# Stage 2b once that canary is verified on production.
+PLAYLIST_CONTROLLER_ENGINE = False
+
 def build_playlist():
+    # Sets window.PLAYLIST_ENGINE = 'controller' before playlist.js's own
+    # <script> tag -- playlist.js decides at parse time whether to defer its
+    # init, so a flag set anywhere later could never win (same reasoning as
+    # pre_scripts's PLAYER_ENGINE flag on show pages). `?engine=legacy` is
+    # the manual escape hatch, kept through Stage 2b. window.WORKER_ORIGIN is
+    # emitted for the same reason WS_PEAKS_URL is on show pages: player.js's
+    # `const WORKER = '...'` (player.js:2) is a lexical binding, not a
+    # `window` property, so a module (playlist-boot.js) can't read it as a
+    # bare identifier the way another classic script can.
+    resolver = (
+        "<script>(function(){"
+        "var p=new URLSearchParams(location.search).get('engine');"
+        f"if(p==='controller'||(p!=='legacy'&&{'true' if PLAYLIST_CONTROLLER_ENGINE else 'false'}))"
+        "window.PLAYLIST_ENGINE='controller';"
+        f"window.WORKER_ORIGIN={WORKER!r};"
+        "})();</script>\n"
+    )
     return page_shell(
         title="Playlist — The Hannan Tapes",
         description="Build a custom playlist from the Hannan archive — filter by artist, venue, mood, and source, then hit play.",
@@ -279,7 +306,10 @@ def build_playlist():
         heading="Playlist",
         tagline="Roll your own set list from the archive",
         nav=site_nav("Playlist"),
-        extra_scripts='\n<script src="/assets/track-select.js"></script>\n<script src="/assets/playlist.js"></script>',
+        extra_scripts=('\n<script src="/assets/track-select.js"></script>'
+                       '\n<script src="/assets/playlist.js"></script>'
+                       '\n<script type="module" src="/assets/playlist-boot.js"></script>'),
+        pre_scripts=resolver,
         main=f'''
   <section class="playlist">
     <p class="pl-intro">Filter the archive by artist, venue, source, or mood, then build a set — a fixed number of songs, a target length, or endless shuffle. Each playlist uses one randomly chosen performance of a song, so one played a dozen times over the years never repeats within a single set.</p>
@@ -1108,4 +1138,4 @@ def build_404():
         nav=site_nav(), main=main)
 
 
-__all__ = ['CONTROLLER_ENGINE_SLUGS', 'build_404', 'build_archive_data', 'build_contact', 'build_history', 'build_home', 'build_manual', 'build_player', 'build_playlist', 'build_process', 'build_search', 'build_show', 'build_song_page', 'build_songs_index', 'build_updates']
+__all__ = ['CONTROLLER_ENGINE_SLUGS', 'PLAYLIST_CONTROLLER_ENGINE', 'build_404', 'build_archive_data', 'build_contact', 'build_history', 'build_home', 'build_manual', 'build_player', 'build_playlist', 'build_process', 'build_search', 'build_show', 'build_song_page', 'build_songs_index', 'build_updates']

@@ -59,7 +59,9 @@ export class FakeElement {
     this.children = [];
     this.style = {};
     this.id = '';
-    this.innerHTML = '';
+    this._rawHTML = '';             // set directly -- the innerHTML setter parses via
+                                     // parseHTMLFragment(), which itself constructs
+                                     // FakeElements and would recurse if routed through here
     this.textContent = '';
     this.hidden = false;
     this.value = 0;
@@ -80,6 +82,24 @@ export class FakeElement {
     const i = this._parent.children.indexOf(this);
     if (i !== -1) this._parent.children.splice(i, 1);
     this._parent = null;
+  }
+  // The playlist views (playlist-views.js) build their markup from scratch
+  // via innerHTML strings, unlike the player-views.js fixtures (which mutate
+  // pre-built FakeElement trees) -- so a real, if minimal, parser is needed
+  // here, plus closest() for their delegated click handlers.
+  get innerHTML() { return this._rawHTML || ''; }
+  set innerHTML(html) {
+    this._rawHTML = html;
+    this.children = parseHTMLFragment(html);
+    this.children.forEach((c) => { c._parent = this; });
+  }
+  closest(sel) {
+    let node = this;
+    while (node) {
+      if (node._matches && node._matches(sel)) return node;
+      node = node._parent;
+    }
+    return null;
   }
   // Views measure the waveform to turn a click into a position. Node has no
   // layout, so tests set _rect explicitly on the elements they click.
@@ -132,6 +152,69 @@ export class FakeElement {
   }
 }
 
+// ── minimal innerHTML parser ────────────────────────────────────────────
+// Just enough to parse the markup playlist-views.js actually generates:
+// nested divs/spans/buttons/a/input plus inline SVG icons (which use
+// self-closing tags like <polygon .../>). Not a real HTML parser (no
+// entity table beyond what esc() in the real modules produces, no handling
+// of unquoted attributes with special characters) -- deliberately narrow,
+// same "just enough" philosophy as the rest of this file.
+const VOID_TAGS = new Set(['input', 'br', 'img', 'hr']);
+const TOKEN_RE = /<(\/?)([a-zA-Z][\w-]*)((?:\s+[^<>]*?)?)\s*(\/?)>|([^<]+)/g;
+const ATTR_RE = /([a-zA-Z_:][\w:-]*)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+)))?/g;
+
+function decodeEntities(s) {
+  return s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&#9834;/g, '♪');
+}
+
+function parseAttrs(attrStr) {
+  const attrs = {};
+  ATTR_RE.lastIndex = 0;
+  let m;
+  while ((m = ATTR_RE.exec(attrStr))) {
+    if (!m[1]) continue;
+    const value = m[2] !== undefined ? m[2] : m[3] !== undefined ? m[3] : m[4] !== undefined ? m[4] : '';
+    attrs[m[1]] = value;
+  }
+  return attrs;
+}
+
+export function parseHTMLFragment(html) {
+  const root = new FakeElement('fragment');
+  const stack = [root];
+  TOKEN_RE.lastIndex = 0;
+  let m;
+  while ((m = TOKEN_RE.exec(html))) {
+    const [, closing, tag, attrStr, selfClose, text] = m;
+    const current = stack[stack.length - 1];
+    if (text !== undefined) {
+      current.textContent += decodeEntities(text);
+      continue;
+    }
+    if (closing) {
+      if (stack.length > 1) stack.pop();
+      continue;
+    }
+    const el = new FakeElement(tag);
+    const attrs = parseAttrs(attrStr || '');
+    for (const [k, v] of Object.entries(attrs)) {
+      const dv = decodeEntities(v);
+      if (k === 'class') el.className = dv;
+      else if (k === 'id') el.id = dv;
+      else if (k.startsWith('data-')) {
+        el.dataset[k.slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase())] = dv;
+      } else {
+        el.attributes[k] = dv;
+        if (k === 'value') el.value = dv;
+      }
+    }
+    current.appendChild(el);
+    if (!selfClose && !VOID_TAGS.has(tag.toLowerCase())) stack.push(el);
+  }
+  return root.children;
+}
+
 // A document is just a root element plus the few document-level members the
 // player modules read.
 export class FakeDocument extends FakeElement {
@@ -141,6 +224,10 @@ export class FakeDocument extends FakeElement {
     this.activeElement = new FakeElement('div');
   }
   createElement(tag) { return new FakeElement(tag); }
+  // player-boot.js/playlist-boot.js both use one or the other; only
+  // playlist-boot.js needs getElementById (its markup is all id-addressed,
+  // unlike show pages' class-selector-based ROW_SELECTOR/HERO_SELECTOR).
+  getElementById(id) { return this.querySelector('#' + id); }
 }
 
 export class FakeWindow {
@@ -229,5 +316,26 @@ export async function loadPlayerBoot() {
     .replace("from '/assets/player-controller.js';", `from '${controllerUrl}';`)
     .replace("from '/assets/player-views.js';", `from '${viewsUrl}';`)
     + `\n// instance ${++bootSeq}\n`;
+  return import(dataUrl(src));
+}
+
+// playlist-views.js has no WaveSurfer dependency to stub — a plain rewrite.
+let playlistViewsUrl = null;
+export async function loadPlaylistViews() {
+  if (!playlistViewsUrl) {
+    playlistViewsUrl = dataUrl(read('playlist-views.js')
+      .replace("from '/assets/player-controller.js';", `from '${controllerUrl}';`));
+  }
+  return import(playlistViewsUrl);
+}
+
+// Same "importing it IS running the bootstrap" shape as loadPlayerBoot().
+let playlistBootSeq = 0;
+export async function loadPlaylistBoot() {
+  await loadPlaylistViews();
+  const src = read('playlist-boot.js')
+    .replace("from '/assets/player-controller.js';", `from '${controllerUrl}';`)
+    .replace("from '/assets/playlist-views.js';", `from '${playlistViewsUrl}';`)
+    + `\n// instance ${++playlistBootSeq}\n`;
   return import(dataUrl(src));
 }
