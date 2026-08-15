@@ -5,17 +5,15 @@ see §6. Phase 1 (show pages) Steps 1–4 are built: `PlaybackController`, the
 view layer, the `data-item` markup every show page carries, and
 `player-boot.js` — 61 passing deterministic tests across
 `test-player-controller.mjs` (22), `test-player-views.mjs` (16) and
-`test-player-boot.mjs` (23). **Three show pages now run the new engine**
-(the allowlist in `pages.CONTROLLER_ENGINE_SLUGS`); the other 27 and every
-song page are byte-identical to before, in production today. **Step 4 is
-done, including its browser pass** (2026-08-14, `scripts/browser_check.mjs`,
-now 185/185 against real Chromium — see §6 Step 4's entry for the full
-record, including the corrected, policy-dependent framing of deep-link
-autoplay). **Step 5a is also done**: PR #3 merged (`7872882`), deployed, and
-verified against real production. **Step 5b (widen the allowlist to every
-show) is implemented and locally verified, with its own PR (#4) open —
-not yet merged or deployed**, so production is still on the 3-page canary
-as of this line; see §6 Step 5's entry for the full record, including a
+`test-player-boot.mjs` (23), plus `scripts/browser_check.mjs`'s real-browser
+pass (185/185 locally, see below). **Every public show page now runs the
+new engine** (Step 5b, `pages.CONTROLLER_ENGINE_SLUGS`); only song pages
+stay on the legacy engine this phase. **Steps 4, 5a, and 5b are all done,
+including production verification for each**: PR #3 (Step 4 + the 3-page
+canary, `7872882`) and PR #4 (Step 5b's full rollout, `fd0a68e`) both
+merged, deployed, and verified against real production —
+`scripts/browser_check.mjs --prod` most recently ran 197/197 against all 30
+live show pages. See §6 Step 5's entry for the full record, including a
 ninth review (5b-readiness) and a tenth (the 5b implementation itself).
 Mockup: https://claude.ai/code/artifact/71ae2166-d3ed-471d-9719-abd73fe353ba
 Reviewed by Codex ten times, all recorded in
@@ -1245,7 +1243,7 @@ during migration, not removed speculatively.
        proxied origin). Reported, not fixed here — `_headers`/CSP is
        `deploy-infra` territory, per this step's own scope discipline.
 
-       5b. [~] **Expand the allowlist to all show pages, keeping
+       5b. [x] **Expand the allowlist to all show pages, keeping
        `wavesurfer.js` as the dormant fallback.** Every show page emits the
        engine flag and `player-boot.js`; `wavesurfer.js`'s module tag keeps
        being emitted too, so a page whose controller mount fails still has
@@ -1253,15 +1251,6 @@ during migration, not removed speculatively.
        `player-views.js`/`player-controller.js` specifically — see the
        caveat below for what this does and doesn't cover). Verify the wider
        rollout the same way as 5a before treating it as settled.
-
-       **`[~]` not `[x]`, deliberately (a tenth review's finding #1) —
-       implementation and local verification are done; the step's own
-       stated completion criterion ("verify the wider rollout the same way
-       as 5a") is production verification, which is still pending (below).
-       Don't mark this `[x]` until that's actually run — 5a itself only got
-       its checkmark after production verification passed, and 5b should be
-       held to the same bar rather than be checked off early because the
-       code is written.**
 
        **Implementation done (2026-08-14).** `CONTROLLER_ENGINE_SLUGS` (`pages.py`) is now
        `{s["slug"] for s in PUBLIC_SHOWS} - CONTROLLER_ENGINE_EXCLUDED_SLUGS`
@@ -1331,10 +1320,21 @@ during migration, not removed speculatively.
        covers every public show; they coincide today but a future trackless
        public show wouldn't be caught by this harness.
 
-       **Production verification for this step is still pending** — the
-       process is identical to 5a's (merge the PR, watch the deploy Action
-       including cache purge, then `browser_check.mjs --prod`), not a new
-       procedure; this section will be updated with the result once it runs.
+       **Production verification: done (2026-08-14).** PR #4 merged
+       (`fd0a68e`), deploy Action green including the cache-purge step,
+       `scripts/browser_check.mjs --prod` run against `https://renedebos.com`
+       covering all 30 live show pages: **197/197 passed** — no failures at
+       all this run, not even the known Cloudflare-beacon CSP warning (now
+       correctly filtered), and no repeat of 5a's transient first-hit
+       anomaly. Every page mounts with the correct view count, both legacy
+       engines stay dormant, real playback/toggle/seek/Space/canvas work
+       across the heavy-check sample (including the DOM-churn
+       `MutationObserver` assertion on the largest page, confirmed
+       `mutations=0` against the real production page, not just locally),
+       the Hero/deep-link/alt-transfer/cross-tab mechanisms all hold, asset
+       headers are correct, and the five non-canary sample pages are
+       unaffected. **The controller engine is now genuinely live on every
+       public show page**, not just the original 3-page canary.
 
        5c. [ ] **Delete `wavesurfer.js` as its own, later, separate
        decision** — only once confidence from 5b is established, not as part
