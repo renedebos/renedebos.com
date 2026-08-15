@@ -1,7 +1,7 @@
 // Deterministic tests for PlaybackController's state-machine/queue logic —
-// no browser needed, just a fake <audio> element. Not wired into any CI
-// (this project has no formal test suite/browser matrix by convention), but
-// meant to be re-run by hand whenever player-controller.js changes, and is
+// no browser needed, just a fake <audio> element. Wired into the deploy
+// workflow's Gate 3 (.github/workflows/deploy.yml) as well as being meant
+// for re-running by hand whenever player-controller.js changes, and is
 // the "stale-play and queue-transition tests pass" gate before old engines
 // get deleted in a later migration step (see
 // plans/player-consolidation/player-consolidation-plan.md).
@@ -10,6 +10,18 @@
 
 import assert from 'node:assert/strict';
 import { PlaybackController } from './player-controller.js';
+
+// Node >=21 defines a getter-only `navigator` global (the Navigator API) —
+// plain `globalThis.navigator = {...}` throws against it ("which has only a
+// getter"). A real gap between an older local dev Node (where no such
+// global exists yet, so the plain assignment silently just works) and CI's
+// runner Node -- caught only once this suite actually ran there.
+// Object.defineProperty replaces the accessor with a plain data property.
+function setGlobalNavigator(value) {
+  Object.defineProperty(globalThis, 'navigator', {
+    value, configurable: true, writable: true, enumerable: true,
+  });
+}
 
 // ── fake <audio> ────────────────────────────────────────────────────────
 // Mirrors just enough of HTMLMediaElement for the controller's own logic:
@@ -480,7 +492,7 @@ test('retry reloads even when play() rejected without setting audio.error', asyn
 test('a browser that rejects an unsupported Media Session action still constructs', async () => {
   const originalNav = globalThis.navigator;
   const handlers = {};
-  globalThis.navigator = {
+  setGlobalNavigator({
     mediaSession: {
       metadata: null,
       playbackState: 'none',
@@ -492,7 +504,7 @@ test('a browser that rejects an unsupported Media Session action still construct
         handlers[action] = fn;
       },
     },
-  };
+  });
   try {
     const audio = new FakeAudio();
     let c;
@@ -500,7 +512,7 @@ test('a browser that rejects an unsupported Media Session action still construct
       'one unsupported lock-screen action must not abort the whole controller');
     assert.ok(handlers.play && handlers.pause, 'the supported actions still register');
     c.destroy();
-  } finally { globalThis.navigator = originalNav; }
+  } finally { setGlobalNavigator(originalNav); }
 });
 
 // Step 5c-era review finding: destroy() called _abort.abort() (removing the
@@ -510,9 +522,9 @@ test('a browser that rejects an unsupported Media Session action still construct
 // controller that no longer exists.
 test('destroy() leaves the lock screen reporting no active session, not stale "playing"', async () => {
   const originalNav = globalThis.navigator;
-  globalThis.navigator = {
+  setGlobalNavigator({
     mediaSession: { metadata: null, playbackState: 'none', setActionHandler() {} },
-  };
+  });
   try {
     const audio = new FakeAudio();
     const c = new PlaybackController({ audio });
@@ -523,7 +535,7 @@ test('destroy() leaves the lock screen reporting no active session, not stale "p
     c.destroy();
     assert.equal(navigator.mediaSession.playbackState, 'none',
       'teardown must clear the lock screen\'s reported state, not leave it stuck at "playing"');
-  } finally { globalThis.navigator = originalNav; }
+  } finally { setGlobalNavigator(originalNav); }
 });
 
 // ── runner ─────────────────────────────────────────────────────────────
