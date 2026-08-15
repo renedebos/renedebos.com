@@ -262,12 +262,21 @@ export class PlaylistNowPlayingView extends QueueView {
         this._currentId = null;
         this._playBtn = this._shuffleBtn = this._range = this._timeCur = null;
         this._errorEl = null;
+        this._seeking = false;
       }
       return;
     }
     if (item.id !== this._currentId) {
       this._buildStructure(item);
       this._currentId = item.id;
+      // A drag/press-and-hold gesture in progress on the OLD range element
+      // (mousedown/touchstart already fired, 'change' has not) leaves
+      // _seeking stuck true forever once that element is torn down and
+      // replaced -- the new range's value/aria-valuetext would silently
+      // freeze in _patch() (Codex post-deploy review finding #4, 2026-08-15).
+      // The track just changed out from under any in-progress seek anyway,
+      // so there is nothing left to preserve.
+      this._seeking = false;
     }
     this._patch(snapshot);
   }

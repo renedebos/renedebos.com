@@ -284,6 +284,23 @@ test('a corrupt savedPlaylists value degrades to an empty list without overwriti
   } finally { c.destroy(); }
 });
 
+// Codex post-deploy review finding #3 (2026-08-15): MAX_SAVED_PLAYLISTS was
+// only enforced in storeSaved() (the write path) -- a stored value that
+// already exceeds the bound (stale from before this cap existed, or
+// hand-edited) rendered every entry regardless. loadSaved() now caps the
+// READ result too.
+test('an oversized stored savedPlaylists array is capped when read/rendered, not just when written', async () => {
+  const oversized = Array.from({ length: 130 }, (_, i) => (
+    { name: 'set-' + i, ids: ['a'], created: new Date().toISOString() }
+  ));
+  const { doc, c } = await boot({ storage: { savedPlaylists: JSON.stringify(oversized) } });
+  try {
+    const rendered = doc.getElementById('pl-saved').innerHTML;
+    const count = (rendered.match(/pl-saved-row/g) || []).length;
+    assert.equal(count, 100, 'render must be capped at MAX_SAVED_PLAYLISTS even though storage holds more');
+  } finally { c.destroy(); }
+});
+
 test('an oversized playlist name is rejected before writing', async () => {
   const { win, doc, c } = await boot({ hash: '#p=b' });
   try {
@@ -305,6 +322,22 @@ test('quota failure on save is surfaced, not silently swallowed', async () => {
 });
 
 // ── endless-mode rollover ────────────────────────────────────────────────
+// Math.random is monkey-patched here (restored in `finally`) so the rollover
+// reshuffle is provably a DIFFERENT order, not just a same-order replay.
+// (Codex post-deploy review finding #5, 2026-08-15: the previous version of
+// this test captured `firstOrder` but never asserted against it, so a
+// rollover that quietly kept the original order would still have passed.)
+// buildQueue()'s shuffleTracks() is a Fisher-Yates over 5 items — 4 calls to
+// Math.random() per shuffle. Values just under 1 make every swap index equal
+// its own position (j=i, no-op), leaving the pool's natural a/b/c/d/e order;
+// values at 0 always swap with index 0, producing a known different order.
+function withScriptedRandom(values, fn) {
+  const original = Math.random;
+  let i = 0;
+  Math.random = () => values[i++ % values.length];
+  try { return fn(); } finally { Math.random = original; }
+}
+
 test('onQueueExhausted rebuilds and reshuffles the queue in endless mode, and keeps playing', async () => {
   const { win, doc, c } = await boot();
   try {
@@ -313,17 +346,28 @@ test('onQueueExhausted rebuilds and reshuffles the queue in endless mode, and ke
     doc.getElementById('pl-length').dispatch('click', {
       target: Object.assign(new FakeElement('button', ['chip']), { dataset: { group: 'mode', value: 'endless' } }),
     });
-    doc.getElementById('pl-generate').dispatch('click', {});
+    withScriptedRandom([0.999, 0.999, 0.999, 0.999], () => {
+      doc.getElementById('pl-generate').dispatch('click', {});
+    });
     await tick();
     assert.equal(c.queue.length, 5, 'endless mode queues the whole pool');
     const firstOrder = c.queue.map((t) => t.id);
+    assert.deepEqual(firstOrder, ['a', 'b', 'c', 'd', 'e'],
+      'sanity check on the scripted-random setup -- near-1 values must leave the pool order unchanged');
     c.play(c.queue.length - 1);
     await tick();
-    c.audioElement.dispatchEvent(new Event('ended'));
+    withScriptedRandom([0, 0, 0, 0], () => {
+      c.audioElement.dispatchEvent(new Event('ended'));
+    });
     await tick();
     assert.equal(c.currentIndex, 0, 'rollover restarts at index 0');
     assert.equal(c.state, 'playing', 'rollover must keep playing, not stop');
     assert.equal(c.queue.length, 5, 'rollover queue is still the full pool');
+    const secondOrder = c.queue.map((t) => t.id);
+    assert.notDeepEqual(secondOrder, firstOrder,
+      'a real rollover reshuffle must produce a different order, not silently replay the same one');
+    assert.deepEqual([...secondOrder].sort(), [...firstOrder].sort(),
+      'the reshuffle must still be a permutation of the same pool, not a different set of tracks');
   } finally { c.destroy(); }
 });
 
@@ -331,12 +375,15 @@ test('onQueueExhausted rebuilds and reshuffles the queue in endless mode, and ke
 // endless rollover to be proven via all three entry points -- ended, Next,
 // and Media Session nexttrack -- since the controller handles them at two
 // separate call sites (player-controller.js's 'ended' listener vs.
-// _advance()). Only 'ended' was tested before. next() and Media Session's
-// nexttrack handler both funnel through the SAME _advance(1) call, so this
-// test exercises the shared code path Media Session's hardware button also
-// depends on (the MediaSession browser API registration itself is
-// browser-only and covered by browser_check.mjs's checkPlaylistPage(), not
-// deterministic Node tests).
+// _advance()). next() and Media Session's nexttrack handler both funnel
+// through the SAME _advance(1) call (verified: player-controller.js's
+// mediaSession action handlers register `nexttrack: () => this.next()`), so
+// this test exercises the shared code path Media Session's hardware button
+// also depends on. It does NOT exercise the browser's actual MediaSession
+// API surface (registration, OS lock-screen integration) -- that stays
+// browser-only, unverified by any suite in this repo (a prior version of
+// this comment incorrectly claimed browser_check.mjs covered it; grepping
+// browser_check.mjs for `nexttrack`/`mediaSession` turns up zero matches).
 test('next() at the end of an endless queue rolls over the same way ended does', async () => {
   const { doc, c } = await boot();
   try {

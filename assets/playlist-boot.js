@@ -253,7 +253,12 @@ export function bootPlaylistPage(doc, win) {
       return [];
     }
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(validSavedEntry);
+    // Bounded at the read boundary too, not just in storeSaved() -- a
+    // localStorage value with far more than MAX_SAVED_PLAYLISTS valid
+    // entries (stale from before this bound existed, or hand-edited) would
+    // otherwise render unbounded DOM every time the saved-playlists panel
+    // draws (Codex post-deploy review finding #3, 2026-08-15).
+    return parsed.filter(validSavedEntry).slice(0, MAX_SAVED_PLAYLISTS);
   }
   function storeSaved(list) {
     if (list.length > MAX_SAVED_PLAYLISTS) {

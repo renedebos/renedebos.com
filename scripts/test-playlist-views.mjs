@@ -268,6 +268,38 @@ test('PlaylistNowPlayingView prev button: <=3s past index 0 goes back one track 
   c.destroy();
 });
 
+// Codex post-deploy review finding #4 (2026-08-15): _seeking was set true on
+// mousedown/touchstart and cleared only on 'change'. If the track changes
+// mid-drag (Next, ended, removal, Media Session) before the user releases,
+// _buildStructure() swaps in a fresh range element but _seeking stayed
+// stuck true forever -- every later _patch() silently skipped updating the
+// range value/aria-valuetext/time label for the rest of the session.
+test('starting a seek drag, then switching tracks before releasing, does not permanently freeze the progress range', async () => {
+  const c = makeController();
+  const rows = [catalogRow('a'), catalogRow('b', { durationSec: 200 })];
+  const root = new FakeElement('div');
+  const view = new PlaylistNowPlayingView(root, { catalogById: catalogById(rows) });
+  c.mount(view);
+  c.setQueue(rows.map(itemFromCatalogRow), { startIndex: 0, autoplay: true });
+  await new Promise((r) => setTimeout(r, 0));
+
+  // Begin a drag (mousedown fires, 'change' never does) then jump tracks
+  // before releasing -- exactly the sequence a real Next-tap mid-drag hits.
+  const range = root.querySelector('.progress-range');
+  root.dispatch('mousedown', { target: range });
+  c.next();
+  await new Promise((r) => setTimeout(r, 0));
+
+  c.audioElement.duration = 200;
+  c.audioElement.currentTime = 50;
+  c.audioElement.dispatchEvent(new Event('timeupdate'));
+
+  const newRange = root.querySelector('.progress-range');
+  assert.equal(newRange.getAttribute('aria-valuetext'), '0:50 of 3:20',
+    'the range must keep updating after a track change interrupts an in-progress drag, not freeze at 0:00');
+  c.destroy();
+});
+
 // ── runner ─────────────────────────────────────────────────────────────
 let failed = 0;
 for (const { name, fn } of tests) {
