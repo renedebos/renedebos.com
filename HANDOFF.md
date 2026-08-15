@@ -3,23 +3,27 @@
 (worktree `/home/renedebos/renedebos.com-player-consolidation`)
 
 **Phase 1 for show pages is complete — Steps 4, 5a, 5b, and 5c are all
-done and live in production.** Every public show page runs the shared
+done and live in production, and an external Codex review of that
+production-healthy state found four real (if not-yet-reachable) bugs,
+all now fixed and re-verified.** Every public show page runs the shared
 controller, and the legacy `wavesurfer.js` waveform engine (plus its
 `/lab/wavesurfer/` prototype) is deleted; `player.js` is now the sole
 legacy fallback. PR #3 (Step 4 + the 3-page canary, `7872882`), PR #4 (Step
-5b's full rollout, `fd0a68e`), and PR #5 (Step 5c, `1a19160`) all merged,
-deployed, and verified against real production. Most recent production
-run: `browser_check.mjs --prod` across all 30 live show pages, **166/167
-passed** — the one failure (`/playlist/ real legacy playback works`) was
-investigated directly (a standalone Playwright reproduction against
-production) and confirmed to be a pre-existing check-script timing flake,
-not a regression: playback genuinely starts and advances, it just crosses
-the `0:00` display slightly after the check's 2.5s wait on a colder run.
-`/playlist/`/`playlist.js` are untouched by Step 5c's diff. A tenth review
-found and fixed a real bug in Step 5b's rollback mechanism, and the "Step
-5c deletion review" found and fixed a real test-quality gap in Step 5c's
-breakage test (see below) — worth knowing about even though neither
-affects anything currently live.
+5b's full rollout, `fd0a68e`), PR #5 (Step 5c, `1a19160`), and PR #6 (the
+Codex-review fixes, `294e007`) all merged and deployed. **Shipping PR #6's
+new CI test gate broke deploy twice** (PR #7 fixed a Node-version pin that
+silently broke `wrangler deploy`; PR #8 fixed a Node-24-only `navigator`
+global incompatibility, verified against a real downloaded Node 24 binary
+after the first guess-free fix still wasn't enough) — both now fixed and
+deploy is green again (run 31860440965, `eb3a0ca`). Most recent production
+run: `browser_check.mjs --prod` across all 30 live show pages, **167/167
+passed**, fully clean — including the earlier `/playlist/` timing-flake
+check now passing normally, confirming it really was a timing coincidence.
+A tenth review found and fixed a real bug in Step 5b's rollback mechanism,
+the "Step 5c deletion review" found and fixed a real test-quality gap in
+Step 5c's breakage test, and the "Phase 1's normal production path is
+healthy" review found the four bugs above — see
+`player-consolidation-codex.md` for full disposition on all of them.
 
 ## ✅ Done this session — Step 4 through Step 5a
 
@@ -265,21 +269,28 @@ tenth review.
 
 ## 🔧 Next up
 
-**Phase 1 for show pages is complete.** No further steps are defined in
-this plan for show pages — `player.js` remains as the permanent legacy
-fallback (it still serves song pages and `/playlist/` directly, and that's
-out of scope for this initiative). Whether/when to start a Phase 2 (song
-pages, `/playlist/`, or `/player/` onto the shared controller) is an open
-question for Rene, not something to assume.
+**Phase 1 for show pages is complete, and its foundation is now
+review-hardened.** No further steps are defined in this plan for show
+pages — `player.js` remains as the permanent legacy fallback (it still
+serves song pages and `/playlist/` directly, and that's out of scope for
+this initiative). A Codex review of Phase 1's shipped state recommended
+fixing four bugs (all fixed) and wiring tests into the deploy gate (done)
+before starting **Phase 2** (`/playlist/` migration) — with that done, the
+review's own recommendation is satisfied, but starting Phase 2 itself is
+still an open question for Rene, not something to assume from this alone.
+Per that same review: **Phase 2 is ready to scope, not ready to code** —
+`plan.md`'s Phase 2 section is still only a sketch (no staged
+migration/fallback sequence, no executable parity tests for hash
+hydration/saved playlists/endless rollover/shuffle restoration, no
+persisted-state schema/version). A design/test-prep pass would be the
+natural first move if Rene wants to proceed, not jumping straight to
+implementation.
 
-Two things still worth surfacing to Rene, neither urgent:
-- The Cloudflare-beacon CSP issue found during 5a (a `deploy-infra` task,
-  not part of this initiative).
-- The pre-existing `/playlist/` timing flake in `browser_check.mjs` found
-  during 5c's production verification (2.5s wait is occasionally too tight
-  for the now-playing time display to have ticked past `0:00` — a
-  check-script issue, not a site bug; a one-line fix if anyone wants to
-  bump the wait).
+One thing still worth surfacing to Rene, not urgent: the Cloudflare-beacon
+CSP issue found during 5a (a `deploy-infra` task, not part of this
+initiative). The `/playlist/` timing flake flagged during 5c's production
+verification did NOT recur in 5c's or this round's production runs — no
+longer believed to need a fix.
 
 ## Gotchas learned this session
 
