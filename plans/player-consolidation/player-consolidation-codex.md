@@ -1902,3 +1902,159 @@ Rene approved acting on findings 1, 2, 3, 4, 7, and the `next()` test addition f
 **Re-verification:** `python3 scripts/build.py --check` and `python3 scripts/build.py` — both clean (31 shows, 680 curated tracks, no orphan song pages; 747 items across 30 show pages). `python3 scripts/verify_markup.py` and `--check-allowlist-coverage` — both clean. All five `node scripts/test-*.mjs` suites — 97/97 passing (`test-player-boot.mjs` 23, `test-player-controller.mjs` 26, `test-player-views.mjs` 17, `test-playlist-state.mjs` 17, `test-playlist-views.mjs` 14). Generated assets (`assets/playlist-boot.js`, `assets/playlist-views.js`, `assets/player-controller.js`, `assets/playlist.js`) confirmed byte-identical to their `scripts/` sources after the rebuild. `browser_check.mjs` itself still not run (no `playwright-chromium` in this environment) — its new checks remain syntax-checked only.
 
 Nothing committed. Plan document's Phase 2 section updated to record Stage 2a as implemented and review-hardened, not yet deployed.
+
+## Phase 2 Stage 2a post-deploy review — 2026-08-15
+
+Status: Stage 2a and the deploy fix (`4400531`, `ed01f2f`) are merged to `main`
+and live in production, gated behind `?engine=controller` and manually
+verified working end-to-end (mount, queue build/play, next/prev, share-link
+round-trip, saved playlists, endless rollover, remove/shuffle, cross-tab
+external-claim, `?engine=legacy` fallback). Requested via direct
+`mcp__codex__codex` call rather than `scripts/codex_review.sh`, scoped to (a)
+anything new/missed in the prior review round and (b) `ed01f2f`, which had no
+review pass at all.
+
+1. **Medium.** `playlist-boot.js:314`'s `syncHash()` replaces the URL with
+   `win.location.pathname` when the queue empties, dropping the query string
+   — including a `?engine=controller`/`?engine=legacy` override. Reloading
+   after the last track is removed (or an all-unknown hash is hydrated)
+   silently falls back to the default engine.
+2. **Medium.** `verify_markup.py:113-140`'s `check_playlist_engine_wiring()`
+   only runs its `playlist.js`-presence/ordering/default-literal checks
+   inside `if has_resolver:`. If both the resolver and the boot tag are
+   accidentally removed from the template, `has_resolver != has_boot` is
+   `False != False` (no error), and nothing else fires — a build that
+   silently drops the entire `/playlist/` canary mechanism would still pass
+   `verify_markup.py` clean, even though (per the function's own docstring)
+   both must be present at this stage.
+3. **Medium.** `MAX_SAVED_PLAYLISTS` (`playlist-boot.js:41`) is enforced only
+   in `storeSaved()` (line 259), not in `loadSaved()` (line 246-256) or
+   `renderSaved()` (line 292) — a localStorage value with far more than 100
+   valid entries (stale from before this bound existed, or tampered with)
+   renders unbounded DOM. Not XSS (names are escaped, ids resolve through the
+   trusted catalog) — an availability/input-bounding gap only.
+4. **Low.** `playlist-views.js`: `_seeking` is set `true` on
+   `mousedown`/`touchstart` (lines 238-239) and cleared only on `change`
+   (line 240). If the current track changes mid-drag (Next, `ended`, Media
+   Session, removal) before `change` fires, `_buildStructure()` (line 275)
+   replaces the range element without resetting `_seeking` — it stays `true`
+   permanently, and `_patch()` (line 318) skips updating the range/time
+   display forever after.
+5. **Low, test-coverage only.** `test-playlist-state.mjs:308-328`'s endless
+   rollover test captures `firstOrder` (line 319) but never asserts against
+   it — a rollover that replayed the identical order would still pass, so
+   "reshuffles" isn't actually proven. The companion `next()` test's comment
+   (lines 330-339) claims Media Session `nexttrack` registration is covered
+   by `browser_check.mjs`'s `checkPlaylistPage()`; grepped `browser_check.mjs`
+   for `nexttrack`/`mediaSession` — zero matches, so that claim is false as
+   stated (the test itself is fine; only the comment overclaims).
+
+### Disposition (Claude, 2026-08-15)
+
+All 5 findings verified directly against the current code (not taken on
+Codex's word):
+
+1. **CONFIRMED**, but pre-existing, not Stage-2a-introduced: legacy
+   `playlist.js:338-341`'s `syncHash()` has the byte-identical
+   `location.pathname` bug (verified by reading the function). Faithful
+   parity with legacy, same category as the queue-end-hides-controls
+   behavior Rene already reviewed and asked to leave. Flagging to Rene
+   rather than auto-fixing, since fixing it changes established legacy-
+   parity behavior mid-canary.
+2. **CONFIRMED**, real integrity-gate gap, not a nitpick — a silent template
+   regression at this stage would currently slip past CI.
+3. **CONFIRMED**, real but low-likelihood (requires a pre-existing
+   oversized/tampered localStorage value); consistent with the project's own
+   untrusted-input hardening stance elsewhere in Stage 2a.
+4. **CONFIRMED** by tracing `_seeking`'s only two write sites — no test
+   exercises a mid-drag track change, so this shipped unnoticed.
+5. **CONFIRMED** on both halves — `firstOrder` is dead code in that test,
+   and the "covered by browser_check.mjs" claim is unsupported by the actual
+   file contents. `ed01f2f` itself (separately) verified **correct and
+   complete** — both `globalThis.navigator` sites now use the
+   `setGlobalNavigator` helper, and no other getter-only-navigator
+   assignments remain anywhere in the new suites.
+
+Recommend fixing 2, 3, 4, and 5 (all small, contained) and asking Rene
+whether 1 should be fixed now (diverges from legacy parity) or left alone
+per his standing preference for this canary phase.
+
+### Fixes applied (Claude, 2026-08-15)
+
+Rene approved acting on findings 2, 3, 4, and 5; asked to leave 1
+untouched (legacy parity, matches his earlier "leave it" call on the
+queue-end-controls-disappear behavior). Each behavioral fix's regression
+test was confirmed to FAIL against the pre-fix code before being restored
+(same backup/revert/re-run/restore proof method as the pre-merge review
+round, since `git stash` doesn't target already-tracked files being
+edited in place cleanly here either — used `cp` to `/tmp` throughout).
+
+1. **Left as-is**, per Rene's explicit instruction — real, byte-identical
+   to legacy `playlist.js:338-341`, not touched.
+
+2. **Fixed.** `check_playlist_engine_wiring()` now derives `has_legacy`
+   from `PLAYLIST_TAG`'s presence and branches on it: while `playlist.js`
+   still ships (pre-2c), both the resolver and the boot tag must be
+   present regardless of whether they happen to agree with each other;
+   once `playlist.js` is gone (post-2c), both must be absent. The old
+   `has_resolver != has_boot` check is now fully subsumed by this and was
+   removed to avoid double-reporting the same regression. Four new
+   `_selftest()` cases: `playlist.js` alone with neither resolver nor boot
+   (pre-2c, must error), resolver present without boot (pre-2c, must
+   error), a page with none of the three (post-2c, must be clean), and
+   leftover resolver+boot after `playlist.js` is gone (post-2c, must
+   error). Confirmed `both_missing_pre_2c` fails (`expected [...], got []`)
+   against the reverted has_resolver!=has_boot-only version; passes after.
+
+3. **Fixed.** `loadSaved()` now slices its filtered result to
+   `MAX_SAVED_PLAYLISTS` before returning — the read boundary is bounded
+   the same way the write boundary (`storeSaved()`) already was, so
+   `renderSaved()` (and the save/delete/rename handlers, which all read
+   through `loadSaved()`) can never act on more than the cap regardless of
+   what's actually sitting in `localStorage`. New test seeds storage with
+   130 valid entries and asserts exactly 100 `.pl-saved-row` elements
+   render. Confirmed failing (`130 !== 100`) against the unsliced version;
+   passes after.
+
+4. **Fixed.** `PlaylistNowPlayingView._render()` now resets `_seeking =
+   false` on every `currentItem.id` change (both the "item disappeared"
+   and "structure rebuilt" branches) — a drag in progress on the OLD range
+   element is meaningless once that element is torn down and replaced, so
+   there's nothing to preserve. New test starts a `mousedown` drag, calls
+   `next()` before any `change` event fires, then asserts the new range's
+   `aria-valuetext` still updates on the next `timeupdate` instead of
+   staying frozen at `0:00`. Confirmed failing (stuck at `'0:00 of 3:20'`)
+   against the version without the reset; passes after.
+
+5. **Fixed, both halves.** The endless-rollover test now scripts
+   `Math.random` (restored via `finally`) so the pre-rollover order is
+   deterministic (`a,b,c,d,e`) and the post-rollover order is
+   deterministically different, then asserts `secondOrder` both differs
+   from `firstOrder` and remains a permutation of the same pool — closing
+   the gap where a rollover that silently replayed the same order would
+   have passed. Proved by temporarily scripting BOTH shuffles to the same
+   values and confirming the new assertion fails
+   (`AssertionError: a real rollover reshuffle must produce a different
+   order...`) before restoring the real (differing) values. Also corrected
+   the companion test's comment, which had claimed `browser_check.mjs`
+   covers Media Session `nexttrack` registration — grepped and confirmed
+   zero matches there; the comment now states plainly that the browser's
+   actual MediaSession API surface remains untested by any suite in this
+   repo, while still correctly noting that `next()`/`nexttrack` share the
+   same `_advance(1)` call this test does exercise.
+
+**Re-verification:** `python3 scripts/build.py --check` and
+`python3 scripts/build.py` — both clean (31 shows, 680 curated tracks, no
+orphan song pages; 747 items across 30 show pages, 136 song pages).
+`python3 scripts/verify_markup.py` and `--check-allowlist-coverage` —
+both clean. All five `node scripts/test-*.mjs` suites — **99/99 passing**
+(`test-player-boot.mjs` 23, `test-player-controller.mjs` 26,
+`test-player-views.mjs` 17, `test-playlist-state.mjs` 18,
+`test-playlist-views.mjs` 15). Generated assets (`assets/playlist-boot.js`,
+`assets/playlist-views.js`) confirmed byte-identical to their `scripts/`
+sources via `diff -q` after rebuild. `browser_check.mjs` still not run in
+this environment (no `playwright-chromium`).
+
+Nothing committed yet — working-tree changes only, pending Rene's go-ahead
+to commit/push (this round touches already-deployed production code, so
+committing means another deploy).

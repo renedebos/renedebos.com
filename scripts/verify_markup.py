@@ -109,23 +109,44 @@ def check_playlist_engine_wiring(src, playlist_controller_engine):
           check_engine_wiring()'s player.js ordering checks.
     playlist.js itself must remain on the page throughout 2a/2b -- it's the
     runtime fallback.
+
+    Fixed 2026-08-15 (Codex post-deploy review finding #2): invariant (1)
+    used to only fire when has_resolver and has_boot DISAGREED -- if a
+    template regression dropped BOTH the resolver and the boot tag at once
+    (has_resolver == has_boot == False), that comparison is False == False,
+    no error, and every other check lives inside `if has_resolver:` so
+    nothing else caught it either. During 2a/2b (playlist.js still present)
+    both must exist regardless of whether they happen to agree; only after
+    Stage 2c deletes playlist.js is "both absent" the correct state. Gate on
+    PLAYLIST_TAG's presence (the pre-2c/post-2c signal) instead of on
+    has_resolver alone.
     """
     errors = []
     has_resolver = PLAYLIST_ENGINE_SNIPPET in src
     has_boot = PLAYLIST_BOOT_TAG in src
+    has_legacy = PLAYLIST_TAG in src
 
-    if has_resolver != has_boot:
-        errors.append("/playlist/: engine resolver and playlist-boot.js must be emitted together "
-                      f"(resolver={has_resolver}, boot={has_boot})")
-    if has_resolver:
-        if PLAYLIST_TAG not in src:
-            errors.append("/playlist/: engine resolver present but playlist.js is missing -- "
-                          "it is the runtime fallback and must stay on the page")
-        elif src.index(PLAYLIST_ENGINE_SNIPPET) > src.index(PLAYLIST_TAG):
+    if has_legacy:
+        # Pre-2c: playlist.js is still the runtime fallback, so both the
+        # resolver and the boot module must be present -- the canary
+        # mechanism doesn't work without either one.
+        if not has_resolver or not has_boot:
+            errors.append("/playlist/: engine resolver and playlist-boot.js must both be present "
+                          f"while playlist.js is still shipped (resolver={has_resolver}, boot={has_boot})")
+    else:
+        # Post-2c: playlist.js was deleted, so neither the resolver nor the
+        # boot module should still be emitted.
+        if has_resolver or has_boot:
+            errors.append("/playlist/: playlist.js is gone but the engine resolver and/or "
+                          f"playlist-boot.js are still present (resolver={has_resolver}, boot={has_boot}) "
+                          "-- stale post-Stage-2c wiring")
+    if has_resolver and has_legacy:
+        if src.index(PLAYLIST_ENGINE_SNIPPET) > src.index(PLAYLIST_TAG):
             errors.append("/playlist/: engine resolver must come BEFORE playlist.js")
         if has_boot and src.index(PLAYLIST_BOOT_TAG) < src.index(PLAYLIST_TAG):
             errors.append("/playlist/: playlist-boot.js must load after playlist.js")
 
+    if has_resolver:
         m = PLAYLIST_DEFAULT_LITERAL_RE.search(src)
         if not m:
             errors.append("/playlist/: could not find the resolver's default-decision literal to verify "
@@ -451,6 +472,34 @@ def _selftest():
     stale_false_page = check_playlist_engine_wiring(_playlist_html("false"), True)
     assert any("resolver's baked-in default is False" in e for e in stale_false_page), \
         f"expected a mismatch error (page says False, constant is True), got {stale_false_page}"
+
+    # Fixed 2026-08-15 (Codex post-deploy review finding #2): a template
+    # regression that drops BOTH the resolver and playlist-boot.js at once
+    # (has_resolver == has_boot == False) used to slip past every check in
+    # this function -- invariant (1) only fired on disagreement, and every
+    # other check lived inside `if has_resolver:`. During 2a/2b, with
+    # playlist.js still on the page, that combination must be flagged.
+    both_missing_pre_2c = check_playlist_engine_wiring(PLAYLIST_TAG, False)
+    assert any("must both be present" in e for e in both_missing_pre_2c), \
+        f"expected an error when playlist.js ships alone with no resolver/boot, got {both_missing_pre_2c}"
+
+    # The mirror case: only one of the pair present (not both, not neither)
+    # while playlist.js is still shipped.
+    resolver_only = check_playlist_engine_wiring(
+        f"<script>window.PLAYLIST_ENGINE='controller';</script>\n{PLAYLIST_TAG}", False)
+    assert any("must both be present" in e for e in resolver_only), \
+        f"expected an error when only the resolver is present, got {resolver_only}"
+
+    # Post-2c (playlist.js deleted): resolver/boot must both be ABSENT.
+    # Leftover wiring after the deletion is a real regression, not the
+    # "both present" case invariant (1) already covers.
+    post_2c_clean = check_playlist_engine_wiring("<p>no playlist engine here</p>", False)
+    assert post_2c_clean == [], f"expected no errors once playlist.js and its wiring are all gone, got {post_2c_clean}"
+
+    post_2c_leftover = check_playlist_engine_wiring(
+        f"<script>window.PLAYLIST_ENGINE='controller';</script>\n{PLAYLIST_BOOT_TAG}", False)
+    assert any("stale post-Stage-2c wiring" in e for e in post_2c_leftover), \
+        f"expected an error for leftover resolver/boot wiring after playlist.js is deleted, got {post_2c_leftover}"
 
 
 def main():

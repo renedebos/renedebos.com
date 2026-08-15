@@ -1474,7 +1474,7 @@ adaptation work rather than a drop-in. `songs.js`'s lazy re-mount becomes
 call-repeatedly-safely contract as today's `if (player._audio) return;`
 guard.
 
-### Phase 2 — `/playlist/` (Stage 2a implemented, review-hardened, not yet deployed)
+### Phase 2 — `/playlist/` (Stage 2a live in production behind the canary; Stage 2b not started)
 
 **Scoping/test-prep pass completed 2026-08-15** (see
 `~/.claude/plans/read-handoff-md-fuzzy-rossum.md` for the working copy this
@@ -1514,9 +1514,62 @@ fixes, +1 coverage addition). `build.py --check`, `build.py`,
 `verify_markup.py`, and `--check-allowlist-coverage` all clean.
 `browser_check.mjs`'s new `checkPlaylistPage()`/`runPlaylistBreakageTest()`
 are syntax-checked only — not run; no `playwright-chromium` in this
-environment. **Not yet committed or deployed** — Stage 2a's own "done when"
-criteria (§ above: `--prod`+param pass, no-param behavior unchanged, a
-manual pass by Rene) still require an actual deploy.
+environment.
+
+**Deployed 2026-08-15** (PR #10, commit `4400531`) — merging it broke the
+deploy workflow: the new `test-playlist-state.mjs` suite used a plain
+`globalThis.navigator = {...}` assignment, which throws under CI's Node
+(a getter-only accessor there; the same class of bug fixed for
+`test-player-controller.mjs` in `5078e47`, but this file predated that fix
+and local dev Node has no such global to catch it). Fixed and deployed in
+PR #11 (commit `ed01f2f`). **Rene then did a full manual pass on
+production** at `?engine=controller`: mount, queue build/play, next/prev,
+share-link round-trip, saved playlists, endless rollover, remove/shuffle,
+cross-tab external-claim, and `?engine=legacy` fallback all confirmed
+working. One thing noticed and deliberately left as-is: playback controls
+(play/shuffle/prev/next) disappear entirely once a non-endless queue plays
+to its end — traced to `PlaybackController.stop()` setting `currentItem`
+to `null`, which `PlaylistNowPlayingView` treats as "hide the whole
+panel." Confirmed this is byte-identical to legacy `playlist.js`'s own
+`renderNow()` at `idx === -1` (`playlist.js:696`) — faithful parity, not a
+Stage 2a regression, so left unfixed per Rene's explicit call.
+
+**Post-deploy Codex review, 2026-08-15** (`player-consolidation-codex.md`'s
+"Phase 2 Stage 2a post-deploy review" section — requested via a direct
+`mcp__codex__codex` call rather than `scripts/codex_review.sh`, scoped to
+what the pre-merge review round missed plus `ed01f2f`, which had no review
+pass at all). Found 5 real issues, no high-severity regressions; `ed01f2f`
+itself verified correct and complete. 4 fixed: `verify_markup.py`'s
+`check_playlist_engine_wiring()` used to accept a template regression that
+dropped BOTH the resolver script and the boot-module tag at once (now
+gated on `playlist.js`'s presence — the pre-/post-2c signal — instead of
+only firing on resolver/boot disagreement); `MAX_SAVED_PLAYLISTS` was
+enforced only on write, so an oversized/tampered `localStorage` value
+would still render unbounded DOM (now capped in `loadSaved()`, the read
+boundary, too); a seek-drag interrupted by a track change left `_seeking`
+stuck `true` forever, freezing the progress range (now reset on every
+`currentItem.id` change); and the endless-rollover test captured
+`firstOrder` but never asserted against it, so a rollover that silently
+replayed the same order would still have passed (now proven with scripted
+`Math.random` — deterministically different order, still the same pool —
+plus a corrected comment that had wrongly claimed `browser_check.mjs`
+covers Media Session's `nexttrack` wiring, which it does not). 1 left
+open, flagged to Rene rather than auto-fixed: `syncHash()` drops the
+`?engine=` query param when the queue empties (`win.location.pathname`
+with no search string) — real, but byte-identical to legacy
+`playlist.js:338-341`, so fixing it now would be a deliberate departure
+from established legacy-parity behavior mid-canary, not a bug fix. Local
+suites: 99/99 passing (+2 from this round: one new oversized-saved-array
+test, one new seek-drag-freeze test; two existing tests strengthened
+without adding to the count). `build.py --check`, `build.py`,
+`verify_markup.py`, and `--check-allowlist-coverage` all clean; generated
+assets confirmed byte-identical to their `scripts/` sources.
+
+Stage 2a's own "done when" criteria (§ above) are now fully met: parity
+tests pass, `--prod`+param confirmed working, no-param behavior
+unchanged, and Rene has done the manual production pass. **Stage 2b
+(flipping `PLAYLIST_CONTROLLER_ENGINE = True`) has not been started** —
+timing is Rene's call, not gated on anything further from this plan.
 
 **What has to move.** `scripts/playlist.js` (868 lines) does eight
 separable jobs; only two are the actual migration:
