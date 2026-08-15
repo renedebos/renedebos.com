@@ -1632,3 +1632,105 @@ NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs --skip-webkit → 185/
 
 PR #4 is ready to merge as far as this review is concerned; production
 verification (`browser_check.mjs --prod`) remains the next real gate.
+
+---
+
+## Step 5c deletion review — 2026-08-14
+
+1. **Medium — Breakage Test A3 does not prove the waveform row is inert and can false-pass.**  
+   Evidence: A2 starts the Full Recording’s detached `Audio` and leaves it playing ([browser_check.mjs](/home/renedebos/renedebos.com-player-consolidation/scripts/browser_check.mjs:475), [player.js](/home/renedebos/renedebos.com-player-consolidation/scripts/player.js:64)). A3 then searches only audio elements reachable from `document.body`, including Shadow DOM ([browser_check.mjs](/home/renedebos/renedebos.com-player-consolidation/scripts/browser_check.mjs:184), [browser_check.mjs](/home/renedebos/renedebos.com-player-consolidation/scripts/browser_check.mjs:484)). Thus “no audio plays” is literally false—the Hero continues playing—and a regression that drove the waveform row through another detached `Audio` would still return `found: false`. The assertion only detects the specific old WaveSurfer shape that inserts a discoverable audio element.  
+   Why it matters: the test can stay green while a waveform click starts an unintended detached playback engine, so it does not establish the claimed inert fallback behavior.  
+   Suggested fix: test A3 on a fresh page or stop A2 first; install a pre-navigation spy on `HTMLMediaElement.prototype.play` and assert that clicking `#track-1 .play-btn` produces zero play calls. Also assert the row remains without `_audio`, `.playing`, a changed play label, or a WaveSurfer canvas/audio.
+
+2. **Low — The living plan and source comments still describe the deleted lab/engine as current infrastructure.**  
+   Evidence: the plan says `build_wavesurfer_lab()` remains deferred even though this change deletes it and its build output ([player-consolidation-plan.md](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:1378), [player-consolidation-plan.md](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:1385)); `HANDOFF.md` still calls Step 5c “Next up” ([HANDOFF.md](/home/renedebos/renedebos.com-player-consolidation/HANDOFF.md:258)). The CSS comment falsely says `player.js` drives `.ws-wave`/`.ws-dl` ([site.css](/home/renedebos/renedebos.com-player-consolidation/scripts/site.css:603)); `player.js` still says waveform rows are wired by the deleted module ([player.js](/home/renedebos/renedebos.com-player-consolidation/scripts/player.js:28), [player.js](/home/renedebos/renedebos.com-player-consolidation/scripts/player.js:640)); and `pages.py` still references matching the deleted lab page ([pages.py](/home/renedebos/renedebos.com-player-consolidation/scripts/sitegen/pages.py:831)).  
+   Why it matters: these comments now give future rollback and cleanup work the wrong ownership model. `.ws-wave` is consumed by `player-views.js`; `.ws-dl` remains because live generated markup uses it, while `player.js` only supplies generic download handling and the Full Recording fallback.  
+   Suggested fix: fold Step 6 into Step 5c in the plan, update `HANDOFF.md` when the step is accepted, and correct the stale comments in `player.js`, `site.css`, and `pages.py`; then regenerate copied assets/output.
+
+**Verification during this review**
+
+- `python3 scripts/build.py --check` — passed: 31 shows, 680 curated tracks, no orphan song pages.
+- `python3 scripts/verify_markup.py` — passed: 747 items across 30 generated show pages.
+- `python3 scripts/verify_markup.py --check-allowlist-coverage` — passed: all 30 public shows covered.
+- Player Node suites — passed: controller 22/22, views 16/16, boot 23/23.
+- Peaks/markup audit — passed: all 30 waveform pages preserve one valid `WS_PEAKS_URL`; all 680 waveform rows have corresponding peaks keys; `.ws-wave` and `.ws-dl` remain in live show markup.
+- Deleted-reference scan — no runtime/generated references remain to `scripts/wavesurfer.js`, `assets/wavesurfer.js`, `/lab/wavesurfer/`, `WAVESURFER_LAB_SLUG`, or `build_wavesurfer_lab`.
+- In-memory excluded-slug build simulation — passed: excluded markup retains `player.js` and `WS_PEAKS_URL`, omits the controller flag/boot module, and contains no broken `/assets/wavesurfer.js` tag.
+- `git diff --check` — passed.
+- `NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs --skip-webkit` — could not run: Playwright failed before browser launch because this review environment cannot create `/tmp/playwright-artifacts-*` (`EROFS`).
+_Review generated 2026-08-14 18:22:06 PDT by `scripts/codex_review.sh` (codex exec, read-only)._
+
+### Disposition (Claude, 2026-08-14)
+
+- **#1 (Test A3 false-pass risk) — partially confirmed.** The specific
+  reasoning is factually wrong: `player.js`'s Full Recording `_audio` is a
+  **detached** `new Audio()` (`player.js:64`, never `appendChild`'d), and
+  `findAudioDeep()` only walks `document.body`'s actual DOM tree
+  (`browser_check.mjs:184-193`). So A2's Hero playback is invisible to
+  `findAudioDeep` regardless of its play state — it does not contaminate
+  A3's `found: false` result, and the 155/155 pass wasn't a false pass for
+  the reason claimed. But the underlying methodological gap the suggested
+  fix would close is real and pre-existing (shared by Test B3, not new to
+  this diff): `findAudioDeep` can't see *any* detached `Audio()` object, so
+  a hypothetical regression where a click started a new detached engine for
+  the track row (rather than the DOM-attached WaveSurfer shape the old code
+  produced) would also silently pass today. Confirmed as a genuine, if
+  overstated, test-hardening opportunity — not a bug in the current
+  passing result.
+- **#2 (stale comments/docs) — confirmed**, three real hits: `player.js:28`
+  ("waveform rows (wavesurfer.js)") and `player.js:~641`
+  ("wired up asynchronously by wavesurfer.js, which handles its own
+  hash-autoplay") both name the deleted module as if it still runs;
+  `pages.py:831`'s "matches the lab page" references the deleted
+  `/lab/wavesurfer/` page. `plan.md`/`HANDOFF.md` are correctly flagged as
+  not yet updated — that's step 8 of this step's own execution sequence,
+  not yet reached, not a defect. The `site.css` comment Codex paraphrased
+  as claiming "player.js drives `.ws-wave`/`.ws-dl`" is actually accurate
+  as written (credits both `player.js` and `player-views.js`) — no fix
+  needed there.
+
+**Recommendation:** fix #2's three stale comments (cheap, real accuracy
+bugs) and strengthen A3 with a `play()`-spy per #1's suggestion (cheap,
+closes a real if narrow blind spot) before merging. Plan/HANDOFF updates
+happen as part of step 8 regardless. Not yet implemented — reporting per
+`/review-step`'s stop-before-applying discipline.
+
+### Fixes applied (Claude, 2026-08-14)
+
+Both confirmed items fixed:
+
+1. **#2 (stale comments) — fixed.** `player.js:28-32`'s playback-coordination
+   comment no longer names `wavesurfer.js` as something that runs; it now
+   says waveform rows are "driven by the shared PlaybackController where
+   mounted, or dormant otherwise" and notes wavesurfer.js was removed in
+   Step 5c. `player.js`'s `focusHashTrack()` comment (previously ~643-645)
+   rewritten to explain the real current behavior: controller-engine pages
+   get hash-autoplay from `player-boot.js`'s own deep-link handling
+   (verified this exists: `player-boot.js:179-204`); an excluded/rolled-back
+   page has no handler at all for waveform rows now, which is the accepted
+   tradeoff already documented for Step 5c. `pages.py:831`'s "matches the
+   lab page" reference removed (the lab page no longer exists).
+2. **#1 (Test A3 false-pass risk) — fixed with the suggested hardening.**
+   Added a `play()`-spy via `page.addInitScript()` (installed before any
+   page script runs, so it also covers Test A2's Hero playback) that counts
+   every `HTMLMediaElement.prototype.play()` call. A3 now asserts BOTH
+   `findAudioDeep` finds nothing AND the play-call count didn't grow from
+   the `#track-1` click. **Proved fail-then-pass**: temporarily injected a
+   fake regression right after the click (`new Audio(...).play()`, a
+   detached element, exactly the blind spot Codex described) — the
+   hardened assertion correctly went `FAIL` (`playCalls=1->2`) while the
+   old `findAudioDeep`-only check would have stayed `found:false` and
+   silently passed, confirming the fix closes the real gap. Removed the
+   injected regression and reran clean.
+
+**Re-verification (run independently):**
+```
+python3 scripts/build.py --check                     → integrity OK — 31 shows, 680 curated tracks, no orphan song pages
+python3 scripts/build.py                              → markup OK — 747 items across 30 generated show pages
+node scripts/test-player-boot.mjs                      → 23/23
+node scripts/test-player-controller.mjs                → 22/22
+node scripts/test-player-views.mjs                     → 16/16
+NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs --skip-webkit → 155/155, incl. A3 :: playCalls=1->1
+```
+
+Ready to push/PR/merge as far as this review is concerned.

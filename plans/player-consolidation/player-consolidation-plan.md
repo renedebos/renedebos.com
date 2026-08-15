@@ -13,8 +13,13 @@ including production verification for each**: PR #3 (Step 4 + the 3-page
 canary, `7872882`) and PR #4 (Step 5b's full rollout, `fd0a68e`) both
 merged, deployed, and verified against real production —
 `scripts/browser_check.mjs --prod` most recently ran 197/197 against all 30
-live show pages. See §6 Step 5's entry for the full record, including a
-ninth review (5b-readiness) and a tenth (the 5b implementation itself).
+live show pages. **Step 5c (deleting the legacy `wavesurfer.js` engine and
+its `/lab/wavesurfer/` prototype) is implemented and locally verified
+(155/155 browser-check, two Codex review passes, all findings fixed) but
+not yet merged/deployed** — production verification is the remaining gate,
+same bar every prior step in this phase was held to. See §6 Step 5's entry
+for the full record, including a ninth review (5b-readiness), a tenth (the
+5b implementation itself), and two more for 5c's implementation.
 Mockup: https://claude.ai/code/artifact/71ae2166-d3ed-471d-9719-abd73fe353ba
 Reviewed by Codex ten times, all recorded in
 `player-consolidation-codex.md`: the first pass on the original proposal,
@@ -1336,9 +1341,31 @@ during migration, not removed speculatively.
        unaffected. **The controller engine is now genuinely live on every
        public show page**, not just the original 3-page canary.
 
-       5c. [ ] **Delete `wavesurfer.js` as its own, later, separate
+       5c. [~] **Delete `wavesurfer.js` as its own, later, separate
        decision** — only once confidence from 5b is established, not as part
-       of the same step. This is the point at which "remove only what is
+       of the same step. Implementation and local verification done
+       (2026-08-14): `scripts/wavesurfer.js` and `/lab/wavesurfer/` deleted
+       (item 6 below folded in, done together as suggested there); `build.py`
+       stopped writing `assets/wavesurfer.js`; `build_show()` drops the
+       `<script src=/assets/wavesurfer.js>` tag but keeps `WS_PEAKS_URL` +
+       the peaks JSON write (shared infra — `player-boot.js`'s
+       `attachPeaks()` reads it too, not legacy-only); lab-only CSS removed,
+       `.ws-wave`/`.ws-dl` correctly kept (live production classes on
+       `.track-row.ws-track`); `browser_check.mjs`'s dormancy check for the
+       now-deleted engine removed, breakage Test A3 rewritten to prove
+       waveform rows are correctly inert when `player-boot.js` is disabled
+       (hardened with a `play()`-spy per a review finding — see codex.md —
+       so a detached-audio regression can't hide from `findAudioDeep`'s
+       DOM-only search); stale `wavesurfer.js` references in `player.js`
+       comments and `pages.py` corrected. Local: build/`--check` clean, all
+       4 test suites pass (23/23, 22/22, 16/16, plus build's own markup
+       check), `browser_check.mjs` 155/155. Two Codex review passes done,
+       all confirmed findings fixed (see codex.md for both). **Not yet
+       marked done** — production verification (push/PR/merge/deploy/
+       `browser_check.mjs --prod`) is still pending, same bar 5a/5b were
+       held to.
+
+       This is the point at which "remove only what is
        provably unreferenced" (below) actually applies. **What this step
        actually costs, and one qualifier on that cost (seventh review):**
        until this point, a `player-boot.js`/`player-views.js`/
@@ -1382,11 +1409,16 @@ during migration, not removed speculatively.
        song page and `/playlist/` still play correctly with the legacy engine
        untouched; cross-tab claim/pause still works between a migrated show
        page and `/playlist/`.
-6. [ ] Deferred housekeeping: `build_wavesurfer_lab()`'s fourth row-markup
+6. [x] Deferred housekeeping: `build_wavesurfer_lab()`'s fourth row-markup
        copy (`.ws-row`, zero production traffic) — delete or update to the
        unified shape after parity is proven. Note this is coupled to step 5's
        `wavesurfer.js` deletion (the lab page is its other consumer), so
-       either do them together or leave both until this step.
+       either do them together or leave both until this step. **Done
+       (2026-08-14), together with 5c as suggested**: `build_wavesurfer_lab()`,
+       `WAVESURFER_LAB_SLUG`, `/lab/wavesurfer/index.html`, and the lab-only
+       `.ws-list`/`.ws-row*` CSS were all deleted rather than updated — the
+       page's own purpose (comparing wavesurfer.js against the alternative)
+       was moot once wavesurfer.js itself was gone.
 
 **Legacy-removal debt this phase deliberately leaves behind** (not
 oversights — each waits for the phase that makes it safe):

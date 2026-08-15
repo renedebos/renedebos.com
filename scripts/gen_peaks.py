@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pre-compute waveform peaks for the wavesurfer.js track players.
+"""Pre-compute waveform peaks for the shared PlaybackController's track players.
 
 For every split track of every track-listed show (or just one show with --slug),
 stream the track's MP3 straight from R2, decode to mono 8 kHz PCM with ffmpeg, bucket
@@ -7,7 +7,8 @@ into ~400 peaks (max-abs per bucket, normalized 0-1), and derive the duration fr
 sample count. Writes data/peaks/<slug>.json keyed by track number:
 { "1": {"d": secs, "p": [..400 floats..]}, ... }.
 
-These peaks let wavesurfer render each waveform without downloading the audio (avoids
+These peaks let the controller (served via `WS_PEAKS_URL`, fetched by `player-boot.js`'s
+`attachPeaks()`) render each waveform without downloading the audio (avoids
 the streaming Worker's CORS scope and a flood of page-load fetches); playback still
 streams lazily through a native media element on play.
 

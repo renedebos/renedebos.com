@@ -257,15 +257,17 @@ tenth review.
 
 ## 🔧 Next up
 
-**Step 5c**: delete `wavesurfer.js` as the legacy fallback — its own,
-later, separate decision per the plan (§6), now that confidence from 5b's
-clean full-catalog production run (197/197) is established. This is the
-last piece of Phase 1 for show pages; `player.js` stays either way (it's
-still the fallback and still serves song pages and `/playlist/`). Read the
-plan's 5c entry (§6) for exactly what this does and doesn't cost before
-starting — worth a fresh discussion with Rene rather than assuming go-ahead
-from 5b's success alone, since deleting code is a different kind of
-decision than shipping a rollout.
+**Step 5c**: `scripts/wavesurfer.js` (the legacy waveform-row engine) and
+its `/lab/wavesurfer/` prototype page are deleted, implemented and locally
+verified (build/`--check` clean, 23/23 + 22/22 + 16/16 deterministic tests,
+`browser_check.mjs` 155/155). Two Codex review passes ran against this
+diff; all confirmed findings fixed, including a real test-quality gap
+(breakage Test A3 could false-pass against a detached-audio regression —
+hardened with a `play()`-spy, proved fail-then-pass by injecting a fake
+regression and confirming the old assertion missed it). **Not yet
+pushed/merged/deployed** — same production-verification bar as 5a/5b still
+applies before this is done. `player.js` stays either way (it's still the
+legacy fallback and still serves song pages and `/playlist/`).
 
 Separately, still worth surfacing to Rene: whether to fix the
 Cloudflare-beacon CSP issue found during 5a (a `deploy-infra` task, not

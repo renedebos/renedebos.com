@@ -600,51 +600,10 @@ main {
   .track-row.ws-track .download-btn svg { width: 16px; height: 16px; }
 }
 
-/* ── wavesurfer.js prototype (lab page) ──────────────────────────────────── */
-
-.ws-list {
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  overflow: hidden;
-  background: var(--player-bg);
-}
-
-.ws-row {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  padding: 0.5rem 1.1rem;
-  border-top: 1px solid var(--border);
-  transition: background 0.15s;
-}
-
-.ws-row:first-child { border-top: none; }
-.ws-row.playing { background: var(--accent-light); box-shadow: inset 3px 0 0 var(--accent); }
-
-.ws-row .play-btn { width: 30px; height: 30px; flex-shrink: 0; }
-.ws-row .play-btn svg { width: 12px; height: 12px; }
-
-.ws-row .track-num {
-  min-width: 1.8em;
-  text-align: right;
-  font-size: 12px;
-  color: var(--muted);
-  font-weight: 300;
-  font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
-}
-
-.ws-row .track-title {
-  flex: 0 1 170px;
-  min-width: 0;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.ws-row:hover .track-title { color: var(--accent); }
+/* .ws-wave and .ws-dl below are production classes on real show-page track
+   rows (.track-row.ws-track), rendered by build_show() and driven by both
+   player.js and the shared controller's player-views.js — not lab-only,
+   despite the "ws-" prefix shared with the removed wavesurfer.js lab page. */
 
 .ws-wave {
   flex: 1 1 auto;
@@ -653,38 +612,8 @@ main {
   cursor: pointer;
 }
 
-.ws-row .time-label {
-  font-size: 12px;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
-  min-width: 3em;
-  text-align: right;
-}
-
-.ws-row .download-btn {
-  width: 24px;
-  height: 24px;
-  background: transparent;
-  color: var(--muted);
-}
-.ws-row .download-btn:hover { background: var(--accent-light); color: var(--accent); }
-.ws-row .download-btn svg { width: 12px; height: 12px; }
-
 /* the download link's wrapper is transparent to the flex layout */
 .ws-dl { display: contents; }
-
-@media (max-width: 600px) {
-  .ws-row { flex-wrap: wrap; row-gap: 0.5rem; padding: 0.7rem 1.1rem; }
-  .ws-row .track-title { flex: 1 1 auto; white-space: normal; line-height: 1.35; }
-  .ws-row .time-label { margin-left: auto; }
-  .ws-wave { flex: 1 1 100%; order: 5; }
-  /* larger touch targets for thumbs */
-  .ws-row .play-btn { width: 44px; height: 44px; }
-  .ws-row .play-btn svg { width: 15px; height: 15px; }
-  .ws-row .download-btn { width: 40px; height: 40px; }
-  .ws-row .download-btn svg { width: 16px; height: 16px; }
-}
 
 /* ── recording cards & player ────────────────────────────────────────────── */
 

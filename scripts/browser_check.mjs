@@ -249,37 +249,6 @@ async function runParityPass(browser, allShows, heavyCheckSlugs) {
         Array.from(document.querySelectorAll('.custom-player')).some((el) => !!el._audio));
       record(`${path} legacy player.js stayed dormant`, legacyRan === false);
 
-      // (b) the check above only sees player.js's own `_audio` marker on
-      // `.custom-player` elements -- it has no way to tell whether
-      // wavesurfer.js (gated by the identical PLAYER_ENGINE_MOUNTED check, but
-      // with no marker of its own) also stayed dormant. wavesurfer.js eagerly
-      // creates a real WaveSurfer instance -- with its own real <audio> element
-      // -- for every .ws-track row on page load if it ever runs (plan.md:
-      // "Today every row eagerly gets its own WaveSurfer instance on page
-      // load"). The controller engine's own shared <audio> element is never
-      // appended to the document (grepped: no appendChild/document.body.append
-      // for it anywhere) and player-views.js only builds a WaveSurfer for a row
-      // once it becomes ACTIVE, which can't happen before any interaction. So
-      // on a controller-engine page, immediately after load and BEFORE any
-      // click, findAudioDeep() finding zero real <audio> elements proves
-      // wavesurfer.js never ran -- checked here, before the play-button click
-      // further down, so it observes the true pre-interaction state.
-      // Fix C: wait for network to settle before checking dormancy --
-      // legacy wavesurfer.js's start() fetches peaks asynchronously BEFORE
-      // build() (which actually constructs WaveSurfer/<audio> instances),
-      // so a slow-resolving fetch could otherwise let this check read
-      // "0 audio elements" before a wrongly-running legacy engine has even
-      // reached build() yet.
-      await page.waitForLoadState('networkidle');
-      if (await page.locator('.ws-track').count() > 0) {
-        const preClickAudioCount = await page.evaluate(`(() => {
-          ${findAudioDeepFn}
-          return findAudioDeep(document.body).length;
-        })()`);
-        record(`${path} legacy wavesurfer.js stayed dormant (no eager WaveSurfer before interaction)`,
-          preClickAudioCount === 0, `audioElements=${preClickAudioCount}`);
-      }
-
       const realErrors = consoleErrors.filter((e) => !KNOWN_UNRELATED_CSP_WARNING.test(e));
       record(`${path} no console errors on load`, realErrors.length === 0, realErrors.slice(0, 3).join(' | '));
 
@@ -496,6 +465,20 @@ async function runBreakageTests(browser, copyDir, base) {
     try {
       const testCtx = await browser.newContext(); // fresh cache partition -- see header note
       const page = await testCtx.newPage();
+      // A3 needs to prove NO engine plays anything for a track-row click --
+      // including a hypothetical regression that starts a DETACHED Audio()
+      // (invisible to findAudioDeep(), which only walks the DOM -- see its
+      // header comment). A play()-spy installed before any page script runs
+      // catches that case too; findAudioDeep alone would not (Step 5c
+      // review finding #1).
+      await page.addInitScript(() => {
+        window.__playCallCount = 0;
+        const origPlay = HTMLMediaElement.prototype.play;
+        HTMLMediaElement.prototype.play = function (...args) {
+          window.__playCallCount++;
+          return origPlay.apply(this, args);
+        };
+      });
       await page.goto(base + '/shows/jerry-cafe-java-1999-05-27/', { waitUntil: 'load' });
       await page.waitForTimeout(1000);
 
@@ -512,6 +495,7 @@ async function runBreakageTests(browser, copyDir, base) {
       record('breakage A2: legacy player.js drives the Full Recording card',
         heroPlaying.found && heroPlaying.t > 0.3 && !heroPlaying.paused, JSON.stringify(heroPlaying));
 
+      const playCallsBeforeA3 = await page.evaluate(() => window.__playCallCount);
       await page.locator('#track-1 .play-btn').click();
       await page.waitForTimeout(2000);
       const waveformPlaying = await page.evaluate(`(() => {
@@ -519,8 +503,10 @@ async function runBreakageTests(browser, copyDir, base) {
         const audios = findAudioDeep(document.body).filter(a => !a.paused);
         return audios.length ? { found: true, t: audios[0].currentTime, paused: audios[0].paused } : { found: false };
       })()`);
-      record('breakage A3: legacy wavesurfer.js still drives waveform track rows (full pair fallback)',
-        waveformPlaying.found && waveformPlaying.t > 0.3 && !waveformPlaying.paused, JSON.stringify(waveformPlaying));
+      const playCallsAfterA3 = await page.evaluate(() => window.__playCallCount);
+      record('breakage A3: with wavesurfer.js removed, waveform track rows have no driving engine (expected — player.js alone is the fallback)',
+        waveformPlaying.found === false && playCallsAfterA3 === playCallsBeforeA3,
+        `${JSON.stringify(waveformPlaying)} playCalls=${playCallsBeforeA3}->${playCallsAfterA3}`);
 
       await testCtx.close();
     } finally {
