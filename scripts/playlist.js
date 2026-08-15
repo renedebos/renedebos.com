@@ -1,7 +1,28 @@
 // Playlist generator for /playlist/. Filters the build-generated track catalog
 // (/assets/tracks.json) client-side, builds a queue, and plays it through one
 // shared <audio> element. Uses the global WORKER + formatTime from player.js.
-(function () {
+//
+// Runtime engine-selection gate (Phase 2 of plans/player-consolidation/,
+// Stage 2a): mirrors player.js's own gate exactly (player.js:217-223), not
+// an unconditional defer -- window.PLAYLIST_ENGINE is set only when the
+// build constant or a `?engine=controller` param asks for the controller
+// engine (see pages.py's build_playlist()), so on every normal page load
+// today this still runs immediately at parse time, byte-identical to before
+// this stage. Only when the flag COULD be 'controller' does this defer to
+// DOMContentLoaded and check whether playlist-boot.js actually mounted.
+if (window.PLAYLIST_ENGINE === "controller") {
+  document.addEventListener("DOMContentLoaded", function () {
+    if (!window.PLAYLIST_ENGINE_MOUNTED) initLegacyPlaylist();
+  });
+} else {
+  initLegacyPlaylist();
+}
+
+function initLegacyPlaylist() {
+  // A positive sentinel for browser_check.mjs's dormancy check -- set only
+  // when this actually runs, so "did the legacy engine stay dormant" is
+  // observable directly rather than inferred from the mounted flag's absence.
+  window.__legacyPlaylistRan = true;
   var filtersEl = document.getElementById("pl-filters");
   var lengthEl = document.getElementById("pl-length");
   var statusEl = document.getElementById("pl-status");
@@ -865,4 +886,4 @@
       renderSaved();
     })
     .catch(function (e) { statusEl.textContent = "Could not load the track catalog: " + e; });
-})();
+}

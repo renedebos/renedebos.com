@@ -1474,7 +1474,7 @@ adaptation work rather than a drop-in. `songs.js`'s lazy re-mount becomes
 call-repeatedly-safely contract as today's `if (player._audio) return;`
 guard.
 
-### Phase 2 — `/playlist/` (scoped, not started)
+### Phase 2 — `/playlist/` (Stage 2a implemented, review-hardened, not yet deployed)
 
 **Scoping/test-prep pass completed 2026-08-15** (see
 `~/.claude/plans/read-handoff-md-fuzzy-rossum.md` for the working copy this
@@ -1485,7 +1485,38 @@ more detail than reproduced here). Two agents did the underlying research
 architecture; an Opus Plan pass turning that into a design), then a Codex
 review of the resulting design was verified line-by-line against the
 actual source and found five real, confirmed defects — corrected in place
-below, not just noted. Ready to code once a session picks up Stage 2a.
+below, not just noted.
+
+**Stage 2a implemented 2026-08-15** (`scripts/playlist-boot.js`,
+`scripts/playlist-views.js`, the `player-controller.js` additions, the
+`playlist.js`/`pages.py`/`build.py`/`verify_markup.py`/`browser_check.mjs`
+wiring described below) — all as designed, plus one deliberate divergence
+found necessary during implementation: `prev()` at queue start is handled
+at the view level (`PlaylistNowPlayingView._prev()`), not by changing the
+shared `PlaybackController._advance()`, to avoid touching an
+already-shipped Phase 1 primitive other pages depend on for a
+single-page's parity choice. A Codex review of the implementation
+(`player-consolidation-codex.md`'s "Phase 2 Stage 2a implementation
+review") found 7 findings; 6 confirmed as real (5 fixed: the transactional
+mount-or-teardown gap, the stuck "paused elsewhere" status message, an
+unconditional per-tick highlight scan, `verify_markup.py`'s unimplemented
+default-match invariant, and `appendQueue()`'s bound-after-normalize
+ordering; 1 — fixed browser-check timing waits — declined as out of scope,
+pre-existing throughout `browser_check.mjs` since Phase 1) plus a
+confirmed test-coverage gap (partially closed: added a `next()`-triggered
+endless-rollover test; the rest of the parity matrix — rename, storage
+sync, page-level shuffle-restore-by-id, share/ZIP/popup — remains
+untested by the new suites, tracked as a known gap, not a shipped-behavior
+bug). Local suites: 97/97 passing (24 unchanged Phase 1 tests across three
+suites, +2 from the `appendQueue` fix, +27 new across
+`test-playlist-views.mjs`/`test-playlist-state.mjs`, +2 from this review's
+fixes, +1 coverage addition). `build.py --check`, `build.py`,
+`verify_markup.py`, and `--check-allowlist-coverage` all clean.
+`browser_check.mjs`'s new `checkPlaylistPage()`/`runPlaylistBreakageTest()`
+are syntax-checked only — not run; no `playwright-chromium` in this
+environment. **Not yet committed or deployed** — Stage 2a's own "done when"
+criteria (§ above: `--prod`+param pass, no-param behavior unchanged, a
+manual pass by Rene) still require an actual deploy.
 
 **What has to move.** `scripts/playlist.js` (868 lines) does eight
 separable jobs; only two are the actual migration:

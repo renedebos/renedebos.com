@@ -51,6 +51,11 @@ def main():
     write("assets/client-zip.js", open(os.path.join(here, "vendor", "client-zip.js")).read())
     write("assets/search.js", open(os.path.join(here, "search.js")).read())
     write("assets/playlist.js", open(os.path.join(here, "playlist.js")).read())
+    # Shared-engine /playlist/ views + boot (Phase 2, Stage 2a) -- separate
+    # from player-views.js/player-boot.js since playlist-views.js must never
+    # import WaveSurfer (see its own header comment).
+    write("assets/playlist-views.js", open(os.path.join(here, "playlist-views.js")).read())
+    write("assets/playlist-boot.js", open(os.path.join(here, "playlist-boot.js")).read())
     write("assets/songs.js", open(os.path.join(here, "songs.js")).read())
     write("assets/track-select.js", open(os.path.join(here, "track-select.js")).read())
     write("assets/archive-data.js", open(os.path.join(here, "archive-data.js")).read())

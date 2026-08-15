@@ -198,6 +198,39 @@ test('appendQueue keeps an item added while shuffled from vanishing on shuffle-o
   } finally { c.destroy(); }
 });
 
+// Codex review finding (Phase 2 Stage 2a, 2026-08-14): appendQueue() used to
+// normalize() the FULL input array before bounding it to room, so an
+// oversized (untrusted-input-derived) array cost O(items.length) validation
+// work even though at most `room` items could ever be kept. Fixed to slice
+// the input to `room` before any per-item work. Proven here with items past
+// the bound deliberately malformed (missing id, which throws in
+// normalizeItem) -- the old order would throw reaching them; the fix must
+// never even look at them.
+test('appendQueue bounds the INPUT before normalizing, not just the output', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    // Fill to 2 short of the 1000-item cap.
+    c.setQueue(Array.from({ length: 998 }, (_, i) => item('existing-' + i)));
+    const fresh = Array.from({ length: 2 }, (_, i) => item('fresh-' + i));
+    const malformed = Array.from({ length: 50 }, () => ({ /* no id, no streamUrl */ }));
+    assert.equal(c.appendQueue(fresh.concat(malformed)), 2,
+      'only room (2) items get appended; the malformed excess must never reach normalizeItem');
+    assert.equal(c.queue.length, 1000);
+  } finally { c.destroy(); }
+});
+
+test('appendQueue is a no-op with zero cost when the queue is already at its bound', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    c.setQueue(Array.from({ length: 1000 }, (_, i) => item('existing-' + i)));
+    const malformed = Array.from({ length: 5 }, () => ({}));
+    assert.equal(c.appendQueue(malformed), 0, 'room=0 must bail before touching the input at all');
+    assert.equal(c.queue.length, 1000);
+  } finally { c.destroy(); }
+});
+
 // ── 5. removal/reorder around the current index ───────────────────────────
 test('removeAt adjusts currentIndex correctly depending on position relative to it', async () => {
   const audio = new FakeAudio();

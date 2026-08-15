@@ -62,6 +62,13 @@ function shuffleArray(a) {
   return a;
 }
 
+// /playlist/'s queues come from a URL hash or localStorage — attacker/other-
+// origin-influenced, unlike a show page's build-time-bounded markup. A cheap
+// backstop here (the real validation/truncation-with-a-message happens at
+// the page's own parse boundary) so nothing can hand the controller an
+// unbounded array no matter which caller it came through.
+const MAX_QUEUE_ITEMS = 1000;
+
 // ── playable-item schema ────────────────────────────────────────────────
 // Validates/defaults a raw item into the normalized shape every view and
 // the controller itself can rely on. Doesn't know or care where the raw
@@ -104,12 +111,32 @@ export function normalizeItem(raw) {
 
 // ── PlaybackController ──────────────────────────────────────────────────
 export class PlaybackController {
-  constructor({ audio = new Audio(), mediaSession = true } = {}) {
+  // onQueueExhausted(reason): called ('ended'|'next') when playback would
+  // otherwise stop/end past the last queue item, in place of that terminal
+  // behavior — return truthy if the page handled it (it's expected to have
+  // called setQueue() itself already) and the controller does nothing
+  // further; absent, or falsy, and today's ended/stop() behavior proceeds
+  // unchanged. Exists because nothing else lets a page distinguish "reached
+  // the end of an endless queue" from "the user pressed Stop" (both land on
+  // 'idle' via stop()), or intercept Media Session's nexttrack at all (it's
+  // registered inside this constructor). Show pages pass nothing.
+  //
+  // onExternalClaim: called when this controller's own claim-listener below
+  // pauses playback because another tab/controller claimed it — the only way
+  // a page can tell an external-claim pause apart from a user-initiated one,
+  // needed for a "paused — playback started somewhere else" status message
+  // without reaching for the ambient legacy onExternalClaim(fn, owner)
+  // global. Show pages pass nothing and are unaffected.
+  constructor({ audio = new Audio(), mediaSession = true, onQueueExhausted = null,
+                onExternalClaim: onExternalClaimCallback = null } = {}) {
     this.audio = audio;
     this.audio.preload = 'none';
+    this._onQueueExhausted = onQueueExhausted;
+    this._onExternalClaimCallback = onExternalClaimCallback;
 
     this._queue = [];
     this._idx = -1;
+    this._queueRevision = 0;  // bumped by every operation that changes queue membership/order
     // Tracked separately from audio.src because the DOM property getter
     // returns a resolved absolute URL, which won't always compare equal to the
     // string we assigned.
@@ -125,7 +152,10 @@ export class PlaybackController {
     this._mediaSessionEnabled = mediaSession && typeof navigator !== 'undefined' && 'mediaSession' in navigator;
 
     this._unclaim = onExternalClaim(this, () => {
-      if (this._state === 'playing' || this._state === 'loading') this.pause();
+      if (this._state === 'playing' || this._state === 'loading') {
+        this.pause();
+        if (this._onExternalClaimCallback) this._onExternalClaimCallback();
+      }
     });
 
     // Every listener below is registered against this signal so destroy() can
@@ -152,6 +182,7 @@ export class PlaybackController {
       // resume from the end instead of restarting.
       if (this._repeatOne) { this.audio.currentTime = 0; this._playIndex(this._idx); return; }
       if (this._idx + 1 < this._queue.length) { this.play(this._idx + 1); return; }
+      if (this._onQueueExhausted && this._onQueueExhausted('ended')) return;
       ++this._gen;
       this._setState('ended');
       this._notify();
@@ -196,7 +227,8 @@ export class PlaybackController {
   setQueue(items, { startIndex = -1, autoplay = false } = {}) {
     if (this._destroyed) return;
     ++this._gen;
-    this._queue = items.map(normalizeItem);
+    this._queue = items.slice(0, MAX_QUEUE_ITEMS).map(normalizeItem);
+    ++this._queueRevision;
     this._shuffleOn = false;
     this._unshuffledQueue = null;
     if (startIndex >= 0 && startIndex < this._queue.length) {
@@ -206,8 +238,13 @@ export class PlaybackController {
       if (autoplay) return this._playIndex(startIndex);
       // Cued but not playing: whatever the element was playing belongs to the
       // queue we just discarded, so stop it rather than leave audible playback
-      // disagreeing with currentItem and the published queue.
+      // disagreeing with currentItem and the published queue. Explicit 'idle'
+      // (not just leaving state as-is): otherwise a setQueue() arriving right
+      // after a previous queue ended/errored — e.g. hash hydration after an
+      // endless-mode rollover — inherits that stale terminal state even
+      // though a perfectly playable track is now cued.
       if (!this.audio.paused) this.audio.pause();
+      this._setState('idle');
     } else {
       this._idx = -1;
       this._setState('idle');
@@ -218,14 +255,25 @@ export class PlaybackController {
 
   appendQueue(items) {
     if (this._destroyed) return 0;
+    const room = Math.max(0, MAX_QUEUE_ITEMS - this._queue.length);
+    if (room === 0) return 0;
+    // Cap the INPUT before doing any per-item work, not just the output --
+    // otherwise an oversized (untrusted-input-derived) array still costs
+    // O(items.length) normalization/validation even though at most `room`
+    // of it could ever be kept. Trade-off: if the first `room` raw items
+    // happen to contain more duplicates-of-existing-ids than real fresh
+    // ones, fewer fresh items land than a full scan would have found --
+    // acceptable for a defensive backstop (this has no caller yet in this
+    // phase; see MAX_QUEUE_ITEMS's own comment).
     const existing = new Set(this._queue.map(t => t.id));
-    const fresh = items.map(normalizeItem).filter(t => !existing.has(t.id));
+    const fresh = items.slice(0, room).map(normalizeItem).filter(t => !existing.has(t.id));
     if (fresh.length) {
       this._queue = this._queue.concat(fresh);
       // Keep the shuffle-off restore snapshot in sync -- otherwise an item
       // appended while shuffle is on survives in _queue but vanishes the
       // moment toggleShuffle() restores from a snapshot that never got it.
       if (this._unshuffledQueue) this._unshuffledQueue = this._unshuffledQueue.concat(fresh);
+      ++this._queueRevision;
       this._notify();
     }
     return fresh.length;
@@ -244,6 +292,7 @@ export class PlaybackController {
     const wasPlaying = this._idx !== -1 && !this.audio.paused;
     const removed = this._queue[index];
     this._queue.splice(index, 1);
+    ++this._queueRevision;
     // Keep the shuffle-off restore snapshot from resurrecting a track that was
     // explicitly removed after shuffling.
     if (this._unshuffledQueue) {
@@ -277,6 +326,7 @@ export class PlaybackController {
     if (fromIndex === to) return;
     const [item] = this._queue.splice(fromIndex, 1);
     this._queue.splice(to, 0, item);
+    ++this._queueRevision;
     if (this._idx === fromIndex) this._idx = to;
     else if (fromIndex < this._idx && to >= this._idx) this._idx -= 1;
     else if (fromIndex > this._idx && to <= this._idx) this._idx += 1;
@@ -384,7 +434,15 @@ export class PlaybackController {
     if (this._idx === -1) return;
     const newIndex = this._idx + dir;
     if (newIndex < 0) return;
-    if (newIndex >= this._queue.length) { this.stop(); return; }
+    if (newIndex >= this._queue.length) {
+      // Only the forward direction (Next) can run off the end of a queue in
+      // a way a page might want to handle (e.g. endless-mode rollover) --
+      // prev() past index 0 is handled by its own early return above this
+      // call and never reaches here for a reason to report.
+      if (dir > 0 && this._onQueueExhausted && this._onQueueExhausted('next')) return;
+      this.stop();
+      return;
+    }
     this.play(newIndex);
   }
 
@@ -419,6 +477,7 @@ export class PlaybackController {
         : this._queue.slice(0, this._idx + 1).concat(shuffleArray(this._queue.slice(this._idx + 1)));
       this._shuffleOn = true;
     }
+    ++this._queueRevision;
     this._notify();
   }
 
@@ -546,6 +605,7 @@ export class PlaybackController {
       currentItem: this.currentItem,
       currentIndex: this._idx,
       queue: this._queue,
+      queueRevision: this._queueRevision,
       repeatOne: this._repeatOne,
       shuffleOn: this._shuffleOn,
     };
