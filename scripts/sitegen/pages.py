@@ -273,12 +273,16 @@ def _curated_playlists_html():
 
 # ── /playlist/ shared-player rollout (Phase 2 of plans/player-consolidation/,
 # Stage 2a) ───────────────────────────────────────────────────────────────
-# Stays False through Stage 2a: the whole new engine ships live, but only a
-# `?engine=controller` query param (the resolver below) actually activates
+# Stayed False through Stage 2a: the whole new engine shipped live, but only
+# a `?engine=controller` query param (the resolver below) actually activated
 # it -- a real-production canary with zero default-visitor exposure, the
-# single-page equivalent of Step 4/5a's slug allowlist. Flips to True in
-# Stage 2b once that canary is verified on production.
-PLAYLIST_CONTROLLER_ENGINE = False
+# single-page equivalent of Step 4/5a's slug allowlist. Flipped to True in
+# Stage 2b (2026-08-15) once that canary was verified end-to-end on
+# production (manual pass plus a post-deploy Codex hardening round -- see
+# player-consolidation-plan.md's Phase 2 section). playlist.js remains the
+# runtime fallback and `?engine=legacy` the manual escape hatch through
+# Stage 2c's 2+ week soak.
+PLAYLIST_CONTROLLER_ENGINE = True
 
 def build_playlist():
     # Sets window.PLAYLIST_ENGINE = 'controller' before playlist.js's own
