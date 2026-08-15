@@ -1474,7 +1474,7 @@ adaptation work rather than a drop-in. `songs.js`'s lazy re-mount becomes
 call-repeatedly-safely contract as today's `if (player._audio) return;`
 guard.
 
-### Phase 2 — `/playlist/` (Stage 2b: PlaybackController is now the default engine; Stage 2c soak not started)
+### Phase 2 — `/playlist/` (complete: Stage 2c deleted the legacy engine, 2026-08-15)
 
 **Scoping/test-prep pass completed 2026-08-15** (see
 `~/.claude/plans/read-handoff-md-fuzzy-rossum.md` for the working copy this
@@ -1579,9 +1579,102 @@ manual escape hatch — both stay in place through Stage 2c's 2+ week soak
 (decision #4, § above). `build.py`, `verify_markup.py`, and
 `--check-allowlist-coverage` all clean after the flip.
 
-**Stage 2c (deleting `scripts/playlist.js`) has not been started** —
-gated on 2+ weeks of default-on production plus a clean `browser_check.mjs
---prod` run, per decision #4.
+**Stage 2c: implemented and shipped 2026-08-15, same day as Stage 2b —
+Rene explicitly waived the 2+ week soak** (decision #4 above), on the
+basis that the only realistic blast radius of a bad Stage 2c is
+client-side `savedPlaylists` localStorage state, never the audio files or
+any server-side data — a risk profile that doesn't actually benefit from
+a calendar-time soak the way a silent-data-loss-in-the-wild scenario
+would. **The real-browser gate was NOT waived** — a Codex review of the
+waiver request caught that skipping the soak made the (until-then only
+syntax-checked) `browser_check.mjs --prod` run the sole remaining
+real-world check, so it was closed properly instead of skipped: this
+session installed `playwright-chromium` into the environment (previously
+absent) and ran `browser_check.mjs --prod` for real against
+`https://renedebos.com`, twice — 177/178 the first time, 178/178 after a
+genuine bug the run itself surfaced was fixed (see below).
+
+Deleted `scripts/playlist.js`/`assets/playlist.js` and the entire
+`?engine=`/`window.PLAYLIST_ENGINE` resolver mechanism (`pages.py`'s
+`build_playlist()`, `PLAYLIST_CONTROLLER_ENGINE` constant, and
+`playlist-boot.js`'s auto-run gate all simplified to unconditional —
+`playlist-boot.js` is now the only engine and mounts at parse time, no
+flag to check). `verify_markup.py`'s `check_playlist_engine_wiring()`
+rewritten for single-engine reality: playlist-boot.js's script tag present
+exactly once, legacy playlist.js and any leftover `PLAYLIST_ENGINE`/
+`?engine=` wiring text both absent, `window.WORKER_ORIGIN` still set (that
+one's unrelated to engine selection but was previously emitted only
+inside the now-deleted resolver script, so its removal was exactly the
+kind of edit that could have silently dropped it too). The storage
+dual-write question this section describes above is now moot by
+construction — there was never any actual dual-write *code* to remove,
+only a comment noting the flat key was kept canonical specifically to
+avoid needing one; that comment is now simply accurate rather than
+forward-looking.
+
+`browser_check.mjs`'s `runPlaylistBreakageTest()` (the "rename
+playlist-boot.js, confirm playlist.js takes over" breakage test) was
+**deleted outright, not retargeted to a fake-graceful-degradation
+assertion** — a Codex review of the deletion plan correctly flagged that
+asserting "no mount flag + no crash" after removing the only engine just
+blesses a dead page as a pass condition, not a real degradation test; a
+missing `playlist-boot.js` is a broken deploy now, already caught by
+`verify_markup.py`/`build.py`'s asset-existence checks and by the real
+`checkPlaylistPage()` smoke check. `checkPlaylistPage()` itself: dropped
+the `?engine=controller` param (no longer meaningful) and the "legacy
+playlist.js stayed dormant" step (nothing sets that signal anymore).
+
+**A real, previously-undetected bug surfaced by actually running
+`browser_check.mjs --prod` for real for the first time** (it had only
+ever been syntax-checked before, per this section's Stage 2a/2b entries
+above): the hash round-trip check's "reload" (`page.goto(BASE + url +
+hash1, ...)`) navigated to a URL byte-identical to the one the page was
+already on — per the HTML spec, navigating to a URL differing only by
+fragment (or not at all) is a same-document navigation with no unload/
+load and no JS state reset, verified directly against production (a
+`window` marker set before the `goto()` survived it, but not a
+`page.reload()`). The check had therefore never actually reloaded
+anything; it silently re-read the same live, still-mid-playback
+controller instance from the previous step and always reported `playing:
+true`. Fixed by using `page.reload()` instead of reconstructing the URL.
+This is a distinct issue from the pre-existing `browser_check.mjs` timing
+flake documented in Phase 1's Step 5c entry above (a tight 2.5s playback
+timing assertion) — this one is a same-document-navigation bug in the
+hash round-trip check specifically, not a timing issue, and it now passes
+for real rather than merely not crashing.
+
+`TAG_ORDER`'s home moved from the deleted `playlist.js` to
+`playlist-boot.js`; `PUBLISHING.md`'s two references to it updated
+accordingly (and `manual/index.html`, generated from `PUBLISHING.md`,
+picked up the fix on rebuild). `track-select.js`'s comments describing
+integration with `playlist.js` (the `trackAddButtonHtml()` global
+consumer, the hashchange listener) updated to name `playlist-views.js`/
+`playlist-boot.js` instead. `site_worker.js:173` still has one stale
+`scripts/playlist.js` comment reference — left alone (deploy-infra's
+file, not this initiative's to edit) and flagged for that team to clean
+up whenever they're next in the file.
+
+`test-playlist-state.mjs` had dead-but-green setup/assertions left over
+from the deleted engine-selection mechanism (`win.PLAYLIST_ENGINE =
+'controller'` assignments that nothing read anymore, and an assertion
+message claiming a mount failure meant "`playlist.js` takes over" when
+there both was no `playlist.js` in this test's fixture and, now, no such
+file at all) — removed, and replaced with a real test proving the
+controller mounts unconditionally even when the URL still carries a
+stale `?engine=legacy` param, which the module doesn't read at all
+anymore (proven by construction: the test passes `search: '?engine=legacy'`
+and asserts the mount flag still ends up `true`).
+
+Local suites: **119/119 passing** (`test-player-boot.mjs` 23,
+`test-player-controller.mjs` 26, `test-player-views.mjs` 17,
+`test-playlist-state.mjs` 19 [+1 from the `?engine=legacy`-is-ignored
+test above], `test-playlist-views.mjs` 15). `build.py`, `build.py
+--check`, and `verify_markup.py` (including its own expanded selftest)
+all clean. `browser_check.mjs --prod`: **178/178**, real audio playback,
+real cross-tab `BroadcastChannel` coordination between `/playlist/` and a
+show page, and the hash round-trip fix above all verified against the
+live site — the first time this script has ever been run for real rather
+than syntax-checked.
 
 **What has to move.** `scripts/playlist.js` (868 lines) does eight
 separable jobs; only two are the actual migration:
@@ -1625,7 +1718,13 @@ separable jobs; only two are the actual migration:
 - **2c** — delete `scripts/playlist.js`, after **2+ weeks** of default-on
   production (longer than Phase 1's one-week precedent — saved-playlist
   failure is silent data loss, not a visible error a quick check catches)
-  plus a clean `--prod` run.
+  plus a clean `--prod` run. **Amended 2026-08-15: the soak itself was
+  explicitly waived by Rene** (client-side `savedPlaylists` localStorage
+  is the only realistic blast radius, never audio files or server data);
+  the clean `--prod` run was kept as a hard requirement and closed with a
+  real (not syntax-checked) `browser_check.mjs --prod` pass — see this
+  section's Stage 2c entry above for the full record, including a real
+  bug the first real run of that check surfaced and fixed.
 
 **View layer.** `PlayerView` is the wrong base class — both `#pl-now` and
 `#pl-queue` are queue-scoped, not item-scoped (`PlayerView` binds `this.item`

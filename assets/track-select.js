@@ -6,10 +6,12 @@
 // a different show or the songs matrix, pick more, then commit the whole
 // running selection to a playlist from wherever you are.
 //
-// trackAddButtonHtml() is exposed as a global so songs.js and playlist.js
-// (separate IIFEs, both loaded after this file) can build the same button
-// markup client-side; scripts/sitegen/fragments.py's track_add_button() is
-// the server-side twin — keep the two visually identical by convention.
+// trackAddButtonHtml() is exposed as a global so songs.js (a separate IIFE,
+// loaded after this file) and playlist-views.js (an ES module, reads it off
+// `window` rather than importing it — see its own use of window.trackAddButtonHtml)
+// can build the same button markup client-side; scripts/sitegen/fragments.py's
+// track_add_button() is the server-side twin — keep all three visually
+// identical by convention.
 (function () {
   var STORE_KEY = 'trackSelection';
 
@@ -132,7 +134,7 @@
     if (!selected.length) return;
     var hash = '#p=' + selected.join(',');
     if (location.pathname === '/playlist/') {
-      // playlist.js listens for hashchange and re-hydrates the queue from it —
+      // playlist-boot.js listens for hashchange and re-hydrates the queue from it —
       // this is the "build a new playlist from a selection within an existing
       // playlist" case. Same-value hash (re-adding the exact current queue)
       // wouldn't fire hashchange, but that's a no-op anyway.

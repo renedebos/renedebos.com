@@ -50,9 +50,9 @@ def main():
     # streamed ZIP Response in the browser, no server-side buffering.
     write("assets/client-zip.js", open(os.path.join(here, "vendor", "client-zip.js")).read())
     write("assets/search.js", open(os.path.join(here, "search.js")).read())
-    write("assets/playlist.js", open(os.path.join(here, "playlist.js")).read())
-    # Shared-engine /playlist/ views + boot (Phase 2, Stage 2a) -- separate
-    # from player-views.js/player-boot.js since playlist-views.js must never
+    # /playlist/ views + boot on the shared PlaybackController (Phase 2;
+    # legacy playlist.js deleted in Stage 2c) -- playlist-views.js is
+    # separate from player-views.js/player-boot.js since it must never
     # import WaveSurfer (see its own header comment).
     write("assets/playlist-views.js", open(os.path.join(here, "playlist-views.js")).read())
     write("assets/playlist-boot.js", open(os.path.join(here, "playlist-boot.js")).read())
