@@ -25,6 +25,22 @@ jobs:
             echo "::error::Committed site is stale — run 'python3 scripts/build.py' locally and commit the result."
             exit 1
           fi
+      # Gate 3: the deterministic player-engine suites (player-consolidation
+      # plan §6's long-open "wire the tests into an actual deployment gate"
+      # item, finally done once Phase 1 for show pages went live everywhere).
+      # No npm dependency to install — these import only relative/node: specs
+      # (test-fake-dom.mjs hand-rolls the DOM/media surface they touch) — so
+      # runs/exits clean with nothing but the runner's preinstalled Node.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '20'
+      - name: Player engine test suites
+        run: |
+          for f in scripts/test-*.mjs; do
+            echo "::group::$f"
+            node "$f" || { echo "::error::$f failed"; exit 1; }
+            echo "::endgroup::"
+          done
       # Deploys the renedebos-site Worker (static assets + playlist short-link
       # endpoints, config in wrangler.jsonc) — this is what serves renedebos.com
       # via Worker custom domains. The old hannan-audio Pages project is no

@@ -437,6 +437,54 @@ test('a waveform row upgrades only when active, wraps the shared element, and te
   } finally { c.destroy(); }
 });
 
+// Step 5c-era review finding: _playIndex() calls _notify() (which drives
+// _upgradeWave() -> WaveSurfer.create()) BEFORE audio.play(). An unguarded
+// construction failure there used to throw all the way back up through
+// _notify() and _playIndex(), so audio.play() was never reached -- a
+// waveform-rendering problem silently blocked audio. This proves both the
+// guard in _upgradeWave() (falls back to the inert canvas, doesn't throw)
+// and _notify()'s per-view isolation (one view's exception can't stop
+// _playIndex() from reaching play()).
+test('a WaveSurfer construction failure does not block audio.play() or leave the row broken', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    wsInstances.length = 0;
+    const it = item('t1');
+    const row = trackRow({ waveform: true, num: 1 });
+    const peaks = { p: [0.1, 0.5, 0.9], d: 200 };
+    const view = new CompactPlayerView(row, it, { queueItems: [it], queueIndex: 0, peaks });
+    c.mount(view);
+    // clientWidth is 0 in this fake DOM (documented above _drawInertWave's
+    // real early-return), so the inert-canvas draw itself is out of scope
+    // here same as elsewhere in this suite -- just confirm the fallback path
+    // is actually taken, not that it visibly draws.
+    let drawnFallback = 0;
+    view._drawInertWave = () => { drawnFallback++; };
+
+    FakeWaveSurfer.failNext = true;
+    // Assert SYNCHRONOUSLY, before any microtask runs: _playIndex() calls
+    // _notify() (which fails to build the WaveSurfer here) and THEN
+    // audio.play() in the same synchronous call stack, before the click
+    // dispatch even returns. Waiting for a tick would let FakeAudio.play()'s
+    // queued 'playing' event fire a second, un-failed _notify() and mask
+    // exactly the ordering bug this test exists to catch.
+    assert.doesNotThrow(() => { row.querySelector('.play-btn').dispatch('click'); },
+      'a WaveSurfer construction failure must not escape as an uncaught exception from a click handler');
+
+    assert.equal(audio.paused, false,
+      'audio.play() must still be reached even though the waveform failed to construct');
+    assert.equal(wsInstances.length, 0, 'no WaveSurfer instance was actually created');
+    assert.equal(view._ws, null, 'the view must not hold a half-constructed instance');
+    // >= 1, not a fixed count: _upgradeWave()'s own catch draws it once, and
+    // _setProgress() (later in the same render) also falls back to it
+    // whenever this._ws is null -- both are correct, independent call sites.
+    assert.ok(drawnFallback >= 1, 'falls back to drawing the inert waveform instead of showing nothing');
+
+    await tick(); // let the queued 'playing' event settle so destroy() below is clean
+  } finally { c.destroy(); }
+});
+
 test('waveform tap while paused starts playback first, then seeks (iOS gesture rule)', async () => {
   const audio = new FakeAudio();
   const c = new PlaybackController({ audio, mediaSession: false });

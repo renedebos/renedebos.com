@@ -694,6 +694,11 @@ def build_contact():
 # rollback of one specific page (a page-specific bug, not an architectural
 # one) without reverting the whole rollout -- see plan.md's Step 5a rollback
 # design for why this shape (edit the set + rebuild + PR), not a runtime flag.
+# PARTIAL since Step 5c: with wavesurfer.js gone, an excluded page's
+# waveform track rows have no engine at all (dead, not degraded) -- only the
+# Full Recording card recovers via player.js. This is the accepted tradeoff
+# documented in plan.md's Step 5c entry, not a bug in this mechanism, but a
+# real incident rollback via this set does NOT fully restore the page.
 #
 # The three pages Step 4/5a's browser-pass verification specifically covered
 # for their differing shapes -- still worth knowing if a markup-shape bug

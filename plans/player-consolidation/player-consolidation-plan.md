@@ -868,7 +868,7 @@ during migration, not removed speculatively.
       subscribe/teardown API specified (§2)
 - [x] Migration-parity checklist turned into the two literal lists in §3
 
-### Phase 1 — show pages (in progress)
+### Phase 1 — show pages (complete)
 
 1. [x] `scripts/player-controller.js`, no DOM. Full controller: queue,
        transport, shuffle-tail algorithm, BroadcastChannel registry,
@@ -1191,7 +1191,7 @@ during migration, not removed speculatively.
        overclaims survived — items 1 and 2 are now true exactly as
        originally documented; item 3 is why the browser-pass description
        above reads the way it now does.
-5. [ ] **Restructured per a later Codex review's recommendation** (see that
+5. [x] **Restructured per a later Codex review's recommendation** (see that
        review's "the proposed Step 5 rollout is too compressed" concern in
        `player-consolidation-codex.md`): the original single checklist item
        below bundled "trust the 3-page canary enough to go site-wide" with
