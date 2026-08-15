@@ -1474,7 +1474,7 @@ adaptation work rather than a drop-in. `songs.js`'s lazy re-mount becomes
 call-repeatedly-safely contract as today's `if (player._audio) return;`
 guard.
 
-### Phase 2 — `/playlist/` (Stage 2a live in production behind the canary; Stage 2b not started)
+### Phase 2 — `/playlist/` (Stage 2b: PlaybackController is now the default engine; Stage 2c soak not started)
 
 **Scoping/test-prep pass completed 2026-08-15** (see
 `~/.claude/plans/read-handoff-md-fuzzy-rossum.md` for the working copy this
@@ -1567,9 +1567,21 @@ assets confirmed byte-identical to their `scripts/` sources.
 
 Stage 2a's own "done when" criteria (§ above) are now fully met: parity
 tests pass, `--prod`+param confirmed working, no-param behavior
-unchanged, and Rene has done the manual production pass. **Stage 2b
-(flipping `PLAYLIST_CONTROLLER_ENGINE = True`) has not been started** —
-timing is Rene's call, not gated on anything further from this plan.
+unchanged, and Rene has done the manual production pass.
+
+**Stage 2b: flipped 2026-08-15.** `PLAYLIST_CONTROLLER_ENGINE` is now
+`True` in `pages.py`; the resolver's baked-in default literal in the
+generated markup confirmed flipped `false` → `true`
+(`playlist/index.html`'s resolver snippet). `PlaybackController` is now
+the default engine for every visitor to `/playlist/`; `playlist.js`
+remains loaded as the runtime fallback, and `?engine=legacy` is the
+manual escape hatch — both stay in place through Stage 2c's 2+ week soak
+(decision #4, § above). `build.py`, `verify_markup.py`, and
+`--check-allowlist-coverage` all clean after the flip.
+
+**Stage 2c (deleting `scripts/playlist.js`) has not been started** —
+gated on 2+ weeks of default-on production plus a clean `browser_check.mjs
+--prod` run, per decision #4.
 
 **What has to move.** `scripts/playlist.js` (868 lines) does eight
 separable jobs; only two are the actual migration:
