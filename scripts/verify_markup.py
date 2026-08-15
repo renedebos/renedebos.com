@@ -72,93 +72,59 @@ def check_engine_wiring(rel, src, slug, allowlist):
 
 PLAYLIST_BOOT_TAG = '<script type="module" src="/assets/playlist-boot.js"></script>'
 PLAYLIST_TAG = '<script src="/assets/playlist.js"></script>'
-PLAYLIST_ENGINE_SNIPPET = "window.PLAYLIST_ENGINE='controller'"
-# Matches the literal boolean pages.py's build_playlist() bakes into the
-# resolver's default-decision branch -- see the f-string at
-# `f"if(p==='controller'||(p!=='legacy'&&{'true' if PLAYLIST_CONTROLLER_ENGINE else 'false'}))"`.
-PLAYLIST_DEFAULT_LITERAL_RE = re.compile(r"p!=='legacy'&&(true|false)\)")
+# The old Stage 2a/2b resolver set this property somewhere in an inline
+# <script> before playlist-boot.js -- if any of these three fragments still
+# show up in the page source, some part of the deleted engine-selection
+# dance survived Stage 2c's cleanup (a stray inline snippet, a leftover
+# `?engine=` reference in a comment-adjacent string, etc.).
+PLAYLIST_ENGINE_LEFTOVER_SNIPPETS = ("PLAYLIST_ENGINE", "window.PLAYLIST_ENGINE", "?engine=")
+WORKER_ORIGIN_SNIPPET = "window.WORKER_ORIGIN="
 
 
-def check_playlist_engine_wiring(src, playlist_controller_engine):
-    """The /playlist/ analogue of check_engine_wiring() above, but a
-    single-page boolean rather than an N-page slug-set check -- Step 5b's
-    coverage-checking machinery (CONTROLLER_ENGINE_SLUGS et al.) is built for
-    a catalog of interchangeable show pages and doesn't map to one
-    architecturally distinct page.
+def check_playlist_engine_wiring(src):
+    """The /playlist/ analogue of check_engine_wiring() above -- much
+    simpler than that function since Stage 2c (2026-08-14) deleted the
+    legacy playlist.js engine and its `?engine=`/PLAYLIST_ENGINE resolver:
+    there is now exactly one engine and no runtime selection to verify.
 
-    Two SEPARATE invariants, not one "presence matches the constant" check --
-    that single-check version is wrong for Stage 2a itself: the constant is
-    False there, but the resolver script and playlist-boot.js must both still
-    be present (that's the entire mechanism the `?engine=controller` canary
-    depends on -- the assets have to exist for the param to activate them at
-    runtime). So:
-      (1) the resolver snippet and the boot module always travel together
-          (asset presence -- true in every stage except after the eventual
-          Stage 2c deletion, when both must be ABSENT instead);
-      (2) the resolver's DEFAULT decision (what it emits when no `?engine=`
-          param is present) matches `playlist_controller_engine` -- a
-          build-time string check on the resolver's baked-in literal, not an
-          asset-presence check (fixed 2026-08-15 Codex review: this
-          invariant was documented in this docstring but never actually
-          implemented -- the parameter was accepted and never read, so
-          Stage 2b could flip PLAYLIST_CONTROLLER_ENGINE in pages.py without
-          rebuilding, and this gate would have accepted the stale HTML).
-      (3) window.PLAYLIST_ENGINE_MOUNTED being reachable at all requires the
-          resolver to run before playlist.js, and playlist-boot.js to load
-          after it -- checked positionally, same reasoning as
-          check_engine_wiring()'s player.js ordering checks.
-    playlist.js itself must remain on the page throughout 2a/2b -- it's the
-    runtime fallback.
-
-    Fixed 2026-08-15 (Codex post-deploy review finding #2): invariant (1)
-    used to only fire when has_resolver and has_boot DISAGREED -- if a
-    template regression dropped BOTH the resolver and the boot tag at once
-    (has_resolver == has_boot == False), that comparison is False == False,
-    no error, and every other check lives inside `if has_resolver:` so
-    nothing else caught it either. During 2a/2b (playlist.js still present)
-    both must exist regardless of whether they happen to agree; only after
-    Stage 2c deletes playlist.js is "both absent" the correct state. Gate on
-    PLAYLIST_TAG's presence (the pre-2c/post-2c signal) instead of on
-    has_resolver alone.
+    Invariants:
+      (1) playlist-boot.js -- the only engine now -- must be on the page,
+          and EXACTLY once (a duplicate script tag would double-mount the
+          controller -- playlist-boot.js's own MOUNTED_FLAG guard covers a
+          same-content double-execution at runtime, but a build regression
+          that emits the tag twice is still worth catching here at the
+          source-text level, before it ever reaches a browser).
+      (2) legacy playlist.js must NOT be referenced -- a leftover reference
+          would mean Stage 2c's deletion was reverted or incomplete.
+      (3) no leftover `?engine=`/PLAYLIST_ENGINE resolver wiring anywhere in
+          the page source -- Stage 2c deleted that mechanism entirely, so
+          any trace of it left behind is stale, not just unused.
+      (4) window.WORKER_ORIGIN must still be set -- unrelated to engine
+          selection (it's how playlist-boot.js, a module script, reads
+          player.js's WORKER constant -- see build_playlist()'s comment),
+          but it was previously emitted only inside the resolver script, so
+          the resolver's removal is exactly the kind of edit that could have
+          silently dropped it too.
+    (check_assets_exist() below separately catches playlist-boot.js's tag
+    going stale in the *other* direction -- referencing an asset build.py no
+    longer writes -- so this only needs to check presence/absence/count.)
     """
     errors = []
-    has_resolver = PLAYLIST_ENGINE_SNIPPET in src
-    has_boot = PLAYLIST_BOOT_TAG in src
-    has_legacy = PLAYLIST_TAG in src
-
-    if has_legacy:
-        # Pre-2c: playlist.js is still the runtime fallback, so both the
-        # resolver and the boot module must be present -- the canary
-        # mechanism doesn't work without either one.
-        if not has_resolver or not has_boot:
-            errors.append("/playlist/: engine resolver and playlist-boot.js must both be present "
-                          f"while playlist.js is still shipped (resolver={has_resolver}, boot={has_boot})")
-    else:
-        # Post-2c: playlist.js was deleted, so neither the resolver nor the
-        # boot module should still be emitted.
-        if has_resolver or has_boot:
-            errors.append("/playlist/: playlist.js is gone but the engine resolver and/or "
-                          f"playlist-boot.js are still present (resolver={has_resolver}, boot={has_boot}) "
-                          "-- stale post-Stage-2c wiring")
-    if has_resolver and has_legacy:
-        if src.index(PLAYLIST_ENGINE_SNIPPET) > src.index(PLAYLIST_TAG):
-            errors.append("/playlist/: engine resolver must come BEFORE playlist.js")
-        if has_boot and src.index(PLAYLIST_BOOT_TAG) < src.index(PLAYLIST_TAG):
-            errors.append("/playlist/: playlist-boot.js must load after playlist.js")
-
-    if has_resolver:
-        m = PLAYLIST_DEFAULT_LITERAL_RE.search(src)
-        if not m:
-            errors.append("/playlist/: could not find the resolver's default-decision literal to verify "
-                          "(pages.py's resolver template may have changed shape)")
-        else:
-            emitted_default = m.group(1) == "true"
-            if emitted_default != bool(playlist_controller_engine):
-                errors.append(
-                    f"/playlist/: resolver's baked-in default is {emitted_default} but "
-                    f"PLAYLIST_CONTROLLER_ENGINE is {bool(playlist_controller_engine)!r} -- "
-                    "the page is stale, rebuild with scripts/build.py")
-
+    boot_count = src.count(PLAYLIST_BOOT_TAG)
+    if boot_count == 0:
+        errors.append("/playlist/: playlist-boot.js is missing -- it's the only playback engine now")
+    elif boot_count > 1:
+        errors.append(f"/playlist/: playlist-boot.js's script tag appears {boot_count} times -- expected exactly 1")
+    if PLAYLIST_TAG in src:
+        errors.append("/playlist/: legacy playlist.js is still referenced -- "
+                      "it was deleted in Stage 2c, this is stale wiring")
+    for snippet in PLAYLIST_ENGINE_LEFTOVER_SNIPPETS:
+        if snippet in src:
+            errors.append(f"/playlist/: found leftover engine-resolver wiring ({snippet!r}) -- "
+                          "the `?engine=`/PLAYLIST_ENGINE dance was deleted in Stage 2c")
+    if WORKER_ORIGIN_SNIPPET not in src:
+        errors.append("/playlist/: window.WORKER_ORIGIN is not set -- "
+                      "playlist-boot.js/playlist-views.js need it to reach the download worker")
     return errors
 
 
@@ -240,13 +206,13 @@ def check():
     errors, n_track, n_rec, n_pages = [], 0, 0, 0
 
     sys.path.insert(0, os.path.join(ROOT, "scripts"))
-    from sitegen.pages import CONTROLLER_ENGINE_SLUGS, CONTROLLER_ENGINE_EXCLUDED_SLUGS, PLAYLIST_CONTROLLER_ENGINE
+    from sitegen.pages import CONTROLLER_ENGINE_SLUGS, CONTROLLER_ENGINE_EXCLUDED_SLUGS
     from sitegen.core import PUBLIC_SHOWS
 
     playlist_page = os.path.join(ROOT, "playlist", "index.html")
     if os.path.exists(playlist_page):
         playlist_src = open(playlist_page).read()
-        errors += check_playlist_engine_wiring(playlist_src, PLAYLIST_CONTROLLER_ENGINE)
+        errors += check_playlist_engine_wiring(playlist_src)
         errors += check_assets_exist("playlist/index.html", playlist_src)
     else:
         errors.append("no generated /playlist/ page found -- run scripts/build.py first")
@@ -448,58 +414,36 @@ def _selftest():
     assert any("show-does-not-exist" in e for e in bad_exclusion), \
         f"expected an error naming show-does-not-exist, got {bad_exclusion}"
 
-    # check_playlist_engine_wiring()'s invariant (2), fixed 2026-08-15 (Codex
-    # review) after the parameter was accepted but never actually checked.
-    # Both mismatch directions, plus the matching case for each literal.
-    def _playlist_html(default_literal):
-        return (
-            f"<script>(function(){{var p=new URLSearchParams(location.search).get('engine');"
-            f"if(p==='controller'||(p!=='legacy'&&{default_literal}))"
-            f"window.PLAYLIST_ENGINE='controller';window.WORKER_ORIGIN='https://x';}})();</script>\n"
-            + PLAYLIST_TAG + "\n" + PLAYLIST_BOOT_TAG
-        )
+    # check_playlist_engine_wiring() post-Stage-2c: single-engine reality --
+    # playlist-boot.js must be present exactly once, legacy playlist.js and
+    # any leftover engine-resolver wiring must not be, WORKER_ORIGIN must be.
+    def _clean_page():
+        return f"<script>window.WORKER_ORIGIN='https://x';</script>\n{PLAYLIST_BOOT_TAG}"
 
-    matching_false = check_playlist_engine_wiring(_playlist_html("false"), False)
-    assert matching_false == [], f"expected no errors when both are False, got {matching_false}"
+    clean = check_playlist_engine_wiring(_clean_page())
+    assert clean == [], f"expected no errors on a clean single-engine page, got {clean}"
 
-    matching_true = check_playlist_engine_wiring(_playlist_html("true"), True)
-    assert matching_true == [], f"expected no errors when both are True, got {matching_true}"
+    missing_boot = check_playlist_engine_wiring("<p>no engine wiring here</p>")
+    assert any("playlist-boot.js is missing" in e for e in missing_boot), \
+        f"expected an error when playlist-boot.js is absent, got {missing_boot}"
 
-    stale_true_page = check_playlist_engine_wiring(_playlist_html("true"), False)
-    assert any("resolver's baked-in default is True" in e for e in stale_true_page), \
-        f"expected a mismatch error (page says True, constant is False), got {stale_true_page}"
+    duplicate_boot = check_playlist_engine_wiring(_clean_page() + f"\n{PLAYLIST_BOOT_TAG}")
+    assert any("appears 2 times" in e for e in duplicate_boot), \
+        f"expected an error when playlist-boot.js's tag is duplicated, got {duplicate_boot}"
 
-    stale_false_page = check_playlist_engine_wiring(_playlist_html("false"), True)
-    assert any("resolver's baked-in default is False" in e for e in stale_false_page), \
-        f"expected a mismatch error (page says False, constant is True), got {stale_false_page}"
+    stale_legacy = check_playlist_engine_wiring(f"{PLAYLIST_TAG}\n{_clean_page()}")
+    assert any("legacy playlist.js is still referenced" in e for e in stale_legacy), \
+        f"expected an error when legacy playlist.js is still on the page, got {stale_legacy}"
 
-    # Fixed 2026-08-15 (Codex post-deploy review finding #2): a template
-    # regression that drops BOTH the resolver and playlist-boot.js at once
-    # (has_resolver == has_boot == False) used to slip past every check in
-    # this function -- invariant (1) only fired on disagreement, and every
-    # other check lived inside `if has_resolver:`. During 2a/2b, with
-    # playlist.js still on the page, that combination must be flagged.
-    both_missing_pre_2c = check_playlist_engine_wiring(PLAYLIST_TAG, False)
-    assert any("must both be present" in e for e in both_missing_pre_2c), \
-        f"expected an error when playlist.js ships alone with no resolver/boot, got {both_missing_pre_2c}"
+    stale_resolver = check_playlist_engine_wiring(
+        f"<script>if(new URLSearchParams(location.search).get('engine')==='legacy')"
+        f"window.PLAYLIST_ENGINE='controller';</script>\n{_clean_page()}")
+    assert any("leftover engine-resolver wiring" in e for e in stale_resolver), \
+        f"expected an error for leftover PLAYLIST_ENGINE/?engine= wiring, got {stale_resolver}"
 
-    # The mirror case: only one of the pair present (not both, not neither)
-    # while playlist.js is still shipped.
-    resolver_only = check_playlist_engine_wiring(
-        f"<script>window.PLAYLIST_ENGINE='controller';</script>\n{PLAYLIST_TAG}", False)
-    assert any("must both be present" in e for e in resolver_only), \
-        f"expected an error when only the resolver is present, got {resolver_only}"
-
-    # Post-2c (playlist.js deleted): resolver/boot must both be ABSENT.
-    # Leftover wiring after the deletion is a real regression, not the
-    # "both present" case invariant (1) already covers.
-    post_2c_clean = check_playlist_engine_wiring("<p>no playlist engine here</p>", False)
-    assert post_2c_clean == [], f"expected no errors once playlist.js and its wiring are all gone, got {post_2c_clean}"
-
-    post_2c_leftover = check_playlist_engine_wiring(
-        f"<script>window.PLAYLIST_ENGINE='controller';</script>\n{PLAYLIST_BOOT_TAG}", False)
-    assert any("stale post-Stage-2c wiring" in e for e in post_2c_leftover), \
-        f"expected an error for leftover resolver/boot wiring after playlist.js is deleted, got {post_2c_leftover}"
+    missing_worker_origin = check_playlist_engine_wiring(PLAYLIST_BOOT_TAG)
+    assert any("WORKER_ORIGIN is not set" in e for e in missing_worker_origin), \
+        f"expected an error when WORKER_ORIGIN is missing, got {missing_worker_origin}"
 
 
 def main():

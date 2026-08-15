@@ -6,11 +6,20 @@
 review-hardened, and live in production** — see git history / the plan's
 Phase 1 section for that work; not repeated here.
 
-**Phase 2 (`/playlist/` migration) is now through Stage 2b — the new
-engine is the default for every visitor, not just a canary.** Stage 2c
-(deleting the legacy fallback) has not started.
+**Phase 2 (`/playlist/` migration) is now fully complete — Stage 2c
+deleted the legacy `playlist.js` engine and its `?engine=` resolver the
+same day Stage 2b shipped.** Rene explicitly waived the originally-planned
+2+ week soak (the only realistic blast radius is client-side
+`savedPlaylists` localStorage, never audio files or server-side data) but
+did NOT waive the real-browser gate — `browser_check.mjs --prod` was run
+for real (not just syntax-checked, for the first time ever) after
+installing `playwright-chromium` into this environment, and a genuine bug
+that run surfaced was fixed before it passed clean. See "Done this
+session" below and the plan doc's Phase 2 section for the full record.
+**Not yet committed or pushed — this needs a review pass and Rene's
+go-ahead before it ships.**
 
-## ✅ Done this session — Phase 2, start to Stage 2b
+## ✅ Done this session — Phase 2, start to Stage 2c (complete)
 
 1. **Scoped Phase 2** (Explore + Plan agents, then a Codex review of the
    design itself, verified line-by-line before folding into the plan —
@@ -76,32 +85,71 @@ engine is the default for every visitor, not just a canary.** Stage 2c
    now loads the controller engine, `?engine=legacy` still works.
    `playlist.js` stays loaded as the runtime fallback through Stage 2c.
 
-Local suites: **99/99 passing** (`test-player-boot.mjs` 23,
+8. **Stage 2c: implemented same day, soak explicitly waived by Rene**
+   (client-side `savedPlaylists` localStorage is the only realistic blast
+   radius, never audio files or server data — see the plan doc's Phase 2
+   section for the full reasoning). The real-browser gate was kept, not
+   waived: installed `playwright-chromium` into this environment (it
+   wasn't here before) and ran `browser_check.mjs --prod` for real against
+   production for the first time ever (previously only syntax-checked).
+   - Deleted `scripts/playlist.js`/`assets/playlist.js` and the entire
+     `?engine=`/`window.PLAYLIST_ENGINE` resolver mechanism — `pages.py`'s
+     `build_playlist()`, `PLAYLIST_CONTROLLER_ENGINE`, and
+     `playlist-boot.js`'s auto-run gate all simplified to unconditional.
+   - `verify_markup.py`'s `check_playlist_engine_wiring()` rewritten for
+     single-engine reality (playlist-boot.js present exactly once, legacy
+     playlist.js and any leftover resolver wiring text absent,
+     `window.WORKER_ORIGIN` still set) with an expanded selftest.
+   - Storage dual-write: confirmed moot by construction — there was never
+     actual dual-write code, only a comment explaining why the flat key
+     stayed canonical; that comment is now simply accurate.
+   - `browser_check.mjs`'s `runPlaylistBreakageTest()` **deleted outright**
+     (not retargeted to a fake "graceful degradation" assertion — a Codex
+     review of that plan correctly called out that asserting "no mount
+     flag, no crash" after removing the only engine just blesses a dead
+     page as a pass, not a real test; a missing `playlist-boot.js` is
+     already caught by `verify_markup.py`/`build.py`'s asset checks and
+     the real smoke check). `checkPlaylistPage()` lost the
+     `?engine=controller` param and the legacy-dormancy step.
+   - **A real bug surfaced by actually running the check for real**: the
+     hash round-trip check's `page.goto()` "reload" navigated to a URL
+     byte-identical to the current one, which per the HTML spec is a
+     same-document navigation with no JS state reset — verified directly
+     against production. The check had never actually reloaded anything;
+     fixed by using `page.reload()` instead. Distinct from the pre-existing
+     `browser_check.mjs` timing flake noted in the plan doc's Phase 1
+     section (that one's a tight playback-timing assertion; this one was a
+     navigation-semantics bug in the check itself).
+   - `TAG_ORDER`'s home moved to `playlist-boot.js`; `PUBLISHING.md`'s two
+     references repointed there (`manual/index.html` picks it up on
+     rebuild — it's generated from `PUBLISHING.md`, not hand-edited).
+     `track-select.js`'s comments about integrating with `playlist.js`
+     updated to name `playlist-views.js`/`playlist-boot.js`.
+   - `site_worker.js:173` still has one stale `scripts/playlist.js`
+     comment — **left alone** (that file is deploy-infra's territory, not
+     this initiative's) and flagged here for that team to clean up.
+   - `test-playlist-state.mjs`: removed dead `window.PLAYLIST_ENGINE`
+     setup and a stale "playlist.js takes over" assertion message; added a
+     real test proving the controller mounts unconditionally even with a
+     stale `?engine=legacy` param on the URL (the module doesn't read
+     `location.search` at all anymore).
+
+Local suites: **119/119 passing** (`test-player-boot.mjs` 23,
 `test-player-controller.mjs` 26, `test-player-views.mjs` 17,
-`test-playlist-state.mjs` 18, `test-playlist-views.mjs` 15). `build.py`,
-`verify_markup.py`, `--check-allowlist-coverage` all clean throughout.
-`browser_check.mjs`'s new `checkPlaylistPage()`/`runPlaylistBreakageTest()`
-are still syntax-checked only — no `playwright-chromium` in this
-environment, never run for real.
+`test-playlist-state.mjs` 19, `test-playlist-views.mjs` 15). `build.py`,
+`build.py --check`, and `verify_markup.py` all clean. `browser_check.mjs
+--prod`: **178/178** for real (first real run ever) — real playback, real
+cross-tab `BroadcastChannel` coordination between `/playlist/` and a show
+page, and the hash round-trip fix above all verified against the live
+site.
 
 ## 🔧 Next up
 
-**Stage 2c — delete `scripts/playlist.js`** (and its generated
-`assets/playlist.js`), remove the `?engine=legacy` branch, drop the
-storage dual-write consideration (moot now — only one engine writes),
-simplify `verify_markup.py`'s wiring check, retarget the two
-`browser_check.mjs` checks that still treat `/playlist/` as a legacy
-reference point. **Gated on 2+ weeks of default-on production plus a
-clean `browser_check.mjs --prod` run** (decision #4 from the scoping
-pass — longer than Phase 1's one-week precedent, because silent
-saved-playlist data loss wouldn't necessarily show up in a quick check).
-**Do not start this before 2026-08-29** without Rene explicitly
-shortening the soak.
-
-Nothing else is queued. If Rene wants `browser_check.mjs` actually run
-for real (not just syntax-checked) before Stage 2c, that needs
-`playwright-chromium` installed in whatever environment does the check —
-not available here.
+Phase 2 is done. **Nothing from this session is committed or pushed yet**
+— it needs a review pass (Codex + Rene) before it ships; do that before
+starting anything else. After that: Phase 3 (`/player/` popup) is
+"not started," not scoped for this session, and not queued — see the plan
+doc for its outline if picked up later.
 
 ## Gotchas learned this session
 
@@ -142,15 +190,20 @@ not available here.
   string** — Phase 2 deliberately kept it unchanged (see the plan's
   scoping section); no upgrade until Phase 3 (`/player/` migration) lets
   every participant change together.
-- **The flat `savedPlaylists` localStorage key is the single canonical
-  store through Stages 2a–2c** — a versioned `v2` envelope is deliberately
-  deferred to a dedicated post-2c stage, once `playlist.js` is gone and
-  there's only one writer (see the plan's storage-schema section for why
-  a dual-write design was rejected).
-- **`syncHash()` drops the `?engine=` query param when the queue empties**
-  — known, real, deliberately left alone as legacy parity (see review
-  round 2, finding #1). If this is ever fixed, fix it in the new engine
-  only — `playlist.js` is going away in Stage 2c, not worth touching.
+- **The flat `savedPlaylists` localStorage key is still the canonical
+  store, now post-2c** — `playlist.js` is deleted and `playlist-boot.js`
+  is the only writer, so the reconciliation problem that motivated
+  deferring a versioned `v2` envelope is gone. A `v2` envelope is now
+  unblocked if anyone wants to pick it up, but nobody has asked for it —
+  don't treat this as queued work, just as no-longer-blocked.
+- **`syncHash()` still drops the whole query string (not just an
+  `?engine=` param — there's no such param anymore) when the queue
+  empties**, via `win.history.replaceState(null, '', win.location.pathname)`.
+  This used to specifically matter for `?engine=legacy`/`?engine=controller`;
+  now that those are gone it's a much lower-stakes generic quirk (any
+  other query param a visitor arrived with gets dropped too). Not fixed as
+  part of Stage 2c — nobody has asked for it, and it was never confirmed
+  as a real problem beyond the now-moot engine-param case.
 - Branch/worktree workflow: sync with `git fetch origin && git merge
   origin/main` at session start and before a PR.
 

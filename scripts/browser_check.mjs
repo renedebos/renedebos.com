@@ -458,12 +458,12 @@ async function runParityPass(browser, allShows, heavyCheckSlugs) {
     await playlistPage.close();
   }
 
-  // Real engine-to-engine half (Stage 2a addition, plans/player-consolidation/
-  // Phase 2): both directions, with REAL playback on both sides, against
-  // /playlist/?engine=controller specifically -- the synthetic check above
-  // only proves a show page reacts to a claim, not that /playlist/'s own
-  // controller instance participates correctly on either side of the
-  // exchange once it's the one actually playing.
+  // Real engine-to-engine half (plans/player-consolidation/ Phase 2): both
+  // directions, with REAL playback on both sides, against /playlist/
+  // specifically -- the synthetic check above only proves a show page
+  // reacts to a claim, not that /playlist/'s own controller instance
+  // participates correctly on either side of the exchange once it's the one
+  // actually playing.
   {
     const showPage = await ctx.newPage();
     await showPage.goto(BASE + '/shows/jerry-cafe-java-1999-05-27/', { waitUntil: 'load' });
@@ -472,14 +472,14 @@ async function runParityPass(browser, allShows, heavyCheckSlugs) {
     await showPage.waitForTimeout(1500);
 
     const playlistPage = await ctx.newPage();
-    await playlistPage.goto(BASE + '/playlist/?engine=controller', { waitUntil: 'load' });
+    await playlistPage.goto(BASE + '/playlist/', { waitUntil: 'load' });
     await playlistPage.waitForFunction(() => window.PLAYLIST_ENGINE_MOUNTED === true, null, { timeout: 15000 });
     await playlistPage.locator('.pl-preset[data-preset="mixed45"]').click();
     await playlistPage.waitForTimeout(1500);
 
     const showPlayingBefore = await showPage.evaluate(() => !window.PLAYER_BOOT.controller.audioElement.paused);
     const playlistPlayingAfter = await playlistPage.evaluate(() => window.PLAYLIST_BOOT.controller.state === 'playing');
-    record('cross-tab (real, show -> playlist): starting real playback on /playlist/?engine=controller pauses the show page',
+    record('cross-tab (real, show -> playlist): starting real playback on /playlist/ pauses the show page',
       showPlayingBefore === false, `showPlaying(afterPlaylistStarted)=${showPlayingBefore}`);
     record('cross-tab (real, show -> playlist): /playlist/ itself keeps playing (its own claim must not self-pause)',
       playlistPlayingAfter === true, `playlistState=${playlistPlayingAfter}`);
@@ -487,7 +487,7 @@ async function runParityPass(browser, allShows, heavyCheckSlugs) {
     await showPage.locator('.track-list [data-item]').first().locator('.play-btn').click();
     await showPage.waitForTimeout(1500);
     const playlistPausedAfter = await playlistPage.evaluate(() => window.PLAYLIST_BOOT.controller.audioElement.paused);
-    record('cross-tab (real, playlist -> show): a claim from the show page pauses /playlist/?engine=controller',
+    record('cross-tab (real, playlist -> show): a claim from the show page pauses /playlist/',
       playlistPausedAfter === true, `playlistPaused=${playlistPausedAfter}`);
 
     await showPage.close();
@@ -497,14 +497,13 @@ async function runParityPass(browser, allShows, heavyCheckSlugs) {
   await ctx.close();
 }
 
-// Dedicated /playlist/?engine=controller checks (Phase 2 Stage 2a of
-// plans/player-consolidation/). One function, not a HEAVY_CHECK_SLUGS entry
-// -- that tiering exists to avoid streaming real audio 30 times for
-// interchangeable show pages, which doesn't apply to one architecturally
-// distinct page. Follows this file's own conventions: record() pass/fail,
-// isRemote-gated prod-only checks, a breakage test on the local temp copy.
+// Dedicated /playlist/ checks (plans/player-consolidation/ Phase 2). One
+// function, not a HEAVY_CHECK_SLUGS entry -- that tiering exists to avoid
+// streaming real audio 30 times for interchangeable show pages, which
+// doesn't apply to one architecturally distinct page. Follows this file's
+// own conventions: record() pass/fail, isRemote-gated prod-only checks.
 async function checkPlaylistPage(context) {
-  const url = '/playlist/?engine=controller';
+  const url = '/playlist/';
   const page = await context.newPage();
   const consoleErrors = [];
   page.on('console', (m) => { if (m.type() === 'error' && !KNOWN_UNRELATED_CSP_WARNING.test(m.text())) consoleErrors.push(m.text()); });
@@ -512,7 +511,8 @@ async function checkPlaylistPage(context) {
 
   await page.goto(BASE + url, { waitUntil: 'load' });
 
-  // 1. Mount.
+  // 1. Mount. playlist-boot.js is the only engine now (Stage 2c deleted the
+  // legacy playlist.js fallback) and mounts unconditionally at parse time.
   await page.waitForFunction(() => window.PLAYLIST_ENGINE_MOUNTED === true, null, { timeout: 15000 });
   const mountInfo = await page.evaluate(() => ({
     hasBoot: !!window.PLAYLIST_BOOT, hasController: !!(window.PLAYLIST_BOOT && window.PLAYLIST_BOOT.controller),
@@ -520,29 +520,39 @@ async function checkPlaylistPage(context) {
   record(`${url}: mount (flag set, controller exposed on PLAYLIST_BOOT)`,
     mountInfo.hasBoot && mountInfo.hasController, JSON.stringify(mountInfo));
 
-  // 2. Legacy dormancy -- positively observable, not inferred from absence:
-  // playlist.js is patched (via addInitScript, before any page script runs)
-  // to record if its own init path ever executes.
-  const legacyRan = await page.evaluate(() => window.__legacyPlaylistRan === true);
-  record(`${url}: legacy playlist.js stayed dormant`, legacyRan !== true, `legacyRan=${legacyRan}`);
-
-  // 3. Catalog fetch landed and the generator is usable.
+  // 2. Catalog fetch landed and the generator is usable.
   await page.waitForFunction(() => {
     const b = document.getElementById('pl-generate');
     return !!b && !b.disabled;
   }, null, { timeout: 15000 });
 
-  // 4. Real playback via a preset.
+  // 3. Real playback via a preset.
   await page.locator('.pl-preset[data-preset="mixed45"]').click();
   await page.waitForTimeout(2000);
   const timeText = (await page.locator('#pl-now .pl-time-current').textContent().catch(() => null) || '').trim();
   record(`${url}: real playback (preset click -> #pl-now time advances)`,
     timeText !== '' && timeText !== '0:00', `time=${timeText}`);
 
-  // 5. Hash round-trip: reload at the hash the queue just wrote and confirm
+  // 4. Hash round-trip: reload at the hash the queue just wrote and confirm
   // the same ids in the same order, cued (not autoplaying).
+  //
+  // Found while running this for real for the first time (2026-08-15, Stage
+  // 2c real-browser gate): `page.goto(BASE + url + hash1, ...)` here used to
+  // navigate to a URL that is BYTE-IDENTICAL to the one the page is already
+  // on (hash1 was just read from that same location.hash) -- per the HTML
+  // spec, navigating to a URL differing only by fragment (or not at all) is
+  // a same-document navigation: no unload/load, no JS state reset. Verified
+  // directly against production: `goto()` to an identical URL leaves an
+  // arbitrary `window` marker set beforehand untouched, while `page.reload()`
+  // reliably clears it. So the old version never actually reloaded anything
+  // -- it re-read the SAME live controller instance (still mid-playback from
+  // step 3 above) and always reported `playing: true`, which is why this
+  // never caught anything: `browser_check.mjs` had never been run for real
+  // before now (no playwright-chromium in this environment until today).
+  // `page.reload()` forces a real reload regardless of the URL/fragment
+  // matching, so use that instead of reconstructing the URL.
   const hash1 = await page.evaluate(() => location.hash);
-  await page.goto(BASE + url + hash1, { waitUntil: 'load' });
+  await page.reload({ waitUntil: 'load' });
   await page.waitForFunction(() => window.PLAYLIST_ENGINE_MOUNTED === true, null, { timeout: 15000 });
   await page.waitForTimeout(1000);
   const roundTrip = await page.evaluate(() => ({
@@ -554,7 +564,7 @@ async function checkPlaylistPage(context) {
     roundTrip.hash === hash1 && roundTrip.queueIds.length > 0 && roundTrip.playing === false,
     JSON.stringify(roundTrip));
 
-  // 6. Saved playlist: save, reload, load it back, delete it.
+  // 5. Saved playlist: save, reload, load it back, delete it.
   await page.evaluate(() => { window.prompt = () => 'Browser check set'; window.confirm = () => true; });
   await page.locator('#pl-save').click();
   await page.waitForTimeout(300);
@@ -583,45 +593,14 @@ async function checkPlaylistPage(context) {
   const afterDelete = await page.evaluate(() => JSON.parse(localStorage.getItem('savedPlaylists') || '[]').length);
   record(`${url}: saved playlist deletes`, afterDelete === 0, `remaining=${afterDelete}`);
 
-  // 7. track-select.js's "+" buttons are still wired against the new markup.
+  // 6. track-select.js's "+" buttons are still wired against the new markup.
   const addBtnCount = await page.locator('#pl-queue .track-add').count();
   record(`${url}: track-select.js's "+" buttons are present on queue rows`, addBtnCount > 0, `count=${addBtnCount}`);
 
-  // 8. Console clean.
+  // 7. Console clean.
   record(`${url}: no console errors`, consoleErrors.length === 0, consoleErrors.join(' | '));
 
   await page.close();
-}
-
-// Renames assets/playlist-boot.js in a temp copy and confirms playlist.js
-// takes over with real legacy playback -- the /playlist/ analogue of
-// runBreakageTests' Test A, called from the same temp-copy section.
-async function runPlaylistBreakageTest(browser, copyDir, base) {
-  const path = join(copyDir, 'assets', 'playlist-boot.js');
-  renameSync(path, path + '.disabled');
-  try {
-    const testCtx = await browser.newContext();
-    const page = await testCtx.newPage();
-    await page.goto(base + '/playlist/?engine=controller', { waitUntil: 'load' });
-    await page.waitForTimeout(1000);
-    const flagState = await page.evaluate(() => ({ flag: window.PLAYLIST_ENGINE_MOUNTED, hasBoot: !!window.PLAYLIST_BOOT }));
-    record('playlist breakage: missing playlist-boot.js never sets the mounted flag',
-      flagState.flag === undefined && !flagState.hasBoot, JSON.stringify(flagState));
-
-    await page.waitForFunction(() => {
-      const b = document.getElementById('pl-generate');
-      return !!b && !b.disabled;
-    }, null, { timeout: 15000 });
-    await page.locator('.pl-preset[data-preset="mixed45"]').click();
-    await page.waitForTimeout(2000);
-    const timeText = (await page.locator('#pl-now .pl-time-current').textContent().catch(() => null) || '').trim();
-    record('playlist breakage: legacy playlist.js drives real playback when the module 404s',
-      timeText !== '' && timeText !== '0:00', `time=${timeText}`);
-
-    await testCtx.close();
-  } finally {
-    renameSync(path + '.disabled', path);
-  }
 }
 
 async function runBreakageTests(browser, copyDir, base) {
@@ -945,7 +924,7 @@ try {
 
   await runParityPass(browser, ALL_SHOWS, HEAVY_CHECK_SLUGS);
 
-  // /playlist/?engine=controller -- Phase 2 Stage 2a. Runs unconditionally
+  // /playlist/ (plans/player-consolidation/ Phase 2). Runs unconditionally
   // (both local and --prod), same BASE either way.
   {
     const plCtx = await browser.newContext();
@@ -959,18 +938,22 @@ try {
     await checkNonAllowlistedPagesUnaffected(ctx);
     await ctx.close();
   } else {
-    // Isolated copy for the breakage tests -- assets/+shows/+playlist/ only
-    // (everything the generated pages actually reference), on a SEPARATE
-    // port, so this script never renames a file inside the real working tree.
+    // Isolated copy for the breakage tests -- assets/+shows/ only (everything
+    // the show-page breakage scenarios reference; /playlist/ no longer has a
+    // fallback-engine breakage scenario to test now that legacy playlist.js
+    // is gone -- see Stage 2c of plans/player-consolidation/: a missing
+    // playlist-boot.js is just a broken deploy, already caught by
+    // verify_markup.py/build.py's asset-existence checks and by the real
+    // /playlist/ smoke check above, not something worth a fake "graceful
+    // failure" assertion), on a SEPARATE port, so this script never renames a
+    // file inside the real working tree.
     const copyDir = mkdtempSync(join(tmpdir(), 'player-consolidation-browser-check-'));
     cpSync(join(ROOT, 'assets'), join(copyDir, 'assets'), { recursive: true });
     cpSync(join(ROOT, 'shows'), join(copyDir, 'shows'), { recursive: true });
-    cpSync(join(ROOT, 'playlist'), join(copyDir, 'playlist'), { recursive: true });
     const copyPort = PORT + 1;
     const copyServer = await startServer(copyDir, copyPort);
     try {
       await runBreakageTests(browser, copyDir, `http://127.0.0.1:${copyPort}`);
-      await runPlaylistBreakageTest(browser, copyDir, `http://127.0.0.1:${copyPort}`);
     } finally {
       copyServer.kill();
       rmSync(copyDir, { recursive: true, force: true });

@@ -1,28 +1,25 @@
-// Page bootstrap for /playlist/ running the shared player engine (Phase 2 of
-// plans/player-consolidation/, Stage 2a).
+// Page bootstrap for /playlist/, running on the shared PlaybackController
+// (Phase 2 of plans/player-consolidation/). This is now the only playback
+// engine on the page -- the legacy playlist.js engine and its
+// `?engine=`/PLAYLIST_ENGINE resolver dance were deleted in Stage 2c
+// (2026-08-14); this module mounts unconditionally at parse time (see the
+// auto-run block at the bottom of this file).
 //
-// ── how engine selection works ──
-// Mirrors player-boot.js's gate exactly: a build-time resolver script emits
-// `window.PLAYLIST_ENGINE = 'controller'` inline BEFORE playlist.js when
-// either the build constant or a `?engine=controller` param asks for it
-// (see pages.py's build_playlist()) — playlist.js sees that flag and defers
-// its own init to DOMContentLoaded, checking PLAYLIST_ENGINE_MOUNTED first.
 // This module is a module script, so it runs after the document is parsed
 // but before DOMContentLoaded — it mounts the controller inside a try/catch
-// and sets PLAYLIST_ENGINE_MOUNTED only on success. Any failure (a 404 on
-// this asset, a parse error, a thrown exception during mount) leaves the
-// flag unset, and playlist.js initializes normally — a real runtime
-// fallback, not just a deploy-time rollback (same rationale as
-// player-boot.js's own header comment).
+// and sets the MOUNTED_FLAG only on success, so other code (tests,
+// browser_check.mjs) can observe a successful mount rather than assuming
+// one. A mount failure (a parse error, a thrown exception) is logged and
+// otherwise silent — there is no fallback engine to hand off to anymore, so
+// the page simply stays inert; see the plan doc's Stage 2c section for why
+// that's an acceptable failure mode this late in the rollout.
 //
 // ── the async wrinkle show pages don't have ──
 // The catalog fetch (/assets/tracks.json) is asynchronous, but the mounted
 // flag has to be set before DOMContentLoaded. Resolution: the flag is set on
 // synchronous mount of the SHELL (controller constructed, views mounted,
 // every DOM listener wired) — never on catalog arrival. A catalog-fetch
-// failure then degrades exactly the way legacy playlist.js does today (a
-// status-line message), rather than falling back to a legacy engine that
-// would immediately hit the same failing fetch. This is a deliberate
+// failure then degrades to a status-line message. This is a deliberate
 // divergence from player-boot.js, where everything mountable is synchronous.
 import { PlaybackController } from '/assets/player-controller.js';
 import { itemFromCatalogRow, PlaylistQueueView, PlaylistNowPlayingView, ARTIST_NAMES } from '/assets/playlist-views.js';
@@ -87,8 +84,9 @@ function sanitizeFilename(s) {
 
 // Mounts one controller and the two queue-scoped views + a boot-level
 // hash-sync subscriber over the /playlist/ markup. Throws if the required
-// elements are missing (playlist.js is the runtime fallback) rather than
-// mounting a half-working engine — mirrors player-boot.js's bootShowPage().
+// elements are missing, rather than mounting a half-working engine (there is
+// no fallback engine to catch the failure anymore, see the auto-run block's
+// header comment below) — mirrors player-boot.js's bootShowPage().
 export function bootPlaylistPage(doc, win) {
   const filtersEl = doc.getElementById('pl-filters');
   const lengthEl = doc.getElementById('pl-length');
@@ -401,12 +399,12 @@ export function bootPlaylistPage(doc, win) {
   // Everything below is ONE transaction: constructing/mounting the views,
   // wiring every DOM listener, and kicking off the catalog fetch. On ANY
   // throw, abort + destroy before rethrowing, so a partial mount never
-  // leaves a live controller/views/listeners behind for playlist.js's
-  // fallback to collide with (Codex review, Phase 2 Stage 2a, finding #1 --
-  // the original version only wrapped the three controller.mount() calls,
-  // leaving all DOM wiring and the fetch kickoff unprotected; mirrors
-  // player-boot.js's bootShowPage(), which wraps mounting AND decoration
-  // wiring in one try, returning `handle` from inside it).
+  // leaves a stray live controller/views/listeners behind (Codex review,
+  // Phase 2 Stage 2a, finding #1 -- the original version only wrapped the
+  // three controller.mount() calls, leaving all DOM wiring and the fetch
+  // kickoff unprotected; mirrors player-boot.js's bootShowPage(), which
+  // wraps mounting AND decoration wiring in one try, returning `handle`
+  // from inside it).
   try {
     const queueView = new PlaylistQueueView(queueEl, { catalogById, getMode: () => mode });
     const nowView = new PlaylistNowPlayingView(nowEl, { catalogById });
@@ -648,12 +646,16 @@ export function bootPlaylistPage(doc, win) {
 }
 
 // ── auto-run ─────────────────────────────────────────────────────────────
-if (typeof window !== 'undefined' && window.PLAYLIST_ENGINE === 'controller'
-    && !window[MOUNTED_FLAG]) {
+// Unconditional as of Stage 2c -- this is the only engine on the page now,
+// so there's no `?engine=`/PLAYLIST_ENGINE flag to check and no legacy
+// engine to defer to. The `!window[MOUNTED_FLAG]` guard stays: it keeps a
+// second load of this module (e.g. a stray duplicate <script> tag) from
+// mounting a second controller instance on top of the first.
+if (typeof window !== 'undefined' && !window[MOUNTED_FLAG]) {
   try {
     window.PLAYLIST_BOOT = bootPlaylistPage(document, window);
     window[MOUNTED_FLAG] = true;
   } catch (e) {
-    console.error('[playlist-boot] controller mount failed, falling back to the legacy playlist engine', e);
+    console.error('[playlist-boot] controller mount failed', e);
   }
 }

@@ -307,7 +307,7 @@ question:
 | Question | Where |
 |---|---|
 | What tags are allowed to exist at all? | `TAGS.md` (the rules) + `TAG_VOCAB` in `scripts/sitegen/core.py` (enforced at build — an unlisted tag fails the integrity check) |
-| Which of those tags show up as filter chips on `/playlist/`? | `TAG_ORDER` in `scripts/playlist.js` — a curated, ordered subset; a tag can be valid and simply not offered as a filter |
+| Which of those tags show up as filter chips on `/playlist/`? | `TAG_ORDER` in `scripts/playlist-boot.js` — a curated, ordered subset; a tag can be valid and simply not offered as a filter |
 | Which tags does a given track actually carry? | the track's `tags: [...]` array in `data/recordings.json`, editable via `make edit` |
 
 The vocabulary currently holds 20 tags across five groups (provenance,
@@ -323,7 +323,7 @@ To add or retire a tag:
    at roughly 20 tags or fewer.
 2. Update `TAG_VOCAB` in `scripts/sitegen/core.py` to match, or the next
    build's integrity check fails on any track already carrying the tag.
-3. Decide whether it belongs in `TAG_ORDER` (`scripts/playlist.js`) as a
+3. Decide whether it belongs in `TAG_ORDER` (`scripts/playlist-boot.js`) as a
    playlist filter, or stays search-only.
 4. Rebuild + push — `assets/tracks.json` (the playlist's data source) and
    every page that surfaces tags are generated from the catalog.

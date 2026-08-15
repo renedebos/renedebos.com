@@ -74,7 +74,6 @@ function catalogRow(id, extra = {}) {
 async function boot({ hash = '', search = '', storage = {}, catalogFail = false } = {}) {
   const { doc } = playlistDoc();
   const win = new FakeWindow({ hash, search });
-  win.PLAYLIST_ENGINE = 'controller';
   win.WORKER_ORIGIN = 'https://wav-download.renedebos.workers.dev';
   win.history = { replaceState: (s, t, url) => { win.location.hash = (url || '').startsWith('#') ? url : ''; win.location.pathname = (url || '').startsWith('#') ? win.location.pathname : url; } };
   win.location.pathname = '/playlist/';
@@ -111,18 +110,33 @@ test('mounts and sets the flag synchronously; catalog arrives later', async () =
   } finally { if (c) c.destroy(); }
 });
 
+// Stage 2c (2026-08-14) deleted the legacy playlist.js engine and its
+// `?engine=`/PLAYLIST_ENGINE resolver -- playlist-boot.js is now the only
+// engine and mounts unconditionally, with no window.PLAYLIST_ENGINE flag to
+// check. A stale `?engine=legacy` link (bookmarked, shared, or cached from
+// before the deletion) must not do anything special -- the module doesn't
+// read location.search at all anymore, so this proves that by construction
+// rather than by absence of a crash.
+test('mounts unconditionally even with a stale ?engine=legacy param on the URL', async () => {
+  const { win, c } = await boot({ search: '?engine=legacy' });
+  try {
+    assert.equal(win.PLAYLIST_ENGINE_MOUNTED, true,
+      'a leftover ?engine=legacy param must be ignored -- there is no engine selection anymore');
+    assert.ok(c, 'the controller must still mount normally');
+  } finally { if (c) c.destroy(); }
+});
+
 test('a thrown mount failure leaves the flag unset (bootPlaylistPage propagates, does not swallow)', async () => {
   const { doc } = playlistDoc();
   doc.getElementById('pl-queue').remove(); // required element missing
   const win = new FakeWindow({});
-  win.PLAYLIST_ENGINE = 'controller';
   globalThis.document = doc;
   globalThis.window = win;
   globalThis.localStorage = fakeStorage();
   globalThis.fetch = () => Promise.resolve({ json: () => Promise.resolve([]) });
   await loadPlaylistBoot();
   assert.equal(win.PLAYLIST_ENGINE_MOUNTED, undefined,
-    'the auto-run block must catch the throw and leave the flag unset so playlist.js takes over');
+    'the auto-run block must catch the throw and leave the flag unset -- there is no fallback engine to hand off to anymore, the page just stays inert');
 });
 
 // Codex review finding (Phase 2 Stage 2a, 2026-08-14): the transactional
@@ -137,7 +151,6 @@ test('a thrown mount failure leaves the flag unset (bootPlaylistPage propagates,
 test('a mount failure AFTER views are already mounted still tears everything down (not just the missing-markup case)', async () => {
   const { doc } = playlistDoc();
   const win = new FakeWindow({});
-  win.PLAYLIST_ENGINE = 'controller';
   win.WORKER_ORIGIN = 'https://x';
   globalThis.document = doc;
   globalThis.window = win;
