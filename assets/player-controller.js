@@ -220,7 +220,14 @@ export class PlaybackController {
     if (this._destroyed) return 0;
     const existing = new Set(this._queue.map(t => t.id));
     const fresh = items.map(normalizeItem).filter(t => !existing.has(t.id));
-    if (fresh.length) { this._queue = this._queue.concat(fresh); this._notify(); }
+    if (fresh.length) {
+      this._queue = this._queue.concat(fresh);
+      // Keep the shuffle-off restore snapshot in sync -- otherwise an item
+      // appended while shuffle is on survives in _queue but vanishes the
+      // moment toggleShuffle() restores from a snapshot that never got it.
+      if (this._unshuffledQueue) this._unshuffledQueue = this._unshuffledQueue.concat(fresh);
+      this._notify();
+    }
     return fresh.length;
   }
 
@@ -452,6 +459,12 @@ export class PlaybackController {
         try { navigator.mediaSession.setActionHandler(action, null); } catch (e) { /* unsupported action */ }
       });
       navigator.mediaSession.metadata = null;
+      // audio.pause() above fired 'pause', but its listener was already
+      // removed by _abort.abort() a moment earlier, so it never ran
+      // _syncMediaPlaybackState() -- left uncorrected here, the lock screen
+      // would keep reporting "playing" for a controller that no longer
+      // exists. 'none' (not 'paused'), since there's no session at all now.
+      navigator.mediaSession.playbackState = 'none';
     }
     this._destroyed = true;
   }
@@ -538,8 +551,16 @@ export class PlaybackController {
     };
   }
 
+  // Isolated per view: _playIndex() calls this BEFORE audio.play() (see its
+  // ordering note), so an exception escaping one view's render (e.g. a
+  // WaveSurfer construction failure) must not stop the others from updating
+  // or propagate back up and block play() itself. Same principle as
+  // player-boot.js's attachPeaks() isolating one row's setPeaks() failure.
   _notify() {
     const snapshot = this.snapshot();
-    this._views.forEach(v => v.onControllerUpdate(snapshot));
+    this._views.forEach(v => {
+      try { v.onControllerUpdate(snapshot); }
+      catch (e) { console.error('[player-controller] a view threw from onControllerUpdate', e); }
+    });
   }
 }

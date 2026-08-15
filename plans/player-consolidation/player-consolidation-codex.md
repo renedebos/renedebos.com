@@ -1734,3 +1734,29 @@ NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs --skip-webkit → 155/
 ```
 
 Ready to push/PR/merge as far as this review is concerned.
+
+### Step 5c production verification — 2026-08-15
+
+PR #5 (`88df4f8`/`9461e48`, merge commit `1a19160`) merged and deployed
+(Action `31857142955`, green). `browser_check.mjs --prod --skip-webkit`
+against all 30 live show pages: **166/167**, one failure investigated and
+confirmed to be a **pre-existing false failure in the check script**, not a
+regression from this step:
+
+`/playlist/ real legacy playback works` asserts the now-playing time text
+isn't `0:00` after a 2.5s wait. Reproduced directly with a standalone
+Playwright script against production: the time reads `0:00` at 1s,
+`0:01` at 2s — playback genuinely starts and advances correctly, it just
+crosses zero slightly after the check's 2.5s window on a colder run.
+`/playlist/` and `playlist.js` are untouched by this step's diff (only
+`wavesurfer.js`, `player.js` comments, `pages.py` comments, `site.css`,
+`browser_check.mjs`'s A3/dormancy checks, `gen_peaks.py` comments, and
+`player-dev.md` changed). Not fixed here — out of scope for Step 5c, a
+tight-timing assertion pre-dating this PR, tracked as a known flake rather
+than blocking this step's completion.
+
+Also spot-checked: `curl -sI https://renedebos.com/lab/wavesurfer/` → 404
+(expected, the page is deleted); `curl -s https://renedebos.com/shows/jerry-cafe-java-1999-05-27/`
+contains no reference to `/assets/wavesurfer.js`.
+
+**Step 5c is done.**

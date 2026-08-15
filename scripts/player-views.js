@@ -328,6 +328,7 @@ export class PlayerView {
 
   _upgradeWave() {
     if (this._ws || !this.waveContainer || !this.peaks || !this.controller) return;
+    const hadCanvas = this._canvas;
     if (this._canvas) { this._canvas.remove(); this._canvas = null; }
 
     // `media` wraps the controller's element rather than creating a second
@@ -335,34 +336,48 @@ export class PlayerView {
     // that element alone on destroy(). No `url` is passed — the controller has
     // already assigned src by the time this runs (see _playIndex's ordering
     // note), so WaveSurfer adopts the existing source instead of clearing it.
-    this._ws = WaveSurfer.create({
-      container: this.waveContainer,
-      media: this.controller.audioElement,
-      peaks: this.peaks.p ? [this.peaks.p] : undefined,
-      duration: this.peaks.d,
-      height: WAVE_HEIGHT,
-      waveColor: TRACK,
-      progressColor: ACCENT,
-      cursorColor: ACCENT,
-      cursorWidth: 1,
-      barWidth: 2,
-      barGap: 1,
-      barRadius: 2,
-      normalize: true,
-      dragToSeek: true,
-    });
+    //
+    // Guarded: this runs synchronously inside the controller's _notify(),
+    // BEFORE _playIndex() calls audio.play() (see that method's ordering
+    // note) — an unguarded construction failure here would throw all the
+    // way back up through _notify() and silently prevent audio.play() from
+    // ever being called. Waveform enhancement is a nicety; it must fail
+    // independently of native playback (Step 5c-era review finding).
+    try {
+      this._ws = WaveSurfer.create({
+        container: this.waveContainer,
+        media: this.controller.audioElement,
+        peaks: this.peaks.p ? [this.peaks.p] : undefined,
+        duration: this.peaks.d,
+        height: WAVE_HEIGHT,
+        waveColor: TRACK,
+        progressColor: ACCENT,
+        cursorColor: ACCENT,
+        cursorWidth: 1,
+        barWidth: 2,
+        barGap: 1,
+        barRadius: 2,
+        normalize: true,
+        dragToSeek: true,
+      });
 
-    // Seek-on-tap, iOS-safe. With precomputed peaks the audio loads lazily, and
-    // iOS Safari won't load a media element outside a user gesture — so a tap
-    // while paused has nothing to seek (readyState 0). Starting playback from
-    // the tapped position within the same gesture makes it load and seek
-    // reliably; on desktop this matches how players like SoundCloud behave.
-    this._ws.on('interaction', (newTime) => {
-      const c = this.controller;
-      if (!c) return;
-      if (c.state === 'playing') { c.seek(newTime); return; }
-      Promise.resolve(c.play()).then(() => c.seek(newTime)).catch(() => {});
-    });
+      // Seek-on-tap, iOS-safe. With precomputed peaks the audio loads lazily,
+      // and iOS Safari won't load a media element outside a user gesture — so
+      // a tap while paused has nothing to seek (readyState 0). Starting
+      // playback from the tapped position within the same gesture makes it
+      // load and seek reliably; on desktop this matches how players like
+      // SoundCloud behave.
+      this._ws.on('interaction', (newTime) => {
+        const c = this.controller;
+        if (!c) return;
+        if (c.state === 'playing') { c.seek(newTime); return; }
+        Promise.resolve(c.play()).then(() => c.seek(newTime)).catch(() => {});
+      });
+    } catch (e) {
+      console.error('[player-views] WaveSurfer upgrade failed, falling back to inert waveform', e);
+      this._ws = null;
+      if (hadCanvas || this.waveContainer) this._drawInertWave();
+    }
   }
 
   _teardownWave() {

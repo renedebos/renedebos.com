@@ -173,7 +173,17 @@ export class FakeAudio extends EventTarget {
 
 export const wsInstances = [];
 export class FakeWaveSurfer {
-  static create(opts) { const ws = new FakeWaveSurfer(opts); wsInstances.push(ws); return ws; }
+  // A test sets this to simulate a real construction failure (e.g. a corrupt
+  // peaks buffer, an unsupported codec) -- consumed once, so it targets
+  // exactly the next create() call rather than breaking every test after it.
+  static failNext = false;
+  static create(opts) {
+    if (FakeWaveSurfer.failNext) {
+      FakeWaveSurfer.failNext = false;
+      throw new Error('synthetic WaveSurfer.create failure');
+    }
+    const ws = new FakeWaveSurfer(opts); wsInstances.push(ws); return ws;
+  }
   constructor(opts) { this.opts = opts; this.destroyed = false; this._on = {}; }
   on(evt, fn) { (this._on[evt] ||= []).push(fn); }
   emit(evt, arg) { (this._on[evt] || []).forEach(fn => fn(arg)); }

@@ -166,6 +166,26 @@ test('toggleShuffle preserves played history and restores exact original order o
   } finally { c.destroy(); }
 });
 
+// Step 5c-era review finding: appendQueue() only pushed onto _queue, never
+// onto _unshuffledQueue -- so an item appended while shuffle was ON survived
+// in the live (shuffled) queue but was never in the snapshot toggleShuffle()
+// restores from, and vanished the instant shuffle was turned back off.
+test('appendQueue keeps an item added while shuffled from vanishing on shuffle-off', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    c.setQueue(['a', 'b'].map(id => item(id)), { startIndex: 0 }); // 'a' current
+    c.toggleShuffle();
+    assert.equal(c.appendQueue([item('c')]), 1, 'a genuinely new id is appended');
+    assert.ok(c.queue.some(t => t.id === 'c'), 'appended item is in the live (shuffled) queue');
+
+    c.toggleShuffle(); // shuffle off -- restores from the pre-shuffle snapshot
+    assert.ok(c.queue.some(t => t.id === 'c'),
+      'an item appended while shuffled must still be present after shuffle is turned back off');
+    assert.equal(c.queue.length, 3, 'no item silently dropped');
+  } finally { c.destroy(); }
+});
+
 // ── 5. removal/reorder around the current index ───────────────────────────
 test('removeAt adjusts currentIndex correctly depending on position relative to it', async () => {
   const audio = new FakeAudio();
@@ -480,6 +500,29 @@ test('a browser that rejects an unsupported Media Session action still construct
       'one unsupported lock-screen action must not abort the whole controller');
     assert.ok(handlers.play && handlers.pause, 'the supported actions still register');
     c.destroy();
+  } finally { globalThis.navigator = originalNav; }
+});
+
+// Step 5c-era review finding: destroy() called _abort.abort() (removing the
+// 'pause' listener that calls _syncMediaPlaybackState()) BEFORE audio.pause()
+// -- so pausing during teardown never updated navigator.mediaSession's
+// playbackState, leaving the OS lock screen reporting "playing" for a
+// controller that no longer exists.
+test('destroy() leaves the lock screen reporting no active session, not stale "playing"', async () => {
+  const originalNav = globalThis.navigator;
+  globalThis.navigator = {
+    mediaSession: { metadata: null, playbackState: 'none', setActionHandler() {} },
+  };
+  try {
+    const audio = new FakeAudio();
+    const c = new PlaybackController({ audio });
+    c.setQueue([item('a')], { startIndex: 0, autoplay: true });
+    await tick();
+    assert.equal(navigator.mediaSession.playbackState, 'playing');
+
+    c.destroy();
+    assert.equal(navigator.mediaSession.playbackState, 'none',
+      'teardown must clear the lock screen\'s reported state, not leave it stuck at "playing"');
   } finally { globalThis.navigator = originalNav; }
 });
 
