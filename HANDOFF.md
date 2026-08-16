@@ -13,12 +13,19 @@ against `renedebos.com`: `/assets/playlist.js` 404s, `/playlist/` serves
 only `playlist-boot.js`. Nothing further queued for Phase 2.
 
 **Phase 3 (sticky in-page mini-player) — Stage 3a-foundation is COMPLETE,
-review-hardened, and COMMITTED** (`ba23c76`, on top of `bf59f10`). Working
-tree is clean. Not yet pushed / no PR opened. The cross-tab ownership
-subsystem that was mid-redesign at the last handoff is now fully
-implemented and has survived **twelve** review rounds; the review loop was
-deliberately closed out (see "Why the review loop stopped"). Nothing in
-this stage ships user-visible UI — that starts at 3a-canary.
+review-hardened, MERGED, and VERIFIED LIVE IN PRODUCTION** (PR #15, plus
+PR #16 fixing a CI-only test failure). The cross-tab ownership subsystem
+that was mid-redesign at the last handoff is now fully implemented and has
+survived **twelve** review rounds; the review loop was deliberately closed
+out (see "Why the review loop stopped"). Nothing in this stage ships
+user-visible UI — that starts at 3a-canary. The one user-facing change is
+song pages moving onto the shared `PlaybackController`, verified working
+in production.
+
+**One commit sits on the branch, unmerged: `825b3aa`** — fixes two stale
+`browser_check.mjs` assertions (see "Two incidents" below). It touches only
+that dev script, nothing shipped, so it can ride along with 3a-canary's PR
+rather than needing one of its own.
 
 ## ✅ Done this session
 
@@ -83,6 +90,41 @@ round 11's finding; round 9's directly caused round 10's), and round 12
 confirms nothing High/Medium remains. The validation this module needs now
 is **a real consumer**, not a thirteenth adversarial pass.
 
+### Shipping it — and two incidents worth reading
+
+Merged PR #15, then **the deploy Action failed at the test gate**. The
+"Deploy renedebos-site Worker" step was correctly *skipped*, so production
+was never touched — the gate did its job. Two separate things surfaced,
+neither of them a bug in shipped code:
+
+**1. A test that only failed on CI's Node.** Three "no lock provider"
+tests asserted `typeof globalThis.navigator === 'undefined'` as a premise
+check. That holds on Node 20 (local) but not Node 24 (CI's
+`ubuntu-latest` default; `deploy.yml` deliberately does not pin it — see
+its comment for why). The module keys off `navigator.locks`, which no Node
+version ships, so the fail-closed behavior was always correct on CI too;
+only the premise-check was wrong. The test's own comment had *predicted*
+this exact failure and it was not acted on. Fixed in PR #16 by controlling
+the global explicitly (`withNavigator()` helper, `defineProperty` since
+Node ≥21's `navigator` is getter-only), covering both lock-less shapes,
+plus new coverage for the real browser path (a genuine `navigator.locks`
+present with no injected provider) that nothing tested before. Verified by
+simulating Node 24 locally: old code reproduces CI's exact 116/117, new
+code passes.
+
+**2. Two browser_check assertions that contradicted the design.** The
+first real production run of the song-page migration failed two checks on
+song pages. Investigated as a possible live regression before anything
+else — it was the *checks* that were wrong. Both asserted that song
+occurrences accumulate into a growing shared queue; the plan's
+**Queue-origin contract** assigns them `playSingleton()` semantics, and
+`song-boot.js`'s own header says "every occurrence row is its own length-1
+singleton queue, never merged with any other row's." The checks had
+conflated *shared controller* with *shared queue*. Verified empirically
+against production first (queue 0 at mount → 1 after playing a row → still
+1 after a second row, audio advancing each time — exactly the contract),
+then rewrote the assertions. Fix is `825b3aa`, still on the branch.
+
 ## 🔧 Next up — Stage 3a-canary
 
 Mini-player container + script **always emitted**, with a
@@ -114,6 +156,24 @@ stub).
 
 ## Gotchas learned this session
 
+- **"All tests pass" is scoped to the runtime you ran them on.** Local is
+  Node 20; CI is Node 24. A green local run said nothing about three tests
+  whose premise was a Node-20-only fact, and the failure only appeared
+  after merging. When a test asserts something about the *environment*
+  rather than the code, control the environment explicitly instead of
+  asserting the ambient one — and when a test comment says "this will need
+  updating if X", treat that as a to-do, not a note. Simulating the other
+  runtime locally (`node --import` a small preload that defines the
+  global) reproduced CI exactly and made the fix verifiable before pushing.
+- **A failing check on freshly-deployed code is not automatically a
+  regression — but treat it as one until proven otherwise.** The two
+  song-page failures looked exactly like a live breakage in the thing that
+  had just shipped. The right order was: check user impact first (real
+  playback passed), reproduce locally (it did — so not a deploy artifact),
+  then read the design docs before touching either the code or the test.
+  The docs settled it. Don't reach for "the test must be stale" early;
+  reach for it only with the contract in hand and an empirical check
+  against production.
 - **When a test's name makes a strong claim, prove it fails without the
   fix.** Round 12 caught two tests that asserted something the *pre-fix*
   code would equally have satisfied — a residual-documenting test that
@@ -153,6 +213,17 @@ stub).
   basics, deep-link autoplay, WaveSurfer failure blast radius, the
   controller's `<audio>` element never being pre-appended, the flat
   `savedPlaylists` key, `syncHash()`'s query-string-dropping quirk).
+- **Song occurrences are `playSingleton()`, deliberately — the queue does
+  NOT accumulate across rows.** Per the plan's **Queue-origin contract**
+  table and `song-boot.js`'s own header: mounting a row attaches a
+  `PlayerView` and enqueues nothing, so an un-played song page correctly
+  has an empty queue; playing a row replaces the queue with a length-1
+  singleton. This preserves legacy behavior (occurrence rows never
+  auto-advanced into each other). "All performances of this song" is
+  explicitly *a deliberate later decision, not a side effect*. Two
+  `browser_check.mjs` assertions once claimed the opposite and failed
+  against production; they were the thing that was wrong. **Don't
+  "restore" them.**
 - **The tab-collision handshake is no longer "out of scope, keep as-is"** —
   that was true through round 9 and is now stale. Rounds 10–11 changed it:
   `isTabProbeCollision()` **dropped its `myNonce` parameter** and treats
@@ -199,13 +270,25 @@ declined / already-handled, with reproduction evidence), and what shipped.
 reference and should not be treated as current.
 
 Tests: `node scripts/test-*.mjs` — 8 files, of which `test-fake-dom.mjs`
-is a helper rather than a suite. **260/260 passing** as of this handoff
-(117 of them in `test-miniplayer-state.mjs`). Also clean: `python3
-scripts/build.py`, `--check`, `python3 scripts/verify_markup.py
---check-allowlist-coverage`, `node --check` on both edited JS files, zero
-null bytes, and `cmp scripts/miniplayer-state.js assets/miniplayer-state.js`.
-Real-browser verification: `scripts/browser_check.mjs` (needs
-`playwright-chromium`; `--prod` points it at `https://renedebos.com`).
+is a helper rather than a suite. **262/262 passing** as of this handoff
+(119 of them in `test-miniplayer-state.mjs`), on **both** Node 20 and a
+simulated Node 24. Also clean: `python3 scripts/build.py`, `--check`,
+`python3 scripts/verify_markup.py --check-allowlist-coverage`, `node
+--check`, zero null bytes, and `cmp scripts/miniplayer-state.js
+assets/miniplayer-state.js`.
+
+Real-browser verification: `scripts/browser_check.mjs` — needs
+`playwright-chromium`, and on this machine it is a **global** install, so
+run it as `NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs`
+(the script's own error message tells you this too). `--prod` points it at
+`https://renedebos.com`. **185/185 against production** as of this handoff.
+
+Production verification done after the 3a-foundation deploy (the runbook's
+"a green Action alone isn't proof" step): `/assets/miniplayer-state.js`
+and `/assets/song-boot.js` both 200 and byte-identical to source; song
+pages reference `song-boot.js` with the legacy fallback intact; `/`,
+`/songs/`, `/playlist/`, `/search/`, `/history/`, `/archive-data/` all
+200; `/assets/playlist.js` still 404 (PR #14 regression check).
 
 Also outstanding, unrelated to Phase 3: Rene wants to set up **custom
 skills** (`~/.claude/skills/` or a project `.claude/skills/`) — neither
