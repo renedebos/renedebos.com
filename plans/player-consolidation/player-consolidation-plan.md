@@ -2246,6 +2246,54 @@ is kept as construction, not as a tested property, and the code says so: the
 coordinator will soon feed this view metadata restored from storage, which
 is where a same-id, same-state title change becomes reachable.
 
+**Third review round, 2026-08-16** (`-codex.md`, "…third-round review") —
+four findings, all confirmed, all fixed; **two of them were defects in the
+second round's own fixes**, which is this loop's documented stopping signal
+and the reason Task 2's review sequence ends here. What it changed:
+- **`isSitePath()`/`boundedPath()` now resolve with the URL parser**, not by
+  inspecting characters. The character check accepted four values that a
+  real parser resolves **off-origin**: `/\evil.test/x` (backslash is a path
+  separator for special schemes) and a tab, CR or LF before the second slash
+  (all stripped before parsing, leaving `//evil.test/`). Both boundaries
+  parse against a sentinel origin on the reserved `.invalid` TLD and compare
+  origins. **The second round's "only root-relative paths survive" claim was
+  false as written; this is what makes it true.**
+- **`date` joined `venue` in the persisted codec.** Same gap, one field over,
+  found one round later. The invariant now written at the codec: *if
+  `MiniPlayerView` renders a field, this projection carries it.*
+- **A view must abort its outgoing `AbortController` when re-attached.**
+  `PlaybackController.mount()` calls `onAttach()` even for a view already in
+  its set, so a duplicate mount left two live click handlers — one click
+  toggled twice and looked like a dead control.
+- **Never call `play()` on an element that was not paused** (the mini-player
+  and `/playlist/`'s `_prev()`), and, at the controller, **never leave
+  `'loading'` set for a replay that neither reloads nor transitions**.
+
+**The harness was the real finding, though.** `FakeAudio.play()` fired
+`play`/`playing` unconditionally, and assigning `src` did not pause — neither
+is what the platform does (WHATWG's internal play steps fire only on a
+paused → playing transition; the media load algorithm sets `paused` to true).
+Modelling both rules turned five tests red across four suites, and each red
+was informative rather than noise: four were tests that had been relying on
+the lie, and the fifth was a **live bug on `/playlist/`** — pressing Prev on
+track 1 of a playing queue left `#pl-now` stuck in its loading presentation
+for the rest of the track, shipped since Phase 2 with a green test the whole
+time. It also exposed a **nondeterministic** failure (~1 run in 20) that
+turned out to be a real `player-controller.js` defect: replaying the current
+item on an unpaused element assigns no `src`, so no load and no `play` event
+follow, and the controller sat in `'loading'` forever — reachable via
+repeat-one's replay and via `/playlist/`'s endless rollover when the reshuffle
+puts the just-finished track back at index 0. **A fake that asserts
+transitions the platform does not make is worse than no fake**; both fakes
+(the shared harness and `test-player-controller.mjs`'s own) now model the two
+rules, and a harness-contract test pins them so they cannot be quietly
+simplified back.
+
+Three files outside Task 2 changed as a result — `player-controller.js`,
+`playlist-views.js`, and the two fakes. All four are on shipped surfaces, all
+are small and directly tested, and all nine mutations for this round's fixes
+are caught by a named test.
+
 **Review round, 2026-08-16** (`-codex.md`, "Stage 3a-canary Phase 0 and Task
 1 review") — five findings, all confirmed and all fixed. Two changed work
 this section had already marked complete, which is why the status words

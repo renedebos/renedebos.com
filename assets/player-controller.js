@@ -810,14 +810,32 @@ export class PlaybackController {
     // holding an error won't recover on play() alone, and the src it failed on
     // is the same string we'd otherwise skip reassigning.
     if (retrying) this._currentSrc = null;
-    if (this._currentSrc !== item.streamUrl) {
+    const reloading = this._currentSrc !== item.streamUrl;
+    if (reloading) {
       this._currentSrc = item.streamUrl;
       this.audio.src = item.streamUrl;
       if (retrying && this.audio.load) this.audio.load();
     }
     this._updateMediaMetadata();
     this._notify();
+    // Captured BEFORE play(), which sets paused = false synchronously.
+    const wasUnpaused = !this.audio.paused;
     const p = this.audio.play();
+    // 'loading' above assumes a `playing` event is coming to clear it. Neither
+    // half of that is guaranteed when we replay the SAME source on an element
+    // that was never paused: no src assignment means no load at all, and
+    // WHATWG's internal play steps fire play/playing only on a paused ->
+    // playing transition, so an element that is merely `ended` (ended does not
+    // set paused) gets seeked back and resumed silently. The controller would
+    // then sit in 'loading' forever while audio played — reproduced on two
+    // paths: repeat-one's replay of the current item, and /playlist/'s endless
+    // rollover when the reshuffle happens to put the just-finished track first.
+    // Found 2026-08-16 only after the test harness stopped firing those events
+    // unconditionally; see test-fake-dom.mjs's FakeAudio.
+    if (!reloading && wasUnpaused && this._state === 'loading') {
+      this._setState('playing');
+      this._notify();
+    }
     if (p && p.catch) {
       return p.catch(err => { if (gen === this._gen) this._handleError(err); });
     }

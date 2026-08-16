@@ -243,12 +243,37 @@ test('PlaylistNowPlayingView prev button: <=3s at queue start (index 0) restarts
   c.mount(view);
   c.setQueue(rows.map(itemFromCatalogRow), { startIndex: 0, autoplay: true });
   await new Promise((r) => setTimeout(r, 0));
-  c.audioElement.currentTime = 1; // under 3s
+  c.audioElement.duration = 200;   // seek() no-ops without a finite duration
+  c.audioElement.currentTime = 1;  // under 3s
   const prevBtn = root.querySelector('[data-act="prev"]');
   root.dispatch('click', { target: prevBtn });
   await new Promise((r) => setTimeout(r, 0));
   assert.equal(c.currentIndex, 0, 'must stay on track 1, not go negative/no-op');
   assert.equal(c.state, 'playing', 'restarting track 1 must actually (re)start playback, not just seek');
+  assert.equal(c.audioElement.currentTime, 0, 'and it must genuinely restart, not just carry on');
+  c.destroy();
+});
+
+// The guard added 2026-08-16: play() on an element that was never paused fires
+// no play/playing event, so an unconditional call left #pl-now stuck in its
+// loading presentation. player-controller.js now corrects that state itself,
+// which is why this test asserts the property that is still view-local — a
+// needless play() attempt mints an ownership 'play-attempt' the coordinator
+// would have to reason about, and clears lastPlayError as a side effect.
+test('PlaylistNowPlayingView prev at index 0 while playing does not mint a fresh play attempt', async () => {
+  const c = makeController();
+  const rows = [catalogRow('a'), catalogRow('b')];
+  const root = new FakeElement('div');
+  c.mount(new PlaylistNowPlayingView(root, { catalogById: catalogById(rows) }));
+  c.setQueue(rows.map(itemFromCatalogRow), { startIndex: 0, autoplay: true });
+  await new Promise((r) => setTimeout(r, 0));
+  c.audioElement.duration = 200;   // seek() no-ops without a finite duration
+  c.audioElement.currentTime = 1;
+  const seqBefore = c.snapshot().ownershipSeq;
+  root.dispatch('click', { target: root.querySelector('[data-act="prev"]') });
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(c.snapshot().ownershipSeq, seqBefore);
+  assert.equal(c.audioElement.currentTime, 0, 'while still restarting the track');
   c.destroy();
 });
 

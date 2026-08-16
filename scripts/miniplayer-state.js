@@ -86,17 +86,34 @@ function boundedString(v, max) {
 // all. Only same-origin ROOT-RELATIVE paths survive — every real pageUrl in
 // this project is one ("/shows/<slug>/#track-N", "/songs/<slug>/"; verified
 // across the generated markup and the whole track catalog), so the rule costs
-// nothing and rejects every scheme, protocol-relative "//host" and off-origin
-// address in a single check. Anything else becomes '', which the view renders
-// as a title with no href at all.
+// nothing. Anything else becomes '', which the view renders as a title with no
+// href at all.
+//
+// **Resolved with the URL parser, not by inspecting characters.** The first
+// version of this function required a leading "/" and rejected a literal second
+// one, which is not the question a browser answers: "/\evil.test/x" resolves to
+// https://evil.test/x (backslash is a path separator for special schemes), and a
+// tab, CR or LF before the second slash is STRIPPED before parsing, so
+// "/<TAB>/evil.test/" is protocol-relative by the time it matters. All four
+// passed the character check and were reproduced resolving off-origin. Parsing
+// against a sentinel origin asks the browser's own question instead of
+// approximating it; the sentinel uses the reserved .invalid TLD so it can never
+// collide with a real origin. URL is a standard global in both browsers and
+// Node, so the module stays DOM-free and testable exactly as before.
 //
 // Applied on BOTH the write and read paths, and again at the render boundary
 // in miniplayer-views.js. Belt and braces is deliberate here: a value that
 // executes is not the kind of thing to leave to one layer.
+const PATH_SENTINEL_ORIGIN = 'https://miniplayer.invalid';
+
 function boundedPath(v, max) {
   const s = boundedString(v, max);
   if (s.charCodeAt(0) !== 47) return '';        // must start with '/'
-  if (s.charCodeAt(1) === 47) return '';        // but "//host" is protocol-relative, i.e. off-origin
+  try {
+    if (new URL(s, PATH_SENTINEL_ORIGIN).origin !== PATH_SENTINEL_ORIGIN) return '';
+  } catch (e) {
+    return '';                                  // unparseable is not a site path either
+  }
   return s;
 }
 
@@ -121,20 +138,28 @@ function finiteNonNegative(v, fallback) {
 // anything else on the site could have written it) rather than build-time-
 // bounded markup.
 //
-// `venue` was added 2026-08-16, and the omission is worth recording because
-// of HOW it happened: this comment's "omits every field a mini-bar never
-// renders" was accurate when it was written in Stage 3a-foundation, and Task
-// 2's MiniPlayerView — which renders "artist · venue · date" — silently
-// falsified it a stage later. Every view test built its fixtures directly, so
-// nothing crossed this codec and the suite stayed green while a restored
-// session rendered "Jerry Hannan · 1999-05-27" with the venue gone. A field
-// this codec drops is invisible until something renders it; when a consumer
-// starts rendering a new field, check this list.
+// `venue` and `date` were both added 2026-08-16 — venue first, then date one
+// review round later, which is the part worth recording. This comment's "omits
+// every field a mini-bar never renders" was accurate when it was written in
+// Stage 3a-foundation, and Task 2's MiniPlayerView — which renders
+// "artist · venue · date" — silently falsified it a stage later. Every view
+// test built its fixtures directly, so nothing crossed this codec and the suite
+// stayed green while a restored session rendered "Jerry Hannan · 1999-05-27"
+// with the venue gone.
 //
-// No ENVELOPE_VERSION bump: an envelope written before this decodes with
-// venue absent, which yields null — exactly what a genuinely venue-less item
-// yields — so old and new envelopes are both handled by the same read path
-// with no migration.
+// Fixing venue alone then left `date` in exactly the same state one field over:
+// the view falls back to it when dateDisplay is null, and a round trip turned
+// such an item into "unknown date". No current producer populates one without
+// the other (checked: all 1,427 generated items carry dateDisplay), so that one
+// was a contract gap rather than a live regression — but "omits only what the
+// bar never renders" had by then been wrong twice. **The invariant to hold: if
+// MiniPlayerView renders a field, this projection carries it.** When a consumer
+// starts rendering a new field, come back here.
+//
+// No ENVELOPE_VERSION bump for either: an envelope written before them decodes
+// with the field absent, which yields null — exactly what a genuinely
+// venue-less or date-less item yields — so old and new envelopes are both
+// handled by the same read path with no migration.
 export function encodeItem(item) {
   if (!item || typeof item !== 'object') throw new TypeError('playable item must be an object');
   const id = boundedString(item.id, MAX_ID_LEN);
@@ -148,6 +173,7 @@ export function encodeItem(item) {
     title: boundedString(item.title, MAX_TITLE_LEN) || 'Untitled',
     artist: boundedString(item.artist, MAX_ARTIST_LEN),
     venue: boundedString(item.venue, MAX_VENUE_LEN) || null,
+    date: boundedString(item.date, MAX_DATE_LEN) || null,
     dateDisplay: boundedString(item.dateDisplay, MAX_DATE_LEN) || null,
     durationSec: typeof item.durationSec === 'number' && isFinite(item.durationSec) && item.durationSec >= 0
       ? item.durationSec : null,
@@ -193,6 +219,7 @@ function decodeItem(raw) {
     title: boundedString(raw.title, MAX_TITLE_LEN) || 'Untitled',
     artist: boundedString(raw.artist, MAX_ARTIST_LEN),
     venue: boundedString(raw.venue, MAX_VENUE_LEN) || null,
+    date: boundedString(raw.date, MAX_DATE_LEN) || null,
     dateDisplay: boundedString(raw.dateDisplay, MAX_DATE_LEN) || null,
     durationSec: typeof raw.durationSec === 'number' && isFinite(raw.durationSec) && raw.durationSec >= 0
       ? raw.durationSec : null,

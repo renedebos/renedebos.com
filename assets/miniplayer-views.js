@@ -32,20 +32,31 @@ const PREV_ICON = '<svg viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2
 const NEXT_ICON = '<svg viewBox="0 0 16 16" fill="currentColor"><polygon points="2,2 2,14 12,8"/><rect x="12" y="2" width="2" height="12"/></svg>';
 const X_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
 
-// 'unknown date' rather than silently dropping the field: 18 real catalog
-// rows have no date (the sean-19-broadway-unknown-* set), and BOTH surfaces
-// this bar replaces say so explicitly -- playlist-views.js's trackMeta() and
-// continuous-player.js's now-playing line. Omitting it shows less than what it
-// replaces, on real content.
-// Same rule as miniplayer-state.js's boundedPath(): only a same-origin
-// root-relative path may become an href, which rejects every scheme,
-// protocol-relative "//host" and off-origin address in one check. Duplicated
-// rather than imported -- this module imports player-controller.js and nothing
-// else, deliberately, and three lines is a cheaper price than that property.
+// Same rule as miniplayer-state.js's boundedPath(), and for the same reason it
+// is resolved with the URL parser rather than by inspecting characters: a
+// leading "/" is not proof of same-origin once the parser is involved
+// ("/\evil.test/x" resolves off-origin, and a tab/CR/LF before a second slash
+// is stripped before parsing). Duplicated rather than imported -- this module
+// imports player-controller.js and nothing else, deliberately, and a few lines
+// is a cheaper price than that property. Keep the two in step.
+const PATH_SENTINEL_ORIGIN = 'https://miniplayer.invalid';
+
 function isSitePath(url) {
-  return typeof url === 'string' && url.charCodeAt(0) === 47 && url.charCodeAt(1) !== 47;
+  if (typeof url !== 'string' || url.charCodeAt(0) !== 47) return false;
+  try {
+    return new URL(url, PATH_SENTINEL_ORIGIN).origin === PATH_SENTINEL_ORIGIN;
+  } catch (e) {
+    return false;
+  }
 }
 
+// 'unknown date' rather than silently dropping the field: 18 real catalog rows
+// have no date (the sean-19-broadway-unknown-* set), and BOTH surfaces this bar
+// replaces say so explicitly — playlist-views.js's trackMeta() and
+// continuous-player.js's now-playing line. Omitting it shows less than what it
+// replaces, on real content. Every field read here must survive persistence;
+// see miniplayer-state.js's encodeItem(), where venue and date each had to be
+// added after this line started reading them.
 function trackMeta(item) {
   return [item.artist, item.venue, item.dateDisplay || item.date || 'unknown date']
     .filter(Boolean).join(' · ');
@@ -73,6 +84,14 @@ export class QueueView {
     // inert, every control dead (Task 2 review finding 1, reproduced). The
     // sibling view modules get away with one because no view of theirs is ever
     // remounted; this bar's Close-then-play cycle is exactly a remount.
+    //
+    // Aborting the OUTGOING one first is what makes a duplicate mount safe:
+    // PlaybackController.mount() calls onAttach() even for a view already in
+    // its set, so simply replacing the controller left the previous
+    // attachment's listeners live — one click then ran two handlers, toggling
+    // twice, so the control looked alive and did nothing (reproduced), and
+    // unmount() no longer removed everything the view had added.
+    if (this._abort) this._abort.abort();
     this._abort = new AbortController();
     this._wireEvents(this._abort.signal);
     this._render(controller.snapshot());
@@ -170,7 +189,15 @@ export class MiniPlayerView extends QueueView {
     if (audio.currentTime > 3) { c.seek(0); return; }
     if (c.currentIndex > 0) { c.prev(); return; }
     c.seek(0);
-    c.play();
+    // Only start playback when it is not already running. play() on an element
+    // that is already playing resolves WITHOUT firing play/playing — WHATWG's
+    // internal play steps fire those only on a paused -> playing transition —
+    // while _playIndex() has already set state 'loading' and is waiting for
+    // exactly that event. An unconditional call therefore left the bar showing
+    // its loading spinner forever while the audio played on. Reproduced with a
+    // spec-shaped fake; the old FakeAudio queued the events unconditionally and
+    // hid it. An 'error' state still needs the call — that is the retry path.
+    if (c.audioElement.paused || c.state === 'error') c.play();
   }
 
   // A detached view must leave nothing rendered and nothing reserved: the bar

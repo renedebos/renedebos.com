@@ -275,9 +275,30 @@ export class FakeAudio extends EventTarget {
     this.paused = true; this.error = null; this.playbackRate = 1;
   }
   get src() { return this._src; }
-  set src(v) { this._src = v; this.error = null; this.loadCount = (this.loadCount || 0) + 1; }
-  load() { this.error = null; }
+  // Assigning src runs the media element load algorithm, and that algorithm
+  // SETS PAUSED TO TRUE (HTML standard, "media element load algorithm"). It is
+  // modelled here because play()'s transition rule below makes it observable:
+  // switching tracks assigns src first, so the play() that follows really is a
+  // paused -> playing transition and really does fire play/playing — which is
+  // why an ordinary track change works while calling play() on an untouched,
+  // already-playing element does not.
+  set src(v) {
+    this._src = v;
+    this.error = null;
+    this.paused = true;
+    this.loadCount = (this.loadCount || 0) + 1;
+  }
+  load() { this.error = null; this.paused = true; }
+  // Fires play/playing ONLY on a paused -> playing transition, which is what
+  // WHATWG's internal play steps do: calling play() on an element that is
+  // already playing resolves the promise and fires nothing. The earlier version
+  // queued both events unconditionally, and that lie hid a real bug — a view
+  // calling play() on an already-playing element left the controller in
+  // 'loading' forever, waiting for a `playing` event a browser never sends
+  // (third-round review finding 2). A fake that asserts transitions the
+  // platform does not make is worse than no fake.
   play() {
+    if (!this.paused) return Promise.resolve();
     this.paused = false;
     queueMicrotask(() => { this.dispatchEvent(new Event('play')); this.dispatchEvent(new Event('playing')); });
     return Promise.resolve();

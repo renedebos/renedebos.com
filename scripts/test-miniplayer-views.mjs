@@ -532,7 +532,13 @@ test('an item restored through the real persistence codec still renders its venu
 // is the line that turns a persisted string into a live link.
 test('a pageUrl that is not a same-origin path never becomes an href', () => {
   for (const hostile of ['javascript:globalThis.__x=1', '//evil.test/shows/',
-    'https://evil.test/shows/', 'data:text/html,<script>alert(1)</script>']) {
+    'https://evil.test/shows/', 'data:text/html,<script>alert(1)</script>',
+    // These four begin with a single '/' and still resolve off-origin: a
+    // character check accepted every one of them (third-round finding 1).
+    '/' + String.fromCharCode(92) + 'evil.test/shows/a',
+    '/' + String.fromCharCode(9) + '/evil.test/',
+    '/' + String.fromCharCode(10) + '/evil.test/',
+    '/' + String.fromCharCode(13) + '/evil.test/']) {
     const c = makeController();
     const { root } = mount(c);
     c.setQueue([item('a', { pageUrl: hostile })], { startIndex: 0 });
@@ -646,6 +652,129 @@ test('an item change with NO state change still re-labels the play button', asyn
   assert.equal(root.querySelector('.mp-play').getAttribute('aria-label'), 'Play Kilkelly Ireland',
     'a fresh button left with the template\'s generic "Play" names no track at all');
   c.destroy();
+});
+
+// ── third-round review findings, 2026-08-16 ───────────────────────────────
+// Finding 2. play() on an element that is already playing resolves without
+// firing play/playing (WHATWG internal play steps), while _playIndex() has
+// already set state 'loading' and is waiting for exactly that event. The bar
+// sat in its loading presentation for the rest of the track while audio played.
+// FakeAudio used to queue the events unconditionally and hid this; it now
+// models the transition rule, so this test is only meaningful because the fake
+// stopped lying. Mutation that fails it: making the play() call unconditional.
+test('Previous on an already-playing first track restarts it without stranding the UI in loading', async () => {
+  const c = makeController();
+  const { root } = mount(c);
+  c.setQueue([item('a'), item('b')], { startIndex: 0, autoplay: true });
+  await tick();
+  c.audioElement.duration = 200;
+  c.audioElement.currentTime = 2;              // under the 3s threshold
+
+  const seqBefore = c.snapshot().ownershipSeq;
+  root.dispatch('click', { target: root.querySelector('.mp-prev') });
+  await tick();
+  assert.equal(c.currentIndex, 0);
+  assert.equal(c.audioElement.currentTime, 0, 'it must still restart the track');
+  assert.equal(c.audioElement.paused, false, 'and keep playing');
+  assert.equal(c.state, 'playing', 'and NOT be stranded in loading, waiting for an event that never comes');
+  // The view's own guard, asserted where it is still individually observable:
+  // _playIndex() bumps the ownership sequence on EVERY attempt, so calling
+  // play() on an already-playing element mints a spurious 'play-attempt' the
+  // coordinator would have to reason about (Task 0.1's contract), and clears
+  // lastPlayError as a side effect. The controller-level correction fixes the
+  // stuck-loading symptom but cannot un-bump this.
+  assert.equal(c.snapshot().ownershipSeq, seqBefore,
+    'restarting an already-playing track must not mint a fresh ownership event');
+  c.destroy();
+});
+
+test('Previous on a paused first track does start it', async () => {
+  const c = makeController();
+  const { root } = mount(c);
+  c.setQueue([item('a'), item('b')], { startIndex: 0, autoplay: true });
+  await tick();
+  c.audioElement.duration = 200;
+  c.audioElement.currentTime = 2;
+  c.pause();
+  await tick();
+
+  root.dispatch('click', { target: root.querySelector('.mp-prev') });
+  await tick();
+  assert.equal(c.audioElement.paused, false, 'a paused track genuinely needs the play() call');
+  assert.equal(c.audioElement.currentTime, 0);
+  c.destroy();
+});
+
+// Finding 3. PlaybackController.mount() calls onAttach() even for a view
+// already in its set, and a per-attachment AbortController that does not abort
+// its predecessor leaves the earlier attachment's listeners live.
+test('mounting the same view twice does not double up its controls', async () => {
+  const c = makeController();
+  const { root, view } = mount(c);
+  c.setQueue([item('a')], { startIndex: 0, autoplay: true });
+  await tick();
+  c.mount(view);                               // duplicate mount, same instance
+  await tick();
+
+  root.dispatch('click', { target: root.querySelector('.mp-play') });
+  await tick();
+  assert.equal(c.audioElement.paused, true,
+    'two live click handlers would toggle twice, leaving playback exactly as it was');
+  c.destroy();
+});
+
+test('unmounting a doubly-mounted view removes every listener it ever added', async () => {
+  const c = makeController();
+  let closes = 0;
+  const root = new FakeElement('div', ['mini-player'], { hidden: true });
+  root._rect = { left: 0, width: 800, top: 0, height: 56 };
+  const view = new MiniPlayerView(root, { onClose: () => { closes++; } });
+  c.mount(view);
+  c.mount(view);
+  c.setQueue([item('a')], { startIndex: 0 });
+  const closeBtn = root.querySelector('.mp-close');
+
+  c.unmount(view);
+  root.dispatch('click', { target: closeBtn });
+  assert.equal(closes, 0, 'a listener from the first attachment must not survive teardown');
+  c.destroy();
+});
+
+// Finding 4. Same shape as venue, one field over: the view falls back to `date`
+// when dateDisplay is null, and the codec did not carry it.
+test('a date-only item keeps its date through the real persistence codec', () => {
+  const env = buildEnvelope({
+    queue: [item('a', { date: '1999-05-27', dateDisplay: null })], currentItemId: 'a',
+    positionSec: 0, playing: false, ownerId: 't1', ownerEpoch: 'e1',
+  });
+  const restored = decodeEnvelope(JSON.parse(JSON.stringify(env)));
+  const c = makeController();
+  const { root } = mount(c);
+  c.restoreSession({ queue: restored.queue, currentItemId: restored.currentItemId });
+  assert.equal(root.querySelector('.mp-meta').textContent, 'Jerry Hannan · Cafe Java · 1999-05-27');
+  c.destroy();
+});
+
+// ── harness contract ──────────────────────────────────────────────────────
+// The fake is load-bearing now: two real bugs (this bar's Previous, and
+// /playlist/'s) were invisible while FakeAudio fired play/playing on every
+// call, and a third (the controller's silent-resume state) surfaced the moment
+// it stopped. Pin both spec rules here so nobody "simplifies" the fake back.
+test('FakeAudio models the two rules the real bugs depended on', async () => {
+  const audio = new FakeAudio();
+  const seen = [];
+  ['play', 'playing'].forEach((t) => audio.addEventListener(t, () => seen.push(t)));
+
+  audio.src = 'https://example.test/a.mp3';
+  assert.equal(audio.paused, true, 'assigning src runs the load algorithm, which pauses');
+  await audio.play();
+  await tick();
+  assert.deepEqual(seen, ['play', 'playing'], 'a paused -> playing transition fires both');
+
+  await audio.play();                          // already playing
+  await tick();
+  assert.deepEqual(seen, ['play', 'playing'], 'a second play() on a playing element fires nothing');
+  assert.equal(audio.paused, false);
 });
 
 // ── runner ─────────────────────────────────────────────────────────────

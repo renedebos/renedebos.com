@@ -277,6 +277,20 @@ test('venue survives a full buildEnvelope -> JSON -> decodeEnvelope round trip',
   assert.equal(encodeItem(item('a')).venue, null, 'a genuinely venue-less item stays null, not ""');
 });
 
+// `date` is the same gap as venue, one field over: MiniPlayerView falls back to
+// it when dateDisplay is null, and the codec did not carry it, so a round trip
+// turned a date-only item into "unknown date".
+test('date survives the round trip too, independently of dateDisplay', () => {
+  const env = buildEnvelope({
+    queue: [item('a', { date: '1999-05-27', dateDisplay: null })],
+    currentItemId: 'a', ownerId: 't1', ownerEpoch: 'e1',
+  });
+  const back = decodeEnvelope(JSON.parse(JSON.stringify(env)));
+  assert.equal(back.queue[0].date, '1999-05-27');
+  assert.equal(back.queue[0].dateDisplay, null, 'and the two stay independent');
+  assert.equal(encodeItem(item('a', { date: 'x'.repeat(5000) })).date.length, 100, 'bounded like the rest');
+});
+
 test('an envelope written before venue existed still decodes, with venue null', () => {
   // Exactly what an older stored envelope looks like: no venue key at all. No
   // ENVELOPE_VERSION bump was needed precisely because this path is identical
@@ -303,6 +317,17 @@ test('pageUrl is rejected unless it is a same-origin root-relative path', () => 
     ['https://evil.test/shows/', ''],
     ['shows/relative/', ''],
     ['', ''],
+    // Normalization, not characters: each of these passed the original
+    // character-level check and resolved OFF-ORIGIN in a real URL parser.
+    // Backslash is a path separator for special schemes; tab, CR and LF are
+    // stripped before parsing, leaving "//evil.test/" behind.
+    ['/' + String.fromCharCode(92) + 'evil.test/shows/a', ''],
+    ['/' + String.fromCharCode(9) + '/evil.test/', ''],
+    ['/' + String.fromCharCode(10) + '/evil.test/', ''],
+    ['/' + String.fromCharCode(13) + '/evil.test/', ''],
+    // ...while an ordinary path with a fragment, a query and a space still
+    // survives: the rule is about origin, not about tidiness.
+    ['/shows/a b/?x=1#track-2', '/shows/a b/?x=1#track-2'],
   ];
   for (const [input, want] of cases) {
     assert.equal(encodeItem(item('a', { pageUrl: input })).pageUrl, want, `encode ${JSON.stringify(input)}`);

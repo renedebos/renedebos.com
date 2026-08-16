@@ -48,9 +48,15 @@ class FakeAudio extends EventTarget {
     this.pendingPlay = null;
   }
   get src() { return this._src; }
-  set src(v) { this._src = v; this.error = null; this.loadCount = (this.loadCount || 0) + 1; }
-  load() { this.error = null; }
+  // Assigning src runs the media element load algorithm, which sets paused to
+  // true (HTML standard). Modelled because play() below only fires its events
+  // on a paused -> playing transition, exactly like a browser: that pair of
+  // rules is what makes "switch track" and "replay the current track" behave
+  // differently, and the difference was a real bug (see the repeat-one test).
+  set src(v) { this._src = v; this.error = null; this.paused = true; this.loadCount = (this.loadCount || 0) + 1; }
+  load() { this.error = null; this.paused = true; }
   play() {
+    const wasPaused = this.paused;
     this.paused = false;
     if (this.autoplayBehavior === 'manual') {
       let resolve, reject;
@@ -63,10 +69,14 @@ class FakeAudio extends EventTarget {
       err.name = 'NotAllowedError';
       return Promise.reject(err);
     }
-    queueMicrotask(() => {
-      this.dispatchEvent(new Event('play'));
-      this.dispatchEvent(new Event('playing'));
-    });
+    // WHATWG's internal play steps fire these only when the element was
+    // actually paused. An already-playing element is seeked/resumed silently.
+    if (wasPaused) {
+      queueMicrotask(() => {
+        this.dispatchEvent(new Event('play'));
+        this.dispatchEvent(new Event('playing'));
+      });
+    }
     return Promise.resolve();
   }
   pause() {
@@ -141,6 +151,46 @@ test('repeat-one restarts the same item and resets currentTime on ended', async 
     assert.equal(audio.currentTime, 0, 'ended handler must reset currentTime before replaying');
     await tick();
     assert.equal(c.currentItem.id, 'a', 'repeat-one must not advance to the next queue item');
+    assert.equal(c.state, 'playing');
+  } finally { c.destroy(); }
+});
+
+// Replaying the CURRENT item assigns no src, so no load happens; and `ended`
+// does not set paused, so play() fires no play/playing event either (WHATWG
+// internal play steps). Without the correction in _playIndex() the controller
+// would sit in 'loading' forever while audio played on — the test above passed
+// only because this file's FakeAudio used to fire those events unconditionally.
+// Reachable two ways today: repeat-one's replay, and /playlist/'s endless
+// rollover when the reshuffle puts the just-finished track back at index 0.
+// Mutation that fails this: dropping the `!reloading && wasUnpaused` correction.
+test('replaying the current item on an unpaused element ends in playing, never stuck in loading', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    c.setQueue([item('a'), item('b')], { startIndex: 0, autoplay: true });
+    await tick();
+    assert.equal(c.state, 'playing', 'premise: playing, and the element is not paused');
+    assert.equal(audio.paused, false);
+    const loads = audio.loadCount;
+
+    c.play(0);                       // same item, same src: nothing reloads
+    await tick();
+    assert.equal(audio.loadCount, loads, 'premise: no reload happened, so no load events either');
+    assert.equal(c.state, 'playing', 'a silent resume must still leave the controller in playing');
+  } finally { c.destroy(); }
+});
+
+// A genuine track change DOES reload, so it keeps the ordinary
+// loading -> playing path — the correction above must not short-circuit it.
+test('switching tracks still goes through loading and lands in playing', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    c.setQueue([item('a'), item('b')], { startIndex: 0, autoplay: true });
+    await tick();
+    c.play(1);
+    assert.equal(c.state, 'loading', 'a real load is pending, so loading is the truthful state');
+    await tick();
     assert.equal(c.state, 'playing');
   } finally { c.destroy(); }
 });
