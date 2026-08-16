@@ -2079,24 +2079,72 @@ Phase 0 closes the integration contracts *before* any UI work, after three
 Codex review rounds on the plan found 8, 7, and 7 gaps respectively.
 
 **Phase 0 — integration contracts**
-- [x] **0.1** Post-construction `onAnyExternalClaim(fn)` / `onOwnershipEvent(fn)`
-      on `PlaybackController`, both returning an unsubscribe; one monotonic
-      `ownershipSeq` + `lastOwnershipEvent` on `snapshot()`
-      (`play-attempt`/`local-play`/`external-claim`); `lastPlayErrorItemId`.
-      Claims hook the media **`play` event**, never the `'playing'` state.
-- [x] **0.2** Dedicated `OWNERSHIP_CHANNEL_NAME` (`hannan-miniplayer-ownership`),
-      never `hannan-playback`; fail-closed contract when the channel can't be
-      created.
-- [x] **0.3** Handshake settlement policy (`SETTLE_MS` 250,
-      `MAX_SETTLE_ROUNDS` 5, restart-on-rotation, bounded give-up).
-- [x] **0.4–0.6, 0.9** Coordinator policy decided — recorded immediately below.
-- [x] **0.7** `storage`-event invalidation routes through the full loss path.
-- [x] **0.8** Eligible-page set, boot cost, flag ownership, height measurement
-      — recorded below.
+Status words are used strictly: **implemented** means code plus a
+mutation-checked test; **decided** means a written contract awaiting its
+consumer in Task 4. A review round found this section had marked several
+contracts as though they were implemented features, so the distinction is
+now explicit.
+
+- [x] **0.1 — implemented.** Post-construction `onAnyExternalClaim(fn)` /
+      `onOwnershipEvent(fn)` on `PlaybackController`, both returning an
+      unsubscribe; one monotonic `ownershipSeq` + `lastOwnershipEvent` on
+      `snapshot()` (`play-attempt`/`local-play`/`external-claim`);
+      `lastPlayErrorItemId`. Claims hook the media **`play` event**, never the
+      `'playing'` state. `play`/`playing` are both ignored when
+      `audio.paused` is already true — a queued media event must not publish
+      ownership or `state:'playing'` after an intervening pause.
+- [~] **0.2 — SUPERSEDED.** `OWNERSHIP_CHANNEL_NAME` exists and its hazard
+      test is retained, but the probe/reply handshake is no longer the
+      collision mechanism (see 0.3), so the coordinator opens no ownership
+      channel. Kept because the hazard generalizes: *any* future channel in
+      this feature must avoid `hannan-playback`, where a structured message
+      pauses audio site-wide. Not a required mechanism.
+- [x] **0.3 — decided; `tabIdentityLockName()` implemented.** The
+      quiet-period settle timer is **replaced** by a document-lifetime Web
+      Lock keyed by the tab id — positive uniqueness evidence rather than
+      absence of a reply. `tabIdentityLockName()` (validated, length-bounded,
+      namespaced so no stored id can produce a reserved `-`-leading name) is
+      built and tested; the acquisition/retry/BFCache lifecycle is a written
+      contract in `miniplayer-state.js` awaiting Task 4.
+- [x] **0.4–0.6, 0.9 — decided.** Coordinator policy recorded below.
+- [x] **0.7 — decided.** `storage` is a wake-up signal only: re-read and
+      re-validate against the captured lease before acting, then route through
+      the full loss path. Nothing routes anything yet — Task 4 implements it.
+- [x] **0.8 — decided.** Eligible-page set, boot cost, flag ownership,
+      height measurement — recorded below.
 
 **Phases A–C** — see the working copy: view + CSS foundations; the
 coordinator (identity/ownership, then session apply/save); then markup,
 flag, invariants, browser checks, and the canary deploy.
+
+**Review round, 2026-08-16** (`-codex.md`, "Stage 3a-canary Phase 0 and Task
+1 review") — five findings, all confirmed and all fixed. Two changed work
+this section had already marked complete, which is why the status words
+above are now explicit:
+- A **queued `play` event delivered after an intervening pause** let a
+  paused controller mint a durable ownership epoch and report
+  `state:'playing'` while silent. Reproduced with two controllers started in
+  the same task. `pause()` flips `paused` synchronously but does not cancel
+  an already-queued media task. Guards added to both handlers. (The
+  `state:'playing'`-while-paused half predates this stage; attaching
+  ownership to it is what made it consequential.)
+- The **settle timer was replaced by the tab-identity Web Lock** — see 0.3.
+  Silence is absence of evidence, and a throttled tab holding a cloned
+  identity can reply after any timer fires, producing exactly the
+  double-owner window the mechanism exists to prevent. The lock is the
+  **sole** collision arbiter: running it alongside the probe/reply handshake
+  would give two independent rotation mechanisms that can disagree, moving
+  `TAB_ID_KEY` while the document still holds only the old id's lock.
+- The **single-sequence test was vacuous** — splitting `_bumpOwnership()`
+  into per-kind counters exposing `Math.max()` left all 57 tests green,
+  because it asserted only `lastOwnershipEvent`. Rewritten to run isolated
+  controller pairs and assert exact `{seq, kind}` streams with consecutive
+  values; the mutation now fails. Second such test in this phase, after the
+  `destroy()` one caught earlier the same session.
+- `storage` events can carry a **stale `newValue`**; the contract now
+  requires a fresh read and re-validation before acting.
+- The module claimed **"There is a consumer now"** while line 31 of the same
+  file said nothing calls it — corrected, along with the status words above.
 
 #### Stage 3a-canary — recorded coordinator policy
 

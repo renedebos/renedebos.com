@@ -4792,3 +4792,209 @@ both fixed:
 --check` on both files, zero null bytes, `cmp` source↔asset matching, and
 `git diff --check` clean for `scripts/`/`assets/`. The next validation
 this subsystem gets is a real consumer in Stage 3a-canary.
+
+---
+
+## Stage 3a-canary Phase 0 and Task 1 review — 2026-08-16
+
+1. **High — A queued stale `play` event can reclaim ownership after an external claim already paused the controller.**
+
+   Evidence: external claims bump `external-claim` and call `pause()` at [scripts/player-controller.js](/home/renedebos/renedebos.com-player-consolidation/scripts/player-controller.js:225), but the `play` listener unconditionally records `local-play` and broadcasts another claim at [scripts/player-controller.js](/home/renedebos/renedebos.com-player-consolidation/scripts/player-controller.js:243). `_playIndex()` invokes `audio.play()` at line 798. The HTML algorithm queues `play` as a media task; a subsequent `pause()` changes `paused` immediately but does not cancel that already-queued event. [HTML media-element algorithm](https://html.spec.whatwg.org/multipage/media.html#playing-the-media-resource)
+
+   A focused probe started two controllers synchronously, before either queued `play` event ran. It ended with controller B audibly paused but reporting `lastOwnershipEvent: "local-play"` after an intervening external claim. The suite’s own fake has the same unconditional queued-event behavior at [scripts/test-player-controller.mjs](/home/renedebos/renedebos.com-player-consolidation/scripts/test-player-controller.mjs:53), but no test starts competing attempts before the first event is delivered. The similarly unguarded `playing` handler can also publish `state="playing"` while `audio.paused === true`.
+
+   Why it matters: an adopting mini-player can mint a fresh durable epoch for a controller that is actually paused, overwrite the genuine winner’s session, and present state inconsistent with audible playback. This invalidates the plan’s checked claim that the `play` hook is safe at [player-consolidation-plan.md](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2082).
+
+   Suggested fix: ignore queued `play` and `playing` events when `audio.paused` is already true. Add a regression that calls `a.play()` and `b.play()` in the same task, before awaiting, then asserts the paused loser’s final ownership event remains `external-claim` and no controller reports `playing` while paused.
+
+2. **High — A 250 ms quiet period cannot establish that the collision handshake has “converged.”**
+
+   Evidence: the contract declares silence for 250 ms to mean settled and permits `restoreLease()` immediately afterward at [scripts/miniplayer-state.js](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:651). BroadcastChannel provides no delivery deadline. A frozen, background-throttled, or busy existing tab can hold the cloned identity while replying after the newcomer’s timer fires. That newcomer can restore and attempt playback while the original tab is still audible; the later reply only repairs ownership after a double-owner window already occurred.
+
+   The round semantics are also underspecified: “after five restarts” is six quiet windows including the initial one, contradicting the stated ~1.25-second bound at lines 672–684, and “any collision resolved restarts” conflicts with “restart-on-rotation” in the plan at [player-consolidation-plan.md](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2090).
+
+   Why it matters: the policy calls this fail-closed and converged, but timeout silence is only a heuristic. It can restore two copies of one lease—the exact condition the handshake exists to prevent.
+
+   Suggested fix: use a document-lifetime Web Lock keyed by the stored tab ID before restoration. A duplicate that cannot acquire that identity lock must rotate and retry; lack of Web Locks already has a defined fail-closed path. Keep BroadcastChannel for late collision signaling if desired, but do not treat a timer without positive uniqueness evidence as convergence. Define whether the initial window counts toward `MAX_SETTLE_ROUNDS`.
+
+3. **Medium — The storage-event invalidation contract can revoke a newly reclaimed, currently valid lease.**
+
+   Evidence: the contract says a changed event tuple enters the full loss path at [scripts/miniplayer-state.js](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:698), but never requires a fresh `readEnvelope()`/`hasValidLease()` check before acting. Storage events are queued tasks delivered only to other storage objects, so this sequence is valid: another tab writes and queues event A; before A is handled, the user plays locally and this tab claims/writes lease B; A then arrives carrying its older `newValue`. [HTML Web Storage broadcast algorithm](https://html.spec.whatwg.org/multipage/webstorage.html#the-storage-interface)
+
+   Why it matters: treating `event.newValue` as current would drop B, pause valid playback, and call `revokeLease()` on B’s still-current epoch. The user’s newer action loses to stale notification data.
+
+   Suggested fix: specify that `storage` is only an invalidation signal. On delivery, re-read current storage and run a fresh lease-validity comparison; ignore the event if the current envelope still matches the current lease. Add a delayed-event test where a local reclaim lands before an older queued event is dispatched.
+
+4. **Low — The new sequence test does not enforce one monotonic counter across local and external events.**
+
+   Evidence: [scripts/test-player-controller.mjs](/home/renedebos/renedebos.com-player-consolidation/scripts/test-player-controller.mjs:933) constructs four controllers sharing one registry, so each receives multiple unrelated claims, despite lines 955–957 saying each saw one. It asserts only `lastOwnershipEvent`, not the exact event stream or sequence values.
+
+   A focused mutation split local and external counters and exposed `Math.max(localSeq, externalSeq)` in `snapshot()`—violating Task 0.1’s single-sequence contract—and all 57 controller tests still passed. The “play-attempt … cannot let a stale restore win” case at line 892 likewise proves only synchronous visibility; it contains no restore/adoption decision.
+
+   Why it matters: a later regression to per-kind counters would leave the named ordering test green, while the plan presents this behavior as tested.
+
+   Suggested fix: run the two scenarios with isolated controller pairs and capture exact `{seq, kind}` streams, including `external-claim`, asserting consecutive sequence values across all three kinds. Rename the play-attempt test to its narrower primitive claim until the coordinator suite proves restore suppression end to end.
+
+5. **Low — The contract text claims a real consumer exists when the repository explicitly has none.**
+
+   Evidence: the module header says the future boot script will be its first consumer at [scripts/miniplayer-state.js](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:31), while the settlement section says “There is a consumer now” at line 690. Repository search found no production import of `miniplayer-state.js`; [HANDOFF.md](/home/renedebos/renedebos.com-player-consolidation/HANDOFF.md:200) also says it is “consumed by nothing.” Nevertheless, the checked plan item says storage invalidation “routes” through the loss path at [player-consolidation-plan.md](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2093).
+
+   Why it matters: this overstates implementation and validation status precisely at the caller boundary where the unresolved races above live.
+
+   Suggested fix: change these claims to “policy drafted for the future coordinator,” and mark routing/settlement implemented only after the coordinator and delayed asynchronous tests exist.
+
+**Verification during this review**
+
+- `python3 scripts/build.py --check` — passed: 31 shows, 680 curated tracks.
+- All seven executable `node scripts/test-*.mjs` suites — passed, 278/278.
+- `python3 scripts/verify_markup.py` — passed: 1,427 items across 166 pages.
+- `python3 scripts/verify_markup.py --check-allowlist-coverage` — passed.
+- `node --check` on the three changed JavaScript sources — passed.
+- Source/asset comparisons and `git diff --check` — passed.
+- Focused queued-`play` race probe — reproduced paused controller ending with `lastOwnershipEvent="local-play"`.
+- Focused split-counter mutation — all 57 controller tests still passed.
+- Real Chromium probe could not launch in the read-only sandbox: Playwright failed with `EROFS` while creating `/tmp/playwright-artifacts-*`.
+_Review generated 2026-08-16 01:12:50 PDT by `scripts/codex_review.sh` (codex exec, read-only)._
+
+### Disposition (Claude, 2026-08-16)
+
+All five **confirmed**, each reproduced or traced independently before being
+accepted. Nothing declined. Two of them invalidate claims this session made in
+the plan and in the module comments, which is recorded below rather than
+quietly corrected.
+
+1. **Queued stale `play` event reclaims ownership — CONFIRMED (High).**
+   Reproduced directly with two controllers started in the SAME task, before
+   either queued `play` event ran. Result: controller B ends with
+   `audio.paused === true` but `state === 'playing'` AND
+   `lastOwnershipEvent === 'local-play'` — it would mint a durable epoch while
+   audibly silent, and overwrite the genuine winner's session. Sequence: A's
+   `play` fires → A claims → B (still `'loading'`) is paused by the claim → B's
+   *already-queued* `play` fires anyway → B bumps `local-play` and re-claims.
+   **One correction to the finding's framing:** the `state === 'playing'` while
+   `audio.paused` half is **pre-existing** — the `'playing'` listener has always
+   been unguarded and this is not a regression from Task 0.1. What Task 0.1
+   changed is the consequence: attaching ownership to that event turned a
+   cosmetic state inconsistency into a durable-storage one. Fix as suggested:
+   ignore `play`/`playing` when `audio.paused` is already true, plus the
+   same-task regression test.
+
+2. **A 250 ms quiet period is not convergence — CONFIRMED (High), and the
+   suggested remedy is better than what the contract currently specifies.**
+   The objection is correct in principle: silence is absence of evidence, and
+   BroadcastChannel has no delivery deadline, so a frozen or background-
+   throttled tab holding the cloned identity can reply after the newcomer's
+   timer fires — producing exactly the double-owner window the handshake exists
+   to prevent. A document-lifetime **Web Lock keyed by the stored tab id**
+   (`navigator.locks.request(..., {ifAvailable: true})`) is strictly better: it
+   is *positive* uniqueness evidence, deterministic, needs no timer, and
+   degrades through the fail-closed path Web Locks already has here. It also
+   covers late duplication (a tab cloned an hour later fails to acquire and
+   rotates immediately) without depending on a probe reply arriving.
+   Both sub-points also confirmed: "after MAX_SETTLE_ROUNDS restarts" with
+   `MAX_SETTLE_ROUNDS = 5` is six windows (1.5 s), not the "~1.25 s" the same
+   comment claims; and "any collision resolved restarts it" contradicts the
+   rotation-based rationale given two lines later — winning a collision does
+   not change this document's identity and needs no fresh quiet window.
+   Note this is a change to a **documented policy only** — no settlement code
+   exists yet — so the cost is a rewrite of the contract plus its
+   implementation landing in Task 4 as originally scheduled.
+
+3. **Storage-event invalidation can revoke a valid lease — CONFIRMED (Medium).**
+   Storage events are queued tasks, so `event.newValue` can be stale by
+   delivery: another tab writes and queues event A; the user then plays locally
+   and this tab claims lease B; A arrives carrying the older value. The contract
+   as written says "on a tuple change, route through the full loss path" without
+   requiring a fresh read — underspecified in precisely the way that invites
+   acting on `newValue`. Fix as suggested: `storage` is an invalidation *signal*
+   only; on delivery re-read current storage and re-run `hasValidLease()`,
+   ignoring the event when the current envelope still matches the current lease.
+   Plus a delayed-event test where a local reclaim lands before an older queued
+   event is dispatched.
+
+4. **The sequence test does not enforce a single monotonic counter — CONFIRMED
+   (Low severity, but the most important finding here).** Independently
+   reproduced: splitting `_bumpOwnership()` into per-kind counters exposing
+   `Math.max(localSeq, externalSeq)` — a direct violation of Task 0.1's
+   single-sequence contract — leaves **all 57 controller tests green**. The test
+   asserts only `lastOwnershipEvent`, which a split-counter implementation gets
+   right too, so its name promises more than it checks. The second half is also
+   confirmed: `claimListeners` is module-scope (`player-controller.js:25`), so
+   the four controllers share one registry and each receives **three** external
+   claims, not one — instrumenting the real event streams gives
+   `one: play-attempt, local-play, external-claim, external-claim, external-claim`,
+   directly contradicting that test's own comment. This is the same
+   passes-for-the-wrong-reason class as the `destroy()` test caught earlier this
+   session, and it is the second time in Phase 0 — worth treating as a pattern,
+   not an incident. Fix as suggested: isolated controller pairs, assert the
+   exact `{seq, kind}` stream and consecutive sequence values across all three
+   kinds, and narrow the play-attempt test's name to what it actually proves
+   (synchronous visibility, not restore suppression — there is no restore
+   decision anywhere in it).
+
+5. **Contract text claims a consumer that does not exist — CONFIRMED (Low).**
+   `miniplayer-state.js:31` says "Nothing in this repo calls this module yet"
+   while line 690, added this session, says "There is a consumer now" — a direct
+   self-contradiction inside one file. The plan's `- [x] 0.7 storage-event
+   invalidation routes through the full loss path` overstates status the same
+   way: nothing routes anything, it is a written contract awaiting Task 4.
+   Fix as suggested: reword to "policy drafted for the coordinator", and mark
+   0.3/0.7 as decided-but-not-implemented rather than done. Same failure mode
+   round 12 flagged (documentation claims deserve the code standard), recurring.
+
+**Not yet actioned** — per `/review-step`'s contract this pass only verifies and
+records. Findings 2 and 4 both change work already marked complete: 2 replaces
+the settlement mechanism, and 4 means Phase 0's test evidence is weaker than
+reported, so Checkpoint 0 should not be considered met until it is redone.
+
+### Disposition update — all five fixed (Claude, 2026-08-16)
+
+Applied via `/apply-review` after Rene approved, with finding 2's remedy
+amended per Codex's follow-up constraints. Suites: **282/282** across 7 files
+on both Node 20 and a simulated Node 24 (was 278). `build.py`, `--check`,
+`verify_markup.py --check-allowlist-coverage` all clean; assets byte-identical.
+
+1. **FIXED.** `play` and `playing` both return early when `audio.paused` is
+   already true. Regression test starts two controllers in the SAME task,
+   before either queued event runs, and asserts the loser ends with
+   `external-claim` last and never reports `state:'playing'` while paused.
+   Mutation-verified: removing both guards fails that test alone.
+2. **FIXED, amended.** The quiet-period settle timer is gone, replaced by a
+   document-lifetime Web Lock keyed by the tab id. Implemented now:
+   `TAB_IDENTITY_LOCK_PREFIX` and `tabIdentityLockName()`, which validates and
+   length-bounds the id — `peekTabId()` does neither, and sessionStorage is
+   user-editable — and namespaces it so no stored value can produce a
+   `-`-leading reserved name. Three tests, mutation-verified. The full
+   acquisition contract is written into the module per Codex's constraints:
+   `{ifAvailable:true}`, acquisition signalled through a separate deferred
+   while the callback is held open by a never-resolving promise (never await
+   `request()` during boot), bounded retry then disable persistence,
+   re-acquire the new id's lock after any rotation including a
+   `revokeLease()` escalation (new before old where possible), and an explicit
+   BFCache rule. The lock is the **sole** collision arbiter — the coordinator
+   does not also run the probe/reply handshake, since two rotation mechanisms
+   can disagree and strand the document holding only the old id's lock.
+   Consequently **0.2 is now marked superseded, not done**; the constant and
+   its hazard test are kept because the hazard generalizes to any future
+   channel, not because the handshake needs them.
+3. **FIXED.** The contract now states that `storage` is a wake-up signal only:
+   never act on `event.newValue`, re-read and re-run `hasValidLease()` against
+   the captured lease, and do nothing if it still validates. Documentation
+   only — the loss path lands with the coordinator in Task 4, and the plan now
+   says so rather than claiming it routes today.
+4. **FIXED.** Sequence test rewritten: isolated controller pairs, torn down
+   between scenarios, asserting exact `{seq, kind}` streams
+   (`play-attempt, local-play, external-claim` and
+   `external-claim, play-attempt, local-play`) with consecutive seq values.
+   The per-kind-counter mutation that previously left all 57 tests green now
+   fails. The play-attempt test was renamed to its actual claim
+   ("observable synchronously, before the play promise settles") — it contains
+   no restore decision and never proved suppression.
+5. **FIXED.** The "There is a consumer now" sentence went with the replaced
+   settlement block; the file is self-consistent with line 31 again. The plan's
+   Phase 0 checklist now uses explicit status words — **implemented** (code +
+   mutation-checked test) versus **decided** (written contract awaiting Task
+   4) — and 0.3/0.7 are marked decided, not done.
+
+Checkpoint 0 is met again on the corrected evidence. Per `/apply-review`, work
+stops here rather than starting Phase A's next task.

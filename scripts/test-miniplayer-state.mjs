@@ -20,6 +20,7 @@ import {
   tombstoneIfCurrent, MAX_PERSISTED_QUEUE_ITEMS, OWNERSHIP_LOCK_NAME,
   TAB_PROBE_MESSAGE, TAB_PROBE_REPLY_MESSAGE, generateNonce, isTabProbeCollision,
   isTabProbeReplyForMe, shouldRotateOnCollision, handleIncomingProbe, handleIncomingProbeReply,
+  tabIdentityLockName, TAB_IDENTITY_LOCK_PREFIX, MAX_PERSISTED_QUEUE_ITEMS as _MPQI,
 } from './miniplayer-state.js';
 
 // ── fake storage — one shared fake localStorage per test (real localStorage
@@ -1970,6 +1971,40 @@ test('documents: the caller-side pattern of checking disabled before calling res
   assert.equal(yRef.disabled ? null : restoreLease(local, yBlockedSession).status, null,
     'documents the required pattern: never reaching restoreLease() once disabled is what would avoid the dual-restoration outcome the hazard test above demonstrates -- contingent on a real caller actually implementing this check, which nothing yet does');
   assert.equal(restoreLease(local, xSession).status, 'restored', 'X, the genuine winner, is completely unaffected');
+});
+
+
+// ── tab-identity lock name (2026-08-16, Task 0.3's replacement for the
+// quiet-period settle timer) ────────────────────────────────────────────
+test('tabIdentityLockName() namespaces the id, so no stored value can produce a reserved name', () => {
+  assert.equal(tabIdentityLockName('abc'), TAB_IDENTITY_LOCK_PREFIX + 'abc');
+  // Web Locks reserves names beginning with U+002D HYPHEN-MINUS (request()
+  // rejects with NotSupportedError). A corrupted or hand-edited tab id could
+  // easily start with one; the prefix means the result never can.
+  const hostile = tabIdentityLockName('-evil');
+  assert.ok(hostile && !hostile.startsWith('-'),
+    'a leading-hyphen id must still yield a usable, non-reserved lock name');
+});
+
+test('tabIdentityLockName() rejects unusable ids — peekTabId() does no validation of its own', () => {
+  // peekTabId() hands back whatever sessionStorage holds, unbounded and
+  // unvalidated, and sessionStorage is editable by anyone with devtools open.
+  assert.equal(tabIdentityLockName(''), null, 'empty');
+  assert.equal(tabIdentityLockName(null), null, 'null — what peekTabId returns on failure');
+  assert.equal(tabIdentityLockName(undefined), null, 'undefined');
+  assert.equal(tabIdentityLockName(123), null, 'non-string');
+  assert.equal(tabIdentityLockName({}), null, 'object');
+  assert.equal(tabIdentityLockName('x'.repeat(100000)), null,
+    'an unbounded id must not become an unbounded lock name');
+});
+
+test('tabIdentityLockName() accepts a real generated tab id', () => {
+  const store = fakeStorage();
+  const id = establishTabId(store);
+  assert.ok(id, 'premise: an id was actually established');
+  const name = tabIdentityLockName(id);
+  assert.ok(name && name.startsWith(TAB_IDENTITY_LOCK_PREFIX));
+  assert.ok(!name.startsWith('-'));
 });
 
 // ── runner ─────────────────────────────────────────────────────────────

@@ -628,7 +628,40 @@ export const TAB_PROBE_REPLY_MESSAGE = 'mini-player-tab-probe-reply';
 // PlaybackController with a real BroadcastChannel: state went 'playing' ->
 // 'paused' on a single probe. The regression test lives in
 // test-player-controller.mjs, since proving this needs a real controller.
+// SUPERSEDED as the collision mechanism (2026-08-16) -- see the tab-identity
+// lock below, which replaced the probe/reply handshake as the sole arbiter.
+// The name and its hazard test are KEPT deliberately: the hazard is not
+// specific to the handshake. ANY BroadcastChannel this feature ever opens must
+// avoid 'hannan-playback', because a structured message there pauses audio in
+// every other tab site-wide. Keeping the constant and its regression test
+// preserves that guard for whatever opens a channel next; nothing is required
+// to use it, and the coordinator does not.
 export const OWNERSHIP_CHANNEL_NAME = 'hannan-miniplayer-ownership';
+
+// ── tab-identity lock ────────────────────────────────────────────────────
+// The lock a document holds for its whole lifetime to prove its tab id is
+// UNIQUELY its own. Acquiring it is positive evidence of uniqueness; the
+// quiet-period timer it replaced could only ever offer absence of evidence
+// (see the settlement policy below for the full reasoning).
+export const TAB_IDENTITY_LOCK_PREFIX = 'miniplayer-tab:';
+
+// Builds the lock name for a tab id, or null if the id is unusable.
+//
+// The id is UNTRUSTED: peekTabId() hands back whatever sessionStorage holds,
+// with no validation and no length bound, and sessionStorage is editable by
+// anyone with devtools open. Every other externally-sourced string in this
+// module is bounded (see the codec's MAX_* constants); this one feeds a Web
+// Lock name, so it gets the same treatment.
+//
+// The prefix also settles the spec's one naming rule for free: a lock name
+// beginning with U+002D HYPHEN-MINUS is reserved and makes request() reject
+// with NotSupportedError. Prefixed names always start with 'm', so no id --
+// however corrupted -- can produce a reserved name.
+export function tabIdentityLockName(tabId) {
+  if (typeof tabId !== 'string') return null;
+  if (!tabId || tabId.length > MAX_ID_LEN) return null;
+  return TAB_IDENTITY_LOCK_PREFIX + tabId;
+}
 
 // CALLER CONTRACT — fail closed if the ownership channel cannot be created.
 // Every engine on this site wraps BroadcastChannel construction in a try/catch
@@ -648,52 +681,68 @@ export const OWNERSHIP_CHANNEL_NAME = 'hannan-miniplayer-ownership';
 // persistence is given up. Same posture, and the same reasoning, as
 // withOwnershipLock()'s fail-closed decision below.
 
-// CALLER CONTRACT — handshake SETTLEMENT policy (2026-08-16, Stage 3a-canary
-// Task 0.3). restoreLease() must run only "after the tab-collision handshake
-// has converged" (its own comment, and residual gap 3 in the plan). That is a
-// requirement, not an algorithm: replies arrive asynchronously and this module
-// is deliberately timer-free, so nothing here can implement it. The policy the
-// coordinator implements:
+// CALLER CONTRACT — identity uniqueness via a TAB-IDENTITY LOCK (2026-08-16,
+// Stage 3a-canary Task 0.3, REPLACING the quiet-period timer this contract
+// originally specified).
 //
-//   1. Boot order is: establishTabId() -> create the ownership channel ->
-//      INSTALL the message listener -> broadcast the first probe -> start a
-//      settle timer. Installing before probing matters: a reply to our own
-//      probe can arrive before we would otherwise have started listening.
-//   2. SETTLE_MS is a quiet period, not a deadline. Any collision resolved in
-//      the meantime RESTARTS it, because a rotation changes our identity and
-//      the mandatory re-probe under the new id has to get its own quiet window
-//      (see the re-probe contract above). Ordinary replies that name someone
-//      else's tabId do not restart it.
-//   3. When the timer fires with no unresolved collision, the handshake has
-//      settled -> call restoreLease() and apply whatever it returns.
-//   4. Settlement gates the INITIAL restore only. The listener stays live for
-//      the whole document lifetime -- a tab duplicated an hour later probes
-//      then, and this document must still reply and still resolve.
-//      Concrete values, so this is a decision and not a TBD: SETTLE_MS = 250
-//      and MAX_SETTLE_ROUNDS = 5, both defined in the coordinator (this module
-//      stays timer-free). 250ms because same-origin BroadcastChannel delivery
-//      is typically sub-millisecond but a busy main thread in the OTHER tab can
-//      delay its reply, and a quarter second during page load is imperceptible
-//      -- the mini-player simply has nothing to show yet. 5 rounds bounds the
-//      worst case at ~1.25s before giving up.
-//   5. Bounded, with a give-up state: after MAX_SETTLE_ROUNDS restarts,
-//      convergence is not happening (a pathological entropy source is the
-//      documented way this occurs -- residual gap 11). DISABLE PERSISTENCE for
-//      the document's lifetime and stop restarting. Ordinary in-page playback
-//      is untouched; only cross-navigation persistence is given up, exactly as
-//      for a failed:true handshake or an unavailable channel.
-//   6. Teardown: clear the timer and close the channel on destroy/pagehide.
+// restoreLease() must run only once this document knows its tab id is uniquely
+// its own (its own comment, and residual gap 3). The first attempt at that was
+// a 250ms quiet period after broadcasting a probe: silence meant settled. A
+// review round correctly rejected it -- BroadcastChannel has no delivery
+// deadline, so a frozen, background-throttled, or merely busy tab holding the
+// cloned identity can reply AFTER the timer fires. Silence is absence of
+// evidence, and the failure it permits is precisely the double-owner window
+// the whole mechanism exists to prevent: the newcomer restores and starts
+// playing while the original is still audible, and the late reply only repairs
+// ownership afterwards.
 //
-// Note this bounded give-up is the protocol residual gap 11 explicitly
-// DECLINED to build inside this module, on the grounds that it was
-// disproportionate "for a module that, as of this stage, has no consumer to
-// exercise it." There is a consumer now, and the caller is the right level for
-// it -- the module stays pure and timer-free, and the give-up state lives where
-// the timers already are.
+// A Web Lock keyed by the tab id gives POSITIVE evidence instead. Acquisition
+// is proof that no other live document holds that identity; there is no timer
+// and no heuristic. Web Locks is already a hard dependency here
+// (withOwnershipLock() disables persistence without it), so this adds no new
+// platform requirement and reuses the same fail-closed path.
 //
-// A test that only drives a synchronous fake channel cannot exercise any of
-// this: delivery ordering IS the thing under test. Task 4's suite must deliver
-// probes/replies with injected delay and out of order.
+//   1. Boot: establishTabId() -> tabIdentityLockName() -> request that lock
+//      with {ifAvailable: true}.
+//   2. ACQUIRED -> this identity is provably unique. Proceed to restoreLease().
+//   3. NOT ACQUIRED (callback invoked with null) -> another live document is
+//      already this tab id, i.e. this document is a clone. rotateTabId() and
+//      retry, up to MAX_IDENTITY_ATTEMPTS. Exhausting the retries, a missing
+//      Web Locks API, or any thrown request() disables persistence for the
+//      document's lifetime -- ordinary in-page playback is untouched.
+//   4. HOLD IT FOR THE DOCUMENT'S LIFETIME. The lock is released when its
+//      callback settles, so the callback returns a promise that is never
+//      resolved. Signal acquisition through a SEPARATE channel (resolve a
+//      deferred from inside the callback); never await request()'s own promise
+//      during boot, or boot waits forever by construction.
+//   5. Re-acquire on every rotation. revokeLease()'s escalation path rotates
+//      TAB_ID_KEY too (see its contract above), so after ANY rotation the
+//      document must acquire the NEW id's lock before it is allowed to claim
+//      or restore again. Acquire the new lock BEFORE releasing the old one
+//      where possible, so the old identity is never briefly free for a clone
+//      to take.
+//   6. BFCache. A bfcached document is alive and still holds its lock, which
+//      is correct -- restoring it must not find its identity stolen. Do NOT
+//      blanket-release on pagehide: a released lock plus a
+//      pageshow.persisted restore leaves the document holding an identity it
+//      no longer owns. Either keep the lock across bfcache, or release on
+//      pagehide AND re-acquire in pageshow (checking event.persisted) before
+//      any persistence work happens. This needs real browser verification of
+//      ordinary navigation, Back/Forward restore, tab duplication, and tab
+//      close -- held locks vs. bfcache is an area where browser behavior is
+//      still moving.
+//
+// This lock is the SOLE identity-collision arbiter. The coordinator must NOT
+// also run the probe/reply handshake below: two independent rotation
+// mechanisms can disagree, moving TAB_ID_KEY to a new value while the document
+// still holds only the OLD id's lock. The handshake helpers stay in this file
+// untouched -- they are hardened, and deleting them is a separate decision --
+// but nothing in the coordinator drives them.
+//
+// Concrete values, so this is a decision and not a TBD: MAX_IDENTITY_ATTEMPTS
+// = 5, defined in the coordinator. There is no timer and therefore no quiet
+// period, no settle rounds, and none of the arithmetic the previous version of
+// this contract got wrong.
 
 // CALLER CONTRACT — watch STATE_KEY via the 'storage' event, and treat a
 // changed ownership tuple as a FULL loss (2026-08-16, Stage 3a-canary Task
@@ -711,12 +760,25 @@ export const OWNERSHIP_CHANNEL_NAME = 'hannan-miniplayer-ownership';
 //     (player-controller.js:23 and friends all tolerate that) receives no claim
 //     messages at all, yet can still read localStorage perfectly well.
 //
-// On a tuple change, route through the SAME loss path as a collision rotation
-// -- do not merely drop the lease. Dropping it alone makes further WRITES
-// impossible (hasValidLease()'s peekTabId/tuple checks) while leaving this tab
-// audibly playing, out of sync with what is durably recorded: exactly the
-// hazard the rotated:true contract above exists to prevent, arriving by a
-// different route. In order:
+// A 'storage' event is a WAKE-UP SIGNAL ONLY. Never act on event.newValue.
+// Storage events are queued tasks delivered to other storage objects, so the
+// value they carry can already be stale by the time the handler runs, and this
+// sequence is entirely legal: another tab writes and queues event A; before A
+// is delivered, the user plays here and this document claims lease B; A then
+// arrives carrying its older newValue. Acting on it would drop B, pause valid
+// playback, and revoke an epoch that is still current -- the user's newer
+// action losing to stale notification data.
+//
+// So on delivery: re-read storage and re-run hasValidLease() against the
+// CAPTURED lease. If it still validates, do nothing at all. Only enter the
+// loss path when the fresh read says ownership genuinely moved.
+//
+// Then route through the SAME loss path as a collision rotation -- do not
+// merely drop the lease. Dropping it alone makes further WRITES impossible
+// (hasValidLease()'s peekTabId/tuple checks) while leaving this tab audibly
+// playing, out of sync with what is durably recorded: exactly the hazard the
+// rotated:true contract above exists to prevent, arriving by a different
+// route. In order:
 //   1. drop the in-memory lease synchronously;
 //   2. pause/relinquish active playback (the caller's playback layer);
 //   3. revokeLease() with the CAPTURED PRIOR lease, not the dropped null;
@@ -724,7 +786,8 @@ export const OWNERSHIP_CHANNEL_NAME = 'hannan-miniplayer-ownership';
 //      else a TAB_ID_KEY rotation can happen.
 //
 // The test harness therefore needs a fake event target alongside its fake
-// storage and fake channel.
+// storage, including a delayed-delivery case where a local reclaim lands
+// before an older queued event is dispatched.
 
 // Purely random output (no orderable/timestamp component -- see
 // shouldRotateOnCollision()'s comment for why that matters), via

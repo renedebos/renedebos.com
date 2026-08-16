@@ -889,7 +889,7 @@ test('ownership events arrive in order as {seq, kind}: play-attempt, then local-
   } finally { c.destroy(); }
 });
 
-test('play-attempt is bumped SYNCHRONOUSLY — before any await, so a slow or failing load cannot let a stale restore win', async () => {
+test('play-attempt is observable synchronously, before the play promise settles', async () => {
   const audio = new FakeAudio();
   audio.autoplayBehavior = 'manual'; // play() never settles
   const c = new PlaybackController({ audio, mediaSession: false });
@@ -930,40 +930,85 @@ test('a REBUFFER (waiting -> playing) does NOT bump the ownership sequence — t
   } finally { c.destroy(); }
 });
 
-test('the sequence distinguishes "played then claimed" from "claimed then played then paused" — which per-kind counters cannot', async () => {
+// Rewritten 2026-08-16 after a review round proved the previous version
+// vacuous: splitting _bumpOwnership() into per-kind counters exposing
+// Math.max(localSeq, externalSeq) — a direct violation of the single-sequence
+// contract this test is named for — left all 57 tests green, because it only
+// ever asserted lastOwnershipEvent, which split counters also get right.
+//
+// Its comment was wrong too. claimListeners is module-scope
+// (player-controller.js:25), so four simultaneously-live controllers share one
+// registry and each receives THREE external claims, not the one the comment
+// claimed. The scenarios now run one ISOLATED PAIR at a time, torn down before
+// the next is built, and assert the exact {seq, kind} stream.
+test('the ownership stream is ONE monotonic sequence spanning local and external events, with consecutive seq values', async () => {
   const mk = () => {
     const audio = new FakeAudio();
-    return { audio, c: new PlaybackController({ audio, mediaSession: false }) };
+    const c = new PlaybackController({ audio, mediaSession: false });
+    const seen = [];
+    c.onOwnershipEvent(e => seen.push(e));
+    return { audio, c, seen };
   };
-  // Order 1: this tab plays, then loses to another tab.
-  const one = mk(); const oneRival = mk();
-  // Order 2: another tab claims first, then this tab plays, then user pauses.
-  const two = mk(); const twoRival = mk();
+
+  // Scenario 1 — this tab plays, then loses to another tab.
+  let mine = mk(); let rival = mk();
   try {
-    one.c.setQueue([item('a')], { startIndex: 0, autoplay: true });
+    mine.c.setQueue([item('a')], { startIndex: 0, autoplay: true });
     await tick();
-    oneRival.c.setQueue([item('r')], { startIndex: 0, autoplay: true });
+    rival.c.setQueue([item('r')], { startIndex: 0, autoplay: true });
+    await tick();
+    assert.deepEqual(mine.seen.map(e => e.kind), ['play-attempt', 'local-play', 'external-claim'],
+      'exact stream, not just its last element');
+    assert.deepEqual(mine.seen.map(e => e.seq), [1, 2, 3],
+      'consecutive across BOTH local and external kinds — per-kind counters cannot produce this');
+    assert.equal(mine.c.state, 'paused');
+  } finally { mine.c.destroy(); rival.c.destroy(); }
+
+  // Scenario 2 — another tab claims first, then this tab plays, then pauses.
+  // Torn down and rebuilt so the shared claim registry holds exactly one pair.
+  mine = mk(); rival = mk();
+  try {
+    rival.c.setQueue([item('r')], { startIndex: 0, autoplay: true });
+    await tick();
+    mine.c.setQueue([item('a')], { startIndex: 0, autoplay: true });
+    await tick();
+    mine.c.pause();
+    await tick();
+    assert.deepEqual(mine.seen.map(e => e.kind), ['external-claim', 'play-attempt', 'local-play'],
+      'the mirror-image ordering');
+    assert.deepEqual(mine.seen.map(e => e.seq), [1, 2, 3], 'one shared counter, still consecutive');
+    assert.equal(mine.c.state, 'paused');
+  } finally { mine.c.destroy(); rival.c.destroy(); }
+
+  // The two scenarios end identically under any per-kind scheme (both paused,
+  // both one local + one external), and are told apart ONLY by event order.
+  // Only the second tab legitimately still owns the session.
+});
+
+test('a queued play event delivered after an intervening pause claims nothing and reports nothing playing', async () => {
+  const a = { audio: new FakeAudio() };
+  const b = { audio: new FakeAudio() };
+  a.c = new PlaybackController({ audio: a.audio, mediaSession: false });
+  b.c = new PlaybackController({ audio: b.audio, mediaSession: false });
+  try {
+    // Both started in the SAME task, before either queued 'play' event runs —
+    // play()/pause() flip `paused` synchronously but deliver 'play'/'playing'
+    // as queued tasks, and pause() does not cancel an already-queued one.
+    a.c.setQueue([item('a')], { startIndex: 0, autoplay: true });
+    b.c.setQueue([item('b')], { startIndex: 0, autoplay: true });
     await tick();
 
-    twoRival.c.setQueue([item('r')], { startIndex: 0, autoplay: true });
-    await tick();
-    two.c.setQueue([item('a')], { startIndex: 0, autoplay: true });
-    await tick();
-    two.c.pause();
-    await tick();
-
-    // Both tabs are paused, and both saw one local play and one external claim
-    // — indistinguishable under separate per-kind counters. Only the LAST event
-    // kind separates them, and only the second tab should still own.
-    assert.equal(one.c.state, 'paused');
-    assert.equal(two.c.state, 'paused');
-    assert.equal(one.c.snapshot().lastOwnershipEvent, 'external-claim',
-      'tab one lost ownership last — it must not reclaim');
-    assert.equal(two.c.snapshot().lastOwnershipEvent, 'local-play',
-      'tab two played after being claimed — it legitimately still owns');
-  } finally {
-    [one, oneRival, two, twoRival].forEach(x => x.c.destroy());
-  }
+    // Whichever one lost is paused; it must not have re-claimed on the way out.
+    for (const [name, x] of [['a', a], ['b', b]]) {
+      if (!x.audio.paused) continue;
+      assert.equal(x.c.snapshot().lastOwnershipEvent, 'external-claim',
+        `${name} is paused, so its last ownership event must be the claim that paused it — `
+        + 'a stale queued play event must not mint a fresh ownership epoch for silent audio');
+      assert.notEqual(x.c.state, 'playing',
+        `${name} reports playing while its audio is paused`);
+    }
+    assert.ok(a.audio.paused || b.audio.paused, 'premise: one of them really did lose');
+  } finally { a.c.destroy(); b.c.destroy(); }
 });
 
 test('a late subscriber recovers a pre-subscription event by comparing snapshot().ownershipSeq', async () => {

@@ -237,11 +237,33 @@ export class PlaybackController {
     this._abort = new AbortController();
     const on = (type, fn) => this.audio.addEventListener(type, fn, { signal: this._abort.signal });
 
+    // Both media events below are ignored once audio.paused is already true.
+    //
+    // play()/pause() flip `paused` synchronously but deliver 'play'/'playing'
+    // as QUEUED media tasks, and pause() does not cancel an event queued
+    // before it. So a controller that had play() called on it and was then
+    // paused -- by an external claim landing in between, or a fast user
+    // pause/play -- still receives a 'play' event describing a state that no
+    // longer holds. Reproduced with two controllers started in the same task,
+    // before either queued event ran: the loser ended up paused but reporting
+    // state 'playing' AND lastOwnershipEvent 'local-play', so an adopting
+    // mini-player would have minted a durable ownership epoch for a silent
+    // controller and overwritten the genuine winner's session.
+    //
+    // The state half of this predates the ownership work (the 'playing'
+    // handler was never guarded); attaching ownership to it is what turned a
+    // cosmetic inconsistency into a durable-storage one.
+    //
     // Bumped BEFORE claim(this), which synchronously runs other in-document
     // controllers' claim listeners — so their 'external-claim' bump is
     // correctly ordered after this one.
-    on('play', () => { this._bumpOwnership('local-play'); claim(this); this._syncMediaPlaybackState(); });
-    on('playing', () => { this._setState('playing'); this._notify(); });
+    on('play', () => {
+      if (this.audio.paused) return;
+      this._bumpOwnership('local-play');
+      claim(this);
+      this._syncMediaPlaybackState();
+    });
+    on('playing', () => { if (this.audio.paused) return; this._setState('playing'); this._notify(); });
     on('waiting', () => { this._setState('loading'); this._notify(); });
     on('pause', () => {
       this._syncMediaPlaybackState();
