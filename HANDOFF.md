@@ -22,8 +22,15 @@ user-visible UI — that starts at 3a-canary. The one user-facing change is
 song pages moving onto the shared `PlaybackController`, verified working
 in production.
 
-**Six commits sit on the branch, unmerged and unpushed.** Nothing is
+**Eleven commits sit on the branch, unmerged and unpushed.** Nothing is
 deployed; no PR is open. Newest first:
+- `18e7dc7` — applies the third Task 2 review round, plus three defects
+  that applying it uncovered (two of them on shipped surfaces)
+- `e96e532` — applies the second Task 2 review round
+- `940a1a6` — applies the first Task 2 review round
+- `bbc707f` — drops `model: sonnet` from the three project agent
+  definitions; Rene's change, so they inherit the session's model
+- `6b0790e` — **Stage 3a-canary Task 2: `MiniPlayerView`**
 - `5d2746d` — applies the Phase 0 review findings, plus Task 1's
   `--player-*` aliases
 - `d4056ac` — Stage 3a-canary Phase 0: the integration contracts
@@ -32,14 +39,61 @@ deployed; no PR is open. Newest first:
 - `825b3aa` — two stale `browser_check.mjs` assertions (see "Two incidents"
   below); dev script only, rides along with 3a-canary's PR
 
-**Nothing on this branch is user-visible yet.** Every commit so far is
-plumbing, docs, or tests; no generated HTML has changed since 3a-foundation
-shipped. The stage's first visible surface is Task 2's `MiniPlayerView`.
+**Nothing on this branch is user-visible yet.** No generated HTML has
+changed since 3a-foundation shipped — Task 2 built the mini-player's view
+layer but nothing emits it into a page, exactly as `miniplayer-state.js` sat
+after 3a-foundation. The first genuinely visible change arrives at Task 6,
+when the container markup and the boot module land.
+
+**Three shipped-surface files changed on this branch as a side effect of
+Task 2's reviews** — `player-controller.js`, `playlist-views.js`, and the
+two test fakes. Each fixes a real bug on a live page (details below); each
+is small and directly tested. Worth calling out in the PR description
+because a reader expecting a view-layer-only diff will not expect them.
 
 ## ✅ Done this session (2026-08-16)
 
-All of it is Stage 3a-canary groundwork plus one documentation cleanup. Two
-commits, both local.
+Stage 3a-canary groundwork, then **Task 2 and its three review rounds**.
+Eleven commits, all local.
+
+### Phase A Task 2 — `scripts/miniplayer-views.js` (`MiniPlayerView`)
+The stage's first user-visible *surface*, though nothing emits it yet. A
+third view module, importing `player-controller.js` and nothing else — a
+test asserts that on the source text, and the harness loader rewrites only
+that one specifier, so a second `/assets/` import fails to resolve rather
+than passing silently. Queue-scoped, with its own local `QueueView` base
+duplicated from `playlist-views.js` rather than imported.
+
+What it does, all per the recorded Phase 0 contracts: patches in place and
+rebuilds structure only on a `currentItem.id` change; hides prev/next for a
+singleton queue, gated on `queueRevision`; resets `_seeking` on a track
+change; distinguishes **Resume** (a `NotAllowedError` still attributed to
+the current item) from **Retry**; emits a close *request* and owns no
+stop/clear policy; and republishes `--miniplayer-height` from a
+`ResizeObserver`.
+
+**Two contracts Task 3 and the coordinator must match:**
+- `--miniplayer-height` is **removed, not zeroed**, when the bar is hidden,
+  so every consumer must read `var(--miniplayer-height, 0px)`. The published
+  value is the border-box height, so the CSS must carry
+  `env(safe-area-inset-bottom)` as the bar's own bottom padding for the
+  measurement to include it.
+- The view changes nothing about playback or the queue on Close. The
+  dismiss → fresh epoch → empty write → drop-lease sequence stays the
+  coordinator's.
+
+### Task 2 was reviewed three times: 7, then 6, then 4 findings
+All seventeen confirmed by reproduction, all fixed or dispositioned; full
+detail in `-codex.md`'s three "Task 2" entries with their Disposition and
+Applied blocks. **The loop was stopped after round three, deliberately** —
+that round's two most serious findings were defects introduced by round
+two's own fixes, which is the same signal that closed the ownership
+subsystem's twelve-round sequence. What this code needs now is a real
+consumer (Tasks 4–5) and a browser, not a fourth adversarial pass.
+
+The findings worth carrying forward are in "Gotchas" and "Durable facts"
+below. The single most valuable one: **making the test fakes honest found
+two live bugs on shipped pages.**
 
 ### The plan doc's Phase 3 section was condensed
 902 lines → 581. The round-by-round review narrative (the twelve
@@ -107,7 +161,16 @@ asserted that song occurrences accumulate into a shared queue; the
 Queue-origin contract assigns them `playSingleton()`. Verified empirically
 against production before rewriting them. Fix is `825b3aa`.
 
-## 🔧 In progress — Stage 3a-canary (Phase 0 complete)
+## 🔧 In progress — Stage 3a-canary (Phase 0 and Phase A Tasks 1–2 complete)
+
+**Next: Task 3** — the mini-player's CSS in *both* design systems
+(`scripts/site.css` and `scripts/home.css`), correct in light and dark in
+each, which finishes Phase A. Full spec in the working copy; the two
+Task-2 contracts it has to honor are listed under "Done this session"
+above. After that, Phase B's coordinator (Tasks 4–5) — the highest-risk
+work in the stage, and the first real consumer `miniplayer-state.js` has
+ever had.
+
 
 Mini-player container + script **always emitted**, with a
 `MINI_PLAYER_ENABLED` flag controlling only the *runtime default*. An
@@ -154,9 +217,12 @@ reproduction, all fixed in `5d2746d`. Two invalidated work already marked
 complete, which is why the status words above exist. The three worth
 carrying forward are in Durable facts and Gotchas below.
 
-**Next: Phase A Task 2** — `scripts/miniplayer-views.js`
-(`MiniPlayerView`), then Task 3's CSS in both design systems. Task 1 is
-done. Task 2 is the stage's first user-visible surface.
+**The working copy's Task 4 text was stale and is now corrected** — it
+still named `myNonce`, `resolvedNonces`, "the dedicated channel" and "the
+settlement timer", all superseded by the tab-identity Web Lock. Left
+uncorrected it would have been implemented as written. Task 4 owns the
+lock's acquisition/retry/BFCache lifecycle and the `storage` listener, and
+opens **no** ownership channel.
 
 **Starting state, verified 2026-08-15, CORRECTED 2026-08-16.** The earlier
 version of this section said "everything on the *controller* side that the
@@ -222,6 +288,62 @@ Remaining stages after this: **3b-default** (route "Add to player" /
 stub).
 
 ## Gotchas learned this session
+
+- **A test fake that is wrong about the platform hides real bugs — plural.**
+  `FakeAudio.play()` fired `play`/`playing` on every call, and assigning
+  `src` did not set `paused`. Neither matches the platform (WHATWG's
+  internal play steps fire only on a paused → playing transition; the media
+  load algorithm sets `paused` true). Modelling both rules turned **five
+  tests red across four suites**: four had been relying on the lie, and the
+  fifth was a **live bug on `/playlist/`** — pressing Prev on track 1 of a
+  playing queue left `#pl-now` stuck in its loading presentation for the
+  rest of the track, shipped since Phase 2 with a green test the whole
+  time. It then surfaced a second, deeper one (below). Both fakes now model
+  the two rules, and a harness-contract test pins them. **Don't "simplify"
+  a fake toward whatever makes the suite green** — that is the same
+  mistake, one level down, as the `ResizeObserver` fake that kept
+  delivering after `disconnect()`.
+- **A flaky test is a bug report, not a retry candidate.** One run in
+  ~20 of `test-playlist-state.mjs` failed after the fake was fixed. It
+  diagnosed to a real `player-controller.js` defect: replaying the CURRENT
+  item assigns no `src`, so no load and no `play` event follow, and the
+  controller sat in `'loading'` forever while audio played — reachable via
+  repeat-one's replay and via `/playlist/`'s endless rollover when the
+  reshuffle happens to put the just-finished track back at index 0. Fixed
+  at the controller. Re-running until green would have buried it.
+- **Ask what a fix makes untestable.** Twice this session a correct fix
+  removed the only path that could prove a *different* line was
+  load-bearing: `_patchMeta()`'s cross-invalidation made the rebuild
+  branch's cache reset unprovable, and the controller-level state
+  correction made both `_prev()` guards unprovable through state. Both were
+  resolved by re-pinning on a property that is still local (the title in
+  the controls key; `ownershipSeq` not moving), not by deleting the
+  belt-and-braces line. When a mutation stops failing, the honest question
+  is "what now guarantees this?", and the answer belongs in the comment.
+- **A character check is not a URL parser.** `isSitePath()` required a
+  leading `/` and rejected a literal second one, and was documented as
+  "only same-origin root-relative paths survive". Four values pass it and
+  resolve **off-origin**: `/\evil.test/x` (backslash is a path separator
+  for special schemes) plus a tab, CR or LF before the second slash (all
+  stripped before parsing). Both boundaries now parse against a sentinel
+  origin on the reserved `.invalid` TLD and compare origins.
+- **When a view starts rendering a field, check the persistence codec.**
+  `encodeItem()`'s "omits every field a mini-bar never renders" was true
+  when written and was falsified by a consumer a stage later — twice, one
+  field apart (`venue`, then `date`). Every view test built fixtures
+  directly, so nothing crossed the codec and the suites stayed green while
+  a restored session rendered a track with its venue missing. The views
+  suite now imports the real `buildEnvelope`/`decodeEnvelope` for at least
+  one test, which is the structural fix; the invariant is written at the
+  codec: **if `MiniPlayerView` renders a field, that projection carries
+  it.**
+- **Watch for a literal control byte in source.** A `0x1f` ended up inside
+  a separator string because it was typed as a character rather than an
+  escape, and it survived a full green test run. The verification sweep is
+  now every C0 control character except tab/newline/CR, not NUL alone —
+  same hazard as the NUL incident below, one byte over. Writing files via
+  a scanned script rather than an inline heredoc is what stopped it
+  recurring.
 
 - **Ask "what mutation would make this fail?" while writing the test, not
   after.** Two vacuous tests turned up in Phase 0 alone — a `destroy()` one
@@ -307,6 +429,36 @@ stub).
   real bugs the narrow framing had hidden. Use both.
 
 ## Durable facts (don't undo)
+
+- **`FakeAudio` (both copies — `test-fake-dom.mjs` and
+  `test-player-controller.mjs`'s own) models two spec rules deliberately:**
+  `play()` fires `play`/`playing` only on a paused → playing transition, and
+  assigning `src` (or calling `load()`) sets `paused = true`. They are a pair
+  — the second is what keeps an ordinary track change working once the first
+  is in place. A harness-contract test asserts both. Reverting either
+  re-hides the two live bugs they exposed.
+- **Never call `play()` on a media element that was not paused.** It
+  resolves without firing anything, so a controller that has already set
+  `'loading'` never leaves it. `MiniPlayerView._prev()` and
+  `PlaylistNowPlayingView._prev()` both guard on `audio.paused ||
+  state === 'error'`, and `player-controller.js`'s `_playIndex()` carries the
+  backstop (a replay that neither reloads nor transitions sets `'playing'`
+  itself). The guards are kept even though the backstop hides their symptom:
+  a needless `play()` still mints an ownership `play-attempt` and clears
+  `lastPlayError`. Both are tested on exactly that property.
+- **A view creates a fresh `AbortController` per `onAttach()` and aborts the
+  outgoing one first.** `PlaybackController.mount()` calls `onAttach()` even
+  for a view already in its set, so replacing without aborting leaves two
+  live handler sets — one click toggles twice and the control looks dead.
+  `onDetach()` also hides and resets, so a remount rebuilds. Note
+  `player-views.js`/`playlist-views.js` still use one constructor-scoped
+  controller; harmless there only because nothing remounts those views.
+- **`--miniplayer-height` is removed, not zeroed**, when the bar is hidden.
+  Consumers must read `var(--miniplayer-height, 0px)`. The published value is
+  the border-box height, so the bar's own CSS must carry
+  `env(safe-area-inset-bottom)` as bottom padding for it to be included.
+- **The mini-player view owns no stop/clear policy.** Close emits a callback
+  and changes nothing about playback, the queue, or its own visibility.
 
 - **Everything under "Durable facts" in this file's Phase-1/Phase-2-era
   versions is unchanged and still true** (see git history:
@@ -414,22 +566,45 @@ applied to the Phase 1/Phase 2 sections, which still carry their full
 inline review narrative despite both phases being shipped and closed;
 that's the obvious next trim if the file gets unwieldy again.
 
-Tests: `node scripts/test-*.mjs` — 8 files, of which `test-fake-dom.mjs`
-is a helper rather than a suite. **282/282 passing** as of this handoff
-(122 in `test-miniplayer-state.mjs`, 58 in `test-player-controller.mjs`;
-Stage 3a-canary Phase 0 and its review round added 20 between them), on
-**both** Node 20 and a simulated Node 24. Simulate Node 24 with
-`node --import <preload> …` where the preload defines a getter-only
-`navigator` global — CI runs Node 24 and local dev runs Node 20. Also clean: `python3 scripts/build.py`, `--check`,
-`python3 scripts/verify_markup.py --check-allowlist-coverage`, `node
---check`, zero null bytes, and `cmp scripts/miniplayer-state.js
-assets/miniplayer-state.js`.
+Tests: `node scripts/test-*.mjs` — 9 files, of which `test-fake-dom.mjs`
+is a helper rather than a suite. **327/327 passing** as of this handoff, on
+**both** Node 20 and a simulated Node 24, counted per suite:
+
+| suite | tests |
+|---|---|
+| `test-miniplayer-state.mjs` | 126 |
+| `test-miniplayer-views.mjs` | 38 |
+| `test-player-controller.mjs` | 60 |
+| `test-player-boot.mjs` | 28 |
+| `test-playlist-state.mjs` | 29 |
+| `test-player-views.mjs` | 17 |
+| `test-playlist-views.mjs` | 16 |
+| `test-song-boot.mjs` | 13 |
+
+(Commit `18e7dc7`'s message says 328 — arithmetic, not a lost test. The
+table is the counted figure.)
+
+Simulate Node 24 with `node --import <preload> …` where the preload defines
+a getter-only `navigator` global — CI runs Node 24 and local dev runs Node
+20. Also clean: `python3 scripts/build.py`, `--check`, `python3
+scripts/verify_markup.py --check-allowlist-coverage`, `node --check`, `cmp`
+of every `scripts/` module against its `assets/` copy, and a control-byte
+sweep (now every C0 character except tab/newline/CR, not NUL alone). The two
+suites that flaked during the fake-audio work were each run 25 further times
+with zero failures.
 
 Real-browser verification: `scripts/browser_check.mjs` — needs
 `playwright-chromium`, and on this machine it is a **global** install, so
 run it as `NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs`
 (the script's own error message tells you this too). `--prod` points it at
-`https://renedebos.com`. **185/185 against production** as of this handoff.
+`https://renedebos.com`. **185/185 against production, but that figure is
+from before Task 2 and it has NOT been re-run this session** — nothing on
+this branch is emitted into a page yet, so there is nothing new for it to
+check, but re-run it before any PR. `plans/player-consolidation/
+browser-check-miniplayer.draft.mjs` is a spec-ahead `checkMiniPlayer()`
+scenario written against the frozen contracts, deliberately not wired into
+any run path and not adopted until Phase C — every assertion in it would
+fail today.
 
 Production verification done after the 3a-foundation deploy (the runbook's
 "a green Action alone isn't proof" step): `/assets/miniplayer-state.js`

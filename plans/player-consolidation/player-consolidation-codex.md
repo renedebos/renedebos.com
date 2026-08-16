@@ -5498,8 +5498,10 @@ Nothing declined. Fixes are not applied here — this is the review step only.
 ### Applied (Claude, 2026-08-16)
 
 All four fixed, plus three defects that applying them uncovered. Suites went
-317 → 328 (miniplayer-views 32→38, miniplayer-state 125→126, player-controller
-58→60, playlist-views 15→16), green on Node 20 and simulated Node 24. **Nine
+317 → 327 (miniplayer-views 32→38, miniplayer-state 125→126, player-controller
+58→60, playlist-views 15→16), green on Node 20 and simulated Node 24. (The
+commit message for this work says 328; it was arithmetic, not a lost test —
+the per-suite figures above are the counted ones.) **Nine
 mutations run, nine caught.**
 
 1. **FIXED.** Both boundaries now resolve with `new URL()` against a sentinel
@@ -5559,7 +5561,7 @@ tested: `player-controller.js` (the silent-resume state correction),
 contract test now pins `FakeAudio`'s two spec rules so the fidelity cannot be
 quietly reverted — the fake is load-bearing evidence now, not scaffolding.
 
-Verification: 328/328 on Node 20 and simulated Node 24; the two suites that
+Verification: 327/327 on Node 20 and simulated Node 24; the two suites that
 flaked were each run 25 more times with zero failures; `build.py --check`,
 `build.py`, `verify_markup.py --check-allowlist-coverage`, `node --check` and
 source/asset `cmp` on all four changed modules, and the control-byte sweep —
