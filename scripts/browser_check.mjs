@@ -625,8 +625,15 @@ async function checkSongPage(context) {
       hasBoot: !!window.SONG_BOOT, hasController: !!(window.SONG_BOOT && window.SONG_BOOT.controller),
       queueLen: window.SONG_BOOT && window.SONG_BOOT.controller.queue.length,
     }));
-    record(`${url}: mount (flag set, controller exposed on SONG_BOOT, every occurrence queued)`,
-      mountInfo.hasBoot && mountInfo.hasController && mountInfo.queueLen > 0, JSON.stringify(mountInfo));
+    // NOT "every occurrence queued" (what this asserted until 2026-08-16,
+    // failing the first real production run of the song-page migration).
+    // Per the plan's Queue-origin contract, a lazily-rendered song occurrence
+    // uses playSingleton() -- mounting a row attaches a PlayerView, it does
+    // NOT enqueue anything, so an un-played page correctly has an empty
+    // queue. "All performances of this song" is explicitly a deliberate
+    // later decision, not a side effect of mounting.
+    record(`${url}: mount (flag set, controller exposed on SONG_BOOT, no eager queue -- occurrences are playSingleton())`,
+      mountInfo.hasBoot && mountInfo.hasController && mountInfo.queueLen === 0, JSON.stringify(mountInfo));
 
     const readinessValue = await page.evaluate(() => window.PLAYBACK_HOST_READY.then((v) => v));
     record(`${url}: PLAYBACK_HOST_READY resolves controller/none`,
@@ -637,10 +644,11 @@ async function checkSongPage(context) {
     await page.waitForTimeout(2000);
     const playback = await page.evaluate(() => {
       const c = window.SONG_BOOT.controller;
-      return { t: c.audioElement.currentTime, paused: c.audioElement.paused, state: c.state };
+      return { t: c.audioElement.currentTime, paused: c.audioElement.paused, state: c.state, queueLen: c.queue.length };
     });
-    record(`${url}: real playback (controller.audioElement actually advances)`,
-      playback.t > 0.3 && !playback.paused && playback.state === 'playing', JSON.stringify(playback));
+    record(`${url}: real playback (controller.audioElement actually advances), queued as a length-1 singleton`,
+      playback.t > 0.3 && !playback.paused && playback.state === 'playing' && playback.queueLen === 1,
+      JSON.stringify(playback));
 
     record(`${url}: no console errors`, consoleErrors.length === 0, consoleErrors.join(' | '));
     await page.close();
@@ -660,27 +668,42 @@ async function checkSongPage(context) {
     record(`${url}: mounts with zero rows initially (no <details> opened yet) instead of refusing to claim the page`,
       zeroRowState === 0, `queueLen=${zeroRowState}`);
 
-    // Open two DIFFERENT song entries and confirm the SAME controller's
-    // queue grows across both -- the behavior scripts/test-song-boot.mjs's
-    // mountRows() tests prove against a fake DOM; this is the real-<details>
-    // real-fetch proof.
+    // Open two DIFFERENT song entries and confirm both groups' rows mount
+    // onto the SAME controller instance -- the behavior
+    // scripts/test-song-boot.mjs's mountRows() tests prove against a fake
+    // DOM; this is the real-<details> real-fetch proof.
+    //
+    // "Shared" here means the controller/audio element, NOT the queue (this
+    // asserted a growing shared queue until 2026-08-16, which contradicted
+    // song-boot.js's own documented queue-origin contract and failed the
+    // first real production run). Identity is proven by tagging the
+    // controller object before the second group opens and finding the tag
+    // still there afterward -- a fresh per-song controller would lose it.
     const details = page.locator('.song-item summary');
     await details.nth(0).click();
     await page.waitForTimeout(500);
-    const afterFirst = await page.evaluate(() => window.SONG_BOOT.controller.queue.length);
+    await page.evaluate(() => { window.SONG_BOOT.controller.__sharedInstanceProbe = 'tagged-after-first-open'; });
+    const rowsAfterFirst = await page.locator('.song-occ .play-btn').count();
     await details.nth(1).click();
     await page.waitForTimeout(500);
-    const afterSecond = await page.evaluate(() => window.SONG_BOOT.controller.queue.length);
-    record(`${url}: opening a second song entry extends the SAME shared queue, not a fresh one`,
-      afterFirst > 0 && afterSecond > afterFirst, `after1=${afterFirst} after2=${afterSecond}`);
+    const rowsAfterSecond = await page.locator('.song-occ .play-btn').count();
+    const sameInstance = await page.evaluate(() =>
+      window.SONG_BOOT.controller.__sharedInstanceProbe === 'tagged-after-first-open');
+    record(`${url}: opening a second song entry mounts its rows onto the SAME controller instance, not a fresh one per song`,
+      rowsAfterFirst > 0 && rowsAfterSecond > rowsAfterFirst && sameInstance,
+      `rows1=${rowsAfterFirst} rows2=${rowsAfterSecond} sameInstance=${sameInstance}`);
 
-    await page.locator('.song-occ .play-btn').first().click();
+    // Play a row from the SECOND opened group specifically -- proves a
+    // lazily-inserted row from a later batch really plays, and that it
+    // replaces rather than extends (playSingleton()'s length-1 queue).
+    await page.locator('.song-occ .play-btn').last().click();
     await page.waitForTimeout(2000);
     const playback = await page.evaluate(() => {
       const c = window.SONG_BOOT.controller;
-      return { t: c.audioElement.currentTime, paused: c.audioElement.paused };
+      return { t: c.audioElement.currentTime, paused: c.audioElement.paused, queueLen: c.queue.length };
     });
-    record(`${url}: real playback from a lazily-inserted row`, playback.t > 0.3 && !playback.paused, JSON.stringify(playback));
+    record(`${url}: real playback from a lazily-inserted row, replacing rather than extending (length-1 queue)`,
+      playback.t > 0.3 && !playback.paused && playback.queueLen === 1, JSON.stringify(playback));
 
     record(`${url}: no console errors`, consoleErrors.length === 0, consoleErrors.join(' | '));
     await page.close();
