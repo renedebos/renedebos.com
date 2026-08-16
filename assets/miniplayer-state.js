@@ -19,11 +19,14 @@
 // itself fail, leaving the two stores disagreeing. The fix here removes the
 // shape entirely rather than further narrowing it: claimOwnership() is now
 // exactly ONE localStorage.setItem() call, and the fencing credential (a
-// "lease": {ownerId, ownerEpoch}) is NEVER persisted anywhere — it lives only
-// in the caller's JS memory (wiped by navigation, which is exactly the
-// lifetime a "was this write issued under the still-current claim" check
-// needs) and is re-derived on a fresh page load by reading the one durable
-// envelope (restoreLease()). See the plan doc for the full bug history.
+// "lease": {ownerId, ownerEpoch}) is never persisted as a SEPARATE credential
+// requiring its own cross-key synchronization — it lives only in the
+// caller's JS memory (wiped by navigation, which is exactly the lifetime a
+// "was this write issued under the still-current claim" check needs). The
+// tuple itself IS necessarily readable inside the one durable envelope
+// (that's how restoreLease() re-derives a lease on a fresh page load at
+// all) — "never persisted" describes the credential's storage SHAPE, not
+// its visibility. See the plan doc for the full bug history.
 //
 // Nothing in this repo calls this module yet — no UI ships this stage. A
 // later stage's mini-player boot script is the first real consumer; this is
@@ -259,13 +262,60 @@ export function readEnvelope(localStore) {
   return { status: 'ok', envelope };
 }
 
+// Reads back its own write and requires exact equality before reporting
+// success (2026-08-15 fix — a `/review-step` round found this was the one
+// storage write in the module that DIDN'T do this: establishTabId() and
+// revokeLease() were both already fixed earlier the same day for the
+// identical reason, but this is the actual commit path underneath
+// claimOwnership()/writeSession()/tombstoneIfCurrent(), so the gap was
+// wider than either of those. Reproduced directly with a setItem() that
+// never throws but silently drops the write: claimOwnership() reported
+// {ok:true} while readEnvelope() still saw 'absent', and both
+// writeSession()/tombstoneIfCurrent() reported true on a healthy claim
+// while the durable envelope stayed byte-for-byte unchanged underneath).
+// Still exactly one setItem() call either way -- the read-back is a
+// getItem(), not a second write -- so the "one write, nothing to roll
+// back" property this module was redesigned around is unaffected.
+//
+// The verification read RETRIES a bounded number of times (2026-08-15 fix
+// — a later `/review-step` round found the original single-attempt version
+// had introduced the exact MIRROR IMAGE of the bug above: a write that
+// genuinely LANDED, followed by one transient getItem() throw, was
+// reported as `false`, so claimOwnership() returned
+// {ok:false, reason:'write-failed'} while the envelope durably showed its
+// new owner, writeSession() returned false while the item was saved, and
+// tombstoneIfCurrent() returned false while ownership was actually
+// cleared — all three reproduced directly). Same bounded-retry shape as
+// generateDistinctFrom() below.
+//
+// HONEST RESIDUAL (deliberately not chased further): if EVERY retry also
+// throws, this still reports `false` for a write that may have landed.
+// Accepted because the consequence is bounded and self-healing rather than
+// corrupting, traced per caller: claimOwnership() has no CAS precondition,
+// so a retried claim simply overwrites cleanly; writeSession() self-heals
+// on the caller's next periodic save; tombstoneIfCurrent() is already
+// documented as best-effort and explicitly never load-bearing for
+// correctness. A full `confirmed`/`not-written`/`indeterminate` tri-state
+// threaded through all three public APIs was considered and declined as
+// disproportionate to that bounded risk.
+const MAX_WRITE_VERIFY_ATTEMPTS = 3;
 export function writeEnvelope(localStore, envelope) {
+  const serialized = JSON.stringify(envelope);
   try {
-    localStore.setItem(STATE_KEY, JSON.stringify(envelope));
-    return true;
+    localStore.setItem(STATE_KEY, serialized);
   } catch (e) {
     return false; // quota exceeded, storage disabled (private browsing), etc.
   }
+  for (let attempt = 0; attempt < MAX_WRITE_VERIFY_ATTEMPTS; attempt++) {
+    let readBack;
+    try {
+      readBack = localStore.getItem(STATE_KEY);
+    } catch (e) {
+      continue; // transient read blip -- retry rather than misreport a landed write as failed
+    }
+    return readBack === serialized; // a successful READ is decisive either way, match or not
+  }
+  return false; // every verification attempt threw -- see the honest residual above
 }
 
 // ── tab identity (sessionStorage) ─────────────────────────────────────────
@@ -279,6 +329,31 @@ function generateTabId() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }
 
+// Regenerates via `generate` until the result differs from `existingValue`,
+// up to a small bounded number of attempts, returning null if it never
+// manages to (2026-08-15 fix — a `/review-step` round found rotateTabId()
+// and claimOwnership() both minted a fresh id/epoch without ever comparing
+// it against the value being replaced. Reproduced directly with pinned
+// Date.now()/Math.random(): rotateTabId() reported success while leaving a
+// genuine collision completely unresolved, and two consecutive
+// claimOwnership() calls minted the IDENTICAL ownerEpoch, letting a stale
+// write from the first claim land after the second — reopening the exact
+// round-5 bug this whole redesign exists to structurally close. Real
+// entropy makes a first-attempt collision astronomically unlikely, so this
+// is defense-in-depth against degraded/predictable entropy sources, not an
+// expected path — but the module's own standing principle is to make a
+// guarantee structural rather than merely probabilistic, same as every
+// storage read-back check elsewhere in this file). Shared by rotateTabId()
+// (below) and claimOwnership()'s epoch minting (further down).
+const MAX_DISTINCT_VALUE_ATTEMPTS = 5;
+function generateDistinctFrom(generate, existingValue) {
+  for (let attempt = 0; attempt < MAX_DISTINCT_VALUE_ATTEMPTS; attempt++) {
+    const candidate = generate();
+    if (candidate !== existingValue) return candidate;
+  }
+  return null; // could not produce a value distinct from existingValue -- caller fails closed
+}
+
 // Called exactly once per document, at boot, before anything else in this
 // module. Idempotent if a value already exists. Unlike the old getTabId(),
 // this does not just trust that setItem() didn't throw -- it READS BACK what
@@ -289,9 +364,21 @@ function generateTabId() {
 // persistent ownership for this document's entire lifetime; do not call any
 // other ownership function below (peekTabId() is the sole exception -- it is
 // always safe to call and simply returns null too).
+//
+// The initial existence check fails closed too (2026-08-15 fix — a
+// `/review-step` round found the original version collapsed a transient
+// read failure to "nothing exists" and proceeded to generate/persist a
+// BRAND NEW id, destroying a perfectly valid identity carried in from a
+// prior same-tab page load; reproduced directly). A read failure here
+// means "cannot confirm whether an identity already exists," which must
+// never be treated as license to overwrite one that might.
 export function establishTabId(sessionStore) {
   let existing;
-  try { existing = sessionStore.getItem(TAB_ID_KEY); } catch (e) { existing = null; }
+  try {
+    existing = sessionStore.getItem(TAB_ID_KEY);
+  } catch (e) {
+    return null; // cannot positively confirm no identity exists -- refuse rather than risk overwriting one
+  }
   if (existing) return existing;
   const id = generateTabId();
   try {
@@ -321,9 +408,32 @@ export function peekTabId(sessionStore) {
 // collision (see the handshake section below). Same read-back verification
 // as establishTabId(): on a failed or unverified persist, returns null
 // instead of a fabricated ephemeral id that looks valid but was never
-// durably recorded.
+// durably recorded. Also requires the new id to actually DIFFER from
+// whatever was there before persisting (see generateDistinctFrom()'s
+// comment above) -- which means a FAILED pre-write read must fail closed
+// too (2026-08-15 fix — a `/review-step` round found the previous version
+// collapsed a throwing pre-write read to "nothing there," comparing the
+// fresh candidate against `null` instead of the real, unreadable prior
+// value; combined with pinned/degraded entropy, reproduced directly:
+// rotateTabId() reported success while returning the EXACT SAME id that
+// was already stored, leaving a genuine collision completely unresolved
+// but reported resolved. The original reasoning here -- "not itself fatal,
+// the read-back verification below is unaffected either way" -- conflated
+// "verified to have landed" with "verified to have actually changed
+// anything," the same distinction the writeEnvelope() fix, round 8, exists
+// to enforce). Safe to fail closed: the caller contract already disables
+// ownership entirely on a null/failed rotation, so this just routes an
+// unconfirmable pre-read through that already-tested path instead of a
+// false-success one.
 export function rotateTabId(sessionStore) {
-  const id = generateTabId();
+  let existing;
+  try {
+    existing = sessionStore.getItem(TAB_ID_KEY);
+  } catch (e) {
+    return null; // cannot confirm the value being replaced -- refuse rather than risk an undetected no-op "rotation"
+  }
+  const id = generateDistinctFrom(generateTabId, existing);
+  if (id == null) return null;
   try {
     sessionStore.setItem(TAB_ID_KEY, id);
   } catch (e) {
@@ -335,10 +445,22 @@ export function rotateTabId(sessionStore) {
 }
 
 // ── live tab-identity collision detection: request/reply handshake ───────
-// NOT part of the 2026-08-15 fenced-lease redesign -- considered solid after
-// rounds 3-4 of review, out of scope here, kept as-is (only the boot
-// pseudocode's `getTabId()` reference below is updated, to `peekTabId()`,
-// since getTabId() no longer exists).
+// NOT part of the 2026-08-15 fenced-lease redesign's original scope --
+// considered solid after rounds 3-4 of review at the time, kept as-is
+// beyond the boot pseudocode's `getTabId()` reference below being updated
+// to `peekTabId()` (getTabId() no longer exists) -- EXCEPT for one later
+// fix (`/review-step`, 2026-08-15): round 9's deterministic nonce tests
+// (fixed/injected entropy, replacing ones that sampled real randomness)
+// made it provable that two GENUINELY DIFFERENT documents can end up with
+// EQUAL nonces, not just equal-by-self-echo. isTabProbeCollision() treated
+// that as "not a collision" (see its own comment for the original,
+// insufficient reasoning), so two real, distinctly-live colliding
+// documents that happened to draw the same nonce would each silently
+// ignore the other's probe and both later restore as owner -- reproduced
+// directly. Fixed below (isTabProbeCollision()/resolveCollision()); the
+// deterministic tie-break itself (shouldRotateOnCollision()) is unchanged
+// and still solid -- this was specifically the "equal nonces mean no
+// collision at all" classification, not the tie-break logic.
 //
 // peekTabId()/establishTabId() above assume a fresh tab/window always gets a
 // fresh id. That's false: per MDN, a page opened via window.open() WITH an
@@ -357,9 +479,22 @@ export function rotateTabId(sessionStore) {
 // unbiased coin flip neither side can predict or game. A tab that loses the
 // flip is not stuck: any real, local user interaction (play/pause/seek/queue
 // change) reclaims ownership outright via claimOwnership() regardless of what
-// the shared envelope says — so the flip only matters between two
-// SIMULTANEOUSLY idle/passive tabs, where either outcome is equally fine
-// since nobody is actively using either one at that moment.
+// the shared envelope says.
+//
+// CORRECTION (2026-08-15, `/review-step`): the flip does NOT only matter
+// between two idle/passive tabs, as an earlier version of this comment
+// claimed — a tab that is ACTIVELY, AUDIBLY PLAYING can also receive a
+// newly-duplicated tab's probe and lose. Losing immediately invalidates its
+// in-memory lease via peekTabId() (see hasValidLease()'s own comment below),
+// so any further save attempt silently stops landing — but nothing in this
+// module stops the audio itself from continuing to play. See the CALLER
+// CONTRACT below: on `rotated:true`, treat it the same as any other
+// external-claim signal — drop the lease and, per the caller's own
+// playback-layer wiring (outside this module's scope), pause/relinquish
+// active playback. Left as a caller-contract requirement rather than
+// module behavior because this module has no PlaybackController dependency
+// by design (see the module's own header comment) — reaching into
+// playback state here would break that boundary.
 //
 // Both message types funnel through the SAME decision, resolveCollision()
 // below, keyed on the OTHER side's nonce and memoized in `resolvedNonces` —
@@ -375,20 +510,88 @@ export function rotateTabId(sessionStore) {
 // this module: no BroadcastChannel object appears anywhere below. A real
 // boot script's channel.onmessage handler is expected to wire this as:
 //   let myTabId = peekTabId(sessionStorage);
+//   let ownershipDisabled = false; // set once, never cleared -- see the failed-rotation contract below
 //   const myNonce = generateNonce();
 //   const resolvedNonces = new Set();
+//   const onRotated = () => {                 // see the rotated:true contract below
+//     myTabId = peekTabId(sessionStorage);
+//     lease = null;
+//     pauseOrRelinquishPlayback();
+//     // MANDATORY re-probe under the NEW identity -- see the contract below
+//     tabChannel.postMessage({ type: TAB_PROBE_MESSAGE, tabId: myTabId, nonce: myNonce });
+//   };
 //   tabChannel.onmessage = (e) => {
 //     if (e.data.type === TAB_PROBE_MESSAGE) {
-//       const { reply, rotated } = handleIncomingProbe(e.data, sessionStorage, myTabId, myNonce, resolvedNonces);
-//       if (rotated) myTabId = peekTabId(sessionStorage); // rotateTabId() already persisted it
-//       if (reply) tabChannel.postMessage(reply);
+//       const { reply, rotated, failed } = handleIncomingProbe(e.data, sessionStorage, myTabId, myNonce, resolvedNonces);
+//       if (reply) tabChannel.postMessage(reply);  // reply BEFORE re-probing, so ordering stays sane
+//       if (rotated) onRotated();
+//       if (failed) ownershipDisabled = true; // see below -- the collision could not be resolved
 //     } else if (e.data.type === TAB_PROBE_REPLY_MESSAGE) {
-//       const { rotated } = handleIncomingProbeReply(e.data, sessionStorage, myTabId, myNonce, resolvedNonces);
-//       if (rotated) myTabId = peekTabId(sessionStorage);
+//       const { rotated, failed } = handleIncomingProbeReply(e.data, sessionStorage, myTabId, myNonce, resolvedNonces);
+//       if (rotated) onRotated();
+//       if (failed) ownershipDisabled = true;
 //     }
 //   };
 //
-// CALLER CONTRACT, load-bearing (`/review-step` finding, 2026-08-15): the
+// CALLER CONTRACT — `rotated:true` (added 2026-08-15, `/review-step`
+// finding): treat this the same as any other external-claim signal — drop
+// the in-memory `lease` variable to `null` synchronously, and (via the
+// caller's own playback-layer wiring, outside this module's scope) pause
+// or relinquish any actively playing audio. Losing a collision tie-break
+// while genuinely active/playing is a real, reproducible case (not just a
+// theoretical one between two idle tabs, despite the section comment
+// above's original, corrected wording) — this module already makes any
+// further WRITE under the stale lease structurally impossible
+// (hasValidLease()'s peekTabId() check), but nothing stops audio already
+// playing from continuing to play silently out of sync with what's
+// durably recorded, unless the caller acts on this signal.
+//
+// CALLER CONTRACT — MANDATORY RE-PROBE after `rotated:true` (2026-08-15,
+// `/review-step` finding — load-bearing, not optional polish). After
+// refreshing `myTabId`, the caller MUST broadcast a fresh PROBE under the
+// NEW identity. Reason: rotateTabId()/generateDistinctFrom() can only
+// guarantee the replacement differs from THIS document's own previous id —
+// they have no way to know what a DIFFERENT, concurrently-rotating
+// document is independently generating at the same moment. Reproduced
+// directly: with three duplicated documents where TWO lose the same
+// tie-break and both rotate, both independently generated the IDENTICAL
+// replacement id under degraded entropy, and (with no re-probe) that fresh
+// duplication went completely undetected — one claimed under it and the
+// other still passed restoreLease() as `'restored'`. Re-probing turns the
+// pairwise handshake into a genuinely self-converging protocol: any
+// duplication created BY a rotation surfaces as an ordinary new collision
+// under the new identity and is resolved by the exact same mechanism,
+// including the composite-key memoization fix (see resolveCollision()) that
+// makes a second collision under a new identity visible at all.
+//
+// HONEST RESIDUAL (deliberately not engineered against): this converges by
+// repetition rather than by a bounded protocol with a give-up state, so a
+// pathological entropy source could in principle keep producing identical
+// replacements across successive rounds. Requires 3+ genuinely
+// simultaneous duplicated tabs AND repeated identical independent draws;
+// with the re-probe above, it is never permanently undetected, only
+// possibly slower to converge. A bounded-convergence protocol with an
+// explicit disable-on-non-convergence state was considered and declined as
+// disproportionate for a module that, as of this stage, has no consumer
+// to exercise it.
+//
+// CALLER CONTRACT — `failed:true` (2026-08-15 fix — a `/review-step` round
+// found this branch didn't exist at all: rotateTabId()'s return value used
+// to be silently discarded, so a FAILED rotation was reported as
+// `rotated:true` regardless, and BOTH sides of a genuine collision could
+// end up sharing the identical id and BOTH pass restoreLease() as
+// `'restored'` — reproduced directly). `failed:true` means this side
+// needed to rotate away from a collision but the underlying sessionStorage
+// write could not be verified — the collision was NOT actually resolved.
+// Treat this exactly like establishTabId() returning null: disable
+// persistent ownership for this document's entire lifetime (do not call
+// claimOwnership()/writeSession()/tombstoneIfCurrent()/revokeLease() again
+// this load) — there is no way to safely continue participating in
+// ownership while still sharing an unresolved, possibly-duplicated
+// identity with another live document.
+//
+// CALLER CONTRACT — `escalated:true` from `revokeLease()`, load-bearing
+// (`/review-step` finding, 2026-08-15): the
 // handshake handlers above trust the CALLER-SUPPLIED `myTabId` parameter —
 // they never re-read storage themselves — so `myTabId` must be refreshed
 // (`= peekTabId(sessionStorage)`) after EVERY function in this module that
@@ -423,14 +626,24 @@ export function generateNonce() {
 }
 
 // True if an incoming message is a PROBE colliding with THIS document: same
-// tabId, different nonce. (Same tabId + same nonce would mean somehow
-// receiving an echo of this document's own probe, which BroadcastChannel
-// never delivers — treated as "not a collision" defensively rather than
-// assumed impossible.)
-export function isTabProbeCollision(incoming, myTabId, myNonce) {
+// tabId, well-formed nonce. Does NOT require the nonce to differ from mine
+// (2026-08-15 fix — see the section comment above): the original version
+// excluded an equal nonce on the theory that same-tabId+same-nonce could
+// only be a self-echo, since BroadcastChannel structurally never delivers
+// a sender its own message. That reasoning is correct as far as it goes —
+// a TRUE self-echo can't reach this code path in a real deployment — but
+// it does not rule out two DIFFERENT documents whose independently-drawn
+// nonces happen to collide, which round 9's deterministic entropy tests
+// made directly provable. Any same-tabId, well-formed probe is now
+// unconditionally a collision; resolveCollision() below is what decides
+// whether the two nonces provide a usable tie-break or not. No longer
+// takes `myNonce` -- it's genuinely unused now that nonce equality doesn't
+// affect collision-ness, and this module doesn't keep unused parameters
+// around for signature stability (see its one call site, updated below).
+export function isTabProbeCollision(incoming, myTabId) {
   return !!incoming && incoming.type === TAB_PROBE_MESSAGE
     && typeof incoming.tabId === 'string' && incoming.tabId === myTabId
-    && incoming.nonce !== myNonce;
+    && typeof incoming.nonce === 'string' && !!incoming.nonce;
 }
 
 // True if an incoming message is a REPLY specifically addressed to MY OWN
@@ -463,12 +676,63 @@ export function shouldRotateOnCollision({ myNonce, theirNonce }) {
 // REPLY to my own probe — memoized in `resolvedNonces` (caller-owned, one
 // Set per document boot) so a given opposing nonce is only ever acted on
 // once, however many messages carry word of it.
-function resolveCollision(theirNonce, sessionStore, myNonce, resolvedNonces) {
-  if (resolvedNonces.has(theirNonce)) return false;
-  resolvedNonces.add(theirNonce);
-  const rotate = shouldRotateOnCollision({ myNonce, theirNonce });
-  if (rotate) rotateTabId(sessionStore);
-  return rotate;
+//
+// Returns {rotated, failed}. `rotated:true` only when this side needed to
+// rotate AND the rotation was verified to actually land. `failed:true`
+// covers TWO distinct cases, both meaning "this collision could not
+// actually be resolved" — the documented caller contract for either is to
+// treat it the same as establishTabId() returning null: disable persistent
+// ownership for this document's entire lifetime, since any further
+// ownership activity risks the exact duplicate-restoration outcome this
+// whole handshake exists to prevent:
+//   - this side needed to rotate (it lost the tie-break) but the
+//     underlying sessionStorage write could not be verified (2026-08-15
+//     fix — a `/review-step` round found rotateTabId()'s return value used
+//     to be silently discarded here, reporting `rotated:true` regardless:
+//     reproduced directly, BOTH sides of a collision ended up sharing the
+//     identical id and BOTH could subsequently pass restoreLease() as
+//     `'restored'`);
+//   - the two nonces provide no usable asymmetry for
+//     shouldRotateOnCollision() to decide a winner with at all -- equal, or
+//     either one missing/malformed (2026-08-15 fix — a `/review-step`
+//     round found the equal-nonce case was previously a silent
+//     `{rotated:false, failed:false}` no-op, INDISTINGUISHABLE from "no
+//     collision happened": reproduced directly, two genuinely different
+//     documents sharing a tabId whose independently-drawn nonces happened
+//     to collide each silently ignored the other's probe, and BOTH later
+//     restored as owner — a real collision (matching tabId) undeniably
+//     occurred, it just couldn't be broken, which is not the same thing as
+//     "nothing to resolve" and must not be reported that way). Checked the
+//     same way shouldRotateOnCollision() itself already guards against a
+//     malformed/missing nonce -- handleIncomingProbeReply()'s `theirNonce`
+//     specifically is NOT otherwise validated before reaching here (only
+//     `replyToNonce` is, by isTabProbeReplyForMe()).
+//
+// The memoization key is the COMPOSITE `(myTabId, theirNonce)`, not
+// `theirNonce` alone (2026-08-15 fix — a `/review-step` round found the
+// nonce-only key conflated "this nonce" with "this collision": after THIS
+// document loses a collision on nonce N and rotates to a new identity, a
+// LATER, genuinely different collision under the NEW id that happens to
+// carry the same opposing nonce N was silently skipped as "already
+// resolved," returning {rotated:false, failed:false} without even
+// consulting the tie-break, and this document then wrongly restored as
+// owner — reproduced directly. Nonce reuse is exactly the degraded-entropy
+// case rounds 9-10 established as reachable, so this is not hypothetical).
+// A collision is identified by WHICH IDENTITY it occurred under, not just
+// by the opposing nonce; scoping the key to `myTabId` means a stale entry
+// from a previous identity generation can never shadow a real collision
+// under the current one. `|` is an unambiguous separator here: tab ids are
+// base36 + a single hyphen (generateTabId()) and nonces are base36
+// (generateNonce()), so neither part can ever contain it and two different
+// (id, nonce) pairs can never collapse to the same key.
+function resolveCollision(theirNonce, sessionStore, myNonce, resolvedNonces, myTabId) {
+  const memoKey = `${myTabId}|${theirNonce}`;
+  if (resolvedNonces.has(memoKey)) return { rotated: false, failed: false };
+  resolvedNonces.add(memoKey);
+  if (!myNonce || !theirNonce || myNonce === theirNonce) return { rotated: false, failed: true };
+  if (!shouldRotateOnCollision({ myNonce, theirNonce })) return { rotated: false, failed: false };
+  const rotated = rotateTabId(sessionStore);
+  return rotated != null ? { rotated: true, failed: false } : { rotated: false, failed: true };
 }
 
 // Called by a tab that is ALREADY live and listening, upon receiving another
@@ -476,18 +740,17 @@ function resolveCollision(theirNonce, sessionStore, myNonce, resolvedNonces) {
 // silent) — replying is what lets a newcomer that joined after this tab's
 // own boot-time probe already happened and is gone still learn about the
 // collision, since the newcomer is the one actively asking. Returns
-// { reply, rotated }: `reply` is the message to postMessage() back (always
-// non-null for a genuine collision, null otherwise — a no-op); `rotated` is
-// whether THIS tab rotated its own id, decided purely by the nonce
-// tie-break.
+// { reply, rotated, failed }: `reply` is the message to postMessage() back
+// (always non-null for a genuine collision, null otherwise — a no-op);
+// `rotated`/`failed` are resolveCollision()'s own result (see its comment).
 export function handleIncomingProbe(incoming, sessionStore, myTabId, myNonce, resolvedNonces) {
-  if (!isTabProbeCollision(incoming, myTabId, myNonce)) return { reply: null, rotated: false };
-  const rotated = resolveCollision(incoming.nonce, sessionStore, myNonce, resolvedNonces);
+  if (!isTabProbeCollision(incoming, myTabId)) return { reply: null, rotated: false, failed: false };
+  const { rotated, failed } = resolveCollision(incoming.nonce, sessionStore, myNonce, resolvedNonces, myTabId);
   const reply = {
     type: TAB_PROBE_REPLY_MESSAGE, tabId: myTabId,
     nonce: myNonce, replyToNonce: incoming.nonce,
   };
-  return { reply, rotated };
+  return { reply, rotated, failed };
 }
 
 // Called by the PROBER, upon receiving a reply to its own probe. Runs the
@@ -496,9 +759,8 @@ export function handleIncomingProbe(incoming, sessionStore, myTabId, myNonce, re
 // complementary answer, so exactly one of the two ever rotates, never both,
 // never neither, regardless of which side happened to send a probe first.
 export function handleIncomingProbeReply(incoming, sessionStore, myTabId, myNonce, resolvedNonces) {
-  if (!isTabProbeReplyForMe(incoming, myTabId, myNonce)) return { rotated: false };
-  const rotated = resolveCollision(incoming.nonce, sessionStore, myNonce, resolvedNonces);
-  return { rotated };
+  if (!isTabProbeReplyForMe(incoming, myTabId, myNonce)) return { rotated: false, failed: false };
+  return resolveCollision(incoming.nonce, sessionStore, myNonce, resolvedNonces, myTabId);
 }
 
 // ── revocation (sessionStorage — epoch-scoped, not a boolean latch) ───────
@@ -618,43 +880,77 @@ export function revokeLease(localStore, sessionStore, lease) {
   }
   try {
     sessionStore.setItem(REVOKED_EPOCH_KEY, lease.ownerEpoch);
-    return { ok: true, escalated: false };
   } catch (e) {
     const rotated = rotateTabId(sessionStore);
     return { ok: rotated != null, escalated: true };
   }
+  // Read back to confirm the write actually landed -- same discipline as
+  // establishTabId()/rotateTabId() (2026-08-15 fix, a `/review-step` round
+  // found this missing: a `setItem()` that "succeeds" without throwing but
+  // silently doesn't persist -- the exact `silentlyDroppingStorage()` case
+  // this suite already models elsewhere -- made revokeLease() report
+  // {ok:true} while nothing was actually recorded, reproduced directly
+  // letting a subsequent restoreLease() wrongly resolve 'restored').
+  let readBack;
+  try { readBack = sessionStore.getItem(REVOKED_EPOCH_KEY); } catch (e) { readBack = null; }
+  if (readBack !== lease.ownerEpoch) {
+    const rotated = rotateTabId(sessionStore);
+    return { ok: rotated != null, escalated: true };
+  }
+  return { ok: true, escalated: false };
 }
 
 // ── lease validity ────────────────────────────────────────────────────────
-// The single predicate every write path (writeSession(), tombstoneIfCurrent())
-// gates on. Pure read, no lock needed. `false` for a malformed/null lease;
-// `false` if that exact epoch has been locally revoked; `false` if the
-// envelope read itself is `'unavailable'` (cannot positively confirm
-// validity against a store that just threw) or `'absent'` (nothing to match
-// against); otherwise compares `(ownerId, ownerEpoch)` against the FRESH
-// envelope -- always re-read here, never cached, so this can be called
-// immediately before a write as a second, defense-in-depth check.
+// Shared by hasValidLease() (below) and tombstoneIfCurrent() -- `false` for
+// a malformed/null lease; `false` if THIS DOCUMENT's own current identity
+// (peekTabId()) no longer equals lease.ownerId; `false` if the envelope
+// read itself is `'unavailable'` or `'absent'`; otherwise compares
+// `(ownerId, ownerEpoch)` against the FRESH envelope -- always re-read
+// here, never cached.
 //
-// Why BOTH ownerId and ownerEpoch, not just ownerId: the HTML Standard
-// explicitly does not guarantee any cross-agent-cluster locking for Web
-// Storage, so a stale write issued under an OLDER lease -- even one held by
-// the SAME tab, from BEFORE it lost and regained ownership -- must not be
-// allowed to land just because ownerId still happens to match. ownerEpoch
-// identifies the specific claim EPISODE, not just the tab; comparing it
-// against the lease captured in the WRITING CALLER'S OWN CLOSURE (never
-// "whatever's currently in sessionStorage") is what makes a delayed write
-// from a superseded claim structurally impossible to land -- this is the
-// exact mechanism that closes the round-5 bug this module was redesigned to
-// eliminate (see writeSession()'s comment for the two gates this proves).
-export function hasValidLease(lease, localStore, sessionStore) {
+// The peekTabId() check (2026-08-15 fix — a `/review-step` round found it
+// missing) closes a gap distinct from the envelope/epoch checks below: THIS
+// document's own tab id can rotate out from under an already-captured
+// in-memory lease -- either by losing the tab-collision tie-break, or by a
+// revokeLease() escalation -- without the shared envelope changing at all
+// (nobody else has written it yet). Without this check, a captured lease
+// naming the OLD, now-abandoned id could still pass every other check
+// (the envelope may well still name that old id too) and a stale write
+// would land under an identity this document no longer holds. Reproduced
+// directly: rotate this document's own id, then confirm the OLD lease
+// still (wrongly) validated and a write under it still (wrongly) landed.
+//
+// Why BOTH ownerId and ownerEpoch in the envelope comparison, not just
+// ownerId: the HTML Standard explicitly does not guarantee any
+// cross-agent-cluster locking for Web Storage, so a stale write issued
+// under an OLDER lease -- even one held by the SAME tab, from BEFORE it
+// lost and regained ownership -- must not be allowed to land just because
+// ownerId still happens to match. ownerEpoch identifies the specific claim
+// EPISODE, not just the tab; comparing it against the lease captured in
+// the WRITING CALLER'S OWN CLOSURE (never "whatever's currently in
+// sessionStorage") is what makes a delayed write from a superseded claim
+// structurally impossible to land -- this is the exact mechanism that
+// closes the round-5 bug this module was redesigned to eliminate (see
+// writeSession()'s comment for the two gates this proves).
+function hasMatchingEnvelopeTuple(lease, localStore, sessionStore) {
   if (!lease || typeof lease.ownerId !== 'string' || !lease.ownerId
       || typeof lease.ownerEpoch !== 'string' || !lease.ownerEpoch) {
     return false;
   }
-  if (isEpochRevoked(sessionStore, lease.ownerEpoch)) return false;
+  if (peekTabId(sessionStore) !== lease.ownerId) return false;
   const { status, envelope } = readEnvelope(localStore);
   if (status !== 'ok') return false;
   return envelope.ownerId === lease.ownerId && envelope.ownerEpoch === lease.ownerEpoch;
+}
+
+// The single predicate writeSession() gates on. Everything
+// hasMatchingEnvelopeTuple() checks, PLUS: `false` if that exact epoch has
+// been locally revoked. tombstoneIfCurrent() below deliberately uses
+// hasMatchingEnvelopeTuple() directly instead of this function -- see its
+// own comment for why revocation must NOT be part of its gate.
+export function hasValidLease(lease, localStore, sessionStore) {
+  if (!hasMatchingEnvelopeTuple(lease, localStore, sessionStore)) return false;
+  return !isEpochRevoked(sessionStore, lease.ownerEpoch);
 }
 
 // ── boot-time restoration ─────────────────────────────────────────────────
@@ -678,11 +974,30 @@ export function hasValidLease(lease, localStore, sessionStore) {
 //                                    -- e.g. the /player/ popup claimed
 //                                    playback and this tab then navigated).
 //   {status:'restored', lease, envelope}
-//                                    safe to resume -- adopt {ownerId,
-//                                    ownerEpoch} from the envelope as this
-//                                    document's operating lease. No write
-//                                    performed; the caller holds the
-//                                    returned lease in memory from here on.
+//                                    a CANDIDATE lease to adopt -- {ownerId,
+//                                    ownerEpoch} from the envelope, as read
+//                                    at this exact moment. No write
+//                                    performed. This is a single unlocked
+//                                    read (deliberately -- see below), so it
+//                                    is NOT a guarantee that no other tab's
+//                                    claim has landed a moment later; the
+//                                    only hard guarantee is what always
+//                                    holds regardless of restoreLease()'s
+//                                    result: any WRITE later attempted under
+//                                    a superseded lease is still correctly
+//                                    rejected by hasValidLease()'s always-
+//                                    fresh envelope re-check. A caller that
+//                                    resumes visible UI/audio state directly
+//                                    from 'restored', before ever attempting
+//                                    a write, has a narrow window where that
+//                                    resumed state could already be stale --
+//                                    closing that window requires a real
+//                                    boot-time coordinator wiring collision/
+//                                    external-claim listeners BEFORE trusting
+//                                    a restoration, which is out of scope
+//                                    here (`/review-step` finding,
+//                                    2026-08-15: no such coordinator exists
+//                                    yet -- this module has no consumer).
 export function restoreLease(localStore, sessionStore) {
   const tabId = peekTabId(sessionStore);
   if (!tabId) return { status: 'no-identity' };
@@ -771,11 +1086,13 @@ function generateEpoch() {
 // ever (the entire reason this module was redesigned; see the module
 // comment). Under the lock: peekTabId() (fail if no established identity) ->
 // readEnvelope() (fail if 'unavailable' -- cannot safely build on a store
-// that just threw) -> mint a fresh ownerEpoch -> ONE writeEnvelope() call,
-// preserving the existing envelope's queue/position/etc. content if any (an
-// explicit local claim reclaims OWNERSHIP, it is not a full session write --
-// the caller is expected to follow up with writeSession(), now gated to
-// pass, to persist fresh session content).
+// that just threw) -> mint a fresh ownerEpoch, VERIFIED distinct from any
+// existing envelope's (reason: 'epoch-collision' on the vanishingly rare
+// failure to do so -- see generateDistinctFrom()'s comment) -> ONE
+// writeEnvelope() call, preserving the existing envelope's queue/position/
+// etc. content if any (an explicit local claim reclaims OWNERSHIP, it is
+// not a full session write -- the caller is expected to follow up with
+// writeSession(), now gated to pass, to persist fresh session content).
 //
 // Deliberately NO compare-and-swap precondition on this call: an explicit
 // local interaction always wins regardless of current envelope content (this
@@ -795,7 +1112,12 @@ export async function claimOwnership(localStore, sessionStore, lockRequest) {
     const { status, envelope: existing } = readEnvelope(localStore);
     if (status === 'unavailable') return { ok: false, lease: null, envelope: null, reason: 'unavailable' };
 
-    const ownerEpoch = generateEpoch();
+    // Must differ from the epoch being replaced (2026-08-15 fix — see
+    // generateDistinctFrom()'s comment; without this a degraded/predictable
+    // entropy source could mint the SAME epoch twice in a row, making a
+    // stale write from the first claim indistinguishable from the second).
+    const ownerEpoch = generateDistinctFrom(generateEpoch, existing ? existing.ownerEpoch : null);
+    if (ownerEpoch == null) return { ok: false, lease: null, envelope: null, reason: 'epoch-collision' };
     const next = existing
       ? { ...existing, ownerId: tabId, ownerEpoch, savedAt: Date.now() }
       : buildEnvelope({ queue: [], currentItemId: null, positionSec: 0, playing: false,
@@ -838,13 +1160,20 @@ export async function writeSession(localStore, sessionStore, lease, session, loc
 }
 
 // ── best-effort cosmetic cleanup ──────────────────────────────────────────
-// Optional -- never load-bearing for correctness. Same CAS precondition as
-// writeSession() (hasValidLease()), so it is STRUCTURALLY unable to stomp a
-// fresher legitimate claim: a losing tab's now-stale lease already fails
-// hasValidLease() by the time it would try to tombstone, for the identical
-// reason a stale writeSession() call would be rejected -- there is no
-// separate safety argument to make here, it falls straight out of the same
-// gate. Clears ownerId/ownerEpoch to null while preserving queue/position
+// Optional -- never load-bearing for correctness. Gates on
+// hasMatchingEnvelopeTuple(), NOT hasValidLease() (2026-08-15 fix — a
+// `/review-step` round found the documented "call it best-effort after
+// revokeLease()" sequence was self-defeating: revokeLease() marks THIS
+// EXACT epoch revoked, and hasValidLease() rejects a revoked epoch, so
+// tombstoneIfCurrent() would always immediately reject itself on its own
+// documented normal path, reproduced directly). Revocation must not be
+// part of this gate: tombstoning is purely cosmetic (a passive observer
+// no longer shows stale "owned by someone" content), and its safety comes
+// entirely from the envelope-tuple/identity match — a losing tab's
+// now-stale lease already fails hasMatchingEnvelopeTuple() by the time it
+// would try to tombstone, for the identical reason a stale writeSession()
+// call would be rejected, with or without revocation in the picture.
+// Clears ownerId/ownerEpoch to null while preserving queue/position
 // content, so a passive read-only observer (e.g. the mini-player view on a
 // tab that never owned this session) stops showing stale "owned by someone"
 // content once something OUTSIDE this module's own bookkeeping takes over
@@ -853,13 +1182,31 @@ export async function writeSession(localStore, sessionStore, lease, session, loc
 // losing tab -- is already fully provided by revokeLease()'s local marker
 // alone; call this best-effort, after revokeLease(), and never gate any
 // correctness decision on its return value beyond logging.
+//
+// HONEST RESIDUAL GAP (2026-08-15, `/review-step` finding, deliberately
+// NOT fixed): hasMatchingEnvelopeTuple()'s peekTabId() check means that if
+// revokeLease()'s OWN escalation path fires (rotating this document's tab
+// id as its failure fallback), the immediately-following tombstoneIfCurrent()
+// call will ALSO now fail -- reproduced directly. Removing the peekTabId()
+// check to fix this was considered and REJECTED: it would let a tab that
+// LOST a collision tie-break (a genuinely different scenario, where the
+// stale lease's tuple can still legitimately describe a DIFFERENT, still-
+// live document's ongoing ownership, since collision resolution never
+// touches the envelope) wrongly clear that other document's completely
+// legitimate state -- also reproduced directly, and clearly worse (cross-
+// document interference vs. a cosmetic display staying stale). Left as a
+// narrow, purely cosmetic limitation on the escalation path specifically:
+// the durable envelope may continue showing an abandoned owner until a
+// fresh claim overwrites it, but no correctness property (no phantom
+// auto-resume; no wrong document ever validates the stale lease for a
+// WRITE) is affected either way.
 export async function tombstoneIfCurrent(localStore, sessionStore, lease, lockRequest) {
   return withOwnershipLock(lockRequest, () => {
-    if (!hasValidLease(lease, localStore, sessionStore)) return false;
+    if (!hasMatchingEnvelopeTuple(lease, localStore, sessionStore)) return false;
     const { status, envelope: existing } = readEnvelope(localStore);
     if (status !== 'ok') return false;
     const next = { ...existing, ownerId: null, ownerEpoch: null, savedAt: Date.now() };
-    if (!hasValidLease(lease, localStore, sessionStore)) return false;
+    if (!hasMatchingEnvelopeTuple(lease, localStore, sessionStore)) return false;
     return writeEnvelope(localStore, next);
   }, false);
 }

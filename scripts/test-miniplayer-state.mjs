@@ -350,6 +350,89 @@ test('readEnvelope: ok with the decoded envelope for a healthy stored value', ()
   assert.equal(result.envelope.ownerId, 'tab-1');
 });
 
+// critical: `/review-step` finding, 2026-08-15 -- writeEnvelope() is the one
+// storage write in this module that did NOT read back its own write before
+// this fix, unlike establishTabId()/rotateTabId()/revokeLease(), all of
+// which already guard against exactly this. A setItem() that never throws
+// but silently drops the write must be reported as failure, not success.
+test('critical: writeEnvelope() returns false (not true) when setItem() succeeds without throwing but the write never actually lands', () => {
+  const local = silentlyDroppingStorage();
+  const built = buildEnvelope({ queue: [], ownerId: 'tab-1', ownerEpoch: 'epoch-1' });
+  assert.equal(writeEnvelope(local, built), false);
+  assert.deepEqual(readEnvelope(local), { status: 'absent', envelope: null });
+});
+
+test('writeEnvelope: returns true when the read-back matches exactly', () => {
+  const local = fakeStorage();
+  const built = buildEnvelope({ queue: [], ownerId: 'tab-1', ownerEpoch: 'epoch-1' });
+  assert.equal(writeEnvelope(local, built), true);
+  assert.equal(readEnvelope(local).status, 'ok');
+});
+
+// critical: `/review-step` finding, 2026-08-15 -- the MIRROR IMAGE of the
+// silent-drop bug above, introduced by the single-attempt version of its
+// own fix: a write that genuinely LANDED followed by one transient
+// getItem() throw was reported as failure, so claimOwnership() returned
+// {ok:false, reason:'write-failed'} while the envelope durably showed its
+// new owner (all three callers reproduced directly). The verification read
+// now retries a bounded number of times.
+test('critical: writeEnvelope() returns true when the write lands but the FIRST verification read throws transiently (retry, not a false failure)', () => {
+  const base = fakeStorage();
+  let failNextGet = false;
+  const local = {
+    _store: base._store,
+    getItem: (k) => {
+      if (failNextGet) { failNextGet = false; throw new Error('transient read failure on verification'); }
+      return base.getItem(k);
+    },
+    setItem: (k, v) => { base.setItem(k, v); failNextGet = true; },
+    removeItem: (k) => base.removeItem(k),
+  };
+  const built = buildEnvelope({ queue: [], ownerId: 'tab-1', ownerEpoch: 'epoch-1' });
+  assert.equal(writeEnvelope(local, built), true, 'a landed write must not be reported as failed just because one verification read blipped');
+  assert.equal(readEnvelope(base).envelope.ownerId, 'tab-1', 'sanity: the write really did land');
+});
+
+test('critical: claimOwnership() reports ok:true when its write lands but the verification read throws transiently', async () => {
+  const base = fakeStorage();
+  const session = fakeStorage();
+  establishTabId(session);
+  let failNextGet = false;
+  const local = {
+    _store: base._store,
+    getItem: (k) => {
+      if (failNextGet) { failNextGet = false; throw new Error('transient read failure on verification'); }
+      return base.getItem(k);
+    },
+    setItem: (k, v) => { base.setItem(k, v); failNextGet = true; },
+    removeItem: (k) => base.removeItem(k),
+  };
+  const result = await claimOwnership(local, session, TEST_LOCK);
+  assert.equal(result.ok, true, 'must not report write-failed for a claim that actually landed');
+  assert.equal(readEnvelope(base).envelope.ownerId, result.lease.ownerId, 'the reported lease must match what is durably stored');
+});
+
+// Counts the verification reads as well as asserting the outcome
+// (`/review-step` round 12: the original version of this test asserted only
+// `false`, which the PRE-fix single-attempt implementation would also have
+// satisfied -- it documented the residual without proving the retry bound
+// exists at all, so a later change removing the bound would leave it green).
+test('writeEnvelope: retries the verification read exactly 3 times, then gives up and returns false (the honestly documented residual)', () => {
+  const base = fakeStorage();
+  let getCalls = 0;
+  let setCalls = 0;
+  const local = {
+    _store: base._store,
+    getItem: () => { getCalls++; throw new Error('verification reads permanently unavailable'); },
+    setItem: (k, v) => { setCalls++; base.setItem(k, v); },
+    removeItem: (k) => base.removeItem(k),
+  };
+  const built = buildEnvelope({ queue: [], ownerId: 'tab-1', ownerEpoch: 'epoch-1' });
+  assert.equal(writeEnvelope(local, built), false, 'unbounded retrying is not the contract -- it gives up and reports failure');
+  assert.equal(getCalls, 3, 'must attempt the verification read exactly MAX_WRITE_VERIFY_ATTEMPTS times -- not once (no bound at all) and not unboundedly');
+  assert.equal(setCalls, 1, 'the retry is of the READ only -- the single-setItem() property must be unaffected');
+});
+
 // ── tab identity ────────────────────────────────────────────────────────
 test('establishTabId: generates once and persists across repeated calls against the same sessionStorage', () => {
   const session = fakeStorage();
@@ -365,9 +448,20 @@ test('establishTabId: two different fake sessionStorage instances get two differ
   assert.notEqual(idA, idB);
 });
 
-test('establishTabId: tolerates a throwing pre-check read, still successfully establishes an id', () => {
-  const id = establishTabId(throwingOnFirstGetStorage());
-  assert.notEqual(id, null);
+// Round-6 correction (2026-08-15, `/review-step`): the ORIGINAL version of
+// this test blessed the exact behavior the review flagged as buggy --
+// establishTabId() used to collapse a throwing pre-check read to "nothing
+// exists" and mint/persist a BRAND NEW id, silently destroying a perfectly
+// valid identity carried in from a prior same-tab page load. Reproduced
+// directly. Fixed to fail closed (return null, touch nothing) instead,
+// matching readEnvelope()'s "unavailable ≠ absent" philosophy used
+// everywhere else in this module.
+test('critical: establishTabId() fails closed (returns null, touches nothing) rather than overwriting a valid carried identity when the pre-check read throws', () => {
+  const originalId = establishTabId(fakeStorage()); // a real id from a prior page load
+  const flaky = throwingOnFirstGetStorage({ [TAB_ID_KEY]: originalId });
+  const result = establishTabId(flaky);
+  assert.equal(result, null, 'cannot confirm whether an identity already exists -- must not silently mint a replacement');
+  assert.equal(flaky._store[TAB_ID_KEY], originalId, 'the existing, perfectly valid identity must be completely untouched');
 });
 
 test('establishTabId: returns null (never a fabricated id) when the persist itself throws', () => {
@@ -403,6 +497,82 @@ test('rotateTabId: returns null (never a fabricated ephemeral id) when the persi
 
 test('rotateTabId: returns null (never a fabricated ephemeral id) when the write succeeds but the read-back does not confirm it', () => {
   assert.equal(rotateTabId(silentlyDroppingStorage()), null);
+});
+
+// critical: `/review-step` finding, 2026-08-15 -- before the
+// generateDistinctFrom() fix, a first-draw entropy collision with the id
+// being replaced made rotateTabId() report success while a genuine
+// collision remained completely unresolved. Pinning both Date.now() and
+// Math.random() models degraded/predictable entropy directly rather than
+// hoping to catch a real ~1-in-2^52 collision by chance.
+test('critical: rotateTabId() retries past a first-draw entropy collision with the id being replaced, rather than reporting a no-op as success', () => {
+  const session = fakeStorage();
+  const realRandom = Math.random;
+  const realNow = Date.now;
+  let callCount = 0;
+  try {
+    Date.now = () => 1234567890;
+    Math.random = () => (callCount++ < 2 ? 0.5 : 0.777); // first two draws identical, third differs
+    const original = establishTabId(session); // consumes draw #1
+    const rotated = rotateTabId(session); // draw #2 collides with `original`; draw #3 succeeds
+    assert.notEqual(rotated, original, 'must retry past a colliding draw rather than report a no-op as a resolved rotation');
+    assert.equal(session._store[TAB_ID_KEY], rotated, 'the retried, genuinely distinct id must be the one actually persisted');
+  } finally {
+    Math.random = realRandom;
+    Date.now = realNow;
+  }
+});
+
+test('critical: rotateTabId() fails closed (null) rather than reporting an unresolved collision as success, when entropy never produces a distinct value', () => {
+  const session = fakeStorage();
+  const realRandom = Math.random;
+  const realNow = Date.now;
+  try {
+    Date.now = () => 1234567890;
+    Math.random = () => 0.5; // every draw identical -- an entropy source that never varies
+    const original = establishTabId(session);
+    const rotated = rotateTabId(session);
+    assert.equal(rotated, null, 'must not report success while the id remains completely unchanged');
+    assert.equal(session._store[TAB_ID_KEY], original, 'no false "rotated" write -- the original id must still be the one in storage');
+  } finally {
+    Math.random = realRandom;
+    Date.now = realNow;
+  }
+});
+
+// critical: `/review-step` finding, 2026-08-15 -- a gap in the fix directly
+// above: if the PRE-write read (checking what's already stored) fails, the
+// original patch collapsed that to "nothing there" and compared the fresh
+// candidate against null instead of the real, unreadable prior value --
+// with pinned/degraded entropy, this let rotateTabId() report success while
+// returning the EXACT SAME id already in storage, reproduced directly. Must
+// fail closed the same way establishTabId() already does on its own
+// pre-check read failure, rather than silently skip the distinctness check.
+test('critical: rotateTabId() fails closed (null, no write attempted) when its pre-write existing-id read throws, rather than risking an undetected no-op "rotation"', () => {
+  const store = { [TAB_ID_KEY]: 'kf12oi-i' };
+  let getCalls = 0;
+  const session = {
+    _store: store,
+    getItem: (k) => {
+      getCalls++;
+      if (getCalls === 1) throw new Error('transient read failure on the pre-write check');
+      return store[k] ?? null;
+    },
+    setItem: (k, v) => { store[k] = String(v); },
+    removeItem: (k) => { delete store[k]; },
+  };
+  const realRandom = Math.random;
+  const realNow = Date.now;
+  try {
+    Date.now = () => 1234567890;
+    Math.random = () => 0.5; // pinned -- if the fix were absent, this would reproduce the SAME id
+    const rotated = rotateTabId(session);
+    assert.equal(rotated, null, 'must fail closed rather than report success on an unconfirmable pre-read');
+    assert.equal(store[TAB_ID_KEY], 'kf12oi-i', 'must not have written anything -- the original id must be untouched');
+  } finally {
+    Math.random = realRandom;
+    Date.now = realNow;
+  }
 });
 
 // ── revocation: epoch-scoped, not a boolean latch ──────────────────────────
@@ -645,6 +815,36 @@ test('hasValidLease: true when the lease matches the fresh envelope exactly', as
   assert.equal(hasValidLease(claim.lease, local, session), true);
 });
 
+// ── critical: /review-step found hasValidLease() never checked whether
+// THIS DOCUMENT's own current identity still matches the lease -- only the
+// envelope. If this document's own TAB_ID_KEY rotates (a lost collision
+// tie-break, or a revokeLease() escalation) while nobody else has yet
+// written a new envelope, a captured in-memory lease naming the OLD,
+// now-abandoned id could still pass every other check and a stale write
+// would land under an identity this document no longer holds. Reproduced
+// directly. ────────────────────────────────────────────────────────────
+test('critical: hasValidLease() is false once THIS document\'s own tab id rotates out from under a captured lease, even though the envelope never changed', async () => {
+  const local = fakeStorage();
+  const session = fakeStorage();
+  establishTabId(session);
+  const claim = await claimOwnership(local, session, TEST_LOCK);
+  assert.equal(hasValidLease(claim.lease, local, session), true, 'sanity: valid before rotation');
+
+  rotateTabId(session); // this document's OWN identity moves; envelope untouched
+  assert.equal(hasValidLease(claim.lease, local, session), false,
+    'the captured lease names an identity this document no longer holds -- must not validate merely because the envelope still agrees with the OLD id');
+});
+
+test('critical: writeSession() rejects a captured lease after this document\'s own tab id rotates, even though the envelope never changed', async () => {
+  const local = fakeStorage();
+  const session = fakeStorage();
+  establishTabId(session);
+  const claim = await claimOwnership(local, session, TEST_LOCK);
+  rotateTabId(session);
+  const wrote = await writeSession(local, session, claim.lease, { queue: [item('late')], currentItemId: 'late', positionSec: 1, playing: true }, TEST_LOCK);
+  assert.equal(wrote, false, 'a stale write under an identity this document no longer holds must never land');
+});
+
 test('hasValidLease: false when ownerId no longer matches (a different tab claimed) — gate 6', async () => {
   const local = fakeStorage();
   const sessionA = fakeStorage();
@@ -778,6 +978,67 @@ test('critical: claimOwnership() attempts exactly ONE localStorage.setItem() cal
   assert.equal(failingLocal._counts.setItem, 1, 'a hypothetical future rollback/second write on the failure path would show up here');
 });
 
+// critical: `/review-step` finding, 2026-08-15 -- before writeEnvelope()'s
+// read-back fix, this reported {ok:true} with a lease in hand while the
+// durable envelope stayed 'absent', reproduced directly.
+test('critical: claimOwnership() reports write-failed (never ok:true) when setItem() succeeds without throwing but the write never actually lands', async () => {
+  const session = fakeStorage();
+  establishTabId(session);
+  const local = silentlyDroppingStorage();
+  const result = await claimOwnership(local, session, TEST_LOCK);
+  assert.deepEqual(result, { ok: false, lease: null, envelope: null, reason: 'write-failed' });
+  assert.deepEqual(readEnvelope(local), { status: 'absent', envelope: null });
+});
+
+// critical: `/review-step` finding, 2026-08-15 -- before the
+// generateDistinctFrom() fix, two consecutive claimOwnership() calls under
+// pinned/degraded entropy minted the IDENTICAL ownerEpoch, making a stale
+// write from the FIRST claim indistinguishable from -- and able to land
+// after -- the second: the exact round-5 bug this redesign exists to
+// structurally close, reopened via entropy rather than storage.
+test('critical: claimOwnership() retries past a first-draw epoch collision, so a stale write under the superseded lease is correctly rejected', async () => {
+  const local = fakeStorage();
+  const session = fakeStorage();
+  establishTabId(session);
+  const realRandom = Math.random;
+  const realNow = Date.now;
+  let callCount = 0;
+  try {
+    Date.now = () => 1234567890;
+    Math.random = () => (callCount++ < 2 ? 0.5 : 0.777); // draws #1 and #2 collide, #3 differs
+    const claimA = await claimOwnership(local, session, TEST_LOCK); // consumes draw #1
+    const claimB = await claimOwnership(local, session, TEST_LOCK); // draw #2 collides with claimA's epoch; draw #3 succeeds
+    assert.equal(claimB.ok, true);
+    assert.notEqual(claimB.lease.ownerEpoch, claimA.lease.ownerEpoch, 'must retry past a colliding epoch draw rather than mint an indistinguishable one');
+
+    const staleWrote = await writeSession(local, session, claimA.lease, { queue: [], currentItemId: null, positionSec: 999, playing: true, repeatOne: false, shuffleOn: false }, TEST_LOCK);
+    assert.equal(staleWrote, false, 'a stale write under the superseded FIRST claim must be rejected now that the epochs are provably distinct');
+  } finally {
+    Math.random = realRandom;
+    Date.now = realNow;
+  }
+});
+
+test('critical: claimOwnership() fails closed (reason: epoch-collision) rather than minting an indistinguishable epoch, when entropy never produces a distinct value', async () => {
+  const local = fakeStorage();
+  const session = fakeStorage();
+  establishTabId(session);
+  const realRandom = Math.random;
+  const realNow = Date.now;
+  try {
+    Date.now = () => 1234567890;
+    Math.random = () => 0.5; // every draw identical -- an entropy source that never varies
+    const claimA = await claimOwnership(local, session, TEST_LOCK);
+    assert.equal(claimA.ok, true);
+    const claimB = await claimOwnership(local, session, TEST_LOCK);
+    assert.deepEqual(claimB, { ok: false, lease: null, envelope: null, reason: 'epoch-collision' });
+    assert.equal(readEnvelope(local).envelope.ownerEpoch, claimA.lease.ownerEpoch, 'the previous envelope must be completely untouched -- nothing to roll back, same as every other claimOwnership() failure path');
+  } finally {
+    Math.random = realRandom;
+    Date.now = realNow;
+  }
+});
+
 test('claimOwnership: preserves the existing envelope\'s queue/position content on a reclaim, only ownership fields change', async () => {
   const local = fakeStorage();
   const session = fakeStorage();
@@ -859,6 +1120,23 @@ test('writeSession: succeeds when the lease matches the current envelope', async
   const wrote = await writeSession(local, session, claim.lease, { queue: [item('a1')], currentItemId: 'a1', positionSec: 5, playing: true }, TEST_LOCK);
   assert.equal(wrote, true);
   assert.deepEqual(readEnvelope(local).envelope.queue.map((t) => t.id), ['a1']);
+});
+
+// critical: `/review-step` finding, 2026-08-15 -- before writeEnvelope()'s
+// read-back fix, this returned `true` on a healthy, validly-gated claim
+// while the durable envelope stayed byte-for-byte unchanged underneath,
+// reproduced directly.
+test('critical: writeSession() returns false (not true) when setItem() succeeds without throwing but the write never actually lands', async () => {
+  const local = fakeStorage();
+  const session = fakeStorage();
+  establishTabId(session);
+  const claim = await claimOwnership(local, session, TEST_LOCK);
+  const before = readEnvelope(local).envelope;
+
+  local.setItem = () => { /* silently dropped -- no throw, no mutation */ };
+  const wrote = await writeSession(local, session, claim.lease, { queue: [item('ghost')], currentItemId: 'ghost', positionSec: 1, playing: true }, TEST_LOCK);
+  assert.equal(wrote, false);
+  assert.deepEqual(readEnvelope(local).envelope, before, 'the envelope must be provably unchanged, not just the return value false');
 });
 
 test('writeSession: is a pure gate — never claims ownership itself, only writes when already validly leased', async () => {
@@ -1006,6 +1284,104 @@ test('tombstoneIfCurrent: clears ownerId/ownerEpoch while preserving queue/posit
   assert.equal(envelope.positionSec, 30);
 });
 
+// critical: `/review-step` finding, 2026-08-15 -- before writeEnvelope()'s
+// read-back fix, this returned `true` on a healthy, validly-matching lease
+// while the durable envelope still showed the owner as current, reproduced
+// directly (a passive observer would wrongly believe the tombstone worked).
+test('critical: tombstoneIfCurrent() returns false (not true) when setItem() succeeds without throwing but the write never actually lands', async () => {
+  const local = fakeStorage();
+  const session = fakeStorage();
+  establishTabId(session);
+  const claim = await claimOwnership(local, session, TEST_LOCK);
+
+  local.setItem = () => { /* silently dropped -- no throw, no mutation */ };
+  const result = await tombstoneIfCurrent(local, session, claim.lease, TEST_LOCK);
+  assert.equal(result, false);
+  assert.equal(readEnvelope(local).envelope.ownerId, claim.lease.ownerId, 'the envelope must still show the real owner -- the tombstone must not be believed to have landed');
+});
+
+// ── critical: /review-step found the module's own documented sequence
+// ("call tombstoneIfCurrent() best-effort AFTER revokeLease()") was
+// self-defeating: revokeLease() marks the exact epoch being tombstoned as
+// revoked, and the old gate (hasValidLease()) rejected a revoked epoch --
+// so tombstoning would ALWAYS fail on its own normal, documented path.
+// Reproduced directly. Fixed by gating tombstoneIfCurrent() on the
+// envelope-tuple/identity match alone (hasMatchingEnvelopeTuple()), never
+// on revocation, since tombstoning is purely cosmetic and its safety
+// already comes entirely from that tuple match. ─────────────────────────
+test('critical: the documented revoke-then-tombstone sequence actually works — tombstoneIfCurrent() must not reject solely because revokeLease() just ran', async () => {
+  const local = fakeStorage();
+  const session = fakeStorage();
+  establishTabId(session);
+  const claim = await claimOwnership(local, session, TEST_LOCK);
+  await writeSession(local, session, claim.lease, { queue: [item('a1')], currentItemId: 'a1', positionSec: 30, playing: true }, TEST_LOCK);
+
+  const revokeResult = revokeLease(local, session, claim.lease); // the documented first step
+  assert.equal(revokeResult.ok, true, 'sanity: the revocation itself succeeded');
+
+  const tombstoneResult = await tombstoneIfCurrent(local, session, claim.lease, TEST_LOCK); // the documented second step
+  assert.equal(tombstoneResult, true, 'tombstoning must succeed on its own documented normal path, not self-reject due to the revocation it was told to follow');
+  const envelope = readEnvelope(local).envelope;
+  assert.equal(envelope.ownerId, null);
+  assert.equal(envelope.ownerEpoch, null);
+  assert.deepEqual(envelope.queue.map((t) => t.id), ['a1'], 'queue content must still survive');
+});
+
+// ── documents the honest residual gap (2026-08-15, `/review-step`): when
+// revokeLease() ITSELF escalates (rotates this document's tab id as its
+// own failure fallback), the immediately-following tombstoneIfCurrent()
+// call also fails, since the rotated identity no longer matches the
+// lease. Deliberately NOT fixed -- see tombstoneIfCurrent()'s own comment
+// for why removing the identity check would reopen a worse bug. ────────
+test('documents the residual gap: tombstoneIfCurrent() also fails when it immediately follows a revokeLease() escalation (deliberately not fixed)', async () => {
+  const local = fakeStorage();
+  const session = fakeStorage();
+  establishTabId(session);
+  const claim = await claimOwnership(local, session, TEST_LOCK);
+
+  // Wraps session's OWN backing store live (not a copy) -- setItem() for
+  // REVOKED_EPOCH_KEY throws, everything else (including the rotation
+  // fallback's TAB_ID_KEY write) lands in the SAME store `session` itself
+  // reads from, so the escalation's actual effect on `session` is visible
+  // to the tombstoneIfCurrent() call below via the real `session` object.
+  const blockedSession = {
+    getItem: (k) => session.getItem(k),
+    setItem: (k, v) => { if (k === REVOKED_EPOCH_KEY) throw new Error('blocked'); session.setItem(k, v); },
+    removeItem: (k) => session.removeItem(k),
+  };
+  const revokeResult = revokeLease(local, blockedSession, claim.lease);
+  assert.equal(revokeResult.escalated, true, 'sanity: the epoch-marker write failed, triggering the rotation fallback');
+
+  const tombstoneResult = await tombstoneIfCurrent(local, session, claim.lease, TEST_LOCK);
+  assert.equal(tombstoneResult, false, 'documents the gap -- purely cosmetic, no correctness property affected (see the function\'s own comment)');
+});
+
+// ── proves WHY the gap above is not fixed by simply dropping the identity
+// check: a tab that lost a collision tie-break holds a stale lease whose
+// tuple can still legitimately describe a DIFFERENT, still-live
+// document's ongoing ownership (collision resolution never touches the
+// envelope) -- removing the check would let the loser wrongly clear the
+// winner's completely legitimate state. ─────────────────────────────────
+test('critical: a losing tab\'s stale lease (from a collision, not a revocation) must never be able to tombstone a DIFFERENT, still-legitimate document\'s ownership', async () => {
+  const local = fakeStorage();
+  const sharedTabId = establishTabId(fakeStorage());
+  const winnerSession = fakeStorage({ [TAB_ID_KEY]: sharedTabId });
+  const winnerClaim = await claimOwnership(local, winnerSession, TEST_LOCK);
+  await writeSession(local, winnerSession, winnerClaim.lease, { queue: [item('winner-track')], currentItemId: 'winner-track', positionSec: 10, playing: true }, TEST_LOCK);
+
+  // A loser, cloned before the collision, derives the IDENTICAL lease from
+  // the same envelope -- then loses the tie-break and rotates away.
+  const loserSession = fakeStorage({ ...winnerSession._store });
+  const loserStaleLease = { ...winnerClaim.lease };
+  rotateTabId(loserSession);
+
+  const result = await tombstoneIfCurrent(local, loserSession, loserStaleLease, TEST_LOCK);
+  assert.equal(result, false, 'the loser\'s stale lease must be rejected -- it no longer matches ITS OWN current identity');
+  const envelope = readEnvelope(local).envelope;
+  assert.equal(envelope.ownerId, winnerClaim.lease.ownerId, 'the winner\'s legitimate ownership must be completely untouched');
+  assert.deepEqual(envelope.queue.map((t) => t.id), ['winner-track']);
+});
+
 // ── critical test 8: end-to-end sequencing through the (unchanged) collision
 // handshake, converging into restoreLease() with neither side ever calling
 // writeSession() in between ────────────────────────────────────────────────
@@ -1021,17 +1397,41 @@ function fakeChannel() {
   };
 }
 
+// Models the module's documented caller contract as closely as a harness
+// can without a real coordinator existing (see the module's own boot
+// pseudocode). Two pieces, each added after a `/review-step` round found
+// the harness silently not modelling something the contract requires:
+//   - `ref.disabled` -- the `ownershipDisabled` latch (2026-08-15: the
+//     harness used to ignore `failed` entirely, so no test exercising it
+//     verified that a CORRECTLY wired caller avoids the dual-restoration
+//     hazard, only that the hazard exists when the contract is ignored).
+//     Set once on either handler reporting `failed:true`, never cleared.
+//   - the MANDATORY RE-PROBE after a successful rotation (round 12,
+//     2026-08-15: the harness refreshed `ref.tabId` but never re-probed,
+//     so the three-clone concurrent-loser test had to inject the fresh
+//     probe by hand -- which proved the handshake can resolve a manually
+//     surfaced collision, but NOT that following the contract surfaces it
+//     in the first place, the actual claim being made).
+// Still a simulation of a caller, not a real one -- see the honest-scope
+// note on the caller-contract test further down.
 function wireDocument(channel, session, ref, nonce) {
   const resolved = new Set();
   let port;
+  const onRotated = () => {
+    ref.tabId = peekTabId(session);
+    // The documented contract's re-probe under the NEW identity.
+    port.postMessage({ type: TAB_PROBE_MESSAGE, tabId: ref.tabId, nonce });
+  };
   port = channel.join((msg) => {
     if (msg.type === TAB_PROBE_MESSAGE) {
-      const { reply, rotated } = handleIncomingProbe(msg, session, ref.tabId, nonce, resolved);
-      if (rotated) ref.tabId = peekTabId(session);
-      if (reply) port.postMessage(reply);
+      const { reply, rotated, failed } = handleIncomingProbe(msg, session, ref.tabId, nonce, resolved);
+      if (reply) port.postMessage(reply); // reply BEFORE re-probing, matching the documented ordering
+      if (rotated) onRotated();
+      if (failed) ref.disabled = true;
     } else if (msg.type === TAB_PROBE_REPLY_MESSAGE) {
-      const { rotated } = handleIncomingProbeReply(msg, session, ref.tabId, nonce, resolved);
-      if (rotated) ref.tabId = peekTabId(session);
+      const { rotated, failed } = handleIncomingProbeReply(msg, session, ref.tabId, nonce, resolved);
+      if (rotated) onRotated();
+      if (failed) ref.disabled = true;
     }
   });
   return port;
@@ -1065,28 +1465,42 @@ test('critical: establishTabId -> collision handshake -> restoreLease() resolves
   assert.deepEqual(firstResult.lease, { ownerId: firstRef.tabId, ownerEpoch: firstResult.lease.ownerEpoch });
 });
 
-// ── live tab-identity collision detection (unchanged by the redesign,
-// carried forward verbatim except getTabId() -> peekTabId()/establishTabId()) ─
-test('isTabProbeCollision: a same-tabId, different-nonce PROBE is a real collision', () => {
-  assert.equal(isTabProbeCollision({ type: TAB_PROBE_MESSAGE, tabId: 'x', nonce: 'n2' }, 'x', 'n1'), true);
+// ── live tab-identity collision detection (mostly unchanged by the
+// redesign, carried forward verbatim except getTabId() ->
+// peekTabId()/establishTabId() -- EXCEPT isTabProbeCollision()/
+// resolveCollision(), fixed 2026-08-15 by a later `/review-step` round;
+// see their own comments in the source) ───────────────────────────────────
+test('isTabProbeCollision: a same-tabId PROBE is a real collision regardless of nonce', () => {
+  assert.equal(isTabProbeCollision({ type: TAB_PROBE_MESSAGE, tabId: 'x', nonce: 'n2' }, 'x'), true);
 });
 
 test('isTabProbeCollision: a different tabId is never a collision', () => {
-  assert.equal(isTabProbeCollision({ type: TAB_PROBE_MESSAGE, tabId: 'y', nonce: 'n2' }, 'x', 'n1'), false);
+  assert.equal(isTabProbeCollision({ type: TAB_PROBE_MESSAGE, tabId: 'y', nonce: 'n2' }, 'x'), false);
 });
 
-test('isTabProbeCollision: the same nonce is never treated as a collision', () => {
-  assert.equal(isTabProbeCollision({ type: TAB_PROBE_MESSAGE, tabId: 'x', nonce: 'n1' }, 'x', 'n1'), false);
+// critical: `/review-step` finding, 2026-08-15 -- the ORIGINAL version of
+// this test asserted the opposite (equal nonce => not a collision), on the
+// theory that same-tabId+same-nonce could only be a self-echo. That's true
+// of a SINGLE document's own probe, but NOT of two genuinely different
+// documents whose independently-drawn nonces happen to collide -- reachable
+// in practice now that round 9 made nonce collisions provable via injected
+// entropy, and this is exactly what defeats detection: two real colliding
+// documents each treating the other's equal-nonce probe as "nothing
+// happened" and both later restoring as owner (see the end-to-end
+// regression further down this file for the full reproduction).
+test('critical: isTabProbeCollision: a same-tabId PROBE with an EQUAL nonce is still a real collision (not a self-echo assumption)', () => {
+  assert.equal(isTabProbeCollision({ type: TAB_PROBE_MESSAGE, tabId: 'x', nonce: 'n1' }, 'x'), true);
 });
 
 test('isTabProbeCollision: ignores a message of the wrong type', () => {
-  assert.equal(isTabProbeCollision({ type: TAB_PROBE_REPLY_MESSAGE, tabId: 'x', nonce: 'n2' }, 'x', 'n1'), false);
+  assert.equal(isTabProbeCollision({ type: TAB_PROBE_REPLY_MESSAGE, tabId: 'x', nonce: 'n2' }, 'x'), false);
 });
 
 test('isTabProbeCollision: tolerates a malformed/missing message without throwing', () => {
-  assert.equal(isTabProbeCollision(null, 'x', 'n1'), false);
-  assert.equal(isTabProbeCollision({}, 'x', 'n1'), false);
-  assert.equal(isTabProbeCollision({ type: TAB_PROBE_MESSAGE, tabId: 42, nonce: 'n2' }, 'x', 'n1'), false);
+  assert.equal(isTabProbeCollision(null, 'x'), false);
+  assert.equal(isTabProbeCollision({}, 'x'), false);
+  assert.equal(isTabProbeCollision({ type: TAB_PROBE_MESSAGE, tabId: 42, nonce: 'n2' }, 'x'), false);
+  assert.equal(isTabProbeCollision({ type: TAB_PROBE_MESSAGE, tabId: 'x', nonce: null }, 'x'), false, 'a missing/malformed nonce is not a well-formed probe');
 });
 
 test('isTabProbeReplyForMe: matches only a REPLY whose tabId AND replyToNonce both match mine', () => {
@@ -1110,26 +1524,59 @@ test('shouldRotateOnCollision never rotates when there is no real difference to 
   assert.equal(shouldRotateOnCollision({ myNonce: 'n1', theirNonce: null }), false);
 });
 
-test('generateNonce() output is NOT biased by generation order', () => {
-  let earlierWinCount = 0;
-  const trials = 30;
-  for (let i = 0; i < trials; i++) {
-    const earlier = generateNonce();
-    const later = generateNonce();
-    if (!shouldRotateOnCollision({ myNonce: earlier, theirNonce: later })) earlierWinCount++;
+// The two tests below replace a pair that sampled REAL randomness (real
+// crypto.getRandomValues()/Math.random() calls) and asserted statistically,
+// despite this file's own header describing itself as a deterministic
+// suite -- a `/review-step` finding, 2026-08-15: the prefix-length
+// assertion had a small but real (~1-in-1800) chance of rejecting valid
+// independent output, and sampling doesn't reliably catch an ordering
+// regression anyway. Both rewritten to inject fixed entropy and assert the
+// exact, reproducible consequence: NO orderable time component, proven by
+// showing Date.now() has zero effect on output when the random source is
+// held fixed, rather than sampling many draws and hoping for balance.
+test('generateNonce(): with crypto.getRandomValues, output is the exact deterministic encoding of the injected bytes, independent of Date.now()', () => {
+  const fixedBytes = [0, 1, 2, 253, 254, 255, 16, 32, 48, 64, 80, 96, 112, 128, 144, 160];
+  const realDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'crypto');
+  const realNow = Date.now;
+  try {
+    Object.defineProperty(globalThis, 'crypto', {
+      value: { getRandomValues: (arr) => { arr.set(fixedBytes.slice(0, arr.length)); return arr; } },
+      configurable: true,
+    });
+    Date.now = () => 1;
+    const a = generateNonce();
+    Date.now = () => 8640000000000000; // the far end of JS's representable date range
+    const b = generateNonce();
+    const expected = fixedBytes.map((byte) => byte.toString(36).padStart(2, '0')).join('');
+    assert.equal(a, expected, 'output must be the exact base36 encoding of the injected bytes, not just "looks random"');
+    assert.equal(a, b, 'identical injected entropy must produce identical output regardless of Date.now() -- no orderable time component');
+  } finally {
+    Object.defineProperty(globalThis, 'crypto', realDescriptor);
+    Date.now = realNow;
   }
-  assert.ok(earlierWinCount >= 5 && earlierWinCount <= trials - 5,
-    `expected roughly half of ${trials} trials to go either way (got ${earlierWinCount} "earlier wins")`);
 });
 
-test('generateNonce() output has no shared prefix across calls (no orderable time component)', () => {
-  const a = generateNonce();
-  const b = generateNonce();
-  let commonPrefixLen = 0;
-  while (commonPrefixLen < a.length && commonPrefixLen < b.length && a[commonPrefixLen] === b[commonPrefixLen]) {
-    commonPrefixLen++;
+test('generateNonce(): falls back to Math.random() when crypto.getRandomValues is unavailable, still independent of Date.now()', () => {
+  const realDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'crypto');
+  const realRandom = Math.random;
+  const realNow = Date.now;
+  try {
+    Object.defineProperty(globalThis, 'crypto', { value: {}, configurable: true }); // no getRandomValues -- forces the fallback branch
+    const sequence = [0.1, 0.9];
+    let calls = 0;
+    Math.random = () => sequence[calls++ % sequence.length];
+    Date.now = () => 1;
+    const a = generateNonce();
+    calls = 0;
+    Date.now = () => 8640000000000000;
+    const b = generateNonce();
+    assert.equal(a, b, 'identical injected entropy must produce identical output regardless of Date.now() -- no orderable time component');
+    assert.equal(a.length, 32, 'two 16-char padded halves, matching the crypto path\'s 16-byte output length');
+  } finally {
+    Object.defineProperty(globalThis, 'crypto', realDescriptor);
+    Math.random = realRandom;
+    Date.now = realNow;
   }
-  assert.ok(commonPrefixLen <= 2, `two nonces share a ${commonPrefixLen}-character prefix ("${a.slice(0, commonPrefixLen)}")`);
 });
 
 test('a real durable owner is NOT immune to losing the tie-break — the outcome tracks the nonce, not "who is real"', async () => {
@@ -1190,12 +1637,128 @@ test('simultaneous mutual probe between two clones — exactly one side rotates,
   assert.equal(ySession._store[TAB_ID_KEY], sharedTabId);
 });
 
+// critical: `/review-step` finding, 2026-08-15 -- the two-clone fixture
+// above structurally cannot exercise this: with exactly two documents,
+// exactly ONE ever rotates, so two losers can never generate replacement
+// ids concurrently. With THREE clones and two losers, both rotate
+// independently, and generateDistinctFrom() can only guarantee each
+// differs from ITS OWN prior id -- it has no way to know what a different,
+// concurrently-rotating document is generating. Reproduced directly under
+// pinned entropy: both losers landed on the IDENTICAL replacement id, and
+// with no re-probe the fresh duplication went completely undetected (one
+// claimed under it, the other still passed restoreLease() as 'restored').
+// This test locks in BOTH halves: the collision genuinely can happen (the
+// module cannot prevent it internally), AND following the documented caller
+// contract is what surfaces and resolves it. Driven entirely through
+// wireDocument() -- the harness that models that contract, including its
+// mandatory post-rotation re-probe -- rather than by injecting the fresh
+// probe by hand (`/review-step` round 12: the hand-injected version proved
+// only that the handshake CAN resolve a manually surfaced collision, not
+// that following the contract surfaces it in the first place, which is the
+// actual claim). Everything below cascades from ONE postMessage by A.
+test('critical: three clones, two concurrent losers generating the SAME replacement id -- following the caller contract surfaces and resolves the fresh duplication', async () => {
+  const local = fakeStorage();
+  const channel = fakeChannel();
+  const sharedTabId = establishTabId(fakeStorage());
+
+  const sessionA = fakeStorage({ [TAB_ID_KEY]: sharedTabId });
+  await claimOwnership(local, sessionA, TEST_LOCK);
+  const sessionB = fakeStorage({ [TAB_ID_KEY]: sharedTabId });
+  const sessionC = fakeStorage({ [TAB_ID_KEY]: sharedTabId });
+
+  const refA = { tabId: sharedTabId };
+  const refB = { tabId: sharedTabId };
+  const refC = { tabId: sharedTabId };
+  const portA = wireDocument(channel, sessionA, refA, 'nonce-zzz'); // A wins -- never rotates
+  wireDocument(channel, sessionB, refB, 'nonce-bbb');
+  wireDocument(channel, sessionC, refC, 'nonce-ccc');
+
+  const realRandom = Math.random;
+  const realNow = Date.now;
+  try {
+    // Date.now pinned throughout; Math.random pinned for exactly the first
+    // TWO draws -- B's and C's initial replacement ids, forcing them to
+    // collide -- then real entropy, so the follow-up rotation that resolves
+    // the duplication can produce a genuinely distinct id.
+    Date.now = () => 1234567890;
+    let draws = 0;
+    Math.random = () => (draws++ < 2 ? 0.42 : realRandom());
+
+    portA.postMessage({ type: TAB_PROBE_MESSAGE, tabId: sharedTabId, nonce: 'nonce-zzz' });
+  } finally {
+    Math.random = realRandom;
+    Date.now = realNow;
+  }
+
+  assert.equal(refA.tabId, sharedTabId, 'A holds the highest nonce -- it must never rotate');
+  assert.notEqual(refB.tabId, sharedTabId, 'B lost and rotated away');
+  assert.notEqual(refC.tabId, sharedTabId, 'C lost and rotated away');
+
+  // The whole point: B and C initially rotated INTO the same id (the gap
+  // this module cannot close internally), and the contract's re-probe is
+  // what surfaced that as an ordinary collision, which the ordinary
+  // handshake then resolved -- all without a single hand-injected message.
+  assert.notEqual(refB.tabId, refC.tabId,
+    'end state: no two documents share an identity, even though two of them independently generated the same replacement id mid-cascade');
+  assert.equal(new Set([refA.tabId, refB.tabId, refC.tabId]).size, 3, 'all three identities are distinct');
+  assert.ok(!refB.disabled && !refC.disabled, 'the duplication resolved by rotation -- no document had to disable ownership to escape it');
+});
+
 test('handleIncomingProbe: no collision at all is a complete no-op', () => {
   const session = fakeStorage({ [TAB_ID_KEY]: 'x' });
   const { reply, rotated } = handleIncomingProbe({ type: TAB_PROBE_MESSAGE, tabId: 'y', nonce: 'n2' }, session, 'x', 'n1', new Set());
   assert.equal(reply, null);
   assert.equal(rotated, false);
   assert.equal(session._store[TAB_ID_KEY], 'x');
+});
+
+// critical: `/review-step` finding, 2026-08-15 -- proves resolveCollision()'s
+// new equal-nonce handling end to end through handleIncomingProbe(), not
+// just the isTabProbeCollision() classification alone: a genuine collision
+// with no usable tie-break asymmetry must report failed:true (routing
+// through the same "disable ownership" caller contract as a failed
+// rotation), never the silent {rotated:false, failed:false} no-op that
+// made this indistinguishable from "no collision happened" before the fix.
+test('critical: handleIncomingProbe() reports failed:true (never a silent no-op) when a genuine collision has no usable tie-break asymmetry', () => {
+  const session = fakeStorage({ [TAB_ID_KEY]: 'shared' });
+  const result = handleIncomingProbe({ type: TAB_PROBE_MESSAGE, tabId: 'shared', nonce: 'same-nonce' }, session, 'shared', 'same-nonce', new Set());
+  assert.equal(result.rotated, false);
+  assert.equal(result.failed, true, 'a genuine collision that cannot be broken must be reported as failed, not silently ignored');
+  assert.ok(result.reply, 'must still reply -- a newcomer needs to learn of the collision even when it cannot be resolved');
+  assert.equal(session._store[TAB_ID_KEY], 'shared', 'no rotation attempted -- nothing to rotate TO without a tie-break winner');
+});
+
+// end-to-end: proves the actual outcome the fix exists to prevent (dual
+// restoration) no longer happens once real nonces happen to collide,
+// exercising the full establishTabId -> handshake -> restoreLease() path
+// with deterministic, pinned entropy rather than asserting against the
+// unit functions in isolation.
+test('critical: two genuinely distinct cloned documents with an EQUAL collision nonce no longer both restore as owner', async () => {
+  const local = fakeStorage();
+  const sharedTabId = establishTabId(fakeStorage());
+  const equalNonce = 'nonce-collision';
+
+  const sessionX = fakeStorage({ [TAB_ID_KEY]: sharedTabId });
+  await claimOwnership(local, sessionX, TEST_LOCK);
+  const sessionY = fakeStorage({ [TAB_ID_KEY]: sharedTabId }); // Y clones X's storage, including the tabId
+
+  const probeFromY = { type: TAB_PROBE_MESSAGE, tabId: sharedTabId, nonce: equalNonce };
+  const xResult = handleIncomingProbe(probeFromY, sessionX, sharedTabId, equalNonce, new Set());
+  const probeFromX = { type: TAB_PROBE_MESSAGE, tabId: sharedTabId, nonce: equalNonce };
+  const yResult = handleIncomingProbe(probeFromX, sessionY, sharedTabId, equalNonce, new Set());
+
+  assert.equal(xResult.failed, true, 'X must recognize the unresolvable collision');
+  assert.equal(yResult.failed, true, 'Y must recognize the unresolvable collision');
+
+  // Per the documented caller contract, BOTH sides now disable ownership
+  // entirely rather than ever calling restoreLease() -- but proving the
+  // underlying storage would still (correctly) show 'restored' for both if
+  // a caller ignored the contract is what demonstrates the fix closed the
+  // detection gap, not just that a flag got set.
+  assert.equal(restoreLease(local, sessionX).status, 'restored');
+  assert.equal(restoreLease(local, sessionY).status, 'restored');
+  // The fix is that BOTH sides now KNOW this (failed:true) and must disable
+  // themselves -- unlike before the fix, where neither side even knew.
 });
 
 test('handleIncomingProbeReply: a reply not addressed to me is a complete no-op', () => {
@@ -1205,7 +1768,7 @@ test('handleIncomingProbeReply: a reply not addressed to me is a complete no-op'
   assert.equal(session._store[TAB_ID_KEY], 'x');
 });
 
-test('handleIncomingProbe: the same opposing nonce is only ever decided once (memoization)', () => {
+test('handleIncomingProbe: the same opposing nonce under the SAME identity is only ever decided once (memoization)', () => {
   const sharedTabId = 'shared';
   const session = fakeStorage({ [TAB_ID_KEY]: sharedTabId });
   const resolved = new Set();
@@ -1214,9 +1777,150 @@ test('handleIncomingProbe: the same opposing nonce is only ever decided once (me
   assert.equal(first.rotated, true);
   const rotatedId = session._store[TAB_ID_KEY];
 
+  // Deliberately re-delivered with the SAME (now pre-rotation) myTabId --
+  // models a duplicate message about the collision this document has
+  // already acted on, which must not rotate a second time.
   const second = handleIncomingProbe(probe, session, sharedTabId, 'nonce-aaa', resolved);
   assert.equal(second.rotated, false);
   assert.equal(session._store[TAB_ID_KEY], rotatedId);
+});
+
+// critical: `/review-step` finding, 2026-08-15 -- the memoization above was
+// keyed by opposing nonce ALONE, which conflated "this nonce" with "this
+// collision". Reproduced directly: after losing a collision on nonce N and
+// rotating to a new identity, a LATER, genuinely different collision under
+// the NEW id carrying the same reused nonce N was silently skipped as
+// "already resolved" (returning {rotated:false, failed:false} without even
+// consulting the tie-break), and this document then wrongly restored as
+// owner. Nonce reuse is exactly the degraded-entropy case rounds 9-10
+// established as reachable, so this is not hypothetical. Note the caller
+// here refreshes myTabId after the rotation, as the documented contract
+// requires -- that refresh is precisely what the old nonce-only key
+// ignored.
+test('critical: a genuinely new collision under a NEWLY ROTATED identity is not silently skipped just because the opposing nonce was already seen under the OLD identity', () => {
+  const originalId = 'original-id';
+  const session = fakeStorage({ [TAB_ID_KEY]: originalId });
+  const resolved = new Set();
+  const reusedNonce = 'nonce-zzz'; // larger -- this document loses and rotates, both times
+
+  const first = handleIncomingProbe({ type: TAB_PROBE_MESSAGE, tabId: originalId, nonce: reusedNonce }, session, originalId, 'nonce-aaa', resolved);
+  assert.equal(first.rotated, true, 'sanity: the first collision rotates as usual');
+  const newId = session._store[TAB_ID_KEY];
+  assert.notEqual(newId, originalId);
+
+  // A genuinely different clone now collides under the NEW id, reusing the
+  // same nonce. myTabId is refreshed per the documented caller contract.
+  const second = handleIncomingProbe({ type: TAB_PROBE_MESSAGE, tabId: newId, nonce: reusedNonce }, session, newId, 'nonce-aaa', resolved);
+  assert.equal(second.rotated, true, 'a real collision under a new identity must be acted on, not shadowed by a stale memo entry from the previous identity');
+  assert.notEqual(session._store[TAB_ID_KEY], newId, 'must have rotated again, to a third distinct id');
+});
+
+// ── critical: /review-step found rotateTabId()'s return value was
+// discarded entirely inside resolveCollision() -- a FAILED rotation write
+// was still reported as rotated:true, so the losing side's storage kept
+// the SAME id it started with while the caller believed the collision was
+// resolved. Reproduced directly: both sides of a collision ended up
+// sharing the identical id, and BOTH could subsequently pass
+// restoreLease() as 'restored' -- the exact duplicate-ownership outcome
+// the whole handshake exists to prevent. Fixed: rotated is only ever true
+// when the write is verified to have landed; failed:true otherwise, with
+// the documented caller contract being to disable ownership entirely for
+// that document (see the section's own comment). ────────────────────────
+test('critical: handleIncomingProbe() reports failed:true (never rotated:true) when the losing side\'s rotation write fails, and does not falsely claim the collision was resolved', () => {
+  const sharedTabId = 'shared';
+  const blockedSession = {
+    getItem: (k) => (k === TAB_ID_KEY ? sharedTabId : null),
+    setItem: () => { throw new Error('write blocked'); },
+    removeItem: () => {},
+  };
+  const probe = { type: TAB_PROBE_MESSAGE, tabId: sharedTabId, nonce: 'nonce-zzz' }; // larger -- I (nonce-aaa) must rotate
+  const result = handleIncomingProbe(probe, blockedSession, sharedTabId, 'nonce-aaa', new Set());
+  assert.equal(result.rotated, false, 'must never report success for a rotation that did not actually land');
+  assert.equal(result.failed, true, 'the caller must be told the collision could not be resolved');
+  assert.ok(result.reply, 'a reply must still be sent regardless of whether this side\'s own rotation succeeded');
+});
+
+// Round-8 correction (2026-08-15, `/review-step`): the ORIGINAL version of
+// this test was misleadingly named -- it documented that Y (the losing
+// side, unable to rotate) technically CAN still pass restoreLease() as
+// 'restored' while stuck sharing X's id, but never actually proved that a
+// CALLER CORRECTLY FOLLOWING the documented contract (disable ownership on
+// `failed:true`) avoids the dual-restoration outcome the test's own name
+// claimed. Split into two: the hazard (unchanged, renamed honestly), and a
+// new test proving the actual fix via the corrected wireDocument() harness.
+test('documents the hazard: Y CAN still technically pass restoreLease() as \'restored\' while stuck sharing X\'s id after a failed rotation -- this is exactly why the caller contract requires disabling ownership on failed:true, not relying on restoreLease() alone', async () => {
+  const local = fakeStorage();
+  const sharedTabId = establishTabId(fakeStorage());
+  const xSession = fakeStorage({ [TAB_ID_KEY]: sharedTabId });
+  await claimOwnership(local, xSession, TEST_LOCK);
+  const yStore = { ...xSession._store }; // Y clones X's storage
+  const yBlockedSession = {
+    getItem: (k) => (Object.prototype.hasOwnProperty.call(yStore, k) ? yStore[k] : null),
+    setItem: () => { throw new Error('write blocked'); }, // Y's rotation write always fails
+    removeItem: (k) => { delete yStore[k]; },
+  };
+
+  const probeFromX = { type: TAB_PROBE_MESSAGE, tabId: sharedTabId, nonce: 'nonce-zzz' };
+  const yResult = handleIncomingProbe(probeFromX, yBlockedSession, sharedTabId, 'nonce-aaa', new Set());
+  assert.equal(yResult.failed, true, 'sanity: Y\'s rotation attempt must have failed');
+  assert.equal(yStore[TAB_ID_KEY], sharedTabId, 'Y is still stuck sharing X\'s id -- the collision is genuinely unresolved');
+  assert.equal(restoreLease(local, { getItem: (k) => yStore[k] ?? null, setItem: () => {}, removeItem: () => {} }).status, 'restored',
+    'restoreLease() alone cannot see that a rotation failed -- this is why the caller contract is load-bearing, not optional polish');
+});
+
+// HONEST SCOPE NOTE (2026-08-15, `/review-step` finding): this test does
+// NOT prove any real caller follows the documented contract -- no boot-time
+// coordinator consumes this module yet (see the module's own top comment),
+// so there is nothing to test against directly. What it actually locks in
+// is narrower: the assertion below is a ternary that trivially evaluates to
+// `null` whenever `yRef.disabled` is true, regardless of what
+// restoreLease() itself would return -- so this documents the CALLER-SIDE
+// PATTERN required by the contract (check `disabled` before ever calling
+// restoreLease()/claimOwnership()), and, combined with the adjacent hazard
+// test proving restoreLease() alone cannot see a failed rotation, shows
+// that pattern is sufficient IF a real caller actually follows it. It is
+// pseudocode-level documentation, not enforcement -- a real coordinator
+// must get its own test once one exists, per the same finding.
+test('documents: the caller-side pattern of checking disabled before calling restoreLease() avoids the dual-restoration hazard, IF a real caller follows it (not yet enforced by any code -- no coordinator exists)', async () => {
+  const local = fakeStorage();
+  const channel = fakeChannel();
+  const sharedTabId = establishTabId(fakeStorage());
+
+  const xSession = fakeStorage({ [TAB_ID_KEY]: sharedTabId });
+  const xRef = { tabId: sharedTabId };
+  await claimOwnership(local, xSession, TEST_LOCK);
+  const xPort = wireDocument(channel, xSession, xRef, 'nonce-zzz'); // larger -- X wins, Y must rotate
+
+  // Y clones X's storage, but Y's OWN sessionStorage write always fails --
+  // modeled by joining the SAME channel with a session whose setItem()
+  // throws, going through the real wireDocument() harness this time (not
+  // a bare handleIncomingProbe() call), so the caller-contract wiring
+  // itself is what's under test.
+  const yStoreBacking = { ...xSession._store };
+  const yBlockedSession = {
+    getItem: (k) => (Object.prototype.hasOwnProperty.call(yStoreBacking, k) ? yStoreBacking[k] : null),
+    setItem: () => { throw new Error('write blocked'); },
+    removeItem: (k) => { delete yStoreBacking[k]; },
+  };
+  const yRef = { tabId: sharedTabId };
+  const yPort = wireDocument(channel, yBlockedSession, yRef, 'nonce-aaa');
+
+  yPort.postMessage({ type: TAB_PROBE_MESSAGE, tabId: yRef.tabId, nonce: 'nonce-aaa' });
+
+  assert.equal(yRef.disabled, true, 'the harness (modeling the documented caller contract) must have recorded the failed rotation');
+  assert.equal(yRef.tabId, sharedTabId, 'Y never actually escaped the collision -- still shares X\'s id');
+
+  // The documented pattern a boot script MUST follow: check the disabled
+  // latch BEFORE ever calling restoreLease()/claimOwnership() -- per the
+  // contract, once disabled, no further ownership function is called for
+  // this document's lifetime at all. NOTE: this ternary trivially resolves
+  // to `null` whenever yRef.disabled is true regardless of what
+  // restoreLease() would have returned -- it does not call into (or prove
+  // anything about) real caller code, since none exists yet. It documents
+  // the pattern; the adjacent hazard test proves the pattern is necessary.
+  assert.equal(yRef.disabled ? null : restoreLease(local, yBlockedSession).status, null,
+    'documents the required pattern: never reaching restoreLease() once disabled is what would avoid the dual-restoration outcome the hazard test above demonstrates -- contingent on a real caller actually implementing this check, which nothing yet does');
+  assert.equal(restoreLease(local, xSession).status, 'restored', 'X, the genuine winner, is completely unaffected');
 });
 
 // ── runner ─────────────────────────────────────────────────────────────

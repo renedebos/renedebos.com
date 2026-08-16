@@ -1931,8 +1931,13 @@ the session (neither could pass `isOwner()` afterward). **Fix**: dropped
 the ownership-based asymmetry entirely. Every collision — regardless of
 which side sent a probe first, or whether either side currently holds
 confirmed ownership — is now decided by ONLY the deterministic, symmetric
-nonce tie-break, memoized per opposing nonce so a given collision is never
-decided twice (closing the mutual-rotation case). This is an intentionally
+nonce tie-break, memoized per `(myTabId, opposing nonce)` so a given
+collision is never decided twice (closing the mutual-rotation case) —
+keyed by the *composite*, not the nonce alone, as of a 2026-08-15
+`/review-step` fix: a nonce-only key conflated "this nonce" with "this
+collision," so after a rotation a genuinely new collision under the new
+identity reusing that nonce was silently skipped (see residual-gap
+discussion and `resolveCollision()`'s own comment). This is an intentionally
 *weaker*, more honest guarantee than round 2's: the outcome is meant to be
 an unbiased coin flip between the two colliding tabs, not a guarantee that
 the "real" owner wins — because no such guarantee is achievable once
@@ -2056,9 +2061,14 @@ redesign implementation" section for the implementation record) —
 ONE `localStorage.setItem()` call with no second-store write ever part of
 the commit, removing the multi-step-transaction shape entirely rather than
 further narrowing it. The fencing credential (a `{ownerId, ownerEpoch}`
-"lease") is never persisted — it lives only in the caller's JS memory,
-wiped by navigation, and is re-derived at boot by reading the one durable
-envelope. `scripts/test-miniplayer-state.mjs` rewritten to match: 83/83
+"lease") is never persisted as a SEPARATE credential — it lives only in
+the caller's JS memory, wiped by navigation, and is re-derived at boot by
+reading the one durable envelope (which itself does store that exact
+tuple, necessarily — that's what "who owns this" means; the property that
+matters is no second store needing to be kept in sync with it, corrected
+same day after a `/review-step` round flagged the original "never
+persisted" phrasing as an overclaim). `scripts/test-miniplayer-state.mjs`
+rewritten to match: 83/83
 passing (replacing the old claim-token/`isOwner()`-specific suite, which
 no longer applies to the new API). All 7 suites, 226/226 passing;
 `build.py --check`/`build.py` clean (`assets/miniplayer-state.js`
@@ -2083,11 +2093,29 @@ second trigger for `TAB_ID_KEY` rotation that the tab-collision
 handshake's documented boot wiring never accounted for, silently letting
 a stale cached id miss a real collision — fixed at the caller-contract
 level (the handshake functions themselves untouched, per their own
-established out-of-scope status), not inside `revokeLease()`. All four
-rounds also found smaller test-quality gaps, fixed alongside.
-`scripts/test-miniplayer-state.mjs`: 92/92 passing; all 7 suites,
-235/235. Not yet committed; at least one more genuinely clean
-`/review-step` round against this latest fix is still owed before the
+established out-of-scope status), not inside `revokeLease()`. A fifth,
+narrowly-scoped round against just that fix came back clean, but a SIXTH
+round — deliberately broad again, not scoped to only the last patch —
+immediately found four more real bugs the narrow framing had been
+hiding: `hasValidLease()` never checked this document's own current
+identity against the lease (high — see residual gap 7); the documented
+revoke-then-tombstone sequence was self-defeating (medium);
+`resolveCollision()` discarded a failed rotation write's return value,
+letting two colliding tabs both restore simultaneously (medium); and
+`establishTabId()` applied read-failure-as-absence on its own pre-check,
+the same policy fixed elsewhere earlier the same day (low). **A second
+broad round followed**, finding four more: a collision-loss caller
+contract gap (extended, no code change — see residual gap notes), a test
+harness that never exercised the new `failed` field end-to-end (fixed —
+`wireDocument()` now tracks it), `revokeLease()` not reading back its own
+write (fixed, same discipline as `establishTabId()`/`rotateTabId()`), and
+a genuine, permanent residual gap where `tombstoneIfCurrent()` fails after
+a `revokeLease()` escalation — investigated and left unfixed on purpose
+(see residual gap 8: the obvious fix reopens a worse cross-document bug).
+All rounds also found smaller test-quality gaps, fixed alongside.
+`scripts/test-miniplayer-state.mjs`: 100/100 passing; all 7 suites,
+243/243. Not yet committed; another BROAD `/review-step` round is still
+owed before the
 ownership subsystem is considered settled, given the track record above.
 
 **The original design in this section — a separate `/player/` popup
@@ -2168,18 +2196,23 @@ envelope (queue via a dedicated capped/deduped/bounded item codec — not
 raw `normalizeItem()` output, which doesn't cap; `setQueue()` does — keyed
 by `currentItemId`, not a raw index, since filtering a corrupt entry can
 shift indices). Ownership is a "lease" (`{ownerId, ownerEpoch}`) that is
-**never persisted** — it lives only in the caller's JS memory, wiped by
-navigation (exactly the lifetime a "was this write issued under the
-still-current claim" check needs), and is re-derived at boot by
-`restoreLease()` reading the one durable envelope fresh.
+**never persisted as a separate credential** — it lives only in the
+caller's JS memory, wiped by navigation (exactly the lifetime a "was this
+write issued under the still-current claim" check needs), and is
+re-derived at boot by `restoreLease()` reading the tuple back out of the
+one durable envelope, where it necessarily does appear (see the "genuinely
+never separately synchronized" clarification further down this section).
 `claimOwnership()` is exactly **one** `localStorage.setItem()` call — no
 second-store write is ever part of the commit, so there is nothing to roll
 back, ever (the reason for the redesign: five straight review rounds
 against the prior multi-step-transaction design each found, or confirmed,
 a real bug, every one the same shape — see the review history above).
-`writeSession()`/`tombstoneIfCurrent()` take that lease explicitly and
-gate every write on `hasValidLease()` (checked fresh, twice — once up
-front, once again immediately before the write) — this is what makes a
+`writeSession()` takes that lease explicitly and gates every write on
+`hasValidLease()` (checked fresh, twice — once up front, once again
+immediately before the write); `tombstoneIfCurrent()` takes the same
+lease shape but deliberately gates on `hasMatchingEnvelopeTuple()`
+instead — everything `hasValidLease()` checks except revocation (see its
+own residual-gap note below for why). Either way this is what makes a
 delayed write issued under a superseded lease structurally unable to
 land, whether the supersession came from a different tab (`ownerId` no
 longer matches) or the SAME tab reclaiming since (`ownerEpoch` no longer
@@ -2221,13 +2254,38 @@ fallback rather than deleting it; the readiness contract; the observable
 play-result signal; the persisted-item codec and ownership rules,
 unit-tested with no UI consuming them yet — **implemented 2026-08-15**,
 ownership subsystem since redesigned to the fenced-lease shape above,
-re-implemented same day, then had four more `/review-step` rounds applied
-against `revokeLease()` and its interaction with the tab-collision
-handshake, each fixing a real gap the round found (235/235 tests
-passing), still owed at least one more genuinely clean `/review-step`
-round before this stage is considered settled and committed);
-**3a-canary** (mini-player
-container + script always emitted, `MINI_PLAYER_ENABLED` controls only the
+re-implemented same day, then had **eleven** more `/review-step` rounds
+applied against it — five narrowly scoped, each finding one real gap; six
+deliberately broad rounds, each finding several more the narrow framing
+had hidden. In order, the broad rounds found: (6) `hasValidLease()`
+missing its identity check, plus three others; (7) an active-owner UX
+gap, a test-harness gap, and `revokeLease()` missing a read-back; (8)
+`writeEnvelope()` — the actual commit path — never read back its own
+write, the one storage write that hadn't already gotten that treatment;
+(9) `rotateTabId()`/`claimOwnership()` never verifying a freshly
+generated id/epoch actually *differed* from the value being replaced,
+which under degraded entropy reopened the round-5 stale-write bug via
+entropy rather than storage (fixed with a shared, bounded
+`generateDistinctFrom()`); (10) that same fix not failing closed when its
+pre-write read threw, plus `isTabProbeCollision()` treating an
+equal-nonce *genuine* collision as no collision at all (both fixed —
+`isTabProbeCollision()` dropped its now-unused `myNonce` parameter, and
+`resolveCollision()` now reports `failed:true` when no tie-break
+asymmetry exists); (11) round 8's fix having introduced its own mirror
+image (a landed write + one transient read throw reported as failure —
+fixed with bounded retry), collision memoization keyed by nonce alone
+surviving a rotation (fixed with a composite `(myTabId, nonce)` key), and
+concurrent losers able to generate identical replacement ids (addressed
+via a mandatory re-probe caller contract). Two gaps investigated and
+knowingly left unfixed as documented residual; **260/260 tests passing**
+(117 in `test-miniplayer-state.mjs`).
+**Review loop deliberately stopped after round 12 verifies round 11's
+fixes** — see residual-gap item 12 for the reasoning (findings trended
+from plausible real-world triggers toward compounding entropy/N-way
+scenarios, and the validation this module needs now is a real consumer,
+not another adversarial pass)); **3a-canary**
+(mini-player container + script always emitted, `MINI_PLAYER_ENABLED`
+controls only the
 runtime default — an earlier draft gated emission itself behind the same
 flag, which made a `?miniplayer=1` runtime override impossible to honor);
 **3b-default** (primary add/handoff actions — `track-select.js`'s "Add to
@@ -2283,14 +2341,25 @@ localStorage:   STATE_KEY ('miniPlayerState', unchanged) — envelope field
   stored (not just "did `setItem` throw"). Returns the verified id, or
   `null`. A `null` result means: disable persistent ownership for this
   document's entire lifetime; do not call any other ownership function
-  below.
+  below. **The initial existence check itself also fails closed** (a
+  same-day `/review-step` round found the first version collapsed a
+  transient read failure to "nothing exists" and proceeded to mint/persist
+  a brand-new id, silently destroying a perfectly valid identity carried
+  in from a prior same-tab page load — reproduced directly, fixed to
+  return `null` immediately instead).
 - **`peekTabId(sessionStore)`** — read-only, never generates, never throws.
   Used by every function below that needs "my established id" without the
   right to mint one.
 - **`rotateTabId(sessionStore)`** — same external behavior on success; on a
   failed or unverified persist, returns `null` instead of a fabricated
-  ephemeral id. The tab-collision handshake is **unchanged** — already
-  solid after rounds 3-4, out of scope for this redesign.
+  ephemeral id. The tab-collision handshake's own DECISION LOGIC (the
+  nonce comparison) is **unchanged** — already solid after rounds 3-4, out
+  of scope for this redesign — but `handleIncomingProbe()`/
+  `handleIncomingProbeReply()`'s RETURN SHAPE gained a `failed` field the
+  same day (see below): a real bug was found in how that otherwise-settled
+  code handled `rotateTabId()`'s new `null`-on-failure contract, which
+  this redesign itself introduced (the pre-redesign version never
+  returned `null`). Fixing that is not a re-litigation of the nonce logic.
 - **`readEnvelope(localStore)`** — returns `{status, envelope}` where
   `status` is `'ok'`, `'absent'` (key missing, or corrupt/wrong-version
   JSON), or **`'unavailable'`** (the `getItem()` call itself threw) — only
@@ -2359,17 +2428,38 @@ localStorage:   STATE_KEY ('miniPlayerState', unchanged) — envelope field
   full history. **Still owed at least one genuinely clean `/review-step`
   round against this version before it's considered settled.**
 - **`hasValidLease(lease, localStore, sessionStore)`** — `false` for a
-  malformed/null lease, `false` if that exact epoch is revoked, `false` if
-  the envelope read is `'unavailable'`, else compares `(ownerId,
-  ownerEpoch)` against the fresh envelope. Pure read, no lock needed.
+  malformed/null lease; `false` if `peekTabId(sessionStore)` no longer
+  equals `lease.ownerId` (added same day by a `/review-step` round — see
+  below); `false` if that exact epoch is revoked; `false` if the envelope
+  read is `'unavailable'`, else compares `(ownerId, ownerEpoch)` against
+  the fresh envelope. Pure read, no lock needed. Internally composed from
+  a shared `hasMatchingEnvelopeTuple()` predicate (everything above except
+  the revocation check) plus a revocation check on top —
+  `tombstoneIfCurrent()` below uses the tuple-only predicate directly,
+  deliberately without the revocation check. **The `peekTabId` check
+  closes a real gap**: this document's own tab id can rotate out from
+  under an already-captured in-memory lease (a lost collision tie-break,
+  or a `revokeLease()` escalation) without the shared envelope changing at
+  all, since nobody else has necessarily written it yet. Without this
+  check a captured lease naming the OLD, abandoned id could still pass
+  every other check — reproduced directly: rotate this document's own id,
+  confirm the old lease still (wrongly) validated and a stale write still
+  landed. (This also corrects an overclaim earlier in this section: the
+  `{ownerId, ownerEpoch}` tuple genuinely IS persisted, in the envelope —
+  that's how `restoreLease()` re-derives a lease at all. "Never persisted"
+  meant no SEPARATE credential requiring cross-key synchronization, not
+  that the tuple appears nowhere in storage.)
 - **`restoreLease(localStore, sessionStore)`** — the "am I the continuing
   owner, and what lease should I hold" check, run once at boot **after**
   the tab-collision handshake has converged. Returns one of:
   `{status:'no-identity'}`, `{status:'unavailable'}`,
   `{status:'unowned', envelope}`, `{status:'not-mine', envelope}`,
   `{status:'revoked', envelope}`, or `{status:'restored', lease, envelope}`
-  (safe to resume — adopt `{ownerId, ownerEpoch}` from the envelope as
-  this document's operating lease, no write needed).
+  (a CANDIDATE lease, not a guarantee — a single unlocked read of
+  `{ownerId, ownerEpoch}` from the envelope, no write needed; a
+  coordinator must install collision/external-claim invalidation
+  listeners before applying visible/audio state from it — see residual
+  gap item 9).
 - **`claimOwnership(localStore, sessionStore, lockRequest)`** — return
   shape `{ok, lease, envelope, reason?}`. Under the lock: `peekTabId()`
   (fail if null) → `readEnvelope()` (fail if `'unavailable'`) → mint a
@@ -2377,8 +2467,13 @@ localStorage:   STATE_KEY ('miniPlayerState', unchanged) — envelope field
   queue/position content if any. No CAS precondition on this call
   specifically — deliberate: an explicit local interaction always wins
   regardless of current envelope content, and a single `setItem()` is
-  atomic per the WHATWG spec. On failure, returns `{ok:false}` with the
-  *previous* envelope completely untouched.
+  atomic per the WHATWG spec. On a failure reported *before* the write is
+  attempted (`no-identity`, `unavailable`, `epoch-collision`) or on a
+  thrown `setItem()`, the *previous* envelope is completely untouched.
+  **Not guaranteed for `write-failed` specifically** (corrected 2026-08-15,
+  `/review-step`): if the write lands but every bounded verification read
+  throws, `writeEnvelope()` reports failure over a mutation that did
+  happen — see residual-gap item 10.
 - **`writeSession(localStore, sessionStore, lease, session, lockRequest)`**
   — takes `lease` explicitly, no longer mints a token internally. Under
   the lock: `hasValidLease(lease, ...)` (reject if false) → build the
@@ -2391,16 +2486,26 @@ localStorage:   STATE_KEY ('miniPlayerState', unchanged) — envelope field
   `lease.ownerEpoch` no longer matches even though `ownerId` is unchanged
   — the single test that most directly exercises round 5's actual bug).
 - **`tombstoneIfCurrent(localStore, sessionStore, lease, lockRequest)`** —
-  optional, best-effort — never load-bearing for correctness. Same CAS
-  precondition as `writeSession()` (`hasValidLease()`), clears
-  `ownerId`/`ownerEpoch` to `null` while preserving queue/position
-  content. Structurally cannot stomp a fresher legitimate claim: a losing
-  tab's stale lease already fails `hasValidLease()` by the time it would
-  try to tombstone. Purpose is cosmetic only (a passive read-only observer
-  stops showing stale "owned by A" content after something outside this
-  module's bookkeeping takes over); the correctness-critical property (no
-  phantom auto-resume by the losing tab) is fully provided by
-  `revokeLease()`'s local marker alone.
+  optional, best-effort — never load-bearing for correctness. Gates on
+  `hasMatchingEnvelopeTuple()` — **not** `hasValidLease()` (corrected same
+  day; see below) — clears `ownerId`/`ownerEpoch` to `null` while
+  preserving queue/position content. Structurally cannot stomp a fresher
+  legitimate claim: a losing tab's stale lease already fails the tuple
+  check by the time it would try to tombstone. Purpose is cosmetic only (a
+  passive read-only observer stops showing stale "owned by A" content
+  after something outside this module's bookkeeping takes over); the
+  correctness-critical property (no phantom auto-resume by the losing tab)
+  is fully provided by `revokeLease()`'s local marker alone. **Originally
+  gated on `hasValidLease()`, which a same-day `/review-step` round found
+  made the module's own documented sequence self-defeating**: calling
+  `tombstoneIfCurrent()` after `revokeLease()` (as documented) always
+  failed, because `revokeLease()` had just marked that exact epoch
+  revoked, and the old gate rejected any revoked epoch — reproduced
+  directly. Fixed by switching to the tuple-only predicate: revocation
+  status was never actually load-bearing for tombstoning's safety in the
+  first place (that safety comes entirely from the tuple match), so
+  excluding it from this one gate closes the self-rejection without
+  weakening anything.
 - **`withOwnershipLock()`** — the best-effort *unlocked* fallback is
   **removed**. When no real lock provider is available, the critical
   section never runs at all; callers surface this as `{ok:false,
@@ -2424,13 +2529,17 @@ return shape gains `lease`/`reason`; `readEnvelope`'s return shape becomes
 `{status, envelope}`; `buildEnvelope`/`decodeEnvelope`'s `ownerToken`
 field renames to `ownerEpoch`. Fully unchanged: `STATE_KEY`, `TAB_ID_KEY`,
 `ENVELOPE_VERSION`, `MAX_PERSISTED_QUEUE_ITEMS`, `encodeItem`,
-`encodeQueue`, `writeEnvelope`, `OWNERSHIP_LOCK_NAME`, and every
-tab-collision-handshake export.
+`encodeQueue`, `OWNERSHIP_LOCK_NAME`. `writeEnvelope` keeps its signature
+but gained read-back verification (round 8) then bounded retry of that
+verification (round 11). `isTabProbeCollision` **dropped its `myNonce`
+parameter** (round 10 — nonce equality no longer affects collision-ness).
 
 **Honestly documented residual gaps** (not eliminated, narrower and
-qualitatively different from every prior round's leftover — every one
-requires *two independent write failures with no successful write in
-between*, not one):
+qualitatively different from every prior round's leftover. An earlier
+version of this line claimed *every* remaining gap requires two
+independent write failures with no successful write in between — that
+blanket claim was **falsified twice** by later rounds and is withdrawn:
+items 9-12 below need no write failure at all):
 1. If *both* `revokeLease()`'s epoch write and its rotation fallback fail,
    and the document navigates before any further `sessionStorage` write
    ever succeeds, a future page load's `restoreLease()` could wrongly
@@ -2509,6 +2618,146 @@ between*, not one):
    module that can also rotate `TAB_ID_KEY` needs the same caller-contract
    treatment — this isn't automatic just because the handshake code itself
    is unchanged.
+7. **Added and closed, same day (2026-08-15) — FOUR more findings from a
+   deliberately BROAD (not narrowly-scoped-to-the-last-patch) review
+   round**, immediately after a narrow round on item 6's fix alone came
+   back clean — proving the narrow framing itself was hiding things, not
+   that the subsystem was actually settled. **(a) High:**
+   `hasValidLease()` never checked whether THIS document's own current
+   identity (`peekTabId()`) still matched the lease — only the envelope —
+   so a captured lease survived this document's OWN `TAB_ID_KEY` rotating
+   out from under it (a lost collision tie-break, or item 6's own
+   `revokeLease()` escalation), and a stale write under an abandoned
+   identity could still land. **(b) Medium:** the module's own documented
+   "call `tombstoneIfCurrent()` after `revokeLease()`" sequence was
+   self-defeating — the epoch `revokeLease()` had just revoked
+   immediately failed `tombstoneIfCurrent()`'s `hasValidLease()` gate.
+   **(c) Medium:** `resolveCollision()` discarded `rotateTabId()`'s return
+   value entirely, so a FAILED rotation write was still reported as
+   `rotated:true` — reproduced directly, both sides of a collision ended
+   up sharing the identical id and BOTH passed `restoreLease()` as
+   `'restored'` simultaneously, the exact duplicate-ownership outcome the
+   handshake exists to prevent (this one bug is a direct consequence of
+   item 6's own root cause: `rotateTabId()`'s `null`-on-failure contract
+   is NEW, introduced by this redesign, and this one caller inside the
+   nominally-frozen handshake code was never updated for it). **(d) Low:**
+   `establishTabId()`'s initial existence check applied the exact
+   read-failure-as-absence policy `readEnvelope()` was redesigned earlier
+   the same day to avoid, silently destroying a valid carried identity on
+   a one-off transient read failure. All four reproduced directly, all
+   four fixed the same session: `hasValidLease()` now composed from a
+   shared `hasMatchingEnvelopeTuple()` predicate that includes the
+   `peekTabId()` check; `tombstoneIfCurrent()` switched to that predicate
+   directly (excluding revocation, closing (a) and (b) from one shared
+   fix); the handshake functions' return shape gained `failed`, with
+   `rotated` only ever true on a verified write, and a documented
+   caller contract to disable ownership entirely on `failed:true`;
+   `establishTabId()`'s pre-check now fails closed. See
+   `player-consolidation-codex.md`'s "Full fenced-lease ownership
+   subsystem review" entry for the full findings and disposition.
+8. **Genuine, permanent residual gap (2026-08-15) — investigated and a
+   suggested fix explicitly REJECTED, not merely deferred.** If
+   `revokeLease()`'s own escalation path fires (rotating this document's
+   tab id as its failure fallback), an immediately-following
+   `tombstoneIfCurrent()` call now also fails, since the rotated identity
+   no longer matches the lease being tombstoned. The obvious fix (drop the
+   `peekTabId()` identity check from `tombstoneIfCurrent()`'s gate) was
+   built and tested against, then rejected: it reopens a worse bug — a tab
+   that lost a COLLISION tie-break holds a stale lease whose tuple can
+   still legitimately describe a *different*, still-live document's
+   ongoing ownership (collision resolution never touches the shared
+   envelope), so removing the check would let that loser wrongly clear the
+   *winner's* completely legitimate state, reproduced directly. Purely
+   cosmetic either way (a passive observer keeps showing an abandoned
+   owner until the next real claim overwrites it) — no correctness
+   property is affected (no phantom auto-resume; no wrong document can
+   ever validate the stale lease for a WRITE). Two tests lock in both
+   halves: one proving the gap, one proving the protection it would cost
+   to "fix" it.
+9. **`restoreLease()`'s result is a candidate, not a guarantee (documented
+   2026-08-15, `/review-step` finding).** It is a single unlocked read —
+   deliberately, since it runs once at boot with no consumer yet to wire a
+   lock around — so another tab's claim landing a moment later is not
+   reflected in an already-returned `'restored'` result. No correctness
+   property is at risk (any subsequent WRITE under the stale lease is
+   still rejected by `hasValidLease()`'s always-fresh check), but a future
+   caller that resumes visible UI/audio state directly from `'restored'`,
+   before ever attempting a write, has a narrow window where that state
+   could already be stale. Closing it requires a real boot-time
+   coordinator wiring collision/external-claim listeners before trusting a
+   restoration — out of scope while this module has no consumer. The same
+   review round also found the "correctly-wired caller never treats
+   itself as restored" test was tautological (its key assertion trivially
+   resolves to the value it's checking against whenever the mock
+   `disabled` latch is true, so it could never fail even if a real
+   implementation ignored the contract) — reworded to honestly document a
+   required caller-side pattern rather than claim to prove one is
+   followed; a real coordinator needs its own test once one exists.
+10. **A landed write whose every verification read throws is reported as
+    failure (2026-08-15, round 11 `/review-step` finding — the mirror
+    image of round 8's bug, introduced by round 8's own fix).**
+    `writeEnvelope()` reads back its own write to catch a silent drop;
+    round 11 found the single-attempt version turned one transient
+    `getItem()` throw into a false FAILURE over a write that genuinely
+    landed — reproduced for all three callers (`claimOwnership()`
+    returning `write-failed` while the envelope showed its new owner,
+    `writeSession()` returning `false` over a saved item,
+    `tombstoneIfCurrent()` returning `false` over cleared ownership).
+    Fixed by bounded retry (3 attempts) of the verification read. Residual
+    if *every* attempt throws: accepted deliberately, because the
+    consequence is bounded and self-healing rather than corrupting —
+    `claimOwnership()` has no CAS precondition so a retry overwrites
+    cleanly, `writeSession()` self-heals on the next periodic save, and
+    `tombstoneIfCurrent()` is already documented best-effort. A full
+    `confirmed`/`not-written`/`indeterminate` tri-state threaded through
+    all three public APIs was considered and declined as disproportionate.
+11. **Concurrent collision losers can generate the identical replacement
+    tab id (2026-08-15, round 11 `/review-step` finding).**
+    `generateDistinctFrom()` can only prove a candidate differs from *this*
+    document's own prior id; it cannot know what a different,
+    simultaneously-rotating document is independently generating.
+    Reproduced with three clones, two losers, and pinned entropy: both
+    landed on the same replacement id, and with no re-probe the fresh
+    duplication went entirely undetected. Addressed at the **caller
+    contract** level rather than internally: a caller MUST broadcast a
+    fresh probe under its new identity after any successful rotation,
+    which turns the pairwise handshake into a self-converging protocol
+    (the duplication resurfaces as an ordinary collision and resolves the
+    same way). The test harness `wireDocument()` models that re-probe, and
+    a three-clone test drives the whole cascade through it from a single
+    `postMessage` — verified non-vacuous by temporarily removing the
+    re-probe and confirming the test fails. Still a *simulated* caller,
+    not a real coordinator (see item 9). Residual: this
+    converges by repetition, not via a bounded protocol with a give-up
+    state, so a pathological entropy source could in principle need
+    several rounds. Never *permanently* undetected, only possibly slower;
+    a bounded-convergence-with-disable protocol was declined as
+    disproportionate for a module with no consumer yet.
+12. **Reviewer suggestions deliberately declined across rounds 8-11**, all
+    recorded with reasoning in `player-consolidation-codex.md`'s
+    dispositions: tri-state tab-id/lease results throughout the public
+    surface (`peekTabId()` collapsing a read failure to `null` is
+    fail-closed everywhere it feeds, never incorrectly succeeding); a real
+    DOM-free ownership coordinator to make the caller-contract tests
+    non-tautological (that is Stage 3a-canary's work, not this stage's);
+    and the two items above's fuller engineering. **Recorded judgment
+    (2026-08-15, corrected after round 12 pushed back on an earlier,
+    overstated version of it):** the *collision-handshake* findings
+    trended clearly toward the exotic — rounds 6-7 needed only plausible
+    real-world triggers (storage quota, private browsing), while rounds
+    9-11's handshake findings required pinned/degraded entropy or 3+
+    simultaneously duplicated tabs. That trend does **not** hold for the
+    storage findings: round 8's silent-drop bug and round 11's
+    verification-read bug (item 10) each needed just **one ordinary
+    transient storage failure** — no exotic conditions at all. What
+    justifies stopping is therefore not "everything left is exotic" but
+    that each round's fix has been creating the surface for the next
+    round's finding (round 8's fix directly caused round 11's item 10;
+    round 9's fix directly caused round 10's first finding), with round 12
+    confirming no High or Medium findings remain. The remaining
+    validation this module needs is **a real consumer in Stage
+    3a-canary**, not a thirteenth adversarial pass — the review loop is
+    deliberately stopped here.
 
 Implementation record (what actually shipped, test counts, verification):
 `player-consolidation-codex.md`'s "Phase 3 Stage 3a-foundation fenced-lease
