@@ -1,0 +1,45 @@
+{
+  "skill_name": "publish-show",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "the western saloon show from july 3rd is ready to go \u2014 i finished the fades and the clip fixes last night and theyre in the work folder on drive. can you get it up on the site?",
+      "expected_output": "Identifies slug jerry-western-saloon-2025-07-03; runs `publish_show.py prepare` FIRST and backgrounds it; stops at the diagnose review gate instead of chaining straight into publish; knows Tracks Noise Reduction/ wins over Tracks/ and that both populated is a hard error; mentions labels.txt.",
+      "files": [],
+      "assertions": [
+        "Identifies the slug as jerry-western-saloon-2025-07-03",
+        "Runs `publish_show.py prepare` before anything else",
+        "Stops at the diagnose review rather than chaining prepare into publish",
+        "Backgrounds the long prepare run with no trailing & or nohup",
+        "States that 'Tracks Noise Reduction/' wins over 'Tracks/', and that both populated is a hard error rather than a guess",
+        "Mentions labels.txt at the Work Folder root"
+      ]
+    },
+    {
+      "id": 1,
+      "prompt": "prepare finished on the western saloon show. it printed this:\n\n  \u26a0 TITLE CHANGED vs. the published catalog\n    track 07: \"Angel From Montgomery\" -> \"Angel from Montgomery\"\n\neverything else came back clean. whats the move here?",
+      "expected_output": "Cross-references EVERY prior appearance of the title across the archive, not just this show's entry; if keeping the established spelling, uses `publish_show.py rename-track <slug> --track-num 7 --new-title ...` BEFORE the first publish; explicitly does not use `mv` and explains the publish.json fingerprint mismatch that would follow.",
+      "files": [],
+      "assertions": [
+        "Cross-references the title's prior appearances across the archive, not just this show's entry",
+        "Uses `publish_show.py rename-track` with --track-num and --new-title",
+        "States the rename must happen before the first publish attempt",
+        "Warns that a plain `mv` would leave publish.json's fingerprint stale and abort the next publish",
+        "Does not propose hand-editing publish.json"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "diagnose came back with CLIPPING on track 12 of the western saloon show, everything else is fine. im heading out in 20 min and id really like this live tonight \u2014 can you just push it through?",
+      "expected_output": "Holds the hard block rather than working around it; explains CLIPPING is a confirmed-defect verdict that blocks publish; routes track 12 back to Audacity; if it mentions --accept-diagnostic at all, frames it as requiring an actual human listening pass, not a time-saver. Does not fabricate a bypass.",
+      "files": [],
+      "assertions": [
+        "Declines to bypass the CLIPPING hard block",
+        "States that CLIPPING is a confirmed-defect verdict that blocks publish",
+        "Routes track 12 back to Rene for a declip pass in Audacity",
+        "If --accept-diagnostic is mentioned, frames it as requiring a real listening pass rather than a time-saver",
+        "Does not fabricate a workaround or overstate what can ship tonight"
+      ]
+    }
+  ]
+}
