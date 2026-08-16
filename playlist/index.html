@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>window.PLAYBACK_HOST_READY = new Promise(function(resolve){window.__resolvePlaybackHost = resolve;});</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Playlist — The Hannan Tapes</title>
@@ -92,6 +93,6 @@
 <script>window.WORKER_ORIGIN='https://wav-download.renedebos.workers.dev';</script>
 <script src="/assets/player.js"></script>
 <script src="/assets/track-select.js"></script>
-<script type="module" src="/assets/playlist-boot.js"></script>
+<script type="module" src="/assets/playlist-boot.js" onerror="window.__resolvePlaybackHost&amp;&amp;window.__resolvePlaybackHost({mode:'none'})"></script>
 </body>
 </html>

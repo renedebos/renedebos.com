@@ -571,6 +571,261 @@ test('destroy() leaves the lock screen reporting no active session, not stale "p
   } finally { setGlobalNavigator(originalNav); }
 });
 
+// ── observable play-result signal (Phase 3 Stage 3a-foundation) ──────────
+// Verified bug this exists to fix: _playIndex()'s internal .catch() means
+// play() ALWAYS resolves, never rejects, so a caller doing
+// controller.play().catch(...) to detect a blocked autoplay attempt cannot
+// work — there is nothing to catch. snapshot().lastPlayError is the only
+// observable signal, preserving err.name so 'NotAllowedError' is
+// distinguishable from any other failure.
+test('play() always resolves even on a blocked-autoplay rejection, but snapshot().lastPlayError distinguishes it', async () => {
+  const audio = new FakeAudio();
+  audio.autoplayBehavior = 'reject'; // err.name = 'NotAllowedError', per FakeAudio
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    await assert.doesNotReject(() => c.setQueue([item('a')], { startIndex: 0, autoplay: true }),
+      'play()\'s returned promise must still always resolve — existing call sites must not need to change');
+    await tick();
+    assert.equal(c.state, 'error');
+    assert.equal(c.snapshot().lastPlayError.name, 'NotAllowedError',
+      'a blocked autoplay attempt must be distinguishable from a generic failure');
+  } finally { c.destroy(); }
+});
+
+test('lastPlayError is null for a genuine load failure with no .name (a native MediaError), still distinguishable from NotAllowedError', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    c.setQueue([item('a')], { startIndex: 0, autoplay: true });
+    await tick();
+    audio.simulateError(2); // MEDIA_ERR_NETWORK -- a MediaError has no .name at all
+    assert.equal(c.state, 'error');
+    assert.notEqual(c.snapshot().lastPlayError.name, 'NotAllowedError',
+      'a native media error must never be mistaken for a blocked-autoplay rejection');
+  } finally { c.destroy(); }
+});
+
+test('lastPlayError clears at the start of a fresh play attempt, not left stale from a previous failure', async () => {
+  const audio = new FakeAudio();
+  audio.autoplayBehavior = 'reject';
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    c.setQueue([item('a'), item('b')], { startIndex: 0, autoplay: true });
+    await tick();
+    assert.equal(c.snapshot().lastPlayError.name, 'NotAllowedError');
+
+    audio.autoplayBehavior = 'succeed';
+    c.play(1);
+    await tick();
+    assert.equal(c.state, 'playing');
+    assert.equal(c.snapshot().lastPlayError, null,
+      'a fresh, successful attempt must not leave a stale error from an earlier one');
+  } finally { c.destroy(); }
+});
+
+test('snapshot() always carries a lastPlayError key (null, not just absent) even before any failure', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    assert.equal(c.snapshot().lastPlayError, null);
+  } finally { c.destroy(); }
+});
+
+// ── restoreSession() (Phase 3 Stage 3a-foundation) ────────────────────────
+// No caller in this repo yet — a later stage's mini-player boot script is
+// the first real consumer. Implemented and unit-tested now per the plan.
+test('restoreSession() explicitly assigns audio.src (setQueue({autoplay:false}) deliberately does not)', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    // Prove the contrast first: setQueue() without autoplay does NOT assign src.
+    c.setQueue([item('a')], { startIndex: 0 });
+    assert.equal(audio.src, '', 'setQueue({autoplay:false}) must not assign src — restoreSession() exists partly because of this');
+
+    c.restoreSession({ queue: [item('x'), item('y')], currentItemId: 'y', positionSec: 0 });
+    assert.equal(audio.src, 'https://example.test/y.mp3');
+    assert.equal(c.currentItem.id, 'y');
+    assert.equal(c.currentIndex, 1);
+    assert.equal(c.state, 'idle', 'cued, not playing — matches setQueue()\'s own "idle" convention for a cued-but-not-playing queue');
+    assert.equal(audio.paused, true, 'restoreSession() must never start playback itself');
+  } finally { c.destroy(); }
+});
+
+test('restoreSession() resolves currentItemId against the (possibly filtered) queue, not a raw index', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    c.restoreSession({ queue: [item('a'), item('b'), item('c')], currentItemId: 'c' });
+    assert.equal(c.currentIndex, 2);
+    assert.equal(c.currentItem.id, 'c');
+  } finally { c.destroy(); }
+});
+
+test('restoreSession() falls back to "no current item" when currentItemId is missing/gone from the queue', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    c.restoreSession({ queue: [item('a'), item('b')], currentItemId: 'deleted-from-archive' });
+    assert.equal(c.currentIndex, -1);
+    assert.equal(c.currentItem, null);
+    assert.equal(c.state, 'idle');
+    assert.equal(audio.src, '', 'nothing resolvable — nothing should be loaded either');
+  } finally { c.destroy(); }
+});
+
+test('restoreSession() seeks to positionSec only after loadedmetadata, not immediately', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    c.restoreSession({ queue: [item('a')], currentItemId: 'a', positionSec: 42 });
+    assert.equal(audio.currentTime, 0, 'seeking before metadata is unreliable/a no-op in real browsers — must not even attempt it yet');
+
+    audio.duration = 200;
+    audio.dispatchEvent(new Event('loadedmetadata'));
+    assert.equal(audio.currentTime, 42, 'the deferred seek must fire once metadata actually arrives');
+  } finally { c.destroy(); }
+});
+
+test('restoreSession()\'s deferred seek is generation-guarded — does not fire against a track the user already navigated away from', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    c.restoreSession({ queue: [item('a'), item('b')], currentItemId: 'a', positionSec: 99 });
+    // The user acts before metadata for 'a' ever loads -- a fresh restore/
+    // play supersedes the pending deferred seek.
+    c.restoreSession({ queue: [item('a'), item('b')], currentItemId: 'b', positionSec: 5 });
+    audio.duration = 200;
+    audio.currentTime = 0;
+    audio.dispatchEvent(new Event('loadedmetadata')); // 'b's metadata landing, not 'a's
+    assert.equal(audio.currentTime, 5, 'only the CURRENT (b) restore\'s seek must apply');
+
+    // Now prove the stale one specifically was suppressed, not just
+    // coincidentally overwritten: reset currentTime and fire loadedmetadata
+    // again -- if the stale listener were still armed, it would jump to 99.
+    audio.currentTime = 5;
+    audio.dispatchEvent(new Event('loadedmetadata'));
+    assert.equal(audio.currentTime, 5, 'the superseded restore\'s deferred seek must never fire at all');
+  } finally { c.destroy(); }
+});
+
+// Implementation review finding #4 (2026-08-15): _playIndex() bumps `_gen`
+// unconditionally on every play() attempt, including one that simply
+// RESUMES the exact item restoreSession() just cued — the plan's own
+// "attempt play() only when permitted" resume flow. A `_gen`-guarded seek
+// would be silently invalidated by that resume call alone, before metadata
+// ever has a chance to load, losing the restored position on the most
+// common resume path. The fix keys the guard to `_queueRevision` (never
+// bumped by play()/pause()/seek()) plus the restored item's own id instead.
+test('restoreSession()\'s deferred seek survives calling play() to resume the SAME restored item', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    c.restoreSession({ queue: [item('a'), item('b')], currentItemId: 'a', positionSec: 42 });
+    c.play(); // resume the current (restored) item, before metadata has loaded
+    audio.duration = 200;
+    audio.dispatchEvent(new Event('loadedmetadata'));
+    assert.equal(audio.currentTime, 42,
+      'the restored position must not be lost just because play() was called to resume the same item');
+  } finally { c.destroy(); }
+});
+
+test('restoreSession()\'s deferred seek also survives a BLOCKED (autoplay-rejected) resume attempt on the same item', async () => {
+  const audio = new FakeAudio();
+  audio.autoplayBehavior = 'reject'; // simulates a blocked-autoplay NotAllowedError
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    c.restoreSession({ queue: [item('a')], currentItemId: 'a', positionSec: 17 });
+    await c.play(); // rejected -- _playIndex() still bumps _gen and sets state 'error'
+    assert.equal(c.state, 'error');
+
+    audio.duration = 200;
+    audio.dispatchEvent(new Event('loadedmetadata'));
+    assert.equal(audio.currentTime, 17,
+      'a blocked autoplay attempt on the same restored item must not lose the deferred seek either');
+  } finally { c.destroy(); }
+});
+
+test('restoreSession() honors shuffleOn/repeatOne flags and clears any stale unshuffled snapshot (honest, documented shuffle-restoration limitation)', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    c.toggleShuffle(); // give the controller a pre-shuffle snapshot to prove gets cleared
+    c.restoreSession({
+      queue: [item('a'), item('b')], currentItemId: 'a',
+      repeatOne: true, shuffleOn: true,
+    });
+    assert.equal(c.snapshot().repeatOne, true);
+    assert.equal(c.snapshot().shuffleOn, true);
+    // toggleShuffle() must degrade gracefully (flip the flag, keep the
+    // queue order) rather than resurrect a stale pre-restore snapshot.
+    const order = c.queue.map(t => t.id);
+    c.toggleShuffle();
+    assert.deepEqual(c.queue.map(t => t.id), order,
+      'no pre-shuffle snapshot survives a restore -- toggling off must not silently reorder from stale data');
+  } finally { c.destroy(); }
+});
+
+test('restoreSession() pauses any audio left over from a previous session before loading the restored one', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    c.setQueue([item('old')], { startIndex: 0, autoplay: true });
+    await tick();
+    assert.equal(audio.paused, false);
+
+    c.restoreSession({ queue: [item('new1')], currentItemId: 'new1' });
+    assert.equal(audio.paused, true);
+  } finally { c.destroy(); }
+});
+
+test('restoreSession() is a no-op once destroyed', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  c.destroy();
+  c.restoreSession({ queue: [item('a')], currentItemId: 'a', positionSec: 10 });
+  assert.equal(audio.src, '');
+  assert.equal(c.currentIndex, -1);
+});
+
+// ── onAnyExternalClaim (Phase 3 Stage 3a-foundation) ──────────────────────
+// The existing onExternalClaim callback only runs while state is
+// 'playing'/'loading' (verified directly, player-controller.js's
+// constructor) — correct for its purpose (e.g. not showing a false "paused
+// elsewhere" message on an already-paused tab), but that gating means a
+// merely-restored, never-played controller can never learn it lost
+// ownership under it. onAnyExternalClaim is a second, unconditional hook
+// added specifically so ownership-tracking code (miniplayer-state.js, a
+// later stage's consumer) can observe a claim regardless of state.
+test('onAnyExternalClaim fires on every external claim regardless of state, unlike the gated onExternalClaim', async () => {
+  const audioA = new FakeAudio();
+  const audioB = new FakeAudio();
+  let anyClaims = 0;
+  let gatedClaims = 0;
+  const a = new PlaybackController({
+    audio: audioA, mediaSession: false,
+    onExternalClaim: () => { gatedClaims++; },
+    onAnyExternalClaim: () => { anyClaims++; },
+  });
+  const b = new PlaybackController({ audio: audioB, mediaSession: false });
+  try {
+    // 'a' is idle (never played) when 'b' claims -- the existing gated
+    // callback must NOT fire (a was not playing/loading), but the new
+    // unconditional one must.
+    b.setQueue([item('x')], { startIndex: 0, autoplay: true });
+    await tick();
+    assert.equal(gatedClaims, 0, 'the existing gated callback is correctly silent for an already-idle controller');
+    assert.equal(anyClaims, 1, 'the new unconditional hook must still observe the claim');
+
+    // Now 'a' IS playing -- both must fire.
+    a.setQueue([item('y')], { startIndex: 0, autoplay: true });
+    await tick();
+    b.setQueue([item('z')], { startIndex: 0, autoplay: true }); // b claims again, pausing a (now playing)
+    await tick();
+    assert.equal(gatedClaims, 1, 'the gated callback fires this time since a was playing');
+    assert.equal(anyClaims, 2, 'the unconditional hook keeps firing every time, gated or not');
+  } finally { a.destroy(); b.destroy(); }
+});
+
 // ── runner ─────────────────────────────────────────────────────────────
 let failed = 0;
 for (const { name, fn } of tests) {

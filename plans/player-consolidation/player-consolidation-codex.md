@@ -2058,3 +2058,2737 @@ this environment (no `playwright-chromium`).
 Nothing committed yet — working-tree changes only, pending Rene's go-ahead
 to commit/push (this round touches already-deployed production code, so
 committing means another deploy).
+
+## Phase 3 design review — 2026-08-15
+
+Five rounds reviewing Phase 3's design (the sticky in-page mini-player
+that replaced the originally-planned `/player/` popup — see
+`player-consolidation-plan.md`'s Phase 3 section for why the popup
+approach was rejected). Sourced differently from every review above: run
+interactively by Rene against a working plan file
+(`~/.claude/plans/dynamic-hugging-rossum.md`) rather than via
+`scripts/codex_review.sh`, with each round's verdict pasted back and
+verified against the actual code before the plan was revised — the
+verification and disposition happened inline, round by round, rather than
+as a separate later pass. Every claim below (Codex's and the plan's) was
+independently checked against the source, not taken on either side's word.
+
+### Round 1 findings
+
+1. **"No controller" doesn't mean "no player."** A design draft assumed a
+   missing `PLAYER_BOOT`/`PLAYLIST_BOOT` global meant no player existed on
+   a page. False: `songs.js`/`player.js`'s `initCustomPlayers()` and
+   `player.js:217`'s `initLegacyPlayback()` fallback both create
+   independent `<audio>` engines outside `PlaybackController`.
+   `BroadcastChannel` never echoes to the sending document, so two
+   same-page engines can't coordinate — a real double-playback risk.
+2. **Adopt-without-restoring defeats the primary feature.** The draft said
+   an adopted controller must never restore a persisted session — but
+   show-page controllers start empty (`player-boot.js` mounts before any
+   queue exists) and `/playlist/` exposes its controller before its async
+   catalog/hash hydration finishes. Navigating onto either would make a
+   restored session disappear, or worse, let an empty adopted controller
+   overwrite valid persisted state.
+3. **The proposed autoplay-error detection cannot work.** The draft relied
+   on `controller.play().catch(...)` to detect a browser-blocked autoplay
+   attempt. Verified: `_playIndex()` (`player-controller.js:564`) already
+   attaches its own `.catch()` to the play promise and resolves — the
+   promise `play()` returns to a caller never rejects, so nothing external
+   can ever catch it.
+4. **The persistence contract was incomplete/partly inaccurate.**
+   `normalizeItem()` doesn't cap the queue (`setQueue()` does, verified at
+   `:230`); `endless` is playlist-page-local state, not something
+   `PlaybackController` owns; restored shuffle needs explicit
+   `_unshuffledQueue` handling; filtering corrupt entries can shift a raw
+   index (persist `currentItemId` instead); booleans need real-type
+   validation, not truthy coercion.
+5. **Multiple tabs can corrupt the shared session** with no
+   writer/ownership arbitration in the original draft.
+6. **The canary mechanism contradicted itself** — gating asset *emission*
+   behind the same flag a runtime `?miniplayer=1` override was supposed to
+   flip made the override impossible to honor.
+7. **Stage 3b didn't exercise the replacement workflow** — both "Add to
+   player" and `/playlist/`'s handoff still opened the popup during the
+   proposed soak, so the soak wouldn't have tested the actual replacement
+   path, and 3c would have silently changed "Add to player"'s behavior at
+   deletion time.
+8. Smaller items: don't bundle the BroadcastChannel wire-format upgrade
+   with 3c's destructive deletion; use a shared component stylesheet
+   instead of duplicating CSS structure across `site.css`/`home.css`;
+   "dismiss" needed a real definition (must not leave inaccessible audio
+   playing); the soak needed a concrete duration, not "multi-day."
+
+**Disposition**: all eight confirmed real, all incorporated into the
+revised plan (see round 2+ below for what changed as a direct result —
+notably a new prerequisite "3a-foundation" stage for song-page migration,
+which didn't exist in the pre-round-1 draft at all).
+
+### Round 2 findings
+
+1. **Stage 3a-foundation's architecture was left as an "or"** — "migrate
+   song pages onto the shared controller, or add a yield rule" are
+   materially different designs; the plan needed to pick one.
+2. **The readiness contract needed an actual interface**, not just a
+   concept: who creates it, what value it resolves with, when each page
+   type resolves it, how it settles on a boot module's failure, who owns
+   the resulting controller's teardown.
+3. **Storage-ownership rules still allowed stale-tab overwrites.**
+   Suppressing only the immediate pause-triggered write was insufficient
+   — a losing tab's later `visibilitychange`/`pagehide` writes weren't
+   suppressed. Also, reusing `player-controller.js`'s `selfId` for tab
+   identity was wrong — verified it's a fresh `Math.random()` value
+   generated once per document load (`:23`), not stable across a
+   same-tab navigation.
+4. **`/playlist/`'s own handoff path was missing entirely** — the plan's
+   file list covered `track-select.js`'s "Add to player" but not
+   `playlist-boot.js:540`'s independent `window.sendToPlayer(...)` call
+   or its dedicated "Open continuous player" button
+   (`pages.py:324`).
+5. Smaller clarifications: a migration tombstone for the one-time
+   `playerState`→`miniPlayerState` migration (or it re-triggers whenever
+   the new key is legitimately absent); `restoreSession()` needed to
+   actually assign `audio.src` (`setQueue(...,{autoplay:false})` doesn't)
+   and defer the seek to `loadedmetadata`, generation-guarded;
+   `window.MINI_PLAYER` needed explicit lifecycle discipline (only destroy
+   a controller it constructed, never one it adopted); the measured height
+   offset needed to cover the document's own bottom spacing, not just
+   `.track-select-bar`; page scope needed explicit enumeration; the
+   BroadcastChannel protocol fork needed a firm decision, not "earlier or
+   later"; song migration needed its own verification plan.
+
+**Disposition**: all confirmed real (spot-checked directly: `selfId`'s
+per-document regeneration, `setQueue()`'s lack of `src` assignment, and
+`playlist-boot.js:540`'s independent `sendToPlayer()` call site were all
+verified against the actual source before being incorporated). Resolved
+by restructuring into the four-stage shape (3a-foundation/3a-canary/
+3b-default/3c-removal), a concrete five-question readiness-contract
+answer, a durable ownership redesign, and adding `/playlist/`'s handoff
+path to the file list.
+
+### Round 3 findings
+
+1. **The round-2 readiness-contract fix — a generic ~4s timeout defaulting
+   to `{mode:'none'}` on failure — was itself unsafe.** It could fire
+   before a slow-but-healthy `/playlist/` catalog fetch or show-page mount
+   settled, constructing a second, competing controller. Time elapsed
+   isn't a valid "no player here" signal; only real events are.
+2. **Show pages were resolving readiness at mount time**, before the
+   deep-link/autoplay decision that actually happens later. Verified:
+   `wireDeepLink()`'s `focus(true)` call runs on `window.load`
+   (`player-boot.js:203`), deliberately deferred for layout reasons — a
+   mini-player restoring at mount could start before that decision fires
+   and get overridden by it moments later.
+3. **The ownership model was entirely in-memory** — useless across a full
+   page navigation, which is the exact scenario this phase exists for.
+   Two further gaps: a second tab restoring a persisted session had no way
+   to know it wasn't the rightful owner, and the controller's
+   external-claim callback (`player-controller.js:154-158`, verified)
+   only invokes its body — including any caller-supplied callback — when
+   `state === 'playing'/'loading'`, so a paused restored tab never learns
+   it lost ownership at all.
+
+**Disposition**: all three confirmed by direct code inspection (the
+`window.load` deferral comment, the exact state-gating condition on the
+claim callback). Resolved: readiness resolution rebuilt around real
+events only (script `onerror`, existing try/catch, actual async settle —
+no timeout on any player-capable page); show-page resolution moved inside
+the `window.load` handler, carrying an `initialIntent` value; ownership
+redesigned to live in the persisted envelope itself (`ownerId`), gated by
+exactly three grant-cases, plus a new unconditional `onAnyExternalClaim`
+controller hook so a paused tab can learn about a claim it would
+otherwise never see.
+
+### Round 4 findings
+
+1. **`/playlist/`'s own boot-module failure wasn't covered** — round 3
+   handled a slow/rejected catalog fetch, but not `playlist-boot.js`
+   itself failing to load, parse, or mount, which would leave
+   `PLAYBACK_HOST_READY` pending forever with no timeout to fall back on.
+2. **Ownership-transfer ordering was unspecified.**
+   `BroadcastChannel`/`storage`-event delivery order between tabs isn't
+   guaranteed — a claimant needs to become the recorded owner *before* its
+   controller action broadcasts a claim, or the old owner's in-flight
+   write can land after the new claimant's and silently revert ownership.
+3. Minor: the plan's wording implied `player-boot.js`'s catch directly
+   triggers the legacy fallback — verified it doesn't; the catch only
+   leaves `MOUNTED_FLAG` unset, and `player.js:217`'s separate,
+   later-firing `DOMContentLoaded` listener is what actually calls
+   `initLegacyPlayback()`.
+
+**Disposition**: all confirmed (the `player.js:217` sequencing was
+directly verified — the catch and the fallback trigger are genuinely two
+separate, independently-firing code paths). Resolved: `/playlist/` given
+all three explicit failure paths (script `onerror` → `{mode:'none'}`, an
+in-script throw destroying any partial controller first → `{mode:'none'}`,
+a catalog-fetch-local timeout that never itself constructs a second
+controller), plus a new required breakage test (remove `playlist-boot.js`,
+confirm exactly one controller gets constructed, not zero or two); an
+explicit before-the-broadcast ownership-write ordering contract, with
+external claims only ever setting a local `revoked` latch rather than
+touching the shared envelope; the wording corrected to describe the real
+two-listener sequence.
+
+### Round 5 findings
+
+1. **The `revoked` latch from round 4 was in-memory only** — resets on
+   exactly the event this phase exists to survive, navigation. Concretely
+   broken during the Stage 3b soak: the popup broadcasts claims but never
+   writes to `miniPlayerState` at all, so a tab that received a claim from
+   the popup and then navigated would lose its in-memory latch, see its
+   own `ownerId` still on record, and incorrectly resume ownership —
+   possibly autoplaying over or overwriting the popup's still-active
+   session.
+
+**Disposition**: confirmed — this is a direct, traceable consequence of
+choosing in-memory state for something that must survive a full document
+reload. Resolved: `revoked` moved to `sessionStorage` (same
+survives-same-tab-navigation property as the tab-identity key), checked
+on every boot before any autoplay attempt or write, cleared only by an
+explicit local reclaim alongside the `ownerId` write.
+
+**Net assessment**: the design that emerged after five rounds is the one
+folded into `player-consolidation-plan.md`'s Phase 3 section. Codex's
+final verdict: "conditionally approved... I would allow implementation
+after adding [round 4's two corrections]," then after round 5's fix,
+approved for implementation beginning with 3a-foundation, with no further
+architectural blockers found. Stage 3a-foundation was then implemented
+directly (Claude, not Codex — standing preference) per that design; its
+review is the next section below.
+
+---
+
+## Phase 3 Stage 3a-foundation implementation review — 2026-08-15
+
+1. **High — Song occurrences violate the finalized singleton queue contract and now auto-advance unexpectedly.**
+
+   Evidence: The plan requires each song occurrence to use `playSingleton(item)` to preserve legacy behavior ([player-consolidation-plan.md:197–209](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:197)). Instead, [song-boot.js:66–98](/home/renedebos/renedebos.com-player-consolidation/scripts/song-boot.js:66) accumulates every mounted occurrence into one shared queue and calls `appendQueue()`. The controller automatically advances on `ended` ([player-controller.js:201–208](/home/renedebos/renedebos.com-player-consolidation/scripts/player-controller.js:201)), whereas legacy only advanced inside an explicit `[data-autoplay-next]` container ([player.js:127–140](/home/renedebos/renedebos.com-player-consolidation/scripts/player.js:127)). Song pages do not carry that attribute.
+
+   This changes audible behavior: a detail page plays every performance sequentially, while `/songs/` can continue across unrelated groups in the order the user opened them. The tests encode the regression as the expected result, including asserting that later groups extend the live queue and `next()` reaches them ([test-song-boot.mjs:154–205](/home/renedebos/renedebos.com-player-consolidation/scripts/test-song-boot.mjs:154)), rather than testing legacy parity. The plan’s “implemented/unit-tested” statement at lines 1959–1963 is therefore an overclaim.
+
+   Suggested fix: mount each occurrence with singleton semantics and remove `rowItems`/`appendQueue()` from song boot. Add an end-of-track test proving playback reaches `ended` without starting another occurrence, plus a lazy-index test proving opening another group does not mutate the active singleton queue.
+
+2. **High — Durable ownership is neither atomic nor failure-aware, so a stale tab can overwrite a newer owner.**
+
+   Evidence: `writeSession()` performs a separate ownership read followed by an unconditional envelope write ([miniplayer-state.js:281–300](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:281)). Another tab can claim between those operations, after which the stale writer writes its old `ownerId` back. An inline Node probe reproduced exactly that interleaving: the stale write returned `true`, restored tab A as owner, and replaced tab B’s envelope with `a-late`. This is the exact race the final design claimed to close ([player-consolidation-plan.md:1932–1949](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:1932)). The HTML Standard explicitly warns authors to assume Web Storage has no locking mechanism across agent clusters ([HTML Web Storage](https://html.spec.whatwg.org/dev/webstorage.html)).
+
+   `claimOwnership()` also clears `revoked`, ignores `writeEnvelope()`’s boolean result, and returns an apparently successful envelope ([miniplayer-state.js:320–329](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:320)). A probe with a throwing `localStorage.setItem()` returned an owner envelope and cleared revocation even though no claim was persisted. Existing scenario 3 only models the favorable ordering where revocation arrives before the stale write begins ([test-miniplayer-state.mjs:243–264](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:243)).
+
+   Suggested fix: use a separate current-owner pointer containing a fresh claim epoch and write session data under an epoch-specific key. A stale writer can then only modify its obsolete key, never the current owner pointer or current session. Make `claimOwnership()` return failure unless the pointer write succeeds, and clear `revoked` only after success. Add deterministic tests that interleave a new claim between the old writer’s read and write, plus quota/security-error tests.
+
+3. **High — `sessionStorage` does not guarantee a unique tab ID; copied storage makes two tabs simultaneous owners.**
+
+   Evidence: [miniplayer-state.js:210–227](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:210) states that a new tab/window gets a fresh ID, and the test creates every simulated tab from an empty storage object ([test-miniplayer-state.mjs:16–23](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:16)). In browsers, a page opened with an opener initially receives a copy of the opener’s `sessionStorage` ([MDN `sessionStorage`](https://developer.mozilla.org/en-US/docs/Web/API/Window/sessionStorage)). Browser tab duplication can produce the same practical problem.
+
+   A probe using two distinct storage objects initialized with the same copied contents showed identical tab IDs; the passive clone passed `isOwner()`, successfully wrote, and replaced the original tab’s queue. That defeats the requirement that passive restoration in another tab remain read-only.
+
+   Suggested fix: add a live-context collision handshake—such as a BroadcastChannel probe carrying `tabId` plus a per-document nonce—and rotate a copied ID before permitting restoration or writes. Use `noopener` for applicable outgoing opens, but do not rely on it alone because tab duplication also needs handling. Add a real-browser or faithful copied-storage fixture.
+
+4. **Medium — `restoreSession()` loses the saved position as soon as normal resume playback is attempted.**
+
+   Evidence: `restoreSession()` captures `_gen` for its deferred metadata seek ([player-controller.js:345–384](/home/renedebos/renedebos.com-player-consolidation/scripts/player-controller.js:345)), but `play()` immediately increments `_gen` in `_playIndex()` ([player-controller.js:638–642](/home/renedebos/renedebos.com-player-consolidation/scripts/player-controller.js:638)). Thus the expected `restoreSession(); play(); loadedmetadata` flow invalidates its own seek. A direct probe restored position 42, called `play()`, dispatched `loadedmetadata`, and observed `currentTime === 0`.
+
+   This breaks the phase’s core “position across navigation” behavior and will affect both permitted automatic resume and user-gesture resume. Existing tests exercise metadata after restore and superseding restore calls, but never the real restore-then-play sequence ([test-player-controller.mjs:676–708](/home/renedebos/renedebos.com-player-consolidation/scripts/test-player-controller.mjs:676)).
+
+   Suggested fix: key the pending restore seek to item ID/source or queue revision, not the general play generation. Preserve it when playing the same restored item; clear it only when the current item/session changes. Add tests for both successful and autoplay-blocked restore-then-resume flows.
+
+5. **Medium — `/playlist/` reports restoration as safe after explicitly handling an all-unknown queue link.**
+
+   Evidence: `hydrateFromHash()` clears the queue and shows “None of the tracks…” for a recognized but all-unknown `#p=` hash, then returns `false` ([playlist-boot.js:349–375](/home/renedebos/renedebos.com-player-consolidation/scripts/playlist-boot.js:349)). `resolveReady(false)` converts that to `initialIntent:'none'` ([playlist-boot.js:634–638](/home/renedebos/renedebos.com-player-consolidation/scripts/playlist-boot.js:634)). The test explicitly asserts this unsafe result ([test-playlist-state.mjs:216–221](/home/renedebos/renedebos.com-player-consolidation/scripts/test-playlist-state.mjs:216)).
+
+   Once the mini-player consumes the contract, it may restore an old persisted session immediately after the page deliberately cleared the queue, contradicting both the URL and visible error message. `initialIntent` was introduced specifically to prevent restoration from racing a page-owned queue decision.
+
+   Suggested fix: distinguish “recognized page queue intent” from “resolved nonempty queue.” Return a structured hydration result and use `page-queue` for any recognized `#p=` decision, including an empty result, or extend the union with an explicit `page-clear` intent.
+
+6. **Medium — A stalled playlist catalog request leaves `PLAYBACK_HOST_READY` pending forever.**
+
+   Evidence: [playlist-boot.js:641–661](/home/renedebos/renedebos.com-player-consolidation/scripts/playlist-boot.js:641) resolves readiness only from the fetch’s fulfillment/rejection chain; a fetch that never settles has no fallback. The test covers immediate rejection only ([test-playlist-state.mjs:224–235](/home/renedebos/renedebos.com-player-consolidation/scripts/test-playlist-state.mjs:224)). The final design review specifically required a catalog-fetch-local timeout that does not construct another controller ([player-consolidation-codex.md:2220–2225](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-codex.md:2220)).
+
+   The plan now contradicts that finalized disposition by saying no wall-clock timeout anywhere while also claiming all three playlist failure paths are covered ([player-consolidation-plan.md:1917–1930](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:1917)). Both the implementation and plan wording need correction.
+
+   Suggested fix: add a timeout scoped only to `/assets/tracks.json`, abort the request, retain/adopt the already-mounted controller, and settle readiness exactly once. This is not the rejected generic host timeout and cannot construct a second controller. Add a never-settling-fetch test using a short injectable timeout.
+
+7. **Medium — The persisted codec caps writes but not hostile reads.**
+
+   Evidence: the codec declares a 1,000-item cap ([miniplayer-state.js:30–42](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:30)), but `decodeEnvelope()` iterates the entire stored array without slicing ([miniplayer-state.js:163–173](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:163)). A probe decoded 1,007 items despite the declared 1,000 cap. The only cap test exercises `encodeQueue()` ([test-miniplayer-state.mjs:48–62](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:48)).
+
+   This contradicts the plan’s “dedicated capped/deduped/bounded item codec” claim and permits unnecessary work on corrupt storage. It can also leave `currentItemId` valid after decoding but invalid after `restoreSession()` independently truncates the queue.
+
+   Suggested fix: slice the raw queue before any per-item decoding, then resolve `currentItemId` against that capped, filtered queue. Add a decode-side cap test proving entries beyond the limit are never inspected.
+
+8. **Low — The required real module-load failure test for `/playlist/` is absent.**
+
+   Evidence: the final design review required removing `playlist-boot.js` and verifying the resulting controller count/readiness behavior ([player-consolidation-codex.md:2220–2225](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-codex.md:2220)). Instead, [browser_check.mjs:1076–1083](/home/renedebos/renedebos.com-player-consolidation/scripts/browser_check.mjs:1076) explicitly declines that scenario. Static asset-existence checks and an ordinary smoke test cannot exercise the script element’s `onerror` handler.
+
+   Suggested fix: include `playlist/index.html` in the isolated breakage copy, remove `playlist-boot.js`, and assert `PLAYBACK_HOST_READY` resolves to `mode:'none'`. Once the mini-player consumer exists, extend this to the required exactly-one-controller assertion.
+
+**Verification during this review**
+
+- `python3 scripts/build.py --check` — passed: 31 shows, 680 curated tracks, no orphan song pages.
+- `python3 scripts/verify_markup.py` — passed: 1,427 items across 166 generated show/song pages.
+- `python3 scripts/verify_markup.py --check-allowlist-coverage` — passed.
+- All `node scripts/test-*.mjs` suites — 161/161 passed across the seven test suites; `test-fake-dom.mjs` is a helper.
+- `git diff --check` and source-to-generated-asset `diff -q` checks — passed.
+- Inline Node probes — reproduced stale ownership overwrite, copied-session tab collision, uncapped decode, failed-claim reporting, and restore-then-play position loss.
+- `node scripts/browser_check.mjs` — not executed: it exited after reporting that `playwright-chromium` is unavailable; this is not a browser pass.
+_Review generated 2026-08-15 09:33:23 PDT by `scripts/codex_review.sh` (codex exec, read-only)._
+
+### Disposition (Claude, 2026-08-15)
+
+All eight findings verified directly against the actual code (read every
+cited line, ran the cited tests, and independently re-derived several of
+the failure sequences by hand) — not taken on the review's word. All
+eight confirmed as real. Nothing fixed yet; that's `/apply-review`'s job.
+
+1. **CONFIRMED — high, real regression against a pre-existing plan
+   requirement.** Verified `song-boot.js:66-98`: `mountRows()` shares one
+   `rowItems` array across every mounted occurrence group (not per-group)
+   and calls `controller.appendQueue(fresh)` to extend a single live
+   queue, unconditionally. `player-controller.js`'s `ended` handler
+   auto-advances through this shared queue with nothing gating it to a
+   single group. Verified `player.js:135`: legacy auto-advance is gated by
+   a `[data-autoplay-next]` ancestor container; verified via
+   `scripts/sitegen/pages.py` that only `.track-list` (show pages, line
+   895) carries that attribute — `.song-occs` (line 1146) does not. This
+   confirms legacy never auto-advanced across (or even within) song
+   occurrences. This isn't one of the five Phase 3 design-review rounds'
+   findings — it contradicts an **earlier, pre-existing** part of this
+   same plan document, the "Queue-origin contract" table
+   (`player-consolidation-plan.md:197-209`), which explicitly assigns
+   lazily-rendered song occurrences `playSingleton(item)` — "preserves
+   today's singleton behavior; 'all performances of this song' would be a
+   deliberate later decision, not a side effect." `test-song-boot.mjs:154-205`
+   encodes the cross-group queueing/auto-advance as the *expected*, tested
+   behavior, so the suite is green while enforcing the wrong contract.
+
+2. **CONFIRMED — high, real race.** Verified `miniplayer-state.js:281-284`:
+   `writeSession()`'s `isOwner()` check and its `writeEnvelope()` call are
+   two separate `localStorage` operations, not one atomic transaction —
+   per the HTML Standard, Web Storage has no cross-tab locking guarantee,
+   so a claim from another tab landing between those two calls lets a
+   stale writer overwrite the new owner's envelope. Manually re-derived
+   the exact interleaving the review describes (read succeeds as owner →
+   another tab claims and writes → stale writer's write still proceeds)
+   and confirmed it reaches `writeEnvelope()` with no guard against it.
+   Also verified `claimOwnership()` (`:320-329`): `writeEnvelope()`'s
+   boolean return is discarded, and `clearRevoked()` runs unconditionally
+   before the write is attempted — a failed write (quota/private
+   browsing) still reports success and clears the revoked latch. Verified
+   `test-miniplayer-state.mjs:243-264` ("scenario 3"): it calls
+   `setRevoked(sessionA)` directly in test setup *before* attempting A's
+   write, which only proves the latch works once already set — it does
+   not model the actual TOCTOU gap (a write whose ownership check passes
+   before a concurrent claim, then proceeds anyway).
+
+3. **CONFIRMED — high, a genuine platform-behavior gap missed across all
+   five design-review rounds.** `sessionStorage` is not reliably unique
+   per tab: per MDN, a page opened via `window.open()` with an opener
+   initially receives a **copy** of the opener's `sessionStorage`, and
+   browser tab duplication does the same. None of the five design rounds
+   considered this — they compared `sessionStorage` favorably against
+   `player-controller.js`'s per-load `selfId` for surviving navigation,
+   without addressing that it can be *cloned* across what the ownership
+   model needs to treat as genuinely distinct tabs. Verified
+   `test-miniplayer-state.mjs:16-23`: `fakeStorage(initial = {})` is
+   called with no pre-populated `TAB_ID_KEY` at every simulated-tab call
+   site in the suite, so every test tab gets a fresh, distinct id — the
+   suite cannot and does not catch a cloned-id collision. This is a real
+   gap in the design itself, not just an implementation shortfall.
+
+4. **CONFIRMED — defeats the feature's primary claimed behavior in the
+   realistic call sequence.** Verified `player-controller.js:345-378`
+   (`restoreSession()`'s deferred seek, generation-guarded via `gen =
+   this._gen` captured at restore time) against `:637-638` (`_playIndex()`,
+   called by `play()`): `const gen = ++this._gen;` bumps generation
+   unconditionally, on every `play()` call, including one resuming the
+   exact item `restoreSession()` just cued. Hand-traced the sequence the
+   plan requires (`restoreSession()` → `play()` attempted per the "attempt
+   `play()` only when permitted" resume flow → `loadedmetadata` fires
+   later): `play()`'s `_gen` bump happens before `loadedmetadata` can ever
+   fire, so the deferred seek's `gen !== this._gen` guard is already true
+   by the time metadata arrives, and the seek is silently skipped —
+   playback resumes from 0, not the restored position. Verified
+   `test-player-controller.mjs:676-708`: both existing `restoreSession()`
+   tests either never call `play()` at all, or call a second
+   `restoreSession()` to test supersession — neither exercises the actual
+   restore-then-play sequence, so nothing caught this.
+
+5. **CONFIRMED — real logic gap.** Verified `playlist-boot.js:358-366`:
+   the all-ids-unknown branch (`if (!rows.length)`) explicitly calls
+   `controller.setQueue([])` and sets a visible "None of the tracks in
+   that link are in the archive anymore" status, then `return false` —
+   conflating "a `#p=` hash was recognized and a real decision was made"
+   with "that decision produced a non-empty queue." Verified
+   `resolveReady(hadIds)` (`:634-638`) maps that `false` straight to
+   `initialIntent: 'none'`, indistinguishable from "no hash was present at
+   all." A future mini-player restoring its own session onto this
+   controller because `initialIntent` said it was safe would silently
+   contradict both the URL the visitor followed and the message just
+   shown to them.
+
+6. **CONFIRMED — both a real code gap and a real overclaim in this
+   session's own documentation fold.** Verified `playlist-boot.js:640-661`:
+   readiness resolves only from the catalog fetch's `.then()`/`.catch()` —
+   no local timeout exists on that `fetch()` call. A genuinely
+   non-settling request (not just a rejection, which the existing test at
+   `test-playlist-state.mjs:224-235` does cover) would leave
+   `PLAYBACK_HOST_READY` pending indefinitely. Separately verified: this
+   session's own round-4 disposition, written into this same file at
+   lines 2220-2225, states the catalog-fetch-local timeout as part of
+   what was "Resolved" — an overclaim relative to what actually got
+   built. Both need fixing: the missing timeout in code, and the
+   overclaim in that disposition text and in
+   `player-consolidation-plan.md`'s Phase 3 section (which also doesn't
+   flag this as outstanding).
+
+7. **CONFIRMED — same bug class this project already fixed once before.**
+   Verified `miniplayer-state.js:36` declares `MAX_PERSISTED_QUEUE_ITEMS`,
+   referenced only at the write side (`encodeQueue()`, `:95`, plus its
+   test at `test-miniplayer-state.mjs:56-60`) — `decodeEnvelope()`
+   (`:163-173`) iterates `parsed.queue` with no `.slice()` at all. An
+   arbitrary/corrupted stored value can force unbounded per-item decode
+   work. This is the identical bug class as the Phase 2 Stage 2a
+   post-deploy review's finding #3 (`MAX_SAVED_PLAYLISTS` enforced on
+   write but not read) — same project, same lesson, recurring in new
+   code.
+
+8. **CONFIRMED — a required test from the design review was not added.**
+   Verified `browser_check.mjs:1076-1083`: the comment there reuses Stage
+   2c-era reasoning (no fallback engine exists, so a missing
+   `playlist-boot.js` is "just a broken deploy" already caught by
+   asset-existence checks) to justify skipping the scenario — but round
+   4's requirement (`player-consolidation-codex.md:2220-2225`, this same
+   file) was for a *different* thing that didn't exist at Stage 2c: proof
+   the new `onerror` handler actually resolves `PLAYBACK_HOST_READY` to
+   `{mode:'none'}` rather than hanging. The Stage 2c-era reasoning is
+   still correct for the scenario it originally addressed; it just
+   doesn't cover what round 4 actually asked for, and the comment
+   conflates the two.
+
+**Net assessment:** findings 1-4 are real regressions/gaps against either
+an explicit pre-existing plan requirement (1) or this phase's own
+finalized design (2, 3, 4) — none should be considered done. 1 changes
+live audible behavior on the Songs page today. 2 and 3 both defeat the
+ownership model the five design rounds specifically exist to get right —
+3 in particular is a gap the design itself never anticipated, not just an
+implementation slip. 4 defeats the feature's headline behavior
+(position-across-navigation) in its primary intended use. 5-7 are real
+but narrower — 5 and 6 are correctness gaps with a clear, contained fix;
+7 repeats a known bug class from this project's own history. 8 is a
+missing test, not a live bug. Recommend `/apply-review` for all eight —
+none require further design discussion, all have a concrete suggested fix
+already verified against the real code above.
+
+### Fixes applied (Claude, 2026-08-15)
+
+All eight fixed. Implemented directly (Claude, not Codex — standing
+preference), each behavioral fix proven fail-before/pass-after against the
+pre-fix code (backup/revert-in-place/restore via `cp`, since these files
+already carried this session's own uncommitted changes and `git stash`
+doesn't cleanly target that). Every fix below was independently
+re-verified against the actual code by this session afterward — not just
+taken on the implementing pass's own report.
+
+1. **Fixed.** `song-boot.js`'s `mountRows()` now mounts each occurrence row
+   with a plain `PlayerView` (not `CompactPlayerView`) — its base
+   `_start()` already calls `controller.playSingleton(item)`, the exact
+   mechanism the Hero Full Recording card uses and the one this document's
+   own pre-existing "Queue-origin contract" table specifies for lazily-
+   rendered song occurrences. The shared `rowItems` array and
+   `appendQueue()` call are gone entirely (verified: zero matches for
+   either in the file). `test-song-boot.mjs` rewritten: playing to `ended`
+   no longer starts another occurrence; opening a later group doesn't
+   touch an already-playing singleton's queue; `next()` against a
+   length-1 queue falls through to `stop()` rather than reaching an
+   unrelated song, verified against `_advance()`'s actual behavior rather
+   than assumed.
+
+2. **Fixed.** `miniplayer-state.js` gained an `ownerToken` field (fresh
+   random value per successful `claimOwnership()`, mirrored to a new
+   `sessionStorage['miniPlayerClaimToken']`) alongside `ownerId`.
+   `isOwner()` now requires both to match. `writeSession()` checks
+   ownership **twice** in the same synchronous function body — once up
+   front, once again immediately before the actual `writeEnvelope()` call
+   — closing the realistic race window, which is the nontrivial
+   `buildEnvelope()`/`encodeQueue()` work in between for a large queue,
+   not the trivial gap between two adjacent statements. `claimOwnership()`
+   now returns `{ok, envelope}` and only remembers the new token / clears
+   the revoked latch if the underlying write actually succeeded — a
+   quota/private-browsing failure no longer reports false success. New
+   "scenario 5" test uses an `interleavedStorage()` harness that injects a
+   second tab's claim between the first tab's ownership check and its
+   write, reproducing the exact TOCTOU interleaving the original
+   "scenario 3" test didn't (that one only proved the latch works once
+   pre-set, not that the race itself is closed). A quota-failure test
+   covers `claimOwnership()`'s failure path. Re-read the final
+   implementation directly (`miniplayer-state.js:447-478`): the
+   double-check is real, inside one synchronous function, with no
+   await/microtask boundary between either check and the write.
+
+3. **Fixed, as a unit-tested decision-logic module — not wired to a live
+   channel yet, since nothing consumes this module at all this stage.**
+   Added `generateNonce()`, `isTabIdCollision()`,
+   `shouldRotateOnCollision()` (a deterministic, symmetric
+   lexicographic-nonce tie-break — both colliding documents independently
+   compute the same answer with no further coordination), `rotateTabId()`,
+   and `handleTabCheckMessage()` (the composed decision a future boot
+   script's `channel.onmessage` would call directly). Tested with a fake
+   broadcast/message harness proving two documents that start with a
+   cloned tab id converge on different ids after one round of messages.
+   **A real browser proof of `window.open()`'s actual storage-cloning
+   behavior remains impossible in this environment** (no
+   `playwright-chromium`) — noted honestly in the code rather than
+   silently assumed fixed. **Important documented constraint, verified
+   directly against `player-controller.js`'s existing channel code**: this
+   handshake must use a dedicated `BroadcastChannel`, never
+   `'hannan-playback'` — that channel's `onmessage` treats any
+   non-`selfId` payload as an external claim and pauses playback, so
+   reusing it for tab-check messages would pause every engine on every
+   page load.
+
+4. **Fixed.** `restoreSession()`'s deferred `loadedmetadata` seek no
+   longer keys off `_gen` (bumped by `_playIndex()` on every `play()`
+   call, including one resuming the very item just restored — confirmed
+   this was the exact bug). It now checks `_queueRevision` (bumped only by
+   actual queue-membership/order changes, never by a plain resume) **and**
+   that `this._queue[this._idx].id` still equals the restored item's id
+   (catching a `next()`/`prev()`/different-singleton-click that moves
+   `_idx` without touching `_queueRevision` at all). Verified the full
+   block directly (`player-controller.js:355-403`) — both conditions are
+   checked, with a code comment explaining exactly why `_gen` was wrong
+   for this. New tests: the seek survives a `play()` call resuming the
+   restored item (the realistic sequence that was broken) and survives a
+   blocked-autoplay (`NotAllowedError`) resume too. The pre-existing
+   "seek doesn't fire against a track already navigated away from" test
+   still passes unmodified.
+
+5. **Fixed.** `hydrateFromHash()` now returns `{recognized, hadIds}`
+   instead of a bare boolean; `resolveReady()` reports
+   `initialIntent: 'page-queue'` for any recognized `#p=` decision,
+   including the all-unknown-ids case that used to collapse to `'none'`.
+   The existing test that had asserted the old (wrong) `'none'` outcome
+   for that case was corrected, not just left passing by coincidence.
+
+6. **Fixed** — and the documentation overclaim from round 4's original
+   disposition (elsewhere in this same file) is now accurate again
+   retroactively. `CATALOG_FETCH_TIMEOUT_MS` (10s) with a dedicated
+   `AbortController` scoped to only the `/assets/tracks.json` fetch — on
+   firing, it routes into the existing `.catch()` path, `resolveReady(false)`,
+   no second controller ever constructed. Verified this is genuinely
+   local to the one fetch, not a page-wide timeout (the exact thing round
+   3 correctly banned). Test uses a never-resolving fake fetch with a
+   20ms test-scale timeout substituted via the existing test loader, so
+   the suite doesn't actually wait 10 real seconds.
+
+7. **Fixed.** `decodeEnvelope()` now slices `parsed.queue` to
+   `MAX_PERSISTED_QUEUE_ITEMS` *before* any per-item decode work, mirroring
+   `encodeQueue()`'s existing write-side cap (verified: `:187`). This is
+   the same bug class as the Phase 2 Stage 2a post-deploy review's
+   `MAX_SAVED_PLAYLISTS` fix, applied to new code. Two tests: decoded
+   length is capped exactly; `currentItemId` resolves correctly against
+   the capped (not the original, uncapped) queue.
+
+8. **Fixed.** The isolated `browser_check.mjs` breakage-test copy now
+   includes `/playlist/`'s assets. New Test D renames `playlist-boot.js`
+   in that copy, loads the page, and asserts `window.PLAYBACK_HOST_READY`
+   resolves to `{mode:'none'}` via the script tag's `onerror`, within a
+   bounded race rather than hanging. Syntax-checked only
+   (`node --check` clean) — no `playwright-chromium` in this environment,
+   the same limitation as every other check added to this file this
+   session.
+
+**Re-verification** (independently re-run by this session, not just
+taken from the implementing pass's report): `python3 scripts/build.py
+--check` — clean, 31 shows, 680 curated tracks, no orphan song pages.
+`python3 scripts/verify_markup.py` — clean, 1,427 items across 166
+generated show/song pages. All seven `node scripts/test-*.mjs` suites —
+**177/177 passing** (`test-miniplayer-state.mjs` 37, `test-player-boot.mjs`
+28, `test-player-controller.mjs` 41, `test-player-views.mjs` 17,
+`test-playlist-state.mjs` 26, `test-playlist-views.mjs` 15,
+`test-song-boot.mjs` 13; `test-fake-dom.mjs` is a helper, no assertions of
+its own). `node --check scripts/browser_check.mjs` — clean. Directly
+re-read the actual diffs for findings 1, 2, 3, and 4 (the four hardest —
+a behavioral regression, a genuine cross-tab race, a real platform-
+behavior gap, and a defeated headline feature) rather than relying on
+test-suite-green alone; all four hold up under direct inspection, not
+just under their own tests.
+
+Nothing committed. Two stale comments in `scripts/sitegen/fragments.py`
+(referencing `CompactPlayerView` where finding 1's fix made the reference
+inaccurate) were caught and corrected as part of this pass.
+
+---
+
+## Phase 3 Stage 3a-foundation fix verification — 2026-08-15
+
+1. **High — The owner-token double-check narrows the storage race but does not close it.**
+
+   Evidence: [`writeSession()` checks ownership and then performs a separate `localStorage.setItem()`](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:474). Another tab can still claim between the second `isOwner()` read at line 479 and the write at line 480; `ownerToken` cannot provide compare-and-swap semantics. The test injects the competing claim only during the *first* storage read, so the second check necessarily sees it and passes without exercising the remaining boundary ([test-miniplayer-state.mjs:399](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:399)). A focused probe injecting the claim after the second read produced `staleWriteAccepted:true` and overwrote B’s queue with `a-late`.
+
+   Why it matters: a stale pagehide/timer write can still replace the new owner’s envelope. Therefore the plan and review log’s “all fixed”/“closing the race window” claims are unsupported ([plan:1867](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:1867), [review log:2505](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-codex.md:2505)).
+
+   Suggested fix: serialize all envelope claims and writes with an actual cross-tab primitive, such as a Web Lock with a defined fallback, or move the record to an IndexedDB read-write transaction. Add a test that injects the competing claim specifically between the final ownership read and write; two ordinary `localStorage` calls cannot make that boundary atomic.
+
+2. **High — The tab-collision handshake only converges in the test’s simultaneous-announcement fiction.**
+
+   Evidence: the documented wiring broadcasts one message on boot and only rotates the receiver selected by the nonce comparison ([miniplayer-state.js:277](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:277), [miniplayer-state.js:337](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:337)). The test joins both ports before broadcasting both announcements ([test-miniplayer-state.mjs:544](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:544)). A duplicated tab actually joins after the original tab’s one-time announcement. In that faithful sequence, only the original receives the newcomer’s message: if the original has the larger nonce, neither rotates and both retain the cloned ID; the focused probe reproduced `converged:false`. If the original has the smaller nonce, the original rotates and the passive clone retains the old `ownerId` and copied claim token, potentially transferring ownership to the clone because `isOwner()` accepts that pair ([miniplayer-state.js:447](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:447)).
+
+   Why it matters: finding 3 is not closed, and the current scheme can either leave duplicate owners or displace the established playing owner.
+
+   Suggested fix: design this as a request/response handshake. Install the listener before announcing; existing matching tabs must reply to a newcomer’s probe so the newcomer always learns about an older tab. Preserve the established owner and rotate the joining document, with a deterministic tie-break only for genuinely simultaneous probes. Test the late-join sequence and confirm the established envelope owner remains owner.
+
+3. **Medium — The owner-token API can report ownership success while immediately failing `isOwner()`.**
+
+   Evidence: a new empty session is considered owned even though no claim token exists ([miniplayer-state.js:447](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:447)). `writeSession()` then persists `ownerToken:null`, after which that same tab fails `isOwner()`; a focused probe returned `{before:true,wrote:true,ownerToken:null,after:false}`. Separately, `claimOwnership()` ignores failure to persist `CLAIM_TOKEN_KEY`, clears the revoked latch, and returns `ok:true` ([miniplayer-state.js:510](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:510)). A probe with only that session-storage write failing returned `{reportedOk:true,actuallyOwner:false,revokedAfter:false}`. Existing tests check new-session ownership only before writing and simulate failure only in localStorage ([test-miniplayer-state.mjs:249](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:249), [test-miniplayer-state.mjs:423](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:423)).
+
+   Why it matters: the future boot code can start playback based on `ok:true` but be unable to persist any queue or position, defeating navigation restoration.
+
+   Suggested fix: require even a new session to pass through `claimOwnership()` before `writeSession()`, and report success only after the claim token is durably stored and read back. Preserve/restore the prior token and revoked state if either storage step fails. Add both probes as regression tests.
+
+4. **Medium — Catalog failure still reports an explicit `#p=` link as safe to restore over.**
+
+   Evidence: successful hydration correctly returns `{recognized,hadIds}`, but every fetch rejection or timeout bypasses `hydrateFromHash()` and hard-codes `recognized:false` ([playlist-boot.js:700](/home/renedebos/renedebos.com-player-consolidation/scripts/playlist-boot.js:700), [playlist-boot.js:708](/home/renedebos/renedebos.com-player-consolidation/scripts/playlist-boot.js:708)). The catalog-failure test uses no hash, so it cannot catch this ([test-playlist-state.mjs:237](/home/renedebos/renedebos.com-player-consolidation/scripts/test-playlist-state.mjs:237)).
+
+   Why it matters: with `/#p=a,b` and a transient catalog failure, readiness resolves `initialIntent:'none'`; the future mini-player can restore an unrelated persisted queue over the explicit shared-link intent—the same failure class fix 5 was intended to eliminate.
+
+   Suggested fix: parse whether the hash is syntactically recognized independently of catalog resolution, and preserve `initialIntent:'page-queue'` through fetch rejection/timeout. Add catalog-rejection and never-settling-fetch tests with a valid `#p=` hash.
+
+5. **Medium — Destroying `/playlist/` during its catalog fetch leaves the timeout/fetch lifecycle inconsistent.**
+
+   Evidence: `destroy()` clears the catalog timeout but never aborts `catalogAbort` ([playlist-boot.js:631](/home/renedebos/renedebos.com-player-consolidation/scripts/playlist-boot.js:631)); the fetch owns a separate controller created later ([playlist-boot.js:688](/home/renedebos/renedebos.com-player-consolidation/scripts/playlist-boot.js:688)). A never-settling fetch therefore remains pending forever after destroy, while a later successful fetch can resolve readiness with an already-destroyed controller. This contradicts the adjacent comment claiming destroy participates in settling cleanup. The plan also still states there is “no wall-clock timeout anywhere on a player-capable page,” despite the new 10-second timer ([plan:1936](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:1936)).
+
+   Why it matters: lifecycle/teardown behavior can diverge depending on whether the fetch settles before or after destruction, and later work may rely on the plan’s now-false timeout description.
+
+   Suggested fix: retain the catalog abort controller in handle scope, abort it from `destroy()`, and guard the continuation with a destroyed/settled flag so readiness cannot publish a dead controller. Add a destroy-before-timeout test. Amend the plan to distinguish the prohibited page-wide fallback timeout from this catalog-local timeout.
+
+**Verification during this review**
+
+- `python3 scripts/build.py --check` — passed: 31 shows, 680 curated tracks, no orphan song pages.
+- `python3 scripts/verify_markup.py` — passed: 1,427 items across 166 generated show/song pages.
+- `python3 scripts/verify_markup.py --check-allowlist-coverage` — passed.
+- All `node scripts/test-*.mjs` suites — 177/177 passed; `test-fake-dom.mjs` is a helper.
+- `node --check scripts/browser_check.mjs` and `git diff --check` — passed.
+- Source/generated asset comparisons for the four changed modules — passed.
+- Focused Node probes — reproduced the final-check/write TOCTOU overwrite, late-join collision non-convergence, new-session self-disqualification, and claim-token false success.
+- `node scripts/browser_check.mjs` — not run: `playwright-chromium` is unavailable, so the new real module-load failure test remains unexecuted rather than browser-verified.
+_Review generated 2026-08-15 10:23:15 PDT by `scripts/codex_review.sh` (codex exec, read-only)._
+
+### Disposition (Claude, 2026-08-15)
+
+All five findings verified directly against the actual code — including,
+where relevant, re-tracing exactly why this session's OWN prior
+verification (in the "Fixes applied" block above) was insufficient. That
+prior pass confirmed the fixes "worked" by checking that the code did what
+its comments claimed; it didn't sufficiently question whether what the
+code claims is actually enough. This round's two high findings are
+corrections to that prior verification, not new code discovered fresh —
+worth stating plainly rather than glossing over.
+
+1. **CONFIRMED — high. The previous "fix" for finding #2 narrows the race,
+   it does not close it.** Verified `writeSession()` (`miniplayer-state.js:474-480`):
+   the second `isOwner()` check and the actual `writeEnvelope()` call are
+   still two separate statements — closer together than the original
+   single-check version, but still not one atomic operation. No number of
+   sequential checks can close a TOCTOU gap between two independent tabs;
+   only an actual mutual-exclusion primitive can. Verified
+   `interleavedStorage()`'s harness (`test-miniplayer-state.mjs:56-68`)
+   directly: `onFirstGet` fires exactly once, on the FIRST `getItem()`
+   call — which, inside `writeSession()`, is the first `isOwner()` check.
+   By the time the SECOND `isOwner()` check runs, `triggered` is already
+   `true`, so it never fires again — meaning "scenario 5" (added to prove
+   this finding fixed) only ever models a claim landing before the first
+   check, which the double-check already handled even in its naive form.
+   The actual remaining gap (a claim landing between the second check and
+   the write) is structurally never exercised by this harness. This
+   session's own prior disposition claimed "closing the race window" —
+   that claim was wrong; the honest description is "narrows it."
+
+2. **CONFIRMED — high. The tab-collision handshake (finding #3's fix) does
+   not converge in the realistic case, and can strip ownership from the
+   legitimate tab.** Verified the documented protocol
+   (`miniplayer-state.js:277-297`): announce once on boot, then only react
+   to incoming messages — no reply/response step. Verified the passing
+   test (`test-miniplayer-state.mjs:544-584`) joins BOTH simulated
+   documents' listeners before either posts anything, modeling perfectly
+   simultaneous presence — not what a real duplicated tab does (it boots
+   and joins well after the original tab's own one-time announcement
+   already happened and is gone). Traced the real late-join sequence by
+   hand: the newcomer's announcement is the only message either side ever
+   sees; only the ALREADY-ESTABLISHED tab (which is still listening)
+   receives it, and reacts via `handleTabCheckMessage()`'s nonce
+   comparison — the newcomer, having received nothing back, never runs
+   that comparison at all. Two failure shapes follow directly: if the
+   established tab's nonce is smaller, it's the one that rotates —
+   stripping the ALREADY-PLAYING, actually-owning tab's identity, while
+   the passive newcomer (still holding the original cloned id AND, since
+   `sessionStorage` clones its ENTIRE contents including
+   `CLAIM_TOKEN_KEY`, the original claim token too) now satisfies
+   `isOwner()`'s check and can silently become the new owner despite
+   having done nothing. If the newcomer's nonce is smaller, neither side
+   ever rotates — the newcomer never even ran the comparison — and the
+   collision goes undetected indefinitely.
+
+3. **CONFIRMED — medium, two related gaps.** Verified `isOwner()`
+   (`miniplayer-state.js:447-453`): grant-case 1 ("no envelope exists")
+   returns `true` unconditionally, with no requirement that the tab has
+   actually gone through `claimOwnership()` first. If a caller writes
+   directly via `writeSession()` for a brand-new session (nothing in the
+   API prevents this), `getClaimToken()` returns `null` (nothing was ever
+   stored), so the written envelope's `ownerToken` is `null`, and that
+   SAME tab's very next `isOwner()` check fails the `envelope.ownerToken
+   != null` guard — a self-disqualifying first write. Verified the
+   existing "grant-case 1" test (`:249-253`) only checks `isOwner()` in
+   isolation and never proceeds to a `writeSession()`/re-check sequence,
+   so nothing caught this. Separately verified `claimOwnership()`
+   (`:510-522`): the `sessionStore.setItem(CLAIM_TOKEN_KEY, ...)` call is
+   wrapped in a tolerate-and-continue try/catch — if THAT write fails
+   while the `localStorage` envelope write succeeds, `claimOwnership()`
+   still proceeds to `clearRevoked()` and returns `{ok:true, ...}`, even
+   though this tab can never subsequently pass its own `isOwner()` check
+   (its own `getClaimToken()` will keep returning `null` forever). The one
+   existing failure-path test (`:423-432`) only simulates the
+   `localStorage` write failing, not the `sessionStorage` one.
+
+4. **CONFIRMED — medium, a gap in the previous round's finding #5 fix.**
+   Verified the success path (`playlist-boot.js:697` area) correctly uses
+   `hydrateFromHash()`'s real `{recognized, hadIds}` result — the actual
+   fix worked for that path. But verified the `.catch()` branch
+   (`:707-709`) hardcodes `resolveReady({recognized: false, hadIds:
+   false})` regardless of what the URL hash actually contained — a
+   genuine `#p=a,b` share link, hit by a transient catalog failure or the
+   new finding-#6 timeout, is reported exactly the same as no hash at all.
+   This is the identical failure class the previous round's finding #5
+   fix addressed for the all-unknown-ids case, just reachable via a
+   different path (network failure instead of stale ids) that fix didn't
+   cover.
+
+5. **CONFIRMED — medium, real cleanup gap plus a documentation
+   overclaim.** Verified `destroy()` (`playlist-boot.js:639-642`): it
+   calls `clearTimeout(catalogTimeoutId)` (cancels the timer that would
+   eventually abort the fetch) and `controller.destroy()`, but never calls
+   `catalogAbort.abort()` directly — so a page torn down while the catalog
+   fetch is still in flight leaves that fetch running past teardown, and
+   its eventual `.then()`/`.catch()` continuation still executes,
+   including a `resolveReady()` call that can reference an
+   already-destroyed controller. Separately verified
+   `player-consolidation-plan.md:1936` still literally reads "no
+   wall-clock timeout anywhere on a player-capable page" — true in the
+   sense originally intended (no generic page-wide fallback timeout,
+   which really was rejected and really isn't present), but now
+   inaccurate as a literal sentence given the real, scoped, local
+   10-second catalog timeout finding #6 (previous round) added. A
+   documentation-precision issue, not a design contradiction — the
+   sentence needs a qualifying clause, not a reversal.
+
+**Net assessment**: three of five findings (1, 2, 3) are corrections to
+work this session had already marked "fixed" and verified — 1 and 2 in
+particular are not small misses. Finding 1 means the actual required fix
+category is different from what was built (a real mutual-exclusion
+primitive — Web Locks API with a defined fallback, or an IndexedDB
+transaction — not more sequential `localStorage` checks, which cannot
+structurally close a cross-tab TOCTOU gap no matter how many are added).
+Finding 2 means the tab-collision handshake needs a genuine
+request/reply redesign (a newcomer's probe must get an explicit reply
+from any already-listening tab, with the established/already-owning side
+protected from losing its identity, not a symmetric nonce coin-flip
+between two sides that may never both be listening at the same time) —
+the current implementation is directionally reasonable but the protocol
+shape itself doesn't hold up under the realistic sequencing. 3, 4, and 5
+are contained, mechanical fixes. Recommend `/apply-review` for all five,
+with 1 and 2 flagged as needing more design care than a quick patch —
+worth a deliberate check before considering them closed a second time,
+not just re-running tests until green.
+
+### Fixes applied (Claude, 2026-08-15)
+
+All five fixed. Given this session's own prior over-confidence on findings
+1 and 2 (verified as "closed" once already, incorrectly), every fix below
+was re-verified independently after implementation — reading the actual
+mechanism, not just running the new tests — with particular scrutiny on
+1 and 2.
+
+1. **Fixed, at the correct level.** `miniplayer-state.js`'s `writeSession()`
+   and `claimOwnership()` are now `async` and run their entire
+   check-build-check-write critical section inside `withOwnershipLock()`
+   (`:610-629`), which requests a named lock (`OWNERSHIP_LOCK_NAME`) from
+   an injectable provider — a real `navigator.locks.request()` when
+   available, an injected fake for tests, or (honestly documented, never
+   claimed as "fixed") a best-effort direct-call fallback when neither
+   exists. Verified the fallback path's own test explicitly demonstrates
+   the race is STILL reachable there (`finding #1 (honest fallback)`) —
+   the code doesn't overclaim what it can't provide. Verified
+   `serializingLockProvider()`'s test fake (`test-miniplayer-state.mjs:124-131`)
+   is a genuine minimal mutex (a single promise chain every call appends
+   to), not a coincidentally-passing stub — traced it directly. Verified
+   `finding #1b`'s test: a competing claim triggered SYNCHRONOUSLY from
+   inside the first tab's own critical section is still correctly forced
+   to wait for that section to fully release the lock before running, and
+   both writes succeed on their own terms with the correct final state.
+   This is real serialization, independently confirmed, not test-shaped
+   coincidence.
+
+2. **Fixed, as a genuine protocol redesign.** Replaced the one-shot
+   announce with `handleIncomingProbe()`/`handleIncomingProbeReply()`
+   (`:421-473`) — a real request/reply exchange. Traced the decision logic
+   directly: a tab that receives a probe and holds a real durable identity
+   for that tabId (`envelopeNamesThisTab()`, deliberately narrower than
+   `isOwner()` — excludes the "no envelope at all" grant-case, which would
+   incorrectly treat an idle clone as equally "established") always
+   replies and is NEVER the one that rotates; the prober, once told the
+   other side is established, always rotates instead. Only when NEITHER
+   side has a durable identity does the symmetric nonce tie-break decide.
+   Verified this closes the exact bug traced last round: since the
+   established tab is now required to reply rather than stay silent, a
+   newcomer that boots long after the established tab's own boot-time
+   activity still learns about the collision, and the established/actually-
+   owning side can never be the one stripped of its identity. Verified the
+   primary test (`finding #2: realistic late-join collision`,
+   `test-miniplayer-state.mjs:754-804`) uses the correct realistic
+   sequencing this time — the established tab claims real ownership
+   completely independently first, THEN a newcomer with cloned storage
+   appears and probes — not the previous round's simultaneous-both-
+   listening fiction. All three required properties (established tab
+   unchanged and still owner; newcomer is the one that rotates; newcomer
+   can no longer pass `isOwner()` despite the cloned token) are directly
+   asserted, not inferred.
+
+3. **Fixed.** `writeSession()` now mints and persists a real claim token
+   itself, inside the SAME locked critical section, whenever this tab
+   doesn't already hold one — not a nested call to `claimOwnership()`
+   (which would re-request the non-reentrant lock and deadlock; a real
+   risk correctly identified and avoided). `claimOwnership()` now requires
+   the `sessionStorage` token write to succeed for a reported success,
+   rolling the `localStorage` envelope back to its prior state (or
+   removing it) if the token write fails, so a half-landed claim never
+   leaves a durable record this tab itself can't satisfy.
+
+4. **Fixed.** `hashIsRecognizedShareLink()` (`playlist-boot.js:371-374`)
+   answers "is the current URL hash syntactically a `#p=` link" from the
+   hash alone, independent of catalog state. The catalog fetch's
+   `.catch()` branch now reports `recognized: hashIsRecognizedShareLink()`
+   instead of hardcoding `false` — a genuine share link hit by a network
+   failure or the timeout is no longer indistinguishable from no hash at
+   all.
+
+5. **Fixed.** `destroy()` now calls `catalogAbort.abort()` directly
+   (`:673-677`), and both the fetch's `.then()`/`.catch()` continuations
+   check a `destroyed` flag as their first action (`:734`, `:750`) —
+   verified this correctly covers the residual case where a request was
+   already too far along over the network to actually be stopped by the
+   abort signal in time. Plan-doc wording fixed separately (see below).
+
+**Re-verification** (independently re-run, not taken from the
+implementing pass's report): `python3 scripts/build.py --check` and
+`verify_markup.py` — clean. All eight `node scripts/test-*.mjs` suites —
+**191/191 passing** (`test-miniplayer-state.mjs` 48, `test-player-boot.mjs`
+28, `test-player-controller.mjs` 41, `test-player-views.mjs` 17,
+`test-playlist-state.mjs` 29, `test-playlist-views.mjs` 15,
+`test-song-boot.mjs` 13; `test-fake-dom.mjs` is a helper). `node --check
+scripts/browser_check.mjs` — clean. Directly read and traced the actual
+mechanism for all five findings, not just the tests — findings 1 and 2 in
+particular, given this session's own prior verification of those same two
+findings was wrong once already.
+
+Nothing committed.
+
+---
+
+## Phase 3 Stage 3a-foundation fix verification — 2026-08-15
+
+1. **High — The probe/reply protocol can still rotate the real durable owner during overlapping startup.**
+
+   **Evidence:** [`envelopeNamesThisTab()`](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:406) only checks the shared envelope’s `ownerId`. Because a duplicated tab clones both the tab ID and claim token, both documents see this predicate as true. [`handleIncomingProbe()`](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:421) therefore protects whichever document happens to receive a probe, while [`handleIncomingProbeReply()`](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:460) unconditionally rotates the prober when the reply reports an established identity. Receiving first proves only that the listener existed before that particular message was posted; it does not prove that listener is the incumbent owner.
+
+   A focused probe created a real owner, cloned its complete session storage, then delivered the owner’s delayed boot probe to the clone. The clone did not rotate; the owner did, leaving `ownerStillOwns:false` and `cloneNowOwns:true`. The tests only exercise the favorable ordering where the newcomer is exclusively the prober ([test-miniplayer-state.mjs:744](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:744), [test-miniplayer-state.mjs:866](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:866)); they never reverse probe direction or overlap both startups.
+
+   **Why it matters:** The original owner can still be stripped of identity and ownership, exactly the failure this third-round fix claims is structurally impossible. Consequently, the plan’s “review-hardened” and “durable owner … protected from ever being the one that rotates” claims are unsupported ([player-consolidation-plan.md:1863](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:1863), [player-consolidation-plan.md:1900](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:1900)).
+
+   **Suggested fix:** Track whether a document completed its own presence handshake before the colliding probe arrived. Only a previously settled listener may claim incumbent protection. If both handshakes are unsettled, use the symmetric nonce tie-break regardless of the shared envelope—the cloned storage cannot distinguish them. Add reversed-direction and crossed-probe tests with a durable envelope, asserting exactly one identity survives; downgrade the plan’s completion claim until these pass.
+
+2. **Medium — `claimOwnership()` rollback is best-effort but is documented and tested as guaranteed.**
+
+   **Evidence:** When the claim-token write fails, [`claimOwnership()`](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:737) attempts to restore the previous envelope, but ignores `writeEnvelope()` returning false and suppresses `removeItem()` failure at lines 745–746. The rollback tests use an always-successful `fakeStorage()` for local storage ([test-miniplayer-state.mjs:612](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:612), [test-miniplayer-state.mjs:627](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:627)), so they cannot exercise rollback failure.
+
+   A focused probe allowed the new envelope write, failed the session token write, then failed the rollback write. `claimOwnership()` returned `ok:false`, but the durable owner remained the failed claimant (`owner-b`) instead of the prior owner (`owner-a`).
+
+   **Why it matters:** The false-success bug is fixed, but the claimed invariant that a half-landed claim “never leaves a durable record” is not. A transient storage failure can displace the prior owner while leaving the named replacement unable to satisfy `isOwner()`.
+
+   **Suggested fix:** Persist the new session token first, then write the shared envelope while holding the lock; if the envelope write fails, restore/remove only this tab’s previous token and leave the shared envelope untouched. Clear revocation only after both writes succeed. Add a test where the initial shared write succeeds but the attempted shared rollback fails.
+
+3. **Low — Teardown still runs `response.json()` after destruction, contrary to the “continuations check first” claim.**
+
+   **Evidence:** The first fetch continuation calls `r.json()` without checking `destroyed` ([playlist-boot.js:724](/home/renedebos/renedebos.com-player-consolidation/scripts/playlist-boot.js:724)); only the later data continuation and `.catch()` check it at lines 735 and 752. The destroy test explicitly advances through `r.json()` after teardown ([test-playlist-state.mjs:414](/home/renedebos/renedebos.com-player-consolidation/scripts/test-playlist-state.mjs:414)) but only asserts that readiness and the DOM remain unchanged, so its title “prevents the continuation from acting afterward” is stronger than what it tests. Its blank status fixture also differs from the generated page’s initial “Loading the track catalog…” text.
+
+   **Why it matters:** Direct abort and the later guards do close the original dead-controller/DOM mutation finding, but response-body parsing can still occur after teardown and the recorded “both fetch continuations check destroyed first” claim is literally false.
+
+   **Suggested fix:** Make the first continuation `if (destroyed) return null; return r.json();`, guard the following step against the sentinel, and assert that the fake response’s `json()` was never called. Seed the fixture with the generated initial status text and assert it remains unchanged.
+
+**Verification during this review**
+
+- `python3 scripts/build.py --check` — passed: 31 shows, 680 curated tracks, no orphan song pages.
+- `python3 scripts/verify_markup.py` — passed: 1,427 items across 166 generated show/song pages.
+- `python3 scripts/verify_markup.py --check-allowlist-coverage` — passed.
+- All executable `node scripts/test-*.mjs` suites — 191/191 passed; `test-fake-dom.mjs` is a helper.
+- Fix 1’s lock tests genuinely queue a competing claim under one mutex, and the unprotected fallback test reproduces the race. The named Web Lock wraps the complete synchronous critical sections.
+- Fix 4’s tests directly cover both immediate catalog rejection and timeout with a real `#p=` hash; the hash-only recognition fix closes that finding.
+- `node --check scripts/browser_check.mjs` and `git diff --check` — passed.
+- Source/generated comparisons for `miniplayer-state.js` and `playlist-boot.js` — identical.
+- Focused Node probes — reproduced the reversed-probe ownership transfer and failed rollback leaving the failed claimant as durable owner.
+- `node scripts/browser_check.mjs` — not executed: `playwright-chromium` is unavailable.
+_Review generated 2026-08-15 13:09:35 PDT by `scripts/codex_review.sh` (codex exec, read-only)._
+
+### Disposition (Claude, 2026-08-15)
+
+All three findings independently reproduced against the actual code with
+standalone Node scripts calling the real exported functions directly (not
+just re-reading the source or re-running the existing suite) — this is the
+third round on this exact ownership/collision code, and the first two
+rounds each found real gaps in fixes already believed closed, so nothing
+here was accepted on the report's word alone.
+
+1. **CONFIRMED — high, genuine unresolved architectural gap.** Reproduced
+   exactly as described: `claimOwnership()` a real owner (`ownerSession`),
+   clone its `sessionStorage` verbatim (matching real duplicate-tab
+   semantics), then have the OWNER be the one who sends the next probe
+   (e.g. on its own re-boot after a navigation) while the CLONE is the one
+   already listening. `envelopeNamesThisTab()` reads the same shared
+   `localStorage` envelope from both sides, so the clone's check passes
+   too — it replies `establishedIdentityExists: true`, and
+   `handleIncomingProbeReply()` then unconditionally rotates the real
+   owner. Confirmed output: owner's `isOwner()` flips from `true` to
+   `false`, clone's stays `true` — the real owner is stripped of its
+   identity and the clone ends up as the confirmed durable owner. Root
+   cause is real: the protocol's protection is keyed on which side
+   *received* a given probe, not on which side has been continuously
+   holding the identity since before the collision — and since a cloned
+   tab's storage is byte-identical, the two are structurally
+   indistinguishable to `envelopeNamesThisTab()`. Both existing tests
+   (`test-miniplayer-state.mjs:754`, `:871`) only exercise the newcomer
+   as prober, established tab as receiver — never the reverse. The plan
+   doc's "durable owner … protected from ever being the one that rotates"
+   claim (`player-consolidation-plan.md:1900`) is not true in general, only
+   for the one direction tested.
+
+2. **CONFIRMED — medium, real gap, worse in practice than the report's own
+   framing.** Reproduced with a real owner-a claiming successfully on
+   working storage, then a `localStorage` fake whose 2nd `setItem()` call
+   throws (simulating the rollback write failing) combined with a
+   `sessionStorage` fake whose `setItem()` always throws (triggering the
+   rollback in the first place). Result: `claimOwnership()` correctly
+   returns `{ok:false}` for owner-b (honest about its own failure), but
+   the durable envelope is left naming owner-b's tabId as owner anyway —
+   and reproduced that **both** owner-a and owner-b then fail `isOwner()`
+   against that envelope, not just "the prior owner is displaced" as the
+   report states. The session is left fully orphaned (nobody can pass
+   `isOwner()`), which is a strictly worse outcome. Root cause confirmed
+   at `miniplayer-state.js:745-746`: the rollback's `writeEnvelope()`
+   return value is discarded and `removeItem()`'s failure is swallowed by
+   an explicit best-effort `catch`, with no re-check or second-level
+   recovery either way.
+
+3. **CONFIRMED — low, real but non-functional gap; documentation
+   overclaim.** Read `playlist-boot.js:724-725`: the first `.then((r) =>
+   r.json())` has no `destroyed` guard; only the second `.then((data) =>
+   {...})` (`:735`) and the `.catch()` (`:752`) check it. Read the
+   existing destroy test (`test-playlist-state.mjs:400-422`): it resolves
+   the fake fetch with `{ json: () => Promise.resolve([]) }` and advances
+   two ticks, meaning `r.json()` genuinely does execute post-destroy in
+   the test as written — but the test only asserts `readiness` stays null
+   and the DOM is untouched, never that `json()` itself was skipped. No
+   controller/DOM mutation actually occurs after destroy (the second
+   `.then()`'s guard still catches it before anything observable
+   happens), so this is not a correctness bug, but the "Fixes applied"
+   entry's literal claim that "both fetch continuations check destroyed
+   first" (this file, "Phase 3 Stage 3a-foundation fix verification —
+   2026-08-15", finding 5) is inaccurate — only one of the two `.then()`s
+   does.
+
+**Net assessment**: findings 1 and 2 are real, and finding 1 in particular
+means the probe/reply redesign from the previous round is not the
+structural fix it was believed to be — the underlying problem (a cloned
+tab is indistinguishable from the original by any signal derivable from
+shared storage alone) needs a different mechanism, not a variation on the
+same probe/reply shape. Recommend `/apply-review`, with 1 flagged as
+needing real design work (per the report's suggested direction: track
+whether a document's own identity was settled *before* the colliding
+probe arrived, and fall back to the nonce tie-break whenever that can't be
+established on either side — i.e. incumbency must be evidenced by
+something that isn't itself subject to `sessionStorage` cloning) before
+being considered closed, not a quick patch — this is the second
+consecutive round where the quick-patch version of a fix for this same
+area didn't hold up under a reversed-order test. 2 and 3 are contained,
+mechanical fixes (make the rollback path itself failure-checked/reported,
+and add the missing `destroyed` guard to the first continuation).
+
+### Fixes applied (Claude, 2026-08-15)
+
+All three fixed. Finding 1 got the real design work flagged as necessary
+above, not a patch to the existing role-based shape — traced by hand
+before writing any code (see the reasoning below), and every fix was
+independently reproduced against the actual code both BEFORE (confirming
+the bug) and AFTER (confirming the fix), not just covered by a new test
+that happened to pass.
+
+1. **Fixed via a genuine protocol redesign, not a patch.** Root cause:
+   once a tab's storage can be cloned, "a durable envelope names this
+   tabId as owner" is satisfied equally by the original AND the clone —
+   there is no signal derivable from storage content that tells them
+   apart, so any rule built on that signal (round 2's `envelopeNamesThisTab()`)
+   was structurally unable to reliably protect the real owner, whichever
+   quick patch it went through. Fix: dropped the ownership/role-based
+   asymmetry entirely (`envelopeNamesThisTab()` deleted). Every collision
+   is now decided by ONLY the deterministic, symmetric nonce tie-break
+   (`shouldRotateOnCollision()`, unchanged), routed through one shared
+   `resolveCollision()` path for both message types and memoized per
+   opposing nonce (`resolvedNonces`, a Set the caller owns for the
+   document's lifetime) so a given collision is never decided twice —
+   this is what closes the mutual-rotation case, not just the reversed-role
+   case. Verified by standalone reproduction against the ACTUAL pre-fix
+   `handleIncomingProbe`/`handleIncomingProbeReply` functions (not a
+   hypothetical): the real owner rebooting after navigation genuinely lost
+   to an idle clone every time, and two clones probing each other
+   near-simultaneously genuinely both rotated, orphaning the session
+   (`isOwner()` false on both sides). Both reproductions failed to trigger
+   against the fixed code. `scripts/test-miniplayer-state.mjs` gained 4 new
+   tests (both nonce directions for the reversed-owner case, the mutual-
+   probe case, and a memoization case for a redelivered probe) plus 2
+   rewritten "no-current-owner" tests and a rewritten full-channel
+   integration test (all updated for the new
+   `(incoming, sessionStore, myTabId, myNonce, resolvedNonces)` signature —
+   `localStore` is no longer a parameter, since collision decisions no
+   longer read the envelope at all). Each new/rewritten test was run
+   against a reverted copy of the pre-fix file via the project's
+   cp-based backup/revert/restore method and confirmed to fail there
+   before being confirmed to pass against the fix — not merely written to
+   pass. The plan doc's overclaimed "structurally protected from ever
+   rotating" sentence is corrected with a linked explanation of why no such
+   guarantee is achievable, and the bounded, self-correcting blast radius
+   (any real local interaction reclaims ownership outright) is spelled out
+   there.
+
+2. **Fixed by reordering, eliminating the vulnerable path rather than
+   hardening it.** `claimOwnership()` now writes the LOCAL
+   `sessionStorage` claim token FIRST; only if that succeeds does it
+   attempt the SHARED `localStorage` envelope write. A failure at that
+   second step now only ever requires rolling back the LOCAL token (a
+   single-tab-private write nothing else could have raced against), never
+   the shared envelope — because the shared envelope is structurally never
+   written to at all unless the local half already safely landed. This
+   removes the entire class of bug (a failed rollback of SHARED state)
+   rather than making that rollback more careful. Added
+   `sharedCounterFlakyStores()` to the test file — an order-agnostic fake
+   where the first write across either store succeeds and the second
+   fails — and one new test built on it. Confirmed this exact test FAILS
+   against the pre-fix (envelope-first) code, with the shared envelope
+   visibly corrupted to name the failed claimant instead of the true prior
+   owner (captured in the failure diff), and PASSES against the fix.
+
+3. **Fixed.** Added a `destroyed` check to `playlist-boot.js`'s first
+   `.then((r) => r.json())`, matching the guard already present on the
+   second `.then()` and the `.catch()`. Strengthened the existing destroy
+   test (`test-playlist-state.mjs`) to track whether the fake response's
+   `json()` was actually called (it wasn't, previously, asserted) and to
+   seed/assert against the real generated page's actual initial status
+   text ("Loading the track catalog…") instead of an arbitrary blank
+   fixture value. Confirmed this strengthened test fails against the
+   pre-fix code (`json()` genuinely gets called post-destroy) and passes
+   against the fix.
+
+**Re-verification** (independently re-run): `python3 scripts/build.py
+--check` and `python3 scripts/build.py` (which also runs
+`verify_markup.py`) — clean, 31 shows/680 curated tracks/166 generated
+show+song pages, no orphans. All 8 `node scripts/test-*.mjs` suites —
+**195/195 passing** across the 7 executable suites (`test-miniplayer-state.mjs`
+52, `test-player-boot.mjs` 28, `test-player-controller.mjs` 41,
+`test-player-views.mjs` 17, `test-playlist-state.mjs` 29,
+`test-playlist-views.mjs` 15, `test-song-boot.mjs` 13; `test-fake-dom.mjs`
+is a helper). `node --check scripts/browser_check.mjs` and `git diff
+--check` — clean. Plan doc updated to correct the round-2 overclaim and
+document the round-3 redesign. Nothing committed.
+
+---
+
+## Phase 3 Stage 3a-foundation fourth fix verification — 2026-08-15
+
+1. **High — The nonce tie-break is not an unbiased coin flip; a later clone is structurally favored and the realistic late-join test uses impossible nonce ordering.**
+
+   **Evidence:** `generateNonce()` prefixes randomness with `Date.now()` ([scripts/miniplayer-state.js:362](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:362)), while `shouldRotateOnCollision()` lexicographically rotates the smaller nonce ([scripts/miniplayer-state.js:397](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:397)). For tabs started in different milliseconds, the timestamp prefix dominates the random suffix: the earlier incumbent has the smaller nonce and loses to the later clone. The full-channel test instead hardcodes the earlier incumbent as `"nonce-zzz"` and the later newcomer as `"nonce-aaa"` ([scripts/test-miniplayer-state.mjs:1070](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:1070)), and explicitly avoids calling `generateNonce()` ([scripts/test-miniplayer-state.mjs:1017](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:1017)). A focused probe using the real generator with the incumbent’s random component larger than the newcomer’s still produced `incumbentRotated:true`, `incumbentOwns:false`, and `newcomerOwns:true`.
+
+   **Why it matters:** The redesign does prevent two successful rotations for the same two valid nonces, but it does not provide the plan’s claimed “unbiased coin flip” ([plans/player-consolidation/player-consolidation-plan.md:1936](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:1936)). In the canonical late-join duplication scenario it systematically recreates the prior finding: the real durable owner loses to the clone. The “only idle/passive tabs” justification is also incomplete when the incumbent is rebooting because of an active navigation and can consequently lose permission to restore the session.
+
+   **Suggested fix:** Generate a random-only nonce, preferably with `crypto.randomUUID()` or `crypto.getRandomValues()`, with a documented fallback; do not include an ordering timestamp in the compared value. Rewrite the late-join integration test to use the production nonce generator with controlled time/random sources and prove that a later boot is not predetermined to win. If retaining the real owner is still a requirement, acknowledge that a nonce-only protocol cannot provide it and redesign around a non-clonable live arbiter/lease rather than describing owner loss as closed.
+
+2. **Medium — Reordering `claimOwnership()` moves the rollback hazard to session storage and can still orphan the current owner.**
+
+   **Evidence:** The new token is written locally first ([scripts/miniplayer-state.js:721](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:721)); when the shared write fails, restoration of the previous token remains explicitly best-effort and its failure is swallowed ([scripts/miniplayer-state.js:732](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:732)). If the claimant already owns the durable envelope, a successful new-token write followed by a failed shared write and failed local rollback leaves the shared envelope holding the old token while session storage holds the new one. A focused probe against the real function returned `claimOk:false`, left the shared envelope unchanged, but produced `tokenStillMatches:false` and `ownerAfter:false`.
+
+   The new regression fixture deliberately makes every write after the first fail, so its local rollback actually fails too ([scripts/test-miniplayer-state.mjs:98](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:98)). However, it uses a different claimant B and only verifies that prior owner A remains valid ([scripts/test-miniplayer-state.mjs:706](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:706)); it never exercises an already-current owner reclaiming on a local action.
+
+   **Why it matters:** The shared envelope is no longer corrupted, so the precise shared-rollback finding is narrowed correctly. But the broader invariant that a failed claim cannot orphan the session is still unsupported: the current tab can invalidate its own otherwise-valid durable claim. This contradicts the code’s assertion that nothing relies on the previous local token and the plan’s “eliminates the entire class” wording ([plans/player-consolidation/player-consolidation-plan.md:1944](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:1944)).
+
+   **Suggested fix:** Make the local representation preserve both the previous and pending token until the shared write commits, with `isOwner()` accepting whichever token the shared envelope currently names; cleanup can then be best-effort without losing ownership. Add a regression test where the existing owner calls `claimOwnership()`, the shared write fails, and restoring the local token also fails, asserting that the existing owner still passes `isOwner()`.
+
+### Verification during this review
+
+- `python3 scripts/build.py --check` — passed: 31 shows, 680 curated tracks, no orphan song pages.
+- `python3 scripts/verify_markup.py` and `python3 scripts/verify_markup.py --check-allowlist-coverage` — passed: 1,427 items across 166 generated pages; all 30 public shows covered.
+- All executable `node scripts/test-*.mjs` suites — 195/195 passed: miniplayer 52, player boot 28, controller 41, views 17, playlist state 29, playlist views 15, song boot 13.
+- `node --check scripts/browser_check.mjs`, `git diff --check`, and source/generated comparisons for `miniplayer-state.js` and `playlist-boot.js` — passed.
+- Focused real-function probes — reproduced the timestamp-biased incumbent loss, current-owner local-token orphaning, and rotation reporting success when its storage write fails.
+- `playlist-boot.js` teardown probe/test — the first continuation now skips `response.json()` after destruction, and its fixture matches the generated “Loading the track catalog…” markup; no remaining finding there.
+- `node scripts/browser_check.mjs` — not run: `playwright-chromium` is unavailable.
+_Review generated 2026-08-15 13:54:45 PDT by `scripts/codex_review.sh` (codex exec, read-only)._
+
+### Disposition (Claude, 2026-08-15)
+
+Both findings independently reproduced against the actual code (standalone
+scripts calling the real exported functions directly, matching the same
+method used for every prior round) before implementing anything.
+
+1. **CONFIRMED — high.** Reproduced exactly: called the real
+   `generateNonce()` twice a few milliseconds apart and ran
+   `shouldRotateOnCollision()` — the earlier-generated nonce lost in 20/20
+   trials, not roughly half. Traced the root cause directly:
+   `generateNonce()` (`miniplayer-state.js:362`, pre-fix) used the same
+   `` `${Date.now().toString(36)}-...}` `` shape as `generateTabId()`/
+   `generateClaimToken()`, and since `Date.now()`'s base-36 encoding keeps
+   a constant digit count for years, that leading segment deterministically
+   dominates `shouldRotateOnCollision()`'s lexicographic `<` comparison —
+   the trailing random suffix only ever gets consulted when the timestamps
+   are byte-identical, which never happens across any realistic gap. The
+   round-3 disposition's "unbiased coin flip" framing was simply wrong —
+   confirmed by this repro, not just plausible from reading the diff.
+
+2. **CONFIRMED — medium.** Reproduced exactly: an already-owning tab
+   (`isOwner()` true) attempted a reclaim against storage where the shared
+   envelope write fails; afterward `isOwner()` for that SAME tab returned
+   `false`, even though the shared envelope was completely unchanged and
+   still correctly named this tab. Traced the cause directly to round 3's
+   own fix: writing the candidate token straight into `CLAIM_TOKEN_KEY`
+   BEFORE knowing whether the shared write would succeed meant a failed
+   attempt (plus a failed best-effort rollback) left this tab's own
+   previously-valid token overwritten with an uncommitted one. Genuinely
+   narrower than the original round-2/round-3 bug (the shared envelope
+   itself is never corrupted, and no OTHER tab is affected — only the
+   reclaiming tab's own local bookkeeping), but real and self-inflicted,
+   exactly as described.
+
+### Fixes applied (Claude, 2026-08-15)
+
+Both fixed, both independently re-reproduced against the actual post-fix
+code via the same standalone scripts (not just re-running the test suite)
+to confirm the mechanism itself closed, given this is the fourth
+consecutive round on this code and the third to find something the
+previous round missed.
+
+1. **Fixed by removing the orderable component entirely**, not by
+   reweighting it. `generateNonce()` no longer includes `Date.now()` at
+   all: `crypto.getRandomValues()` (16 bytes, base-36 encoded with
+   per-byte zero-padding so every output has uniform length/character
+   distribution) when available, with a same-shape two-draw
+   `Math.random()`-only fallback otherwise — still free of any time
+   component. Re-ran the exact repro against the fixed function: 8/20
+   "earlier wins" in one run (close to the expected ~50%, nowhere near the
+   pre-fix 20/20). Two new permanent tests added: a repeated-trial
+   statistical check (generous band, guards against flakiness rather than
+   asserting exact 50%) and a common-prefix check (two back-to-back calls
+   must not share the long timestamp-driven prefix the old format
+   produced).
+
+2. **Fixed by staging, not by hardening the rollback again.**
+   `claimOwnership()` now writes the candidate token to a NEW
+   `PENDING_CLAIM_TOKEN_KEY` first, leaving `CLAIM_TOKEN_KEY` (this tab's
+   existing, possibly-still-valid token) completely untouched until the
+   shared envelope write is confirmed to have landed — only then is the
+   candidate promoted to `CLAIM_TOKEN_KEY`. `isOwner()` now accepts either
+   slot. This is a genuine, deliberate behavior change beyond a bugfix:
+   when the shared write succeeds but the LOCAL promotion itself then
+   fails, `claimOwnership()` now correctly reports `ok:true` (previously
+   this exact residual case wasn't reachable in a way any prior round's
+   tests exercised) — verified this is honest, not a regression, since
+   `isOwner()` genuinely does resolve via the pending token in that case.
+   Re-ran the exact repro against the fixed function: the reclaiming tab's
+   `isOwner()` returned `true` after the identical failed-shared-write
+   scenario, with its session token and the envelope's `ownerToken`
+   confirmed matching. `scripts/test-miniplayer-state.mjs`'s three old
+   finding-#3b tests (which asserted the now-superseded "any
+   `CLAIM_TOKEN_KEY` write failure fails the whole claim" behavior) were
+   replaced with four tests covering the actual current behavior: the
+   staging write failing outright, an already-owning tab's reclaim
+   surviving a failed shared write, a promotion-only failure now correctly
+   reporting success, and a new claimant still correctly displacing a
+   prior owner when only its own promotion fails.
+
+**Re-verification**: `python3 scripts/build.py --check` and
+`python3 scripts/build.py` (which also runs `verify_markup.py`) — clean,
+31 shows/680 curated tracks/166 generated pages, no orphans. All 7
+executable `node scripts/test-*.mjs` suites — **198/198 passing**
+(`test-miniplayer-state.mjs` 55, up from 52; `test-player-boot.mjs` 28;
+`test-player-controller.mjs` 41; `test-player-views.mjs` 17;
+`test-playlist-state.mjs` 29; `test-playlist-views.mjs` 15;
+`test-song-boot.mjs` 13). `node --check scripts/browser_check.mjs` and
+`git diff --check` — clean. Plan doc updated to correct the "unbiased coin
+flip" overclaim and document both round-4 fixes. Nothing committed.
+
+---
+
+## Phase 3 Stage 3a-foundation fifth fix verification — 2026-08-15
+
+1. **Medium — A promotion-failed owner can still self-orphan on its next failed reclaim.**
+
+   **Evidence:** When the shared write succeeds but promotion to `CLAIM_TOKEN_KEY` fails, `claimOwnership()` deliberately leaves the committed token only in `PENDING_CLAIM_TOKEN_KEY` ([scripts/miniplayer-state.js:803](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:803)); `isOwner()` accepts that token ([scripts/miniplayer-state.js:581](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:581)). A later `claimOwnership()` unconditionally overwrites that same pending slot with its new candidate ([scripts/miniplayer-state.js:783](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:783)). If the later shared write fails, it removes the candidate ([scripts/miniplayer-state.js:794](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:794)), permanently losing the previous committed token while the unchanged envelope still names it.
+
+   A direct probe produced:
+
+   `first claim: ok:true, owner:true, current:null, pendingMatches:true`
+
+   `later failed reclaim: ok:false, owner:false, envelopeUnchanged:true, current:null, pending:null`
+
+   The same result occurred with both calls routed through an injected `miniplayer-ownership` lock, so Web Locks cannot prevent this intra-operation state transition. The replacement tests split the two states: the promotion-failure test stops immediately after confirming pending ownership ([scripts/test-miniplayer-state.mjs:688](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:688)), while the failed-reclaim test begins with an ordinary successfully promoted current token ([scripts/test-miniplayer-state.mjs:664](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:664)). They never chain the two scenarios.
+
+   **Why it matters:** This contradicts the plan’s assertion that accepting either slot leaves “nothing left to roll back in any branch” ([player-consolidation-plan.md:2003](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2003)). The fourth-round finding remains reachable after two individually tolerated storage failures.
+
+   **Suggested fix:** Preserve whichever slot currently matches the envelope. If `CLAIM_TOKEN_KEY` matches, stage in the pending slot; if only `PENDING_CLAIM_TOKEN_KEY` matches, stage in the current slot or a second candidate slot. Never overwrite the sole matching token before the shared write commits. Add the exact chained regression test above, including an injected serializing lock provider.
+
+2. **Low — The new nonce tests are probabilistic, can reject correct output, and do not exercise the fallback generator.**
+
+   **Evidence:** The timing-bias test relies on 30 uncontrolled random comparisons ([scripts/test-miniplayer-state.mjs:863](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:863)); because calls are back-to-back, it does not ensure `Date.now()` differs as the original failure required. The common-prefix test rejects any randomly occurring three-character prefix ([scripts/test-miniplayer-state.mjs:882](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:882)); a correct crypto-generated pair has roughly a 1-in-1,846 chance of doing that. Both tests use Node’s available Web Crypto path, leaving the `Math.random()` fallback untested ([scripts/miniplayer-state.js:386](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:386)).
+
+   **Why it matters:** The actual generator is timing-independent, but these tests are weaker than the plan’s verification claim and introduce avoidable suite flakiness.
+
+   **Suggested fix:** Make nonce generation accept an injectable random-byte source, or test a small exported encoding helper with fixed byte sequences. Explicitly disable/mock `crypto` for a fallback test, control `Date.now()` to change between calls, and replace statistical/common-prefix assertions with deterministic format and comparison assertions.
+
+**Verification during this review**
+
+- `python3 scripts/build.py --check` — passed: 31 shows, 680 curated tracks, no orphan song pages.
+- `python3 scripts/verify_markup.py` — passed: 1,427 items across 166 generated pages.
+- `python3 scripts/verify_markup.py --check-allowlist-coverage` — passed.
+- All seven executable `node scripts/test-*.mjs` suites — 198/198 passed.
+- `node --check scripts/browser_check.mjs`, `git diff --check`, and source/generated asset comparisons — passed.
+- Focused nonce probe, 100,000 pairs per path — crypto earlier-win rate `50.192%`; forced `Math.random()` fallback with changing `Date.now()` `49.962%`. Both produced fixed 32-character outputs.
+- Focused pending-token probes — reproduced the self-orphaning sequence both without a lock and through the named ownership lock.
+- `node scripts/browser_check.mjs` — could not execute browser checks because `playwright-chromium` is unavailable.
+
+### Disposition (Claude, 2026-08-15)
+
+Both findings independently reproduced against the actual code before
+recording this disposition.
+
+1. **CONFIRMED — medium.** Reproduced exactly with a standalone script:
+   claim 1 lands via the pending slot only (promotion to `CLAIM_TOKEN_KEY`
+   fails, `PENDING_CLAIM_TOKEN_KEY` holds the committed token, `isOwner()`
+   true via pending). A SECOND, later reclaim attempt then fails its
+   shared-envelope write; its failure-cleanup path removes
+   `PENDING_CLAIM_TOKEN_KEY` unconditionally — but that was the ONLY place
+   the FIRST claim's still-valid, still-envelope-matching token lived.
+   After the second (failed) attempt, session storage holds neither
+   `CLAIM_TOKEN_KEY` nor `PENDING_CLAIM_TOKEN_KEY`, while the original
+   envelope is completely unchanged and still names the original token —
+   `isOwner()` now has nothing to match against and returns `false`. Root
+   cause confirmed directly: round 4's fix moved the exact "overwrite an
+   as-yet-unconfirmed slot before knowing if this attempt will succeed"
+   pattern from `CLAIM_TOKEN_KEY` onto `PENDING_CLAIM_TOKEN_KEY`, without
+   protecting the pending slot the same way — a second claim's own staging
+   write (`sessionStore.setItem(PENDING_CLAIM_TOKEN_KEY, ...)`) clobbers
+   whatever a PRIOR, still-relied-upon claim had staged there, with no
+   memory of what it overwrote to restore on failure. This is the same bug
+   class as round 4's finding 2, now reachable one level deeper — round 4's
+   fix narrowed the failure window without eliminating the pattern that
+   causes it.
+
+2. **CONFIRMED — low, test-quality gap, not a code defect.** Read both
+   tests directly: the timing-bias test (`test-miniplayer-state.mjs:863`)
+   generates two nonces back-to-back without forcing any real time gap or
+   controlling `Date.now()`, so it does not specifically exercise the
+   original failure's precondition (a genuine millisecond-or-more gap
+   between generations) — it happens to still catch the old bug because
+   that bug was severe enough to fail even at native call-to-call spacing,
+   but that's incidental, not by design. The common-prefix test
+   (`:882`) asserts `commonPrefixLen <= 2`, which — confirmed by reasoning
+   through the alphabet size (base-36) — has a real, nonzero chance of
+   spuriously failing against a CORRECT, unbiased implementation purely by
+   chance, matching Codex's estimate. Confirmed via grep: neither test (nor
+   any other in the suite) disables/mocks `crypto` to exercise
+   `generateNonce()`'s `Math.random()`-only fallback branch at all — that
+   code path is currently untested.
+
+**What I'd change if approved**: for finding 1, stage the new candidate
+token without destroying whatever token (current OR pending) the envelope
+currently matches — e.g. read which of the two slots (if either) actually
+matches the CURRENT envelope before writing anything, and stage the new
+candidate in the OTHER slot, never the one presently backing a valid
+claim; add the exact chained regression test from the report (claim
+succeeds-via-pending, then a second reclaim's shared write fails,
+asserting the FIRST claim's `isOwner()` status survives), including a
+real injected serializing lock provider per the report's note that Web
+Locks alone doesn't prevent this (it's a single-tab sequential bug, not a
+cross-tab race, so a lock was never going to help — worth saying
+explicitly in the fix's comment so a future reader doesn't wonder). For
+finding 2, make `generateNonce()`'s random-byte source injectable (or
+extract/export the byte-to-string encoding step so it can be tested with
+fixed input), add a test that explicitly disables `crypto` and controls
+`Date.now()` across two calls to exercise the fallback path directly, and
+replace the two probabilistic assertions with deterministic ones (fixed
+byte sequences in, exact expected string out) rather than relying on
+statistical bands.
+
+Not implementing either — awaiting `/apply-review`.
+_Review generated 2026-08-15 14:43:00 PDT by `scripts/codex_review.sh` (codex exec, read-only)._
+
+## Phase 3 Stage 3a-foundation — interactive review session — 2026-08-15
+
+A separate, interactive Codex session (Rene ran it himself, outside
+`scripts/codex_review.sh`, and pasted the verdict into chat) reviewed the
+same ownership code immediately after the fifth automated round above.
+Confirmed the fifth round's finding, and found three further instances of
+the identical root cause. All four claims independently reproduced by
+Claude against the actual code (standalone repro scripts, not the
+reviewer's word) before being accepted, matching the verification standard
+every `codex_review.sh` round in this log has been held to.
+
+1. **Revocation is not settled as one unit.** `setRevoked()`/`clearRevoked()`
+   are two independent `sessionStorage` operations with no coordination
+   between them ([scripts/miniplayer-state.js:525](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:525) (old)).
+   A failed `clearRevoked()` inside `claimOwnership()` leaves the revoked
+   marker set even though the claim otherwise landed and reports
+   `ok:true` — the caller believes it reclaimed ownership, but `isOwner()`
+   still returns `false` on the very next check because the stale latch
+   was never actually cleared.
+
+2. **`getTabId()`/`rotateTabId()` silently tolerate a failed persist.**
+   Both functions call `sessionStore.setItem()` and, on a thrown
+   exception, fall back to returning the freshly-generated (but never
+   durably stored) id anyway ([scripts/miniplayer-state.js:254-273](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:254) (old)).
+   A caller that commits a write under that id has no way to know the id
+   was never actually saved — the very next read (e.g. after navigation,
+   or even just a second call in the same document if the underlying
+   store is now failing every write) returns something else entirely,
+   orphaning whatever was just claimed under the ephemeral one.
+
+3. **`readEnvelope()` collapses "read threw" and "nothing exists" into the
+   same `null`.** A `localStorage.getItem()` call that throws (storage
+   disabled, a hostile/corrupted environment) is indistinguishable from a
+   confirmed-empty key ([scripts/miniplayer-state.js:225-232](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:225) (old)).
+   `isOwner()`'s grant-case 1 ("no envelope exists → free to originate")
+   then fires on a genuine read FAILURE exactly as it would on a genuine
+   fresh session — a broken store gets treated as a free-to-claim one.
+
+**Verdict: stop patching this shape, redesign the subsystem.** Every one
+of these, plus all three of the automated rounds' findings (3, 4, 5), is
+the identical shape: a multi-step commit spread across two separate
+Storage objects, which Web Storage gives no cross-key atomicity for. Every
+individual fix narrowed the failure window without removing the shape that
+keeps producing new instances of it.
+
+### Disposition (Claude, 2026-08-15)
+
+All three findings independently reproduced against the actual code
+before recording this disposition (standalone scripts exercising
+`setRevoked()`/`clearRevoked()`, `getTabId()`/`rotateTabId()`, and
+`readEnvelope()` directly under injected failing/throwing fakes). Agreed
+with the verdict: **not implementing any of these three as individual
+patches.** A sixth patch in the same shape would, per the pattern already
+established by rounds 3/4/5, almost certainly leave behind a seventh. A
+complete redesign was planned instead — see the plan doc's "Blocker B,
+redesigned: single-commit fenced lease" section for the design, and the
+implementation entry below for what shipped from it.
+
+## Phase 3 Stage 3a-foundation — fenced-lease redesign implementation — 2026-08-15
+
+Implemented directly (Claude, standing preference for this project), from
+the design already reviewed and finalized in plan-mode against the actual
+code (see `player-consolidation-plan.md`'s "Blocker B, redesigned" section
+for the full design and rationale — condensed here to what changed and how
+it was verified).
+
+**What shipped**: `scripts/miniplayer-state.js` rewritten in place.
+`claimOwnership()` is now exactly one `localStorage.setItem()` call — no
+second store write is ever part of the commit, so there is nothing left to
+roll back in any branch, closing the shape (not just the latest instance
+of it) that produced rounds 3, 4, 5, and all three interactive-session
+findings above. The fencing credential (a `{ownerId, ownerEpoch}` "lease")
+is never persisted anywhere; it lives only in the caller's JS memory and is
+re-derived at boot by `restoreLease()` reading the one durable envelope.
+`writeSession()`/`tombstoneIfCurrent()` take that lease explicitly and
+gate every write on `hasValidLease()`, checked fresh immediately before
+the actual write — this is the mechanism that makes a delayed write issued
+under a superseded lease structurally unable to land, closing round 5's
+actual bug at the root rather than narrowing it further. Revocation
+(`isEpochRevoked()`/`revokeLease()`) is scoped by comparing a specific
+`ownerEpoch` value rather than a boolean latch that must later be cleared
+— a fresh epoch is never equal to a previously recorded revoked one, so
+supersession is automatic and there is no clear step left to fail (closes
+interactive finding 1). `establishTabId()`/`rotateTabId()` now read back
+what was actually persisted before returning it, returning `null` instead
+of a fabricated ephemeral id on any failed-or-unverified write (closes
+finding 2). `readEnvelope()` is now tri-state (`'ok'`/`'absent'`/
+`'unavailable'`), so a genuine read failure can never again be treated as
+a free-to-claim empty session (closes finding 3). The best-effort
+unlocked fallback in `withOwnershipLock()` is removed — with no lock
+provider available, the critical section never runs at all, and callers
+surface a documented degraded result (`{ok:false, reason:'no-lock'}` /
+`false`) rather than running unprotected; this is a judgment call flagged
+in the plan (Codex's recommendation, Claude agreed, explicitly re-confirmed
+with Rene this session before implementing) since the OLD design's
+no-lock race could permanently orphan a claim while the NEW design's
+would just be a self-healing one-cycle glitch (a single atomic `setItem()`
+has nothing to half-write).
+
+**Test suite rewritten to match**: `scripts/test-miniplayer-state.mjs`,
+83/83 passing (up from 55 in the pre-redesign shape — the old suite's
+claim-token/`isOwner()`-specific tests no longer apply to the new API and
+were replaced, not kept alongside). Covers, among others, the exact test
+list called out in the plan: a call-counting fake proving `claimOwnership()`
+performs exactly one `setItem()`; `establishTabId()`/`rotateTabId()`
+returning `null` (never a fabricated id) on both a thrown write and a
+write that "succeeds" but a read-back doesn't confirm; `readEnvelope()`
+resolving `'unavailable'` (never `'absent'`) on a thrown read; supersession
+without any clear step, proven directly; `writeSession()` rejected on a
+stale `ownerId` (gate 6) and — the sharpest test in the suite, re-targeting
+round 5's actual bug at the new design — rejected on a stale `ownerEpoch`
+with `ownerId` unchanged (gate 7); `tombstoneIfCurrent()` proven unable to
+stomp a fresher legitimate claim; an end-to-end sequencing test running
+`establishTabId()` through the (unchanged) collision handshake to
+convergence via the existing `fakeChannel()` harness, then `restoreLease()`
+resolving exactly one of two duplicated tabs to `'restored'`; and both
+`claimOwnership()`/`writeSession()` proven to take the degraded no-lock
+path with no provider injected and no `navigator.locks` (this Node
+environment has neither). The tab-collision handshake's own tests carried
+forward with no logic changes (out of scope for this redesign, per the
+plan), updated only where they referenced the removed `getTabId()`/
+`isOwner()`.
+
+**Full-suite verification**: all 7 executable `node scripts/test-*.mjs`
+suites, 226/226 passing (83 miniplayer-state + 28 player-boot + 41
+player-controller + 17 player-views + 29 playlist-state + 15
+playlist-views + 13 song-boot — `song-boot.js` unaffected, confirmed by
+grep it never imports this module). `python3 scripts/build.py --check`
+and `python3 scripts/build.py` both clean (`assets/miniplayer-state.js`
+regenerated as the verbatim build-output copy, per this repo's
+`scripts/*.js` → `assets/*.js` convention — not hand-edited).
+
+**Not done as part of this pass, per the plan's own "residual gaps"
+section**: `browser_check.mjs`'s real-browser two-tab ownership test
+(gate 6/7 against a genuine second tab, not a fake) — `playwright-chromium`
+unavailable in this environment, same limitation every prior round in
+this log has hit. At least one more `/review-step` round against this
+implementation is still owed before treating the ownership subsystem as
+settled — three of the last three automated rounds plus the interactive
+session each found something real, so a clean round here should be read
+as encouraging, not conclusive, until it actually happens. Not yet
+committed.
+
+---
+
+## Fenced-lease redesign review — 2026-08-15
+
+1. **Medium — A stale revocation can overwrite a newer revoked epoch, making the newer epoch resumable again.**
+
+   Evidence: revocation uses one shared `REVOKED_EPOCH_KEY`; `revokeLease()` unconditionally replaces its value, while `isEpochRevoked()` compares only against that latest value ([miniplayer-state.js:492](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:492), [miniplayer-state.js:528](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:528)). Calling `revokeLease(newEpoch)` followed by a delayed `revokeLease(oldEpoch)` makes `isEpochRevoked(newEpoch)` return `false`. Existing tests exercise only one stored epoch and the normal fresh-claim direction ([test-miniplayer-state.mjs:401](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:401)). This also contradicts the plan’s claim that all remaining revocation gaps require two write failures ([player-consolidation-plan.md:2356](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2356)). The assumption that navigation always wipes the old in-memory lease is also unsafe with lifecycle restoration or leaked callbacks ([player-consolidation-plan.md:2147](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2147)).
+
+   Why it matters: a delayed listener or restored old document can replace epoch B’s durable revocation with epoch A. If the envelope still names B, the next `restoreLease()` can return `restored`, recreating the phantom-resume behavior revocation exists to prevent—with no storage failures involved.
+
+   Suggested fix: store revocation independently per epoch, such as `miniPlayerRevokedEpoch:<ownerEpoch>`, so revoking one epoch cannot un-revoke another and each revocation remains one atomic `setItem()`. Add a regression test that revokes B, then stale A, and verifies both remain revoked. Also remove or qualify the plan’s “wiped by navigation” and two-write-failure claims.
+
+2. **Low — The tests do not prove two edge-path invariants that the plan relies on.**
+
+   Evidence: the call-counting test covers only `claimOwnership()`’s happy path ([test-miniplayer-state.mjs:562](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:562)); the write-failure test uses an uncounted throwing store ([test-miniplayer-state.mjs:587](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:587)). Thus a future failure-only rollback write would evade both tests despite the implementation record claiming the counter proves exactly one write ([player-consolidation-codex.md:3436](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-codex.md:3436)). Likewise, no-lock behavior is tested for `claimOwnership()` and `writeSession()` but not `tombstoneIfCurrent()`, although the plan specifies all three ([player-consolidation-plan.md:2330](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2330)). The code currently satisfies both invariants: the failure-path probe attempted exactly one write, and all three operations route through `withOwnershipLock()` ([miniplayer-state.js:666](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:666)).
+
+   Why it matters: these are precisely the failure branches where the superseded design repeatedly regressed, so happy-path-only coverage is insufficient protection.
+
+   Suggested fix: add a counting store whose first `setItem()` throws and assert exactly one attempted write, plus a no-provider `tombstoneIfCurrent()` test asserting `false` and byte-for-byte unchanged storage.
+
+### Verification during this review
+
+- `python3 scripts/build.py --check` — passed: 31 shows, 680 curated tracks, no orphan song pages.
+- All seven executable `node scripts/test-*.mjs` suites — 226/226 passed.
+- Focused inline probes — confirmed one claim write attempt on quota failure; confirmed no-lock `writeSession()` and `tombstoneIfCurrent()` both return `false` without mutation; reproduced the stale-revocation overwrite described above.
+_Review generated 2026-08-15 19:35:51 PDT by `scripts/codex_review.sh` (codex exec, read-only)._
+
+### Disposition (Claude, 2026-08-15)
+
+Both findings independently reproduced against the actual code before
+recording this disposition.
+
+1. **CONFIRMED — medium.** Reproduced exactly with a standalone script:
+   claimed epoch A, `revokeLease(A)` (A correctly revoked), reclaimed as
+   epoch B, `revokeLease(B)` (B correctly revoked — `isEpochRevoked(B)`
+   true), then a THIRD, stale `revokeLease(A)` call (modeling a delayed
+   listener or leftover closure still holding the earlier lease) —
+   `isEpochRevoked(B)` immediately flips back to `false`, and
+   `restoreLease()` on the same storage resolves `'restored'` instead of
+   `'revoked'`. Root cause confirmed directly: `REVOKED_EPOCH_KEY` holds
+   only the single most-recently-written epoch, and `isEpochRevoked()`
+   compares against exactly that one value — a later write to the same key
+   unconditionally destroys the record of any earlier one, regardless of
+   which epoch is actually current. This does contradict the plan's
+   residual-gaps claim that every remaining gap "requires two independent
+   write failures with no successful write in between" — this one requires
+   zero failures, just two ordinary (non-failing) writes arriving
+   out of order, which is a materially weaker (worse) precondition than
+   the plan claims. The "caller contract" note in the plan/module that the
+   in-memory lease is wiped by navigation is unaffected by this gap and
+   remains correct as far as it goes — it's specifically an out-of-order
+   *duplicate/stale* revocation call (not navigation) that this finding
+   depends on, worth clarifying in the fix's own comment rather than
+   removing that language outright.
+
+2. **CONFIRMED — low, test-quality gap, not a code defect.** Read the
+   test file directly: `countingStorage()` is instantiated and asserted on
+   only once (`test-miniplayer-state.mjs:563`), covering solely the happy
+   path; the write-failure test (`:587`, "fails with write-failed...")
+   uses a plain `throwingStorage()` with no write-count assertion, so a
+   hypothetical future rollback/second write on that path would pass
+   silently. Confirmed via grep: `tombstoneIfCurrent()` has no counterpart
+   to the "no lock provider" tests that exist for `claimOwnership()`
+   (`:614`) and `writeSession()` (`:696`). Consistent with Codex's own
+   probes (recorded above) that the CODE already satisfies both invariants
+   today — this is purely about the test suite not proving it, the same
+   category of gap this project has flagged before (a correct
+   implementation under-protected by its own regression suite).
+
+**What I'd change if approved**: for finding 1, key revocation per-epoch
+(e.g. `REVOKED_EPOCH_KEY` becomes a small JSON set/list of revoked epochs,
+or a per-epoch key like `miniPlayerRevokedEpoch:<epoch>`) so revoking one
+epoch can never un-revoke another, each individual revocation remains a
+single atomic `setItem()`, and `isEpochRevoked()` checks membership rather
+than equality against a single slot; add the exact repro above as a
+regression test (revoke B, then a stale revoke of an OLDER epoch A,
+assert B is still revoked and `restoreLease()` still returns `'revoked'`);
+narrow the plan's residual-gaps wording to no longer claim this class of
+gap requires a write failure. For finding 2, add a counting-store variant
+of the write-failure test asserting exactly one attempted write (not just
+the outcome), and add a `tombstoneIfCurrent()` no-lock-provider test
+mirroring the existing two.
+
+Not implementing either — awaiting `/apply-review`.
+
+**Applied (Claude, 2026-08-15).** Both findings fixed, per Rene's go-ahead:
+
+1. `REVOKED_EPOCH_KEY` now stores a bounded (`MAX_REVOKED_EPOCHS = 32`),
+   deduped JSON array of revoked epochs rather than a single value.
+   `isEpochRevoked()` checks set membership; `revokeLease()` appends
+   (still exactly one `setItem()` call — the fix is what gets written, not
+   how many writes happen), evicting the oldest entry once the cap is
+   exceeded. Regression test added reproducing the exact repro from the
+   finding (revoke B, then a stale revoke of older A, assert B is still
+   revoked) plus a cap/eviction test. The plan's residual-gaps wording is
+   corrected below to no longer claim this class of gap needs a write
+   failure — the fixed version now does require one, closing the gap this
+   finding identified.
+2. Added a `throwingCountingStorage()` fake and a companion test proving
+   `claimOwnership()` attempts exactly one `setItem()` call on the
+   write-FAILURE path, not just the happy path; added a
+   `tombstoneIfCurrent()` no-lock-provider test mirroring the existing
+   `claimOwnership()`/`writeSession()` ones.
+
+`scripts/test-miniplayer-state.mjs`: 87/87 passing (up from 83 — 2 rewritten
+for the new storage format, 4 new). All 7 suites, 230/230 passing;
+`build.py --check`/`build.py` clean. Not yet committed.
+
+---
+
+## Revocation-fix review — 2026-08-15
+
+1. **Medium — An unreadable or corrupt revocation set fails open and can erase every prior revocation.**
+
+   Evidence: [`readRevokedEpochs()`](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:507) returns `null` for a read exception but `[]` for malformed/non-array JSON. [`revokeLease()`](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:561) converts either result to `[]`, then successfully overwrites the key with only the requested epoch. [`isEpochRevoked()`](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:527) also treats corrupt JSON as no revocations. A focused probe produced `{ok:true, escalated:false}`, forgot the current revoked epoch, and made [`restoreLease()`](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:636) return `restored` after one transient read failure and a successful write. Corrupt JSON likewise changed a revoked lease to `restored`.
+
+   Why it matters: the original stale-revocation bug reappears whenever a read temporarily throws or the stored value is damaged—without either of the two write failures the plan claims are required at [plan lines 2197–2199](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2197). This is not a cross-origin security boundary, but it can recreate phantom session restoration after storage corruption or transient browser/storage failure. No test covers corrupt JSON or `revokeLease()` after an unreadable set.
+
+   Suggested fix: make `readRevokedEpochs()` tri-state. Treat malformed, wrong-shape, or unreadable data as unknown/fail-closed. `isEpochRevoked()` should return `true`; `revokeLease()` must not overwrite unknown history and should instead rotate the tab ID, returning the escalated result. Add both corrupt-JSON and transient-read-failure restoration regressions.
+
+2. **Medium — The 32-entry cap lets delayed old revocations evict the currently revoked epoch with zero failures.**
+
+   Evidence: [`revokeLease()`](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:565) removes the target, appends it as newest, and shifts entries until only 32 remain. After creating 32 old leases, claiming current lease B, revoking B, then delivering delayed revocations for those 32 old leases, a focused probe showed `isEpochRevoked(B) === false` and `restoreLease() === 'restored'`. The envelope still names B because the delayed revocations do not rewrite it. This directly contradicts the claims that revoking one epoch “can never destroy” another and that the cap gap is practically unreachable at [plan lines 2388–2399](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2388), as well as the review-log claim that the fixed case now requires a failure at [codex log lines 3573–3577](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-codex.md:3573).
+
+   Why it matters: this is the same stale-callback lifecycle shape the fix targets, merely repeated enough times to cross the cap. Each individual `setItem()` is atomic, but that does not make the bounded read/modify/write policy loss-free.
+
+   Suggested fix: before recording a revocation, validate that the supplied lease still matches the current envelope; a stale lease cannot need durable revocation when the envelope names a newer epoch. If that API change is undesirable, remove the cap until an eviction policy can guarantee the envelope-named revoked epoch is retained. Update the plan to describe any remaining finite-cap limitation accurately.
+
+3. **Low — The two new revocation tests do not prove their broad names and plan claims.**
+
+   Evidence: the stale regression at [`test-miniplayer-state.mjs:441`](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:441) checks only two epochs and membership; it does not construct an envelope, assert `restoreLease() === 'revoked'`, or exercise cap pressure. Its “never” claim is disproved by the probe above. The eviction test at [`test-miniplayer-state.mjs:458`](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:458) accepts any length from 1–32 and checks only that epoch 0 disappeared and epoch 39 survived. An implementation retaining only epoch 39 would pass; it does not prove exact capacity, FIFO boundaries, stored order, or deduplication.
+
+   Why it matters: both tests remain green under materially incorrect eviction policies, including policies that forget recent revocations prematurely.
+
+   Suggested fix: assert the stored array equals `epochs.slice(-32)` exactly; test the boundary epochs, duplicate insertion behavior, and malformed/duplicate stored input. Extend the stale regression through a real envelope and `restoreLease()`, including enough delayed distinct epochs to cross the cap.
+
+4. **Low — The new tombstone no-lock test proves semantic equality, not that no storage write occurred.**
+
+   Evidence: [`test-miniplayer-state.mjs:765`](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:765) compares decoded envelopes with `deepEqual`. A rewrite of byte-identical JSON, or a write to another key, would still satisfy that assertion despite the test name claiming “writes nothing.”
+
+   Why it matters: the intended invariant is that the fail-closed path never enters the critical section or touches storage, not merely that the decoded state looks unchanged afterward.
+
+   Suggested fix: use `countingStorage()`, snapshot the raw backing store, and assert zero additional `setItem()`/`removeItem()` calls plus byte-for-byte equality. The new `throwingCountingStorage()` claim-failure test itself correctly detects a second attempted `setItem()`.
+
+5. **Low — The plan’s function-level revocation contract still describes the removed single-value implementation.**
+
+   Evidence: [plan lines 2281–2284](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2281) say `isEpochRevoked()` compares one stored `revokedEpoch` for exact equality and that `revokeLease()` persists one epoch, while the implementation now reads and writes an array.
+
+   Why it matters: this is the authoritative design section later work will implement against, so it can cause the old bug to be reintroduced despite the later residual-gap note.
+
+   Suggested fix: update the function contracts to specify validated array membership, deduplication, eviction behavior, and the intended fail-closed handling for unreadable or malformed arrays.
+
+**Verification during this review**
+
+- `python3 scripts/build.py --check` — passed: 31 shows, 680 curated tracks, no orphan song pages.
+- `for test_file in scripts/test-*.mjs; do node "$test_file" || exit; done` — passed: all seven suites, 230/230 tests.
+- Focused Node probes — reproduced corrupt-JSON restoration, transient-read revocation loss, and current-epoch eviction after 32 delayed old revocations.
+- `cmp scripts/miniplayer-state.js assets/miniplayer-state.js` — source and generated asset match.
+- `node --check scripts/miniplayer-state.js` and `node --check scripts/test-miniplayer-state.mjs` — passed.
+_Review generated 2026-08-15 19:49:59 PDT by `scripts/codex_review.sh` (codex exec, read-only)._
+
+### Disposition (Claude, 2026-08-15)
+
+All five findings independently reproduced/checked against the actual code
+before recording this disposition.
+
+1. **CONFIRMED — medium.** Reproduced exactly with a standalone script:
+   revoked B, hand-corrupted the stored revoked-epoch set's raw JSON, then
+   called `revokeLease()` for an unrelated epoch — the corrupt read
+   collapsed to `[]`, the write proceeded, and B's revocation was silently
+   lost (`isEpochRevoked(B)` flipped to `false`, `restoreLease()` returned
+   `'restored'`). Root cause confirmed directly: `revokeLease()`'s
+   `readRevokedEpochs(sessionStore) || []` treated an unreadable/corrupt
+   read identically to a confirmed-empty one before overwriting, with no
+   failure required at all.
+2. **CONFIRMED — medium.** Reproduced exactly: revoked B, then delivered
+   32 unrelated stale revocations for older epochs — the FIFO cap evicted
+   B's entry with zero storage failures involved, `isEpochRevoked(B)`
+   flipped to `false`, `restoreLease()` returned `'restored'`. Directly
+   contradicted the plan's claim that this was "practically unreachable."
+3. **CONFIRMED — low, test-quality.** The stale-regression test asserted
+   only `isEpochRevoked()` in isolation, never constructing a real envelope
+   or asserting `restoreLease()`'s actual status; the eviction test
+   accepted any length ≤32 and only checked the two boundary epochs, not
+   exact FIFO order.
+4. **CONFIRMED — low, test-quality.** The no-lock tombstone test used
+   `assert.deepEqual` on the *decoded* envelope, which a byte-identical
+   rewrite (or a write to an unrelated key) would still satisfy despite
+   the test's "writes nothing" claim.
+5. **CONFIRMED — documentation drift.** The plan's function-level
+   contract for `revokeLease()`/`isEpochRevoked()` (written earlier the
+   same day, describing the just-superseded array design) no longer
+   matched either the array implementation it described or the fix
+   applied afterward.
+
+**Fixed, all five, same session — this time by removing the shape rather
+than further patching it**, per this project's own established lesson
+from the original claim-token bugs: the actual root cause wasn't "not
+enough history remembered," it was that `restoreLease()` only ever checks
+revocation against whatever epoch the envelope *currently* names, so a
+revocation for any *other* epoch is provably irrelevant the instant it's
+attempted. `revokeLease()` now takes `(localStore, sessionStore, lease)`
+and skips the write entirely — never reads, never merges, never touches
+`REVOKED_EPOCH_KEY` — when the given epoch no longer matches the fresh
+envelope. `REVOKED_EPOCH_KEY` reverted to a single string value (no JSON,
+no cap, no eviction policy to get wrong); `isEpochRevoked()` is back to a
+plain equality check. On a genuine envelope-read failure (`'unavailable'`),
+the write proceeds anyway (errs toward revoking rather than silently
+skipping a possibly-legitimate revocation) — verified by test and by a
+standalone repro. Re-ran both original repro scripts against the fixed
+code: finding 1's corrupted-storage scenario no longer applies at all
+(there is no more read-merge-write cycle on the revocation key for it to
+corrupt); finding 2's 100-stale-call repro now correctly leaves the
+current revocation untouched. A third standalone check confirmed no
+legitimate (non-tampered) call sequence can lose a real revocation.
+Findings 3/4 fixed by rewriting the affected tests to go through real
+`claimOwnership()`/`restoreLease()` calls and `countingStorage()`
+respectively. Finding 5 fixed by updating the plan doc's function
+contract to match.
+
+`scripts/test-miniplayer-state.mjs`: 89/89 passing. All 7 suites,
+232/232 passing; `build.py --check`/`build.py` clean. Not yet committed.
+
+---
+
+## Latest `revokeLease()` revocation-fix review — 2026-08-15
+
+1. **Medium — An unavailable envelope read lets a stale revocation overwrite the current marker and makes `restoreLease()` resume a genuinely revoked lease.**
+
+   Evidence: [`revokeLease()`](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:568) writes the supplied epoch whenever `readEnvelope()` returns anything other than an `ok` envelope naming a different epoch. Therefore the explicit `unavailable` branch overwrites `REVOKED_EPOCH_KEY` at [line 573](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:573). I reproduced: claim epoch A, reclaim as epoch B, revoke B, make the next `localStorage.getItem()` throw once, then deliver stale `revokeLease(A)`. The marker changed from B to A and [`restoreLease()`](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:639) changed from `revoked` to `restored`.
+
+   The tests do not catch this. The clean-read stale regressions correctly reach `restoreLease()` ([test lines 467–486](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:467), [493–504](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:493)), but the `unavailable` test starts with no envelope or existing relevant marker and only asserts the stale value was written ([515–521](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:515)). It therefore proves the unsafe policy rather than the end-to-end property.
+
+   Why it matters: this requires one transient read failure and otherwise successful storage operations—no tampering and not the two write failures claimed by the plan. It directly contradicts “nothing left to lose” and “no legitimate (non-tampered) call sequence can lose a real revocation” at [plan lines 2427–2436](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2427), as well as the residual-gap characterization at [2396–2405](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2396).
+
+   The missing ownership lock is not a separate clean-read defect in the intended top-level caller: `revokeLease()` is synchronous, local callbacks cannot interleave within it, and other tabs can change shared `localStorage` but not this tab’s `sessionStorage` marker. The platform explicitly provides no cross-agent locking for local storage, however, so the unknown-read branch cannot safely infer which marker may be current. [HTML Web Storage specification](https://html.spec.whatwg.org/multipage/webstorage.html)
+
+   Suggested fix: never overwrite the single marker when `readEnvelope()` is `unavailable`. Escalate directly by rotating the tab ID; if rotation succeeds, return `{ok:true, escalated:true}` with the existing marker untouched, and if it fails return `{ok:false, escalated:true}`. Add the exact end-to-end regression above, asserting the B marker remains intact and `restoreLease()` never returns `restored`. Alternatively, use independent per-epoch keys so revoking A can never overwrite B. Correct the plan’s safety and residual-gap claims.
+
+**Verification during this review**
+
+- `python3 scripts/build.py --check` — passed: 31 shows, 680 curated tracks, no orphan song pages.
+- `for test_file in scripts/test-*.mjs; do node "$test_file" || exit; done` — passed: all seven suites, 232/232 tests.
+- Focused Node reproduction — confirmed transient envelope-read failure changes B from `revoked` to `restored`.
+- `node --check scripts/miniplayer-state.js` and `node --check scripts/test-miniplayer-state.mjs` — passed.
+- `cmp scripts/miniplayer-state.js assets/miniplayer-state.js` — passed; source and generated asset match.
+_Review generated 2026-08-15 20:03:19 PDT by `scripts/codex_review.sh` (codex exec, read-only)._
+
+### Disposition (Claude, 2026-08-15)
+
+**CONFIRMED — medium.** Reproduced exactly with a standalone script: A
+claimed, reclaimed as B, B revoked (`restoreLease()` correctly `'revoked'`)
+— then a stale `revokeLease(A)` call hit a `localStorage.getItem()` that
+throws exactly once (a transient read failure, not tampering, not
+corruption) — the previous fix's "proceed with the write when unavailable"
+policy overwrote `REVOKED_EPOCH_KEY` from B to A anyway, and
+`restoreLease()` flipped from `'revoked'` to `'restored'`. Root cause
+confirmed directly: my own stated rationale for that policy ("err toward
+revoking, never silently skip a legitimate revocation") was solving the
+wrong problem — it correctly avoided *skipping* a legitimate revocation,
+but didn't account for a stale/irrelevant call ALSO hitting the
+`'unavailable'` branch and blindly overwriting a different, genuinely
+current one. Same bug class as findings 1 and 2 from the prior two rounds,
+third distinct trigger path.
+
+**Fixed** by treating an unavailable envelope read the same way a failed
+`sessionStorage` write is already treated: escalate via `rotateTabId()`
+instead of writing the marker at all. This can neither confirm the epoch
+is current nor rule it out, so it does neither of the two things that
+already proved unsafe (writing unconditionally, or silently skipping) —
+it makes the decision moot by rotating this document's own identity,
+which the same `restoreLease()` ownerId check already relies on elsewhere
+in this design. Re-ran the exact repro above against the fix: result is
+now `{ok:true, escalated:true}`, B's marker is completely untouched, and
+`restoreLease()` reports `'not-mine'` (never `'restored'`) — the escalation
+does mean this specific tab can no longer recognize its own still-valid
+claim B until it explicitly reclaims again (a narrow, honestly-documented
+consequence: it only bites when a caller has already violated its own
+"drop the lease before calling revokeLease" contract by holding a stale
+lease past its drop point, AND a transient read failure lands at that
+exact moment — both required, matching the residual-gaps section's stated
+severity bar).
+
+`scripts/test-miniplayer-state.mjs`: 90/90 passing (added an escalation
+test and the end-to-end transient-failure regression, replaced the test
+that asserted the old unsafe "write anyway" behavior). All 7 suites,
+233/233 passing; `build.py --check`/`build.py` clean. Not yet committed.
+
+**This is the third round in a row to find something real in
+`revokeLease()` specifically** (single-value overwrite → bounded-set
+eviction → unavailable-read overwrite, one fix session, three distinct
+bugs, all in the same ~15-line function). Per this project's own stated
+standard, a clean round from here is required, not assumed, before this
+subsystem is considered settled.
+
+---
+
+## `revokeLease()` fourth-form review — 2026-08-15
+
+1. **Medium — Successful escalation leaves the collision handshake’s cached tab ID stale, allowing a later duplicated tab to evade collision detection.**
+
+   Evidence: `revokeLease()` rotates `TAB_ID_KEY` on an unavailable envelope or failed marker write ([scripts/miniplayer-state.js:579](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:579), [scripts/miniplayer-state.js:590](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:590)). However, the documented boot wiring caches `myTabId` and refreshes it only when a handshake handler itself reports rotation ([scripts/miniplayer-state.js:377](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:377), [scripts/miniplayer-state.js:382](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:382)). The handlers compare incoming probes against that caller-supplied cached value ([scripts/miniplayer-state.js:466](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:466), [scripts/miniplayer-state.js:481](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:481)).
+
+   A focused reproduction established an ID, forced `revokeLease()` through its unavailable-read escalation, copied the resulting session storage as a duplicated tab would, and sent a probe using the rotated ID. With the documented cached pre-rotation ID, `handleIncomingProbe()` returned `{reply:null, rotated:false}`; using `peekTabId()` instead recognized the collision and returned a reply. If ownership is later reclaimed under the shared rotated ID, the undetected clone can subsequently restore that lease because its `ownerId` matches.
+
+   The tests exercise revocation escalation and collision handling separately. The revocation tests only verify that storage rotated ([scripts/test-miniplayer-state.mjs:515](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:515)); the collision fixture refreshes its cached ID only after rotations initiated inside the handshake ([scripts/test-miniplayer-state.mjs:984](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:984)). No test joins these paths.
+
+   The plan’s branch-by-branch `revokeLease()` description matches the implementation, but its caller contract mentions only dropping the lease ([player-consolidation-plan.md:2295](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2295)), while calling the unchanged handshake “solid” ([player-consolidation-plan.md:2283](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2283)) and residual item 5 “not a live gap” ([player-consolidation-plan.md:2429](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2429)). Those safety claims are now unsupported.
+
+   Suggested fix: structurally prevent cached-identity divergence—prefer having handshake dispatch read `peekTabId(sessionStore)` for every message, or require every successful `revokeLease()` escalation to refresh `myTabId` immediately. Add an end-to-end test covering escalation → copied session storage → clone probe → claim/restore, asserting the collision is resolved and at most one tab restores. Cover both escalation triggers. Update the plan’s function contract and residual-gap item 5 accordingly.
+
+### Verification during this review
+
+- `python3 scripts/build.py --check` — passed: 31 shows, 680 curated tracks, no orphan song pages.
+- `for test_file in scripts/test-*.mjs; do node "$test_file" || exit; done` — passed: all seven suites, 233/233 tests.
+- `node --check scripts/miniplayer-state.js && node --check scripts/test-miniplayer-state.mjs` — passed.
+- `cmp scripts/miniplayer-state.js assets/miniplayer-state.js` — passed; generated asset matches source.
+- Focused inline Node escalation/collision probe — reproduced the stale cached-ID failure described above.
+_Review generated 2026-08-15 20:11:50 PDT by `scripts/codex_review.sh` (codex exec, read-only)._
+
+### Disposition (Claude, 2026-08-15)
+
+**CONFIRMED — medium, a genuinely fourth and distinct bug, not a
+re-discovery of rounds 1-3.** Reproduced exactly with a standalone script:
+established a tab id, escalated `revokeLease()` via an unavailable
+envelope read (rotating `TAB_ID_KEY` internally, as intended), then sent a
+collision probe carrying the CURRENT (rotated) id. `handleIncomingProbe()`
+called with the STALE cached `myTabId` (never refreshed, since the
+documented boot pseudocode only refreshes it on a handshake-reported
+rotation) returned `{reply:null, rotated:false}` — the real collision
+invisible, no reply ever sent. The identical probe, called with a freshly
+re-read `peekTabId(sessionStore)`, correctly recognized the collision and
+replied. Root cause confirmed directly: `revokeLease()`'s escalation path
+(added this session, to fix the round-3 finding) introduced a SECOND
+trigger for `TAB_ID_KEY` rotation that the collision handshake's
+documented caller-wiring pseudocode was never updated to account for — it
+only ever refreshed the cached id in response to a rotation the handshake
+itself reported.
+
+**This is a caller-contract/documentation gap, not a defect inside
+`revokeLease()` or the handshake functions themselves** — both correctly
+do what they're individually documented to do; the gap is specifically
+that nothing connected the two. Per this project's own established
+boundary (`HANDOFF.md`'s "Durable facts": the tab-collision handshake "is
+NOT part of the redesign... considered solid after rounds 3-4, out of
+scope, keep as-is"), the fix does not touch
+`handleIncomingProbe`/`handleIncomingProbeReply`/`isTabProbeCollision` —
+doing so would mean modifying code this project has separately declared
+settled. Instead: the boot-pseudocode comment now explicitly states the
+caller contract (refresh `myTabId` after `revokeLease()` reports
+`escalated:true`, exactly the same as after a handshake-reported
+rotation), `revokeLease()`'s own comment cross-references it, and two new
+tests prove both the hazard (stale cached id → collision invisible) and
+the fix (fresh `peekTabId()` after escalation → collision correctly
+detected).
+
+`scripts/test-miniplayer-state.mjs`: 92/92 passing. All 7 suites,
+235/235 passing; `build.py --check`/`build.py` clean. Not yet committed.
+
+**Fourth round in a row to find something real in this immediate area**
+(the first three all inside `revokeLease()` itself; this one at the
+boundary between `revokeLease()` and the handshake it now interacts
+with). Per this project's own repeatedly-stated standard, still not
+treating a clean round as assured — one more genuinely clean pass is
+owed before this is settled.
+
+---
+
+## Caller-contract fix review — 2026-08-15
+
+1. **Medium — The plan’s canonical `revokeLease()` caller contract still omits the required cached-ID refresh.**
+
+   Evidence: The function-by-function contract describes dropping the lease and calling `revokeLease()`, but never instructs the caller to refresh `myTabId` when `escalated:true` ([player-consolidation-plan.md:2302](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2302), [player-consolidation-plan.md:2321](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2321)). The requirement appears only later in the historical residual-gap narrative ([player-consolidation-plan.md:2474](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2474)).
+
+   Why it matters: A future boot implementation is likely to follow the function-by-function API contract rather than reconstruct requirements from review provenance. Following that section literally would recreate the stale-ID hazard this fix addresses.
+
+   Suggested fix: Add `if (result.escalated) myTabId = peekTabId(sessionStore)` directly to the `revokeLease()` caller contract around line 2326, including the reason that handshake handlers trust the cached caller-supplied ID.
+
+2. **Low — `revokeLease()`’s new comment incorrectly says `escalated:true` proves the ID was rotated.**
+
+   Evidence: The comment says “`escalated:true` means TAB_ID_KEY was just rotated” ([miniplayer-state.js:589](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:589)). Both escalation branches return `escalated:true` even when `rotateTabId()` returns `null`, producing `{ok:false, escalated:true}` ([miniplayer-state.js:606](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:606), [miniplayer-state.js:617](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:617)); that result is explicitly tested ([test-miniplayer-state.mjs:566](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:566)).
+
+   Why it matters: The refresh-on-`escalated` rule remains safe and correct, but callers must not infer that rotation succeeded unless `ok:true`. The current wording contradicts the documented return shape.
+
+   Suggested fix: Say that `escalated:true` means rotation was attempted and the caller must refresh its cache; `ok:true` means the rotation landed, while `ok:false` means it failed.
+
+No additional unaccounted rotation source exists in this module. `establishTabId()` writes only during boot before the cache is established; runtime rotation is limited to the handshake’s `resolveCollision()` path and `revokeLease()`. The two new tests faithfully exercise `handleIncomingProbe()` with stale versus refreshed IDs and prove their stated behavior.
+
+**Verification during this review**
+
+- `python3 scripts/build.py --check` — passed: 31 shows, 680 curated tracks, no orphan song pages.
+- `for test_file in scripts/test-*.mjs; do node "$test_file" || exit; done` — passed: all seven suites, 235/235 tests.
+- `node --check scripts/miniplayer-state.js` and `node --check scripts/test-miniplayer-state.mjs` — passed.
+- `cmp scripts/miniplayer-state.js assets/miniplayer-state.js` — passed; generated asset matches the source.
+_Review generated 2026-08-15 20:20:00 PDT by `scripts/codex_review.sh` (codex exec, read-only)._
+
+### Disposition (Claude, 2026-08-15)
+
+Both confirmed by reading the actual text.
+
+1. **CONFIRMED — medium, documentation gap.** Verified: the plan's
+   canonical `revokeLease()` function-by-function contract (the
+   authoritative section a future implementer would read) described
+   dropping the lease and calling `revokeLease()` but never mentioned the
+   `myTabId` refresh requirement — that only appeared in the later
+   historical residual-gap narrative, easy to miss if reading the contract
+   section alone. Fixed by adding the refresh instruction directly to the
+   canonical contract, with the same reasoning (a second rotation source
+   the handshake's own wiring didn't originally anticipate).
+2. **CONFIRMED — low, precision gap.** Verified: `revokeLease()`'s own
+   comment said "`escalated:true` means TAB_ID_KEY was just rotated,"
+   which is imprecise — both escalation branches return `escalated:true`
+   even when the `rotateTabId()` fallback itself fails (`{ok:false,
+   escalated:true}`, already covered by an existing test). The
+   refresh-unconditionally-on-`escalated` guidance remains correct either
+   way (a re-read via `peekTabId()` simply reflects whatever is actually
+   there), but the comment's own justification was wrong. Fixed by
+   clarifying `escalated:true` means rotation was *attempted*, `ok`
+   distinguishes whether it landed.
+
+No new code defects found this round — first genuinely clean pass on the
+underlying logic, after four consecutive rounds each finding a real
+behavioral bug in this immediate area. `scripts/test-miniplayer-state.mjs`
+unchanged at 92/92 (documentation-only fixes). All 7 suites, 235/235
+passing; `build.py --check`/`build.py` clean. Not yet committed.
+
+---
+
+## Full fenced-lease ownership subsystem review — 2026-08-15
+
+1. **High — Rotating the tab ID does not invalidate captured leases, allowing a displaced owner to continue writing.**
+
+   Evidence: both collision resolution and revocation escalation rotate `TAB_ID_KEY` ([scripts/miniplayer-state.js:466](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:466), [scripts/miniplayer-state.js:603](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:603)), but `hasValidLease()` checks only the revocation marker and envelope tuple—not whether `peekTabId(sessionStore)` still equals `lease.ownerId` ([scripts/miniplayer-state.js:649](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:649)). Consequently, `writeSession()` accepts the old lease after a successful rotation ([scripts/miniplayer-state.js:831](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:831)). A focused probe forced a revocation-marker failure, successfully rotated the ID, then confirmed `hasValidLease(oldLease) === true` and that a stale session write landed.
+
+   This also exposes a plan overclaim: the exact `{ownerId, ownerEpoch}` tuple is stored in the envelope ([scripts/miniplayer-state.js:229](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:229)), despite the assertion that “the lease isn’t stored at all” ([player-consolidation-plan.md:2268](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2268)). Any tab can reconstruct that tuple; the current gate does not bind it to that tab’s session identity. Existing tests exercise stale epochs, rotation, and escalation separately, but never attempt an old write after rotation ([test-miniplayer-state.mjs:515](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:515), [test-miniplayer-state.mjs:648](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:648)).
+
+   Why it matters: when a live owner loses the collision nonce tie-break, or `revokeLease()` escalates, an already-scheduled position/queue callback holding the previous lease can still overwrite durable state. This directly contradicts the plan’s claim that captured stale callbacks are structurally unable to write and that dropping the main lease variable fully protects the current document ([player-consolidation-plan.md:2382](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2382), [player-consolidation-plan.md:2434](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2434)).
+
+   Suggested fix: make `hasValidLease()` fail closed unless `peekTabId(sessionStore) === lease.ownerId`, in addition to the existing epoch/envelope checks. Add regressions for collision rotation → captured old write, both revocation escalation triggers → captured old write, and a distinct tab attempting to use a lease copied from the envelope. Correct the plan’s “lease isn’t stored” and residual-gap claims.
+
+2. **Medium — The prescribed revoke-then-tombstone sequence makes `tombstoneIfCurrent()` reject itself.**
+
+   Evidence: successful `revokeLease()` records the lease epoch ([scripts/miniplayer-state.js:619](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:619)); `tombstoneIfCurrent()` then gates on `hasValidLease()` ([scripts/miniplayer-state.js:856](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:856)), which rejects that exact revoked epoch at [scripts/miniplayer-state.js:654](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:654). The module explicitly instructs callers to invoke the tombstone after revocation ([scripts/miniplayer-state.js:853](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:853)). A focused probe confirmed `{ok:true}` from revocation followed by `false` from tombstoning, with `ownerId`/`ownerEpoch` left intact. The tests cover each operation independently but never this documented sequence.
+
+   Why it matters: the tombstone’s stated purpose—preventing passive observers from continuing to display stale ownership after an external non-module player takes over—cannot work on its normal path ([player-consolidation-plan.md:2393](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2393)). Durable state can therefore disagree with what has actually taken ownership.
+
+   Suggested fix: give tombstoning a predicate that compares the captured owner tuple against the fresh envelope under the lock but does not reject solely because the same local epoch was revoked. Retain the second immediate pre-write comparison. Alternatively, tombstone before revocation and document/test that ordering. Add an end-to-end external-claim → revoke → tombstone regression.
+
+3. **Medium — The collision handshake reports a rotation even when `rotateTabId()` failed, leaving both duplicated tabs able to restore ownership.**
+
+   Evidence: `rotateTabId()` correctly returns `null` when persistence fails ([scripts/miniplayer-state.js:325](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:325)), but `resolveCollision()` ignores that return value, memoizes the nonce, and returns the tie-break decision as `rotated:true` ([scripts/miniplayer-state.js:466](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:466)). The caller consequently refreshes the same unchanged ID and treats the collision as resolved. A focused probe made only the loser’s `TAB_ID_KEY` write throw; both tabs retained the shared ID and both returned `restored`.
+
+   The suite tests failed `rotateTabId()` only in isolation ([test-miniplayer-state.mjs:400](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:400)); every handshake test uses infallible storage ([test-miniplayer-state.mjs:1040](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:1040)). Thus the plan’s characterization of the unchanged handshake as “solid” is unsupported ([player-consolidation-plan.md:2290](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2290)), and the residual-gaps introduction claiming two independent write failures are always required is false ([player-consolidation-plan.md:2430](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2430)).
+
+   Why it matters: one transient sessionStorage write failure preserves a duplicated identity and permits two documents to restore the same lease—the exact collision the handshake exists to prevent.
+
+   Suggested fix: propagate rotation success separately from the tie-break decision. Do not mark the opposing nonce resolved when the losing side’s rotation fails; fail closed by disabling persistent ownership for that document if retry cannot converge. Add an end-to-end failed-rotation handshake test asserting at most one tab can restore.
+
+4. **Low — `establishTabId()` treats an initial read failure as absence and overwrites a valid carried identity.**
+
+   Evidence: the initial `getItem()` exception is collapsed to `existing = null`, after which a new ID is generated and persisted ([scripts/miniplayer-state.js:292](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:292)). The test explicitly blesses this behavior as “tolerates a throwing pre-check read” ([test-miniplayer-state.mjs:368](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:368)). A focused probe began with a valid carried ID, threw only on the first read, and confirmed it was replaced.
+
+   Why it matters: a one-off read failure during same-tab navigation destroys ownership continuity and makes the subsequent envelope appear `not-mine`. This contradicts the plan’s idempotence claim when an identity exists ([player-consolidation-plan.md:2280](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2280)) and applies the exact read-failure-as-absence policy that `readEnvelope()` was redesigned to avoid.
+
+   Suggested fix: return `null` immediately when the initial identity read throws; do not write a replacement ID. Change the test to assert zero `setItem()` attempts and preservation of the existing value.
+
+**Verification during this review**
+
+- `python3 scripts/build.py --check` — passed: 31 shows, 680 curated tracks, no orphan song pages.
+- All seven executable `node scripts/test-*.mjs` suites — passed, 235/235 total; `test-miniplayer-state.mjs` passed 92/92.
+- `python3 scripts/verify_markup.py` — passed: 1,427 items across 166 generated show/song pages.
+- `node --check scripts/miniplayer-state.js`, `node --check scripts/test-miniplayer-state.mjs`, and `node --check scripts/browser_check.mjs` — passed.
+- `cmp scripts/miniplayer-state.js assets/miniplayer-state.js` — passed.
+- Focused Node interleaving probes — reproduced all four findings, including stale writes after successful escalation, the self-rejecting tombstone sequence, dual restoration after failed collision rotation, and identity replacement after a transient read failure.
+- `git diff --exit-code bf59f10 -- …` and `git status --short` — clean; reviewed files match commit `bf59f10`.
+_Review generated 2026-08-15 20:26:16 PDT by `scripts/codex_review.sh` (codex exec, read-only)._
+
+### Disposition (Claude, 2026-08-15)
+
+All four findings independently reproduced against the actual code before
+recording this disposition. This broader, non-narrowly-scoped round
+caught things the last several increasingly-narrow rounds missed — exactly
+the risk flagged when narrowing scope: "review the branch again" was
+avoided in favor of narrow framings for speed, and it let a real
+interaction bug (finding 3, and the round-4 caller-contract gap before it)
+go unnoticed by rounds looking only at the immediately-preceding patch.
+
+1. **CONFIRMED — high.** Reproduced exactly: captured a valid lease,
+   rotated THIS document's own `TAB_ID_KEY` (modeling a lost collision
+   tie-break or a `revokeLease()` escalation) without touching the
+   envelope, then confirmed `hasValidLease(the old lease)` still returned
+   `true` and `writeSession()` with that stale lease still landed. Root
+   cause confirmed directly: `hasValidLease()` compared the lease against
+   the envelope but never against THIS document's own current
+   `peekTabId()`. Also confirmed the plan's "the lease isn't stored at
+   all" wording was imprecise — the envelope legitimately stores
+   `(ownerId, ownerEpoch)` (that's how `restoreLease()` re-derives a
+   lease at all); the real property that matters is no SEPARATE credential
+   needing to be kept in sync, not that no tuple is ever persisted
+   anywhere.
+2. **CONFIRMED — medium.** Reproduced exactly: `revokeLease()` then
+   `tombstoneIfCurrent()` with the same lease — `{ok:true}` from
+   revocation, `false` from tombstoning, envelope untouched. Root cause
+   confirmed directly: `tombstoneIfCurrent()` gated on `hasValidLease()`,
+   which itself gates on `isEpochRevoked()` — so the exact epoch
+   `revokeLease()` just recorded as revoked immediately fails
+   `tombstoneIfCurrent()`'s own gate, on the function's own documented
+   normal-use sequence.
+3. **CONFIRMED — medium.** Reproduced exactly: forced the losing side's
+   `rotateTabId()` write to fail during collision resolution — the loser
+   kept its original (still-shared) id, but `handleIncomingProbe()` still
+   reported `rotated:true`. Both sides then independently passed
+   `restoreLease()` as `'restored'`. Root cause confirmed directly:
+   `resolveCollision()` called `rotateTabId(sessionStore)` and discarded
+   its return value entirely, never checking for the `null`-on-failure
+   result this same redesign gave `rotateTabId()`. This is squarely a
+   consequence of THIS redesign (the old pre-redesign `rotateTabId()`
+   never returned `null`, always fabricating a value) breaking an
+   assumption `resolveCollision()` — otherwise legitimately out of scope —
+   was written under; not a re-litigation of the settled nonce-comparison
+   logic itself.
+4. **CONFIRMED — low.** Reproduced exactly: seeded a valid carried
+   identity, made only the FIRST `getItem()` call throw, confirmed
+   `establishTabId()` replaced the valid identity with a freshly minted
+   one. Root cause confirmed directly: the existence pre-check collapsed a
+   read failure to "nothing exists," applying exactly the
+   read-failure-as-absence policy `readEnvelope()` was redesigned earlier
+   today to avoid, just missed in this one other spot.
+
+**Fixed, all four, same session**, each by removing the shape rather than
+adding a narrow patch:
+1. `hasValidLease()` refactored around a new shared predicate,
+   `hasMatchingEnvelopeTuple()`, which now also requires
+   `peekTabId(sessionStore) === lease.ownerId` before ever consulting the
+   envelope.
+2. `tombstoneIfCurrent()` switched from `hasValidLease()` to
+   `hasMatchingEnvelopeTuple()` directly — deliberately excluding the
+   revocation check, since tombstoning is purely cosmetic and its safety
+   comes entirely from the tuple match, with revocation never part of that
+   argument in the first place.
+3. `resolveCollision()`/`handleIncomingProbe()`/`handleIncomingProbeReply()`
+   return shape gains `failed`; `rotated` is only ever `true` when the
+   write is verified to have landed. Documented caller contract: on
+   `failed:true`, disable persistent ownership for that document's entire
+   lifetime (same remedy as `establishTabId()` returning `null`) — the
+   collision genuinely could not be resolved, and no safe continuation
+   exists. This is the one fix that touches code inside the
+   nominally-"out of scope" tab-collision handshake — justified because
+   the bug is in how that code handles a CHANGED dependency contract
+   (`rotateTabId()`'s new `null`-on-failure return), not in the
+   nonce-comparison decision logic itself, which is untouched.
+4. `establishTabId()`'s initial existence check now returns `null`
+   immediately on a read failure, rather than proceeding to mint and
+   persist a replacement.
+
+`scripts/test-miniplayer-state.mjs`: 97/97 passing (up from 92 — 1
+rewritten to match the corrected fail-closed behavior, 6 new). All 7
+suites, 240/240 passing; `build.py --check`/`build.py` clean. Not yet
+committed.
+
+**Given a broader review round found four real bugs immediately after a
+narrowly-scoped round reported clean, do not read that prior clean round
+as having validated anything beyond its own narrow scope.** Another
+`/review-step` round — broad again, not narrowed to just this batch's
+diff — is warranted before treating the ownership subsystem as settled.
+
+---
+
+## Second full fenced-lease ownership subsystem review — 2026-08-15
+
+1. **Medium — A successful collision rotation invalidates an active owner’s lease without requiring the caller to stop or relinquish visible playback.**
+
+   Evidence: the documented listener only refreshes `myTabId` after `rotated:true`; it does not clear the lease or change controller state ([scripts/miniplayer-state.js:393](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:393)). The module nevertheless claims the tie-break matters only between idle/passive tabs ([scripts/miniplayer-state.js:369](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:369)), even though any live owner can receive a newly duplicated tab’s probe. Rotation immediately makes its captured lease invalid through `peekTabId()` ([scripts/miniplayer-state.js:704](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:704)). The test explicitly permits a durable owner to lose but never models an actively playing controller or lease lifecycle ([scripts/test-miniplayer-state.mjs:1203](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:1203)).
+
+   A focused probe persisted `playing:true`, made the incumbent lose the nonce tie-break, and produced `oldLeaseValid:false` while the envelope still said `playing:true` and the clone returned `restored`. Under the documented future wiring, the incumbent’s audio can continue while all its saves silently fail and the clone becomes the persistent owner.
+
+   Why it matters: playback visible to the user can diverge from durable ownership and a second document may resume the same session. This zero-failure lifecycle case is absent from the residual-gaps list.
+
+   Suggested fix: make `rotated:true` a full caller contract, not merely an ID-cache update. If the document holds a lease, synchronously drop it and pause/demote the controller before allowing the winning document to restore, or redesign the late-join protocol to preserve an actively playing incumbent. Add an integration test with a playing incumbent, duplicated newcomer, successful incumbent rotation, and assertions over both lease and controller state.
+
+2. **Medium — The collision integration harness still ignores `failed`, so the suite does not test the newly required fail-closed behavior.**
+
+   Evidence: `wireDocument()` destructures only `reply`/`rotated` from both handlers and has no `ownershipDisabled` state ([scripts/test-miniplayer-state.mjs:1092](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:1092)). The test named “two colliding tabs never both restore” bypasses that harness and actually asserts that the failed side still returns `restored` ([scripts/test-miniplayer-state.mjs:1315](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:1315)). It therefore documents the hazard without verifying the caller contract that supposedly closes it. Only failure through `handleIncomingProbe()` is tested; reply-side failure is not integrated.
+
+   This is especially brittle because `resolveCollision()` memoizes the opposing nonce before attempting rotation ([scripts/miniplayer-state.js:512](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:512)). A focused probe returned `failed:true` on the first failed rotation but `{rotated:false, failed:false}` for the repeated message. Ignoring the first result permanently loses the failure signal.
+
+   Why it matters: the plan records the failed-rotation bug as closed and cites the 97-test suite ([plans/player-consolidation/player-consolidation-plan.md:2593](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2593)), but the separately maintained integration fixture still demonstrates the unsafe wiring future boot code could copy.
+
+   Suggested fix: add `ownershipDisabled` to `wireDocument()`, set it permanently on either handler’s `failed:true`, and prevent restore/claim/write operations when set. Rewrite the failed-rotation test to run through that harness and assert exactly one enabled document may restore. Cover failures reached through both probe and reply processing.
+
+3. **Medium — `revokeLease()` reports success without verifying the epoch marker, contradicting the subsystem’s own silent-write failure model.**
+
+   Evidence: the suite explicitly defines a storage implementation whose `setItem()` succeeds but silently drops the write ([scripts/test-miniplayer-state.mjs:102](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:102)); `establishTabId()` and `rotateTabId()` read back writes for exactly this reason. In contrast, `revokeLease()` returns `{ok:true, escalated:false}` immediately after `setItem()` without reading the marker back ([scripts/miniplayer-state.js:663](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:663)).
+
+   A focused probe silently dropped only `REVOKED_EPOCH_KEY`; `revokeLease()` reported success, the marker remained absent, and the next `restoreLease()` returned `restored`. That contradicts the plan’s claim that `ok:false` requires both marker and fallback failure ([plans/player-consolidation/player-consolidation-plan.md:2344](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2344)) and its residual claim that wrongful future restoration requires two independent failures ([plans/player-consolidation/player-consolidation-plan.md:2484](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2484)).
+
+   Why it matters: under the failure behavior the module already claims to defend against, one undetected write failure re-enables a genuinely revoked lease after navigation.
+
+   Suggested fix: read back `REVOKED_EPOCH_KEY` after writing it. If the value is not the requested epoch or the read throws, treat the write as unverified and invoke `rotateTabId()`. Add the silent-drop regression through `restoreLease()`.
+
+4. **Low — Revocation escalation makes the documented cosmetic tombstone path impossible, and the residual list omits that limitation.**
+
+   Evidence: marker-write failure successfully rotates the tab ID ([scripts/miniplayer-state.js:663](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:663)); `hasMatchingEnvelopeTuple()` then rejects the old lease because its owner ID no longer matches `peekTabId()` ([scripts/miniplayer-state.js:704](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:704)); and `tombstoneIfCurrent()` uses that predicate ([scripts/miniplayer-state.js:928](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:928)). The revoke-then-tombstone regression covers only the ordinary marker-write success path ([scripts/test-miniplayer-state.mjs:1059](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:1059)).
+
+   A focused marker-write-failure probe produced `{ok:true, escalated:true}`, followed by `tombstoneIfCurrent() === false`; the envelope continued naming the abandoned old ID. This undercuts the plan’s cosmetic-cleanup description ([plans/player-consolidation/player-consolidation-plan.md:2437](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2437)).
+
+   Why it matters: passive observers can continue displaying stale ownership after the external player took over. Correctness remains fenced, so severity is low, but the documented purpose is not met on either escalation trigger.
+
+   Suggested fix: do not simply remove the identity check globally, because collision-driven rotations need it. Either document this as a residual cosmetic limitation, or introduce a dedicated external-claim cleanup path that compares the fresh envelope tuple under the ownership lock independently of the subsequent revocation rotation. Test both escalation triggers.
+
+**Verification during this review**
+
+- `python3 scripts/build.py --check` — passed: 31 shows, 680 curated tracks, no orphan song pages.
+- Seven executable `node scripts/test-*.mjs` suites — passed, 240/240 total; `test-miniplayer-state.mjs` passed 97/97.
+- `python3 scripts/verify_markup.py` — passed: 1,427 items across 166 generated pages.
+- `python3 scripts/verify_markup.py --check-allowlist-coverage` — passed: all 30 public shows covered.
+- Syntax checks, `cmp scripts/miniplayer-state.js assets/miniplayer-state.js`, and `git diff --check` — passed.
+- Focused Node probes reproduced the silent revocation loss, escalation-blocked tombstone, failed-result memoization, and active-owner rotation divergence described above.
+_Review generated 2026-08-15 20:43:57 PDT by `scripts/codex_review.sh` (codex exec, read-only)._
+
+### Disposition (Claude, 2026-08-15)
+
+All four findings independently reproduced/checked against the actual code
+before recording this disposition.
+
+1. **CONFIRMED — medium, documentation/caller-contract gap, not a storage-
+   correctness bug.** Verified: the module already correctly makes a
+   post-rotation stale write structurally impossible (hasValidLease()'s
+   peekTabId() check, fixed in the previous round), but nothing in the
+   documented boot pseudocode told a caller to stop/pause actively playing
+   audio on `rotated:true` — only to refresh its cached id. Also verified
+   the section comment's claim that the tie-break "only matters between two
+   idle/passive tabs" was genuinely wrong: a live, actively-playing owner
+   can receive a newly-duplicated tab's probe and lose exactly the same way
+   an idle one can. **Fixed** by correcting that claim and extending the
+   documented CALLER CONTRACT: on `rotated:true`, drop the in-memory lease
+   and pause/relinquish playback via the caller's own playback-layer wiring
+   (deliberately not reaching into controller state from this module,
+   consistent with its "pure, DOM-free" design). No code change — this
+   module has no PlaybackController dependency to act through; storage-
+   level safety was already correct.
+2. **CONFIRMED — medium, test-quality gap in this session's own prior
+   fix.** Verified directly: `wireDocument()` (the integration harness)
+   destructured only `reply`/`rotated`, never `failed`; the "two colliding
+   tabs never both restore" test's own assertion proved the opposite of
+   its name (that Y *can* still restore), documenting the hazard without
+   ever proving a correctly-wired caller avoids it. **Fixed**: `wireDocument()`
+   now tracks `ref.disabled` on `failed:true`; the old test renamed to
+   honestly describe what it proves (the hazard); a new test wired through
+   the corrected harness proves a caller that actually follows the
+   documented contract (check `disabled` before calling `restoreLease()`)
+   never reaches the dual-restoration outcome.
+3. **CONFIRMED — medium.** Reproduced exactly: a `setItem()` that silently
+   drops the write (the same `silentlyDroppingStorage()` shape this suite
+   already models elsewhere) made `revokeLease()` report `{ok:true}` with
+   nothing actually recorded, and a subsequent `restoreLease()` wrongly
+   resolved `'restored'`. Root cause confirmed directly: unlike
+   `establishTabId()`/`rotateTabId()`, `revokeLease()` never read back its
+   own write. **Fixed** by adding the identical read-back-and-verify step;
+   on a confirmed-unpersisted write, escalates via `rotateTabId()` exactly
+   like a thrown write already does.
+4. **CONFIRMED — low — but the suggested "remove the identity check"
+   fix was investigated and explicitly REJECTED, not merely deferred.**
+   Reproduced the reported case directly (tombstone fails immediately
+   after a `revokeLease()` escalation). Before accepting the suggested
+   fix, reproduced the SPECIFIC hazard it would reopen: a tab that lost a
+   collision tie-break holds a stale lease whose tuple can still
+   legitimately describe a *different*, still-live document's ongoing
+   ownership (collision resolution never touches the shared envelope) —
+   removing `hasMatchingEnvelopeTuple()`'s identity check to fix (4) would
+   let that loser wrongly clear the *winner's* completely legitimate
+   state, reproduced directly and clearly worse (cross-document
+   interference vs. a cosmetic display staying stale). **Disposition:
+   left as an honest, narrowly-scoped residual gap** — the review's own
+   suggested fix explicitly offered this as an acceptable resolution.
+   Documented in `tombstoneIfCurrent()`'s own comment with the specific
+   scenario and the specific rejected alternative; two new tests added,
+   one proving the gap exists (tombstone fails after escalation) and one
+   proving the protection it exists to preserve (a collision loser's
+   stale lease can never tombstone a different document's legitimate
+   ownership).
+
+`scripts/test-miniplayer-state.mjs`: 100/100 passing (up from 97 — 2
+rewritten, 5 new). All 7 suites, 243/243 passing; `build.py --check`/
+`build.py` clean. Not yet committed.
+
+**Eighth review round today on this subsystem** (five narrow + two broad
++ this disposition's verification pass), seven of which found something
+real. The two broad, non-narrowly-scoped rounds each found multiple real
+bugs immediately after narrower preceding rounds reported clean — the
+clearest evidence yet in this project's history that scope-narrowing
+review rounds trade completeness for speed. Another broad round is
+warranted before treating this subsystem as settled; given the pattern,
+a clean broad round should still be read as encouraging, not conclusive.
+
+---
+
+## Full fenced-lease ownership subsystem review — 2026-08-15
+
+1. **High — Every shared-envelope write can report success without verifying that the write landed.**
+
+   Evidence: `writeEnvelope()` returns `true` immediately after `setItem()` and performs no read-back ([scripts/miniplayer-state.js:262](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:262)). `claimOwnership()` consequently returns `{ok:true, lease}` ([scripts/miniplayer-state.js:907](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:907)), while `writeSession()` and `tombstoneIfCurrent()` return `true` ([scripts/miniplayer-state.js:940](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:940), [scripts/miniplayer-state.js:992](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:992)) solely because `setItem()` did not throw.
+
+   This contradicts the subsystem’s own explicit silent-drop failure model ([scripts/test-miniplayer-state.mjs:102](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:102)). That fixture is applied to tab-ID writes, but never to `writeEnvelope()` or any of its three callers. A focused probe made `localStorage.setItem()` silently drop writes: `claimOwnership()` returned `ok:true` while `readEnvelope()` remained `absent`; after a healthy claim, both `writeSession()` and `tombstoneIfCurrent()` returned `true` while the durable envelope stayed byte-for-byte unchanged.
+
+   Why it matters: a caller can start playback believing it acquired durable ownership, silently lose queue/position saves, or believe ownership was tombstoned when it was not. Only one failure is required, contradicting the plan’s claim that remaining gaps require two independent write failures ([player-consolidation-plan.md:2237](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2237)) and that a failed claim returns `{ok:false}` ([player-consolidation-plan.md:2433](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2433)).
+
+   Suggested fix: make `writeEnvelope()` serialize once, call `setItem()`, then read the raw value back under the same ownership lock and require exact equality before reporting success. Return a reason distinguishing thrown writes, unavailable read-back, and mismatched read-back. Add silent-drop regressions for `writeEnvelope()`, `claimOwnership()`, `writeSession()`, and `tombstoneIfCurrent()`.
+
+2. **Medium — `restoreLease()` can return a stale lease as “restored” after another tab has already claimed ownership.**
+
+   Evidence: `restoreLease()` reads the envelope once and immediately returns its tuple without a lock or final validation ([scripts/miniplayer-state.js:790](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:790)). The ownership lock wraps claims and writes, but not restoration. The integration test performs the claim and handshake strictly before restoration and never interleaves a claim during the read ([scripts/test-miniplayer-state.mjs:1172](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:1172)).
+
+   A focused interleaving captured A’s envelope read, let B’s real `claimOwnership()` land before that read returned, and then completed A’s `restoreLease()`. A returned `status:'restored'` with A’s lease while durable storage already named B. This directly contradicts the plan’s “safe to resume” characterization ([player-consolidation-plan.md:2424](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2424)).
+
+   Why it matters: later gated writes reject the stale lease, but a boot caller may already restore visible state or resume audio from the stale snapshot, diverging from durable ownership and potentially overlapping another tab’s playback.
+
+   Suggested fix: treat restoration as a candidate snapshot, not an unconditional resume grant. Run its read/validation under the ownership lock, install external-claim/collision listeners before beginning restoration, and use a caller-owned ownership generation so any claim received during or after restoration invalidates the result before state or playback is applied. Add an interleaving regression where B claims between A’s envelope read and returned result.
+
+3. **Medium — Higher-level APIs still collapse storage failures into ordinary negative ownership results.**
+
+   Evidence: `peekTabId()` converts a throwing `sessionStorage` read to `null` ([scripts/miniplayer-state.js:323](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:323)); `restoreLease()` then reports normal `no-identity` ([scripts/miniplayer-state.js:790](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:790)), and `claimOwnership()` reports `no-identity` ([scripts/miniplayer-state.js:896](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:896)). Likewise, `hasMatchingEnvelopeTuple()` converts both an absent envelope and an unavailable read to `false` ([scripts/miniplayer-state.js:749](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:749)), causing `writeSession()` to return the same `false` for storage failure, revocation, stale ownership, and no lock. The tests explicitly equate unavailable and absent reads at this layer ([scripts/test-miniplayer-state.mjs:641](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:641), [scripts/test-miniplayer-state.mjs:646](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:646)).
+
+   Why it matters: these paths fail closed, but a future caller cannot distinguish ownership loss from a storage outage and therefore cannot choose correct retry, disablement, logging, or user-status behavior. The plan’s statement that genuine read failures are never mistaken for absence is only true of `readEnvelope()`, not the subsystem’s public operations ([player-consolidation-plan.md:2218](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2218)).
+
+   Suggested fix: introduce tri-state tab-ID and lease checks, such as `valid`, `stale`, and `unavailable`, and return structured results from `writeSession()`/`tombstoneIfCurrent()` with explicit reasons including `no-lock`, `read-unavailable`, `revoked`, `stale`, and `write-failed`.
+
+4. **Medium — The failed-collision “end-to-end” test still proves only a test-owned latch, not enforceable caller behavior.**
+
+   Evidence: the module explicitly has no real consumer yet ([scripts/miniplayer-state.js:28](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:28)). `wireDocument()` merely stores `failed` in `ref.disabled`; it does not own or guard restore/claim/write operations, and it still does not model the required lease drop or playback relinquishment on `rotated:true` ([scripts/test-miniplayer-state.mjs:1154](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:1154)). The purported enforcement assertion conditionally avoids calling `restoreLease()` with `yRef.disabled ? null : ...`, then asserts that self-produced `null` ([scripts/test-miniplayer-state.mjs:1440](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:1440)). Thus the test would remain green if the future boot implementation ignored the latch entirely.
+
+   Why it matters: the underlying module still permits both duplicated tabs to return `restored` after failed rotation, as the adjacent hazard test demonstrates. The plan records the harness gap as fixed ([player-consolidation-plan.md:2104](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2104)), but enforcement remains only pseudocode.
+
+   Suggested fix: create a small DOM-free ownership coordinator that owns `disabled`, current lease, collision handling, restore/claim/write gating, and the playback-relinquish callback. Exercise that real coordinator in the collision tests. Until such a consumer exists, describe this behavior as an unverified caller contract rather than an end-to-end guarantee.
+
+5. **Low — The plan’s summary retains two claims that its later detailed section already corrects.**
+
+   Evidence: the summary says the lease is “never persisted” and that both `writeSession()` and `tombstoneIfCurrent()` gate on `hasValidLease()` ([player-consolidation-plan.md:2193](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2193), [player-consolidation-plan.md:2203](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2203)). In reality, the tuple is persisted inside the envelope ([scripts/miniplayer-state.js:182](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:182)), and tombstoning deliberately uses the tuple-only predicate ([scripts/miniplayer-state.js:985](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:985)). The later plan text acknowledges both corrections.
+
+   Why it matters: an implementing agent reading the summary can restore the exact cross-store misconception already found in prior reviews or incorrectly add revocation back to the tombstone gate.
+
+   Suggested fix: say “no separately persisted fencing credential” and describe `writeSession()` as using `hasValidLease()` while `tombstoneIfCurrent()` uses `hasMatchingEnvelopeTuple()`.
+
+**Verification during this review**
+
+- `python3 scripts/build.py --check` — passed: 31 shows, 680 curated tracks, no orphan song pages.
+- All seven executable `node scripts/test-*.mjs` suites — passed, 243/243 total; `test-miniplayer-state.mjs` passed 100/100. The playlist suite emitted `MaxListenersExceededWarning`s but did not fail.
+- `python3 scripts/verify_markup.py` and `--check-allowlist-coverage` — passed: 1,427 items across 166 pages; all 30 public shows covered.
+- Syntax checks, `git diff --check`, and `cmp scripts/miniplayer-state.js assets/miniplayer-state.js` — passed.
+- Focused Node interleaving/failure probes — reproduced false-success envelope writes, stale restoration after a concurrent claim, and storage-read failures collapsing to normal negative results.
+_Review generated 2026-08-15 21:10:48 PDT by `scripts/codex_review.sh` (codex exec, read-only)._
+
+### Disposition (Claude, 2026-08-15)
+
+1. **High — `writeEnvelope()` never reads back its own write — CONFIRMED, real bug, not yet fixed.**
+   Reproduced directly: a silently-dropping `localStorage` (setItem() never
+   throws, never mutates) makes `claimOwnership()` return `{ok:true}` while
+   `readEnvelope()` still reports `'absent'`; on an already-healthy claim,
+   both `writeSession()` and `tombstoneIfCurrent()` return `true` while the
+   durable envelope is byte-for-byte unchanged. This is a genuine
+   inconsistency against the module's own established pattern:
+   `establishTabId()` and `revokeLease()` were BOTH already fixed earlier
+   this session (rounds 4 and 6/7) to read back their own writes for
+   exactly this reason, but `writeEnvelope()` — the actual commit path for
+   `claimOwnership()`/`writeSession()`/`tombstoneIfCurrent()` — never got
+   the same treatment. Needs fixing before this stage is settled: make
+   `writeEnvelope()` read back the raw stored value and compare for exact
+   equality before reporting success, matching `establishTabId()`'s and
+   `revokeLease()`'s existing shape.
+
+2. **Medium — `restoreLease()`'s "safe to resume" characterization overclaims — CONFIRMED as a documentation gap, DECLINING the code-level fix.**
+   `restoreLease()` is a plain synchronous read with no lock (by design —
+   "Pure read, no lock needed" per the plan) and returns `'restored'` from
+   a snapshot that a concurrent claim by another tab can supersede a
+   moment later; the plan's summary text calls this state "safe to
+   resume" with no caveat. The characterization is real and the doc text
+   should be softened — but the suggested fix (run restoration under the
+   lock, wire external-claim/collision listeners, add a caller-owned
+   generation counter to invalidate a stale restoration after the fact)
+   requires a real boot-time coordinator, and this module explicitly has
+   no consumer yet (Stage 3a-foundation is scoped as "unit-tested with no
+   UI consuming them yet" per the plan's own stage-shape text). No
+   correctness property is actually at risk: any subsequent WRITE
+   attempted under a superseded restored lease is still correctly
+   rejected by `hasValidLease()`'s fresh-envelope re-check, same mechanism
+   that already closes the analogous round-5 bug. Treating this the same
+   way the round-4 handshake caller-contract gap was treated: a
+   documentation fix now (reword "safe to resume" to make clear it is a
+   candidate a future caller must not treat as final without its own
+   collision-listener wiring), full fix deferred to whichever stage
+   actually builds that boot-time coordinator.
+
+3. **Medium — `peekTabId()` collapsing a read failure to `null` — DECLINED, working as designed for this module's current scope.**
+   Confirmed technically true (a transient `sessionStorage` read failure
+   inside `peekTabId()` becomes indistinguishable from "no identity" at
+   every layer built on it), but every path this feeds is already
+   fail-closed: `hasMatchingEnvelopeTuple()` rejects, `restoreLease()`
+   reports `'no-identity'`, `claimOwnership()` refuses — none of them ever
+   *incorrectly succeeds* because of this collapse, which is the
+   correctness property this module actually needs to hold. Checked the
+   two specific plan citations the finding names
+   (player-consolidation-plan.md:2218-2219 and :2332-2333) — both already
+   scope the tri-state guarantee explicitly to `readEnvelope()` by name,
+   not to "the subsystem's public operations" generally, so the claimed
+   plan overclaim is not actually present in the text as written. This is
+   a legitimate future UX/observability request (a real boot caller might
+   someday want to show "storage unavailable" differently from "someone
+   else is playing"), not a correctness bug — declining a tri-state
+   refactor of the whole public surface for a module with no consumer yet
+   that would need to act on the distinction.
+
+4. **Medium — the "correctly-wired caller" test is tautological — CONFIRMED, DECLINING the suggested fix (build a real coordinator), ACCEPTING a test-honesty fix.**
+   Verified directly: the test's key assertion is
+   `yRef.disabled ? null : restoreLease(...).status` — when `disabled` is
+   true this trivially evaluates to `null` regardless of what
+   `restoreLease()` would have returned, so the test cannot fail even if
+   a real future implementation ignored the latch entirely, exactly as
+   claimed. This is the same underlying gap already accepted and
+   documented in the "Second full fenced-lease ownership subsystem
+   review" disposition (round 7, finding on the caller-contract test) —
+   this round's finding sharpens the same point with a cleaner
+   reproduction rather than surfacing a new one. Building the suggested
+   real DOM-free ownership coordinator now would pull Stage 3a-canary/3b
+   work forward into a stage explicitly scoped as consumer-less; declining
+   that. Accepting the smaller fix: reword the test's name/assertion
+   comment so it honestly claims to prove the latch mechanism plus a
+   caller pattern that follows the contract, not "a caller correctly
+   following the documented contract" (implying a real one exists).
+
+5. **Low — plan summary retains two claims already corrected later in the same document — CONFIRMED, easy fix.**
+   Verified both citations: player-consolidation-plan.md:2192-2193 still
+   says the lease is "never persisted" and :2203-2204 still says
+   `tombstoneIfCurrent()` gates on `hasValidLease()` — both already
+   corrected further down the same section (:2333-2335 clarifies "never
+   persisted" means no separately-synchronized credential, not literal
+   absence from storage; :2356+ area documents `tombstoneIfCurrent()`
+   using `hasMatchingEnvelopeTuple()` directly). Summary text should be
+   updated to match the corrected detail section so an implementing agent
+   skimming only the summary doesn't reintroduce either misconception.
+
+**Net assessment: this round is NOT clean.** One High-severity, genuine,
+in-scope correctness gap (finding 1) plus two documentation-accuracy fixes
+(findings 2 summary wording, 5) and one test-honesty fix (finding 4) are
+real and worth doing before the next broad round. Findings 3's code-level
+suggestion and 2/4's full-coordinator suggestions are declined as
+out-of-scope for a consumer-less module. Reported to Rene; awaiting
+explicit go-ahead before implementing anything above — no source file has
+been touched during this review.
+
+---
+
+## Full fenced-lease ownership subsystem review — 2026-08-15
+
+1. **Medium — Lease epochs and rotated tab IDs can repeat, causing operations to report successful fencing without changing the fence.**
+
+   Evidence: both identifiers use `${Date.now()}-${Math.random()}` without checking the result against the value being replaced ([scripts/miniplayer-state.js:298](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:298), [scripts/miniplayer-state.js:357](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:357), [scripts/miniplayer-state.js:907](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:907)). `rotateTabId()` verifies only that its candidate was persisted, so it returns success even when that candidate equals the existing ID; `resolveCollision()` then reports `rotated:true` although the duplicated identity remains unresolved ([scripts/miniplayer-state.js:558](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:558)). Likewise, `claimOwnership()` accepts a repeated `ownerEpoch`, making an earlier lease indistinguishable from the purportedly newer claim ([scripts/miniplayer-state.js:933](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:933)).
+
+   A focused probe fixed `Date.now()` and `Math.random()`: `rotateTabId()` returned the unchanged ID as success; two consecutive claims minted the identical epoch; and `writeSession()` accepted a delayed write under the first claim after the second claim. Existing tests merely call the real RNG and assert inequality, so they cannot exercise reuse ([scripts/test-miniplayer-state.mjs:422](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:422), [scripts/test-miniplayer-state.mjs:853](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:853)).
+
+   Why it matters: epoch reuse reopens the central same-tab stale-write bug this redesign claims is structurally impossible, while unchanged “rotation” can leave two duplicated documents able to restore the same lease. It also contradicts the plan’s claims that a fresh epoch is never equal to an earlier one and that residual correctness gaps require two write failures ([player-consolidation-plan.md:2211](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2211), [player-consolidation-plan.md:2218](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2218), [player-consolidation-plan.md:2503](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2503)).
+
+   Suggested fix: generate IDs/epochs from `crypto.getRandomValues()` or `crypto.randomUUID()`, but still compare against the value being superseded and retry until different. `rotateTabId()` should fail closed if it cannot read the prior ID or produce and verify a distinct replacement. `claimOwnership()` should require `ownerEpoch !== existing.ownerEpoch`. Add deterministic tests with injected/stubbed entropy that first repeats the old value.
+
+2. **Low — The prior `restoreLease()` documentation correction is incomplete; the plan still calls the result “safe to resume.”**
+
+   Evidence: the detailed function contract still describes `{status:'restored'}` as “safe to resume” ([player-consolidation-plan.md:2428](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2428)), although the implementation and later plan text correctly characterize it as an unlocked candidate snapshot that may already have been superseded ([scripts/miniplayer-state.js:804](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:804), [player-consolidation-plan.md:2641](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2641)).
+
+   Why it matters: a future coordinator following the function-by-function contract could resume visible playback before installing the collision/external-claim invalidation required to trust the candidate.
+
+   Suggested fix: replace “safe to resume” with “candidate lease; a coordinator must install invalidation listeners before applying visible/audio state,” matching residual-gap item 9.
+
+3. **Low — Two nonce tests presented as deterministic are probabilistic and can fail on valid random output.**
+
+   Evidence: one test samples only 30 real random pairs and requires an arbitrary 5–25 split; the next fails whenever two valid nonces happen to share more than two prefix characters ([scripts/test-miniplayer-state.mjs:1309](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:1309), [scripts/test-miniplayer-state.mjs:1321](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:1321)). For the current two-character-per-byte encoding, the prefix assertion has roughly a 1-in-1,800 chance of rejecting valid independent output.
+
+   Why it matters: the project describes these Node suites as deterministic, but repeated healthy runs can fail randomly. Statistical sampling also does not reliably detect an orderable prefix regression.
+
+   Suggested fix: inject or stub the entropy source with fixed byte sequences. Assert exact nonce encoding and demonstrate that changing `Date.now()` does not affect output; retain the fixed-string symmetry tests for the tie-break itself.
+
+**Verification during this review**
+
+- `python3 scripts/build.py --check` — passed: 31 shows, 680 curated tracks, no orphan song pages.
+- All `node scripts/test-*.mjs` files — seven executable suites passed, 248/248 total; `test-playlist-state.mjs` emitted existing `MaxListenersExceededWarning`s.
+- `python3 scripts/verify_markup.py` and `python3 scripts/verify_markup.py --check-allowlist-coverage` — passed: 1,427 items across 166 pages; all 30 public shows covered.
+- Syntax checks, `cmp scripts/miniplayer-state.js assets/miniplayer-state.js`, and `git diff --check` — passed.
+- Focused fixed-entropy probe — reproduced unchanged successful tab rotation, repeated owner epochs, and a stale first-lease write landing after a second claim.
+_Review generated 2026-08-15 21:30:17 PDT by `scripts/codex_review.sh` (codex exec, read-only)._
+
+### Disposition (Claude, 2026-08-15)
+
+1. **Medium — Lease epochs/rotated tab IDs never checked against the value they're replacing — CONFIRMED via direct reproduction, real bug, not yet fixed.**
+   Pinned `Date.now()`/`Math.random()` to fixed values (models degraded or
+   predictable entropy — e.g. a fingerprinting-resistance browser patch, a
+   broken PRNG, or simply the pathological case) and reproduced all three
+   claims directly: `rotateTabId()` returned the SAME id as before while
+   reporting success (a genuine collision would be reported resolved while
+   remaining completely unresolved); two consecutive `claimOwnership()`
+   calls minted the identical `ownerEpoch`; and, most importantly, a write
+   issued under the FIRST claim's lease then landed successfully via
+   `writeSession()` AFTER the second claim — this is exactly the round-5
+   bug class ("a delayed write issued under a superseded lease
+   structurally unable to land") this entire redesign exists to close,
+   reopened under degraded entropy. Real, in-scope, worth fixing: this is
+   the same underlying principle as every write-verification fix already
+   applied this session (verify the actual invariant holds, don't trust
+   the mechanism not to fail) — just applied to entropy instead of
+   storage. Proposed fix: `rotateTabId()` reads the existing id first and
+   requires its candidate to differ, retrying (small bounded loop) before
+   failing closed; `claimOwnership()` requires the freshly minted
+   `ownerEpoch` to differ from the existing envelope's, same retry
+   pattern. Add deterministic tests with pinned/injected entropy proving
+   both paths detect and recover from a first-draw collision.
+
+2. **Low — `restoreLease()`'s "safe to resume" wording still present at one location I missed last round — CONFIRMED, easy fix.**
+   Verified: player-consolidation-plan.md:2434 (the function-by-function
+   contract description of `restoreLease()`) still reads "safe to resume"
+   — I fixed the section's summary paragraph and the code comment in the
+   previous round's disposition but missed this specific, separate
+   location. Same correction applies here.
+
+3. **Low — Two nonce tests sample real randomness despite the suite's own "deterministic" documentation — CONFIRMED, real flake risk, fixable.**
+   Verified both tests directly: `generateNonce() output is NOT biased by
+   generation order` (scripts/test-miniplayer-state.mjs, 30 real trials,
+   asserts a 5–25 split) and `generateNonce() output has no shared prefix
+   across calls` (asserts a real pair's common prefix length ≤ 2) both
+   call the real entropy source rather than a fixed/injected one, despite
+   this test file's own header comment describing itself as
+   "Deterministic tests for miniplayer-state.js." The prefix test's
+   rejection probability on valid independent output is small (~1-in-1800
+   for the current two-characters-per-byte encoding) but nonzero, and
+   sampling doesn't reliably catch a real ordering regression anyway.
+   Real, low-severity, worth fixing: rewrite to inject/stub the entropy
+   source with fixed byte sequences and assert exact nonce encoding,
+   keeping the existing fixed-string symmetry tests for the tie-break
+   logic itself unchanged.
+
+**Net assessment: this round is NOT clean either.** One real, in-scope
+correctness gap (finding 1, same underlying principle as findings already
+fixed this session, just applied to entropy rather than storage) plus two
+low-severity, easy documentation/test fixes (2, 3). Reported to Rene;
+awaiting explicit go-ahead before implementing anything above — no source
+file has been touched during this review.
+
+---
+
+## Fenced-lease ownership subsystem review — 2026-08-15
+
+1. **Medium — `rotateTabId()` can report a successful rotation without changing the ID when its initial read fails.**
+
+   Evidence: a failed pre-write `getItem()` is collapsed to `existing = null`, after which `generateDistinctFrom()` compares the candidate against `null`, not the unreadable stored ID ([scripts/miniplayer-state.js:383](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:383), [scripts/miniplayer-state.js:387](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:387)). The final read-back proves only that the candidate is stored, not that it differs from the previous value ([scripts/miniplayer-state.js:397](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:397)). A focused probe combining a first-read exception with pinned `Date.now()`/`Math.random()` produced `{original:"kf12oi-i", rotated:"kf12oi-i", reportedSuccess:true}`. `resolveCollision()` consequently reports `rotated:true`, and `revokeLease()` escalation reports `ok:true`, despite the identity remaining unchanged ([scripts/miniplayer-state.js:591](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:591), [scripts/miniplayer-state.js:734](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:734)). The suite tests a failed initial read only for `establishTabId()`; every rotation-distinctness test uses a readable store ([scripts/test-miniplayer-state.mjs:395](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:395), [scripts/test-miniplayer-state.mjs:422](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:422), [scripts/test-miniplayer-state.mjs:444](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:444)).
+
+   Why it matters: the collision handshake or revocation fallback can claim the duplicated identity was abandoned when both documents still possess it, allowing both to restore the same lease. This contradicts the plan’s successful-rotation contract and its claim that the handshake’s nonce/rotation logic is settled ([player-consolidation-plan.md:2339](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2339)).
+
+   Suggested fix: make `rotateTabId()` return `null` without writing when the existing-ID read throws, matching `establishTabId()`’s fail-closed policy. Add a regression using `throwingOnFirstGetStorage()` plus pinned entropy, and exercise it through both `handleIncomingProbe()` and `revokeLease()`.
+
+2. **Medium — Equal collision nonces make two cloned documents ignore each other and both restore ownership.**
+
+   Evidence: `generateNonce()` can produce identical values when its entropy source repeats ([scripts/miniplayer-state.js:526](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:526)); the deterministic tests explicitly demonstrate identical injected entropy producing identical output ([scripts/test-miniplayer-state.mjs:1409](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:1409), [scripts/test-miniplayer-state.mjs:1431](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:1431)). Nevertheless, `isTabProbeCollision()` rejects a same-ID probe when its nonce equals this document’s nonce, and `shouldRotateOnCollision()` also declines the tie ([scripts/miniplayer-state.js:540](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:540), [scripts/miniplayer-state.js:566](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:566)). The suite actively blesses this behavior as “never treated as a collision” ([scripts/test-miniplayer-state.mjs:1364](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:1364)). A focused probe with two cloned session stores and equal nonces returned no reply, no rotation, no failure from either handler; both subsequent `restoreLease()` calls returned `restored`.
+
+   Why it matters: `BroadcastChannel` does not deliver a sender its own message, so a received same-ID/same-nonce probe is another document, not a self-echo. Ignoring it defeats the handshake’s sole purpose without any storage failure and contradicts the plan’s “exactly one survives” and “already solid” claims ([player-consolidation-plan.md:1931](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:1931), [player-consolidation-plan.md:2342](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2342)).
+
+   Suggested fix: recognize every valid same-tab-ID probe as a collision. Because equal nonces provide no deterministic asymmetry, return `failed:true` and require both documents to disable persistent ownership, or introduce a bounded fresh-nonce collision round that fails closed if equality persists. Replace the current same-nonce test with an end-to-end fixed-entropy regression proving two clones cannot both restore.
+
+**Verification during this review**
+
+- `python3 scripts/build.py --check` — passed: 31 shows, 680 curated tracks, no orphan song pages.
+- All seven executable `node scripts/test-*.mjs` suites — passed, 252/252 total; `test-miniplayer-state.mjs` passed 109/109. Existing synthetic-error logs and playlist `MaxListenersExceededWarning`s were emitted.
+- `python3 scripts/verify_markup.py` — passed: 1,427 items across 166 generated pages.
+- `python3 scripts/verify_markup.py --check-allowlist-coverage` — passed: all 30 public shows covered.
+- Syntax checks, `cmp scripts/miniplayer-state.js assets/miniplayer-state.js`, and `git diff --check` — passed.
+- Focused fixed-entropy probes — reproduced unchanged successful rotation after a transient read failure and dual restoration after equal collision nonces.
+_Review generated 2026-08-15 21:44:20 PDT by `scripts/codex_review.sh` (codex exec, read-only)._
+
+### Disposition (Claude, 2026-08-15)
+
+1. **Medium — `rotateTabId()` can report success without changing the ID when its pre-write read fails — CONFIRMED via direct reproduction, real gap in my own round-9 fix, not yet fixed.**
+   Reproduced directly: a session store whose first `getItem()` call throws
+   (transient read failure), combined with pinned entropy, makes
+   `rotateTabId()` return the SAME id that was already stored while
+   reporting it as a successful rotation. Root cause: the pre-write read
+   failure collapses `existing` to `null`, so `generateDistinctFrom()`
+   compares the freshly generated candidate against `null` (which any real
+   id always differs from) instead of against the actual, unreadable prior
+   value — the final read-back only proves the write LANDED, not that
+   anything actually CHANGED, which is exactly the distinction the
+   `writeEnvelope()` fix (round 8) exists to enforce elsewhere. This is a
+   genuine inconsistency in my own round-9 patch: I reasoned in the code
+   comment that "a read failure on the pre-write existing value is not
+   itself fatal here... the read-back verification below is unaffected
+   either way" — that reasoning conflated "verified to have landed" with
+   "verified to have changed anything," which are different properties.
+   Real, in-scope, needs fixing: match `establishTabId()`'s existing
+   fail-closed policy — return `null` without ever writing when the
+   pre-write read throws, rather than silently treating an unreadable
+   value as "nothing there." Safe to do so: the caller contract already
+   handles a `null`/`failed` rotation by disabling ownership for that
+   document entirely, so failing closed here doesn't strand a real
+   collision unresolved, it just routes it through the existing
+   already-tested disable-on-failure path instead of a false-success path.
+
+2. **Medium — Two genuinely distinct documents with equal collision nonces never detect each other and both restore ownership — CONFIRMED via direct reproduction, real bug in previously out-of-scope handshake logic, proposing to fix.**
+   Reproduced directly: two documents sharing a tab id (a genuine
+   collision — e.g. duplicated tab), whose nonces happen to be equal,
+   both call `handleIncomingProbe()` on each other's probe and get
+   `{reply:null, rotated:false, failed:false}` — a complete no-op,
+   identical to "no collision at all" — because `isTabProbeCollision()`
+   explicitly excludes `incoming.nonce === myNonce` from being a
+   collision at all (original reasoning: BroadcastChannel never delivers
+   a sender its own message, so same-tabId+same-nonce was assumed to only
+   ever be a self-echo). Both sides then call `restoreLease()` and both
+   get `'restored'` — full dual-ownership, not merely a display gap. This
+   logic is technically outside the fenced-lease redesign's stated scope
+   ("NOT part of the 2026-08-15 redesign... already solid after rounds
+   3-4... out of scope here" per the module's own comment), but round 9's
+   own deterministic-nonce-injection fix is what made this provable, and
+   the underlying shape is identical to every other fix applied this
+   session: a comparison that silently degrades to "no-op" when compared
+   values collide, instead of treating "can't distinguish" as its own
+   outcome requiring a decision. The original justification (guarding
+   against a self-echo BroadcastChannel structurally cannot deliver) was
+   solving a problem that cannot occur while leaving open one that can, if
+   rarely. Proposing to fix by widening `isTabProbeCollision()` to treat
+   ANY same-tabId probe as a collision regardless of nonce equality (safe
+   given BroadcastChannel's no-self-delivery guarantee — the "self-echo"
+   case this excluded cannot reach this code path in a real deployment),
+   and having `resolveCollision()` report `failed:true` (never silently
+   `rotated:false, failed:false`) when the nonces are equal and therefore
+   provide no deterministic tie-break winner — routing through the
+   already-built, already-tested "disable ownership on failed:true"
+   caller contract rather than inventing new caller-side behavior.
+
+**Net assessment: this round is NOT clean either — both findings real,
+both reproduced, both worth fixing.** Finding 1 is a direct gap in my own
+round-9 patch (higher priority to close before it ships alongside that
+fix). Finding 2 touches logic previously declared out-of-scope for this
+redesign, but the same reproduction discipline and "structural, not
+probabilistic" principle already applied three times this session
+(writeEnvelope, rotateTabId's/claimOwnership's entropy check) applies
+here too — declining to fix it now, on the grounds that it predates this
+redesign, would be inconsistent with why findings 1's round-9 sibling was
+fixed. Reported to Rene; awaiting explicit go-ahead before implementing
+anything above — no source file has been touched during this review.
+
+**Outcome (Claude, 2026-08-15): both implemented, approved by Rene.**
+- Finding 1: `rotateTabId()`'s pre-write read now fails closed (returns
+  `null`, writes nothing) on a throw, matching `establishTabId()`'s
+  existing policy, instead of collapsing to `existing = null` and
+  comparing the fresh candidate against the wrong value.
+- Finding 2: `isTabProbeCollision()` now treats any same-tabId,
+  well-formed-nonce probe as a collision regardless of nonce equality
+  (dropped its now-unused `myNonce` parameter entirely rather than leave
+  it dead); `resolveCollision()` now returns `{rotated:false,
+  failed:true}` when the two nonces provide no usable tie-break asymmetry
+  (equal, or either missing/malformed) instead of a silent
+  `{rotated:false, failed:false}` no-op — routed through the same
+  already-tested "disable ownership on failed:true" caller contract as a
+  failed rotation. `shouldRotateOnCollision()` itself is unchanged.
+- Added 6 regression tests: `rotateTabId()`'s pre-read failure (pinned
+  entropy, proves no false-success self-overwrite), the corrected
+  `isTabProbeCollision()` equal-nonce classification, a malformed-nonce
+  case, `handleIncomingProbe()` reporting `failed:true` for an
+  unresolvable collision, and an end-to-end regression proving two cloned
+  documents with an equal collision nonce are both correctly flagged
+  rather than silently both restoring. 112/112
+  `test-miniplayer-state.mjs`, 255/255 across all suites, `build.py
+  --check`, `verify_markup.py --check-allowlist-coverage`, syntax checks,
+  and `cmp scripts/miniplayer-state.js assets/miniplayer-state.js` all
+  clean. Round eleven (`/review-step`) launched next.
+
+---
+
+## Eleventh fenced-lease ownership subsystem review — 2026-08-15
+
+1. **Medium — A post-write verification-read failure mutates durable state while every public API reports that the write failed.**  
+   Evidence: [writeEnvelope()](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:279) performs `setItem()` before its verification read, then returns `false` when that read throws at [line 287](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:287). `claimOwnership()` consequently returns `write-failed` with no lease at [line 1040](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:1040), even though its candidate may now be the durable owner. The same ambiguity affects `writeSession()` and `tombstoneIfCurrent()`. A focused probe made only the immediate read-back throw: `claimOwnership()` returned `{ok:false, lease:null, reason:"write-failed"}` while `readEnvelope()` showed its new owner tuple durably stored; `writeSession()` returned `false` while its new item was stored; and `tombstoneIfCurrent()` returned `false` while ownership was actually cleared. This directly falsifies the plan’s assertion that a failed claim leaves the previous envelope completely untouched at [player-consolidation-plan.md:2456](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2456). Existing tests cover a throwing `setItem()` and a silently dropped write, but never “write lands, verification read throws” ([test-miniplayer-state.mjs:895](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:895), [line 920](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:920)).  
+   Why it matters: a claimant can displace the previous owner yet receive no lease, leaving neither live caller able to save; callers can also retry or display failure despite their session/tombstone having landed. One transient read failure is sufficient.  
+   Suggested fix: make `writeEnvelope()` return a structured outcome such as `confirmed`, `not-written`, or `indeterminate`. Treat a post-write unreadable verification as indeterminate, not equivalent to a thrown/dropped write; under the lock, re-read and adopt the candidate lease only if its exact tuple is later confirmed. Propagate this status through all three callers and remove the “previous envelope untouched” guarantee from ambiguous paths. Add focused regressions for claim, session write, and tombstone.
+
+2. **Medium — Collision memoization survives a tab-ID rotation and can suppress a genuinely new collision under the replacement identity.**  
+   Evidence: the module specifies one document-lifetime `resolvedNonces` set keyed only by the opposing nonce ([miniplayer-state.js:469](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:469)); `resolveCollision()` checks and inserts only `theirNonce` at [lines 644–646](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:644). After A rotates because of nonce `zzz`, then claims under its new ID, a later clone of that new identity using `zzz` is treated as already resolved by A. The clone computes that it should retain the ID, so neither rotates and both return `restored`. The focused reproduction produced `second:{rotated:false,failed:false}`, identical replacement IDs, and `aRestore:"restored", cRestore:"restored"`. The memoization test misses this because, after rotating storage, it calls the handler again with the obsolete pre-rotation `sharedTabId` ([test-miniplayer-state.mjs:1625](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:1625), [line 1634](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:1634)); real wiring refreshes the cached ID. The plan’s “memoized per opposing nonce so a given collision is never decided twice” claim at [player-consolidation-plan.md:1934](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:1934) conflates a nonce with a collision identity.  
+   Why it matters: nonce reuse—precisely the degraded-entropy case the last two rounds hardened—can create dual restoration without a storage failure. The equal-nonce `failed:true` path itself remains latched correctly; the defect is reuse after the document has moved to a new ID generation.  
+   Suggested fix: memoize by `(collisionTabId, opposingNonce)`, passing the message’s tab ID into `resolveCollision()`, or clear the memo whenever this document’s ID changes, including revocation escalation. Add the reproduced rotate → reclaim → clone-new-ID-with-historical-nonce regression.
+
+3. **Medium — Multiple collision losers can independently generate the same replacement ID, and successful rotation does not trigger another probe.**  
+   Evidence: `generateDistinctFrom()` guarantees only that each candidate differs from that document’s own previous value ([miniplayer-state.js:319](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:319)); `rotateTabId()` cannot compare against replacements concurrently generated by other tabs ([line 398](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:398)). The documented `rotated:true` wiring refreshes the ID and relinquishes playback but sends no probe for the new identity ([lines 488–495](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:488)). With three clones and fixed entropy, two lower-nonce tabs independently processed the highest nonce’s probe, both returned `rotated:true`, and both persisted the same replacement `kf12oi-i`. After one claimed under that ID, both returned `restored`. The suite covers only two-tab collisions, where exactly one side rotates, so this cannot occur in its fixture ([test-miniplayer-state.mjs:1528](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:1528)). This also disproves the plan’s blanket assertion that every residual gap requires two independent write failures at [player-consolidation-plan.md:2516](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2516).  
+   Why it matters: the round-9 distinctness fix prevents a no-op against the old ID, but does not establish that the replacement is unique among concurrent losers. Three duplicated documents or repeated degraded entropy can therefore leave a fresh duplicated identity undetected, with zero storage failures.  
+   Suggested fix: after every successful handshake rotation, start a fresh probe for the replacement ID, with collision bookkeeping scoped to that ID generation; repeat within a bounded convergence protocol and disable persistence if it cannot converge. Add a three-clone fixed-entropy test asserting no two enabled documents retain the same replacement ID and at most one can restore.
+
+Verification during this review:
+
+- `python3 scripts/build.py --check` — passed: 31 shows, 680 curated tracks, no orphan song pages.
+- All seven `node scripts/test-*.mjs` suites — passed, 255/255; existing synthetic-error output and playlist `MaxListenersExceededWarning`s were non-fatal.
+- `python3 scripts/verify_markup.py` and `--check-allowlist-coverage` — passed: 1,427 items across 166 pages; all 30 public shows covered.
+- Syntax checks, source/generated-asset `cmp`, and `git diff --check` — passed.
+- Focused Node probes reproduced all three findings.
+- Repository-wide signature search found no stale three-argument `isTabProbeCollision()` caller or remaining `myNonce` documentation for that function.
+_Review generated 2026-08-15 22:12:56 PDT by `scripts/codex_review.sh` (codex exec, read-only)._
+
+### Disposition (Claude, 2026-08-15)
+
+All three findings independently reproduced via standalone Node scripts
+before writing anything up.
+
+1. **Medium — post-write verification-read failure reported as write failure — CONFIRMED, real false-negative bug, proposing a bounded fix.**
+   Reproduced directly for all three callers: a storage double whose
+   `setItem()` genuinely lands but whose VERY NEXT `getItem()` throws once
+   (a transient read blip immediately after a successful write) made
+   `claimOwnership()` report `{ok:false, reason:'write-failed'}` while
+   `readEnvelope()` showed the new owner durably stored; `writeSession()`
+   returned `false` while the new queue item was durably saved;
+   `tombstoneIfCurrent()` returned `false` while ownership was actually
+   cleared. This is the mirror image of round 8's bug (false SUCCESS on a
+   silent drop) — round 8's fix over-corrected into an occasional false
+   FAILURE on a genuinely landed write. Real, worth fixing, but I'm
+   declining the reviewer's full suggested fix (propagate a 3-state
+   `confirmed`/`not-written`/`indeterminate` result through all three
+   public APIs) as disproportionate to the actual risk: traced the
+   consequence for each caller and it's bounded, not corrupting —
+   `claimOwnership()`'s `{ok:false}` self-heals on the next retry (no CAS
+   precondition, a fresh claim just overwrites cleanly); `writeSession()`
+   likewise self-heals on the next periodic save; `tombstoneIfCurrent()`
+   is already explicitly documented "best-effort... never load-bearing for
+   correctness." Proposing instead: a small bounded RETRY on the
+   verification read itself inside `writeEnvelope()` (same shape as
+   `generateDistinctFrom()`'s existing retry pattern elsewhere in this
+   file) — closes the overwhelming majority of realistic transient-blip
+   cases without a larger interface change across every caller; the
+   residual (every retry also throws) gets documented honestly rather than
+   chased further, given the bounded, self-healing consequence traced
+   above.
+
+2. **Medium — collision memoization keyed by opposing nonce alone survives this document's own tab-ID rotation — CONFIRMED, real bug, cheap and clean to fix.**
+   Reproduced directly: after A loses a collision on nonce `zzz` and
+   rotates to a new id, a LATER, genuinely different collision under A's
+   NEW id that happens to carry the identical opposing nonce `zzz` (the
+   same reused-nonce scenario rounds 9-10 already established as reachable
+   under degraded entropy) is silently treated as "already resolved" by
+   the stale memoization entry — `resolveCollision()` returns
+   `{rotated:false, failed:false}` without even reconsulting
+   `shouldRotateOnCollision()`, and A wrongly restores as owner. Small,
+   contained fix: `resolveCollision()` already receives `myTabId` at both
+   call sites (`handleIncomingProbe()`/`handleIncomingProbeReply()`) — key
+   `resolvedNonces` by a composite of `(myTabId, theirNonce)` instead of
+   `theirNonce` alone, so a collision under a NEW identity is never
+   shadowed by a stale entry from a previous one. No caller-contract
+   change needed — the Set's lifetime/ownership is unchanged, only what's
+   stored in it.
+
+3. **Medium — concurrent collision losers can independently generate the identical replacement ID, and no re-probe follows a successful rotation — CONFIRMED, real, proposing a partial fix plus an honestly documented residual.**
+   Reproduced directly: with 3 clones colliding and 2 losers (B, C) both
+   needing to rotate under pinned entropy, both independently generated
+   the SAME replacement id — `generateDistinctFrom()` can only guarantee a
+   candidate differs from THAT document's own prior value, it has no way
+   to know what a DIFFERENT, concurrently-rotating document is
+   independently generating. Confirmed separately that the documented
+   caller-contract pseudocode never re-probes under the new identity after
+   `rotated:true`, so even a fresh collision from an unrelated cause (not
+   just this specific concurrent-generation case) would go undetected.
+   Proposing a caller-contract-level fix (consistent with how this exact
+   gap category — refresh `myTabId`, drop the lease, pause playback — was
+   already handled for `rotated:true` elsewhere in this file): document
+   that a caller MUST broadcast a fresh PROBE under the new id immediately
+   after any successful rotation. This turns the existing pairwise
+   handshake into a genuinely self-converging protocol across additional
+   rounds without any new internal module logic, since a stale duplicate
+   the round-2 memoization fix doesn't already catch would now surface as
+   a brand-new collision under the freshly rotated identity and get
+   handled by the SAME mechanism again. Declining to also build the
+   reviewer's suggested bounded-convergence-with-give-up protocol: it
+   requires 3+ genuinely simultaneous duplicated tabs AND 2+ of the losers
+   independently generating identical replacement ids, a compounding,
+   extremely narrow case; the re-probe fix means it doesn't go
+   permanently undetected even if it happens, just possibly takes an
+   extra handshake round — documenting that residual honestly rather than
+   building convergence-bound machinery this consumer-less module has no
+   caller to exercise yet.
+
+**Net assessment: this round is NOT clean — all three findings real and
+reproduced.** Proposing to fix all three at the scope described above
+(bounded retry for #1, composite memoization key for #2, re-probe caller
+contract for #3, with #3's N-way edge case documented as residual rather
+than fully engineered against). Worth flagging directly: eleven rounds in,
+the findings have been trending toward progressively more exotic,
+compounding edge cases (rounds 6-7 were plausible real-world triggers —
+storage quota, private browsing; rounds 8-11 need pinned/degraded entropy
+or 3+-way simultaneous tab duplication to manifest). Reported to Rene,
+including that observation; awaiting explicit go-ahead before implementing
+anything above — no source file has been touched during this review.
+
+**Outcome (Claude, 2026-08-15): all three implemented at the proposed
+scope, approved by Rene — who also approved stopping the review loop after
+one final verification round.**
+- Finding 1: `writeEnvelope()`'s verification read now retries a bounded
+  3 attempts (`MAX_WRITE_VERIFY_ATTEMPTS`); a successful read is decisive
+  either way, only a thrown read retries. Still exactly one `setItem()`.
+  Residual (every attempt throws) documented in the source and as plan
+  residual-gap item 10.
+- Finding 2: `resolveCollision()` now memoizes by the composite key
+  `` `${myTabId}|${theirNonce}` `` instead of the nonce alone; both call
+  sites pass `myTabId`. `|` is unambiguous — tab ids are base36 + one
+  hyphen, nonces are base36, so neither part can contain it.
+- Finding 3: addressed at the caller-contract level — the boot pseudocode
+  now routes every `rotated:true` through an `onRotated()` helper that
+  re-probes under the new identity, with a dedicated MANDATORY RE-PROBE
+  contract section explaining why. Residual (convergence by repetition
+  rather than a bounded protocol) documented as plan item 11.
+- Added 5 regression tests (an earlier version of this entry said 6 —
+  corrected by round 12; the ownership suite went 112 -> 117):
+  `writeEnvelope()` transient-verification-read
+  retry, `claimOwnership()` reporting `ok:true` over the same blip, the
+  give-up-after-all-retries residual, a genuinely-new-collision-under-a-
+  rotated-identity test (finding 2's exact reproduction), and a
+  three-clone concurrent-loser test locking in both that the id collision
+  can happen and that the re-probe resolves it end to end.
+- **One incident worth recording**: my first edit for finding 2 wrote a
+  literal NUL byte into the memo-key template string (`${myTabId}\x00
+  ${theirNonce}`), which silently made `grep` treat the whole source file
+  as binary — every subsequent `grep` against it returned nothing, which
+  I initially misread as the file having lost content. Caught by checking
+  byte offsets in Python, fixed by replacing with `|`, and now guarded by
+  an explicit null-byte check in the verification sweep. Worth
+  remembering: a tool going quiet is a symptom, not a null result.
+- Verification: 117/117 `test-miniplayer-state.mjs`, 260/260 across all
+  suites (an earlier version of this entry said 257 — arithmetic error,
+  corrected by round 12), `build.py`, `build.py --check`, `verify_markup.py
+  --check-allowlist-coverage`, `node --check` on both files, zero null
+  bytes in all three files, `git diff --check` clean for `scripts/` and
+  `assets/`, and `cmp scripts/miniplayer-state.js
+  assets/miniplayer-state.js` matching.
+
+---
+
+## Final fenced-lease verification review — 2026-08-15
+
+No High or Medium findings. All three round-11 fixes are correctly implemented; no stale `isTabProbeCollision()` signature remains, and the composite memoization preserves duplicate-message and simultaneous-mutual-probe behavior.
+
+1. **Low — Round 11 overstates the number and strength of its regression tests.**  
+   Evidence: the review log claims six new tests, but the ownership suite increased from 112 to 117—five cases ([player-consolidation-codex.md:4686](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-codex.md:4686), [player-consolidation-codex.md:4700](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-codex.md:4700)). The “every verification read throws” case does not count reads, so the pre-fix single-attempt implementation would also pass it ([test-miniplayer-state.mjs:415](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:415)). The three-clone case manually injects the fresh probe through direct handler calls ([test-miniplayer-state.mjs:1669](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:1669)); the shared caller harness still only refreshes the ID and never re-probes ([test-miniplayer-state.mjs:1398](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-state.mjs:1398)). Thus it proves the existing handshake can resolve a manually surfaced collision, but not the plan’s “end-to-end” caller-contract wording ([player-consolidation-plan.md:2725](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2725)).  
+   Why it matters: later work could remove the three-attempt bound or omit the mandatory caller re-probe while these tests remain green.  
+   Suggested fix: count and assert exactly three verification reads and one write; update `wireDocument()` to perform the documented post-rotation re-probe and drive the three-clone case through that harness. Until a real coordinator exists, call this a caller-contract simulation rather than end-to-end coverage. Correct the round-11 count to five new cases and the current aggregate from 257 to 260.
+
+2. **Low — Residual item 12 inaccurately characterizes every round 8–11 trigger as degraded entropy or three-tab duplication.**  
+   Evidence: item 12 makes that blanket statement at [player-consolidation-plan.md:2739](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2739), while item 10 correctly records that round 11’s first defect required only one transient `getItem()` exception after a landed write ([player-consolidation-plan.md:2699](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2699)).  
+   Why it matters: this overstates how exotic the final review’s storage defect was and weakens the stated rationale for stopping the loop. Items 10 and 11 otherwise accurately describe the code’s remaining behavior.  
+   Suggested fix: say that the collision findings increasingly required degraded entropy or N-way duplication, while the verification-read finding remained an ordinary transient-storage failure.
+
+**Verification during this review**
+
+- `python3 scripts/build.py --check` — passed: 31 shows, 680 curated tracks, no orphan song pages.
+- All `node scripts/test-*.mjs` files — passed: 260/260 executable tests; `test-miniplayer-state.mjs` passed 117/117.
+- `python3 scripts/verify_markup.py --check-allowlist-coverage` — passed; all 30 public shows covered.
+- `node --check` on both reviewed JavaScript files — passed.
+- Source/generated-asset `cmp` and null-byte checks — passed.
+- `git diff --check` over all reviewed files — failed only on pre-existing trailing spaces in the round-11 review-log entry; the scripts/assets themselves were clean.
+_Review generated 2026-08-15 22:32:08 PDT by `scripts/codex_review.sh` (codex exec, read-only)._
+
+### Disposition (Claude, 2026-08-15) — FINAL ROUND, loop stopped here
+
+**Headline: no High or Medium findings. All three round-11 fixes verified
+correct**, no stale `isTabProbeCollision()` signature, and the composite
+memoization key confirmed to preserve both the duplicate-message and
+simultaneous-mutual-probe guarantees. Both Low findings were about the
+accuracy of MY OWN claims rather than about the code — both confirmed and
+both fixed:
+
+1. **Low — overstated test count and strength — CONFIRMED on all three
+   sub-points, all three fixed.**
+   - *Count*: I wrote "6 regression tests"; the suite went 112 → 117, so
+     it was 5. I had also renamed (not added) the memoization test, which
+     is where the miscount came from. Corrected above.
+   - *Aggregate*: I wrote 257/257; recounted directly and it is **260**
+     (117 + 28 + 41 + 17 + 29 + 15 + 13). Plain arithmetic error on my
+     part, carried forward from the prior round's 255. Corrected in both
+     documents.
+   - *Vacuous test*: correct and the sharpest of the three — my "every
+     verification read throws" test asserted only the `false` return,
+     which the PRE-fix single-attempt implementation would equally have
+     satisfied. It documented the residual without proving the retry
+     bound exists at all. Rewritten to count calls and assert exactly 3
+     `getItem()` attempts and exactly 1 `setItem()` (the latter also
+     guarding the single-write property against a future change to the
+     retry loop).
+   - *Overclaimed "end-to-end"*: also correct — the three-clone test
+     hand-injected the post-rotation probe, so it proved the handshake
+     can resolve a manually surfaced collision, not that following the
+     contract surfaces it. Fixed properly rather than by softening the
+     wording: `wireDocument()` now performs the documented re-probe (the
+     same way it was taught to model `ownershipDisabled` after round 7's
+     equivalent finding), and the three-clone test now drives the entire
+     cascade through it from a single `postMessage`, with entropy pinned
+     for exactly the first two draws so B and C genuinely collide
+     mid-cascade. **Verified non-vacuous** by temporarily removing the
+     re-probe from `wireDocument()` and confirming the test fails
+     (116/117), then restoring it (117/117).
+
+2. **Low — residual item 12 mischaracterized rounds 8-11 — CONFIRMED, and
+   this one is worth naming plainly.** I wrote that rounds 8-11 all
+   required degraded entropy or 3+ duplicated tabs. That is true of the
+   *collision-handshake* findings but false of the *storage* ones: round
+   8's silent-drop bug and round 11's verification-read bug each needed
+   only one ordinary transient storage failure. The inaccuracy flattered
+   my own argument for stopping the loop, which is exactly the kind of
+   claim that should not go unchecked. Item 12 rewritten to separate the
+   two trends honestly and to rest the stop-the-loop decision on the
+   defensible reason instead: each round's fix has been creating the
+   surface for the next round's finding (round 8's fix directly caused
+   round 11's item 10; round 9's fix directly caused round 10's first
+   finding), and round 12 confirms no High/Medium findings remain.
+
+**Loop stopped here, as agreed with Rene.** Final state: 117/117
+`test-miniplayer-state.mjs`, 260/260 across all suites, `build.py`,
+`build.py --check`, `verify_markup.py --check-allowlist-coverage`, `node
+--check` on both files, zero null bytes, `cmp` source↔asset matching, and
+`git diff --check` clean for `scripts/`/`assets/`. The next validation
+this subsystem gets is a real consumer in Stage 3a-canary.

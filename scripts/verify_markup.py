@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
-"""Verify the data-item markup in the generated show pages.
+"""Verify the data-item markup in the generated show and song pages.
 
-Guards the player-consolidation work (plans/player-consolidation/): every
-playable thing on a show page carries a normalized item as a data-item JSON
-attribute, which the shared player reads instead of fetching a catalog. That
-markup is generated, so nothing in build.py --check (which validates *source*
-data) looks at it.
+Guards the player-consolidation work (plans/player-consolidation/,
+plans/dynamic-hugging-rossum.md): every playable thing on a show page or a
+song detail page carries a normalized item as a data-item JSON attribute,
+which the shared player reads instead of fetching a catalog. That markup is
+generated, so nothing in build.py --check (which validates *source* data)
+looks at it. (The /songs/ INDEX page's occurrence rows are inserted lazily
+by songs.js and never appear in the static HTML at all -- only their engine
+wiring is checkable here; the row markup itself is covered by
+scripts/test-song-boot.mjs.)
 
 These assertions are not hypothetical: the one-off version of this check caught
 a real recording-ID collision on mad-sweetwater-2000-10-17, where a WAV and a
@@ -33,8 +37,21 @@ REQUIRED = ("id", "kind", "streamUrl", "title", "playLabel")
 
 
 ENGINE_FLAG = "window.PLAYER_ENGINE = 'controller'"
-BOOT_TAG = '<script type="module" src="/assets/player-boot.js"></script>'
+# A tag PREFIX, not the whole tag: both player-boot.js's and song-boot.js's
+# script tags carry an onerror="..." attribute (the readiness-contract
+# module-load-failure signal — see PLAYBACK_READY_SNIPPETS' own comment in
+# fragments.py), so the exact closing `></script>` no longer matches. `in src`
+# / `src.index(...)` both work identically against a prefix.
+BOOT_TAG = '<script type="module" src="/assets/player-boot.js"'
 PLAYER_TAG = '<script src="/assets/player.js"></script>'
+# ── song-page engine wiring (Phase 3 Stage 3a-foundation) ──────────────────
+SONG_ENGINE_FLAG = ENGINE_FLAG  # the exact same flag show pages use — see SONG_ENGINE_FLAG's own comment in sitegen/pages.py
+SONG_BOOT_TAG = '<script type="module" src="/assets/song-boot.js"'
+# Occurrence rows on a song DETAIL page (/songs/<slug>/, server-rendered, not
+# lazy) carry data-item on the SAME element as data-src (player()'s item_attr
+# param) — the non-waveform show-page track-row shape, not the Hero-card
+# shape (CARD_RE below), since song occurrence rows never have a waveform.
+SONG_OCC_RE = re.compile(r'<div class="custom-player" data-src="([^"]*)" data-item="([^"]*)"')
 
 
 def check_engine_wiring(rel, src, slug, allowlist):
@@ -70,7 +87,40 @@ def check_engine_wiring(rel, src, slug, allowlist):
     return errors
 
 
-PLAYLIST_BOOT_TAG = '<script type="module" src="/assets/playlist-boot.js"></script>'
+def check_song_engine_wiring(rel, src):
+    """The song-page analogue of check_engine_wiring() -- simpler, since
+    Stage 3a-foundation made song-boot.js unconditional on every song page
+    from the start (no per-page allowlist the way show pages' rollout
+    needed -- see SONG_ENGINE_FLAG's own comment in sitegen/pages.py): both
+    the flag and the boot tag must always be present together, the flag must
+    precede player.js, and song-boot.js must load after it (same three-part
+    handshake player-boot.js uses, just always-on rather than allowlisted).
+    """
+    errors = []
+    has_flag = SONG_ENGINE_FLAG in src
+    has_boot = SONG_BOOT_TAG in src
+    if has_flag != has_boot:
+        errors.append(f"{rel}: song engine flag and song-boot.js must be emitted together "
+                      f"(flag={has_flag}, boot={has_boot})")
+    if not has_flag:
+        errors.append(f"{rel}: song page emits no engine flag -- song-boot.js is unconditional as of Stage 3a-foundation")
+        return errors
+    if PLAYER_TAG not in src:
+        errors.append(f"{rel}: song engine flag set but player.js is missing — "
+                      "initCustomPlayers() is the runtime fallback and must stay on the page")
+    elif src.index(SONG_ENGINE_FLAG) > src.index(PLAYER_TAG):
+        errors.append(f"{rel}: song engine flag must come BEFORE player.js")
+    if has_boot and src.index(SONG_BOOT_TAG) < src.index(PLAYER_TAG):
+        errors.append(f"{rel}: song-boot.js must load after player.js")
+    return errors
+
+
+# A tag PREFIX, not the whole tag -- see BOOT_TAG's own comment: the real
+# tag now carries an onerror="..." attribute (the readiness-contract
+# module-load-failure signal), so the exact closing `></script>` no longer
+# matches. `.count()` against the prefix still counts one match per distinct
+# tag correctly.
+PLAYLIST_BOOT_TAG = '<script type="module" src="/assets/playlist-boot.js"'
 PLAYLIST_TAG = '<script src="/assets/playlist.js"></script>'
 # The old Stage 2a/2b resolver set this property somewhere in an inline
 # <script> before playlist-boot.js -- if any of these three fragments still
@@ -125,6 +175,37 @@ def check_playlist_engine_wiring(src):
     if WORKER_ORIGIN_SNIPPET not in src:
         errors.append("/playlist/: window.WORKER_ORIGIN is not set -- "
                       "playlist-boot.js/playlist-views.js need it to reach the download worker")
+    return errors
+
+
+PLAYBACK_READY_MARKER = "window.PLAYBACK_HOST_READY = new Promise"
+
+
+def check_playback_ready_first(rel, src):
+    """Every page_shell()-based page must arm window.PLAYBACK_HOST_READY as
+    the very FIRST script in the page -- before any module/boot script tag
+    (plans/dynamic-hugging-rossum.md's readiness contract). A boot module
+    that runs before the promise even exists could never resolve it, so
+    ordering here is load-bearing, not cosmetic.
+    """
+    errors = []
+    idx = src.find(PLAYBACK_READY_MARKER)
+    if idx == -1:
+        errors.append(f"{rel}: missing window.PLAYBACK_HOST_READY -- every page_shell()-based "
+                      "page must arm the readiness contract")
+        return errors
+    # The marker text sits INSIDE its own <script> tag, so the naive "does
+    # <script> appear before the marker" check would always be true (it finds
+    # its own opening tag) -- rfind the tag that actually contains the marker,
+    # then confirm THAT tag, not the marker text itself, is the page's first.
+    own_tag_start = src.rfind("<script", 0, idx)
+    if own_tag_start == -1:
+        errors.append(f"{rel}: window.PLAYBACK_HOST_READY text found outside any <script> tag")
+        return errors
+    first_script = src.find("<script")
+    if first_script != own_tag_start:
+        errors.append(f"{rel}: window.PLAYBACK_HOST_READY must be armed by the FIRST script "
+                      "tag in the page, not a later one")
     return errors
 
 
@@ -214,6 +295,7 @@ def check():
         playlist_src = open(playlist_page).read()
         errors += check_playlist_engine_wiring(playlist_src)
         errors += check_assets_exist("playlist/index.html", playlist_src)
+        errors += check_playback_ready_first("playlist/index.html", playlist_src)
     else:
         errors.append("no generated /playlist/ page found -- run scripts/build.py first")
 
@@ -247,6 +329,7 @@ def check():
                                       CONTROLLER_ENGINE_SLUGS)
         errors += check_assets_exist(rel, src)
         errors += check_every_row_has_item(rel, src)
+        errors += check_playback_ready_first(rel, src)
 
         for raw in ITEM_RE.findall(src):
             try:
@@ -291,11 +374,57 @@ def check():
             if html.unescape(data_src) != item["streamUrl"]:
                 errors.append(f"{rel}: recording {item['id']!r} streamUrl != legacy data-src")
 
-    # Song pages deliberately stay on the legacy engine this phase.
-    for path in glob.glob(os.path.join(ROOT, "songs", "*", "index.html")):
-        if "data-item" in open(path).read():
-            errors.append(f"{os.path.relpath(path, ROOT)}: song pages must not carry data-item yet "
-                          "(they migrate in a later phase)")
+    # ── song pages (Phase 3 Stage 3a-foundation) ─────────────────────────
+    # /songs/ itself: song-boot.js is unconditional (see SONG_ENGINE_FLAG's
+    # comment in sitegen/pages.py), but its occurrence rows are inserted
+    # LAZILY by songs.js -- there is no static data-item markup on this page
+    # to validate the way show/song-detail pages have; only the engine
+    # wiring is checkable here. The row markup itself (occRowHtml() in
+    # songs.js) is covered by scripts/test-song-boot.mjs instead.
+    songs_index_page = os.path.join(ROOT, "songs", "index.html")
+    if os.path.exists(songs_index_page):
+        songs_index_src = open(songs_index_page).read()
+        errors += check_song_engine_wiring("songs/index.html", songs_index_src)
+        errors += check_playback_ready_first("songs/index.html", songs_index_src)
+    else:
+        errors.append("no generated /songs/ index page found -- run scripts/build.py first")
+
+    # /songs/<slug>/: every occurrence row IS server-rendered (not lazy),
+    # same shape as a show page -- validate it the same way, with two
+    # deliberate differences from show-page tracks: no peaksKey requirement
+    # (occurrence rows never have a waveform) and REQUIRED/kind/lossless-key
+    # checks reused as-is (the schema is otherwise identical).
+    for path in sorted(glob.glob(os.path.join(ROOT, "songs", "*", "index.html"))):
+        rel = os.path.relpath(path, ROOT)
+        src = open(path).read()
+        n_pages += 1
+        errors += check_song_engine_wiring(rel, src)
+        errors += check_assets_exist(rel, src)
+        errors += check_playback_ready_first(rel, src)
+
+        ids = []
+        for data_src, raw in SONG_OCC_RE.findall(src):
+            try:
+                item = json.loads(html.unescape(raw))
+            except Exception as e:
+                errors.append(f"{rel}: unparseable data-item ({e})")
+                continue
+            ids.append(item.get("id"))
+            for field in REQUIRED:
+                if not item.get(field):
+                    errors.append(f"{rel}: item {item.get('id')!r} missing required field {field!r}")
+            if item.get("kind") != "track":
+                errors.append(f"{rel}: song occurrence item {item.get('id')!r} has bad kind {item.get('kind')!r}")
+            else:
+                n_track += 1
+            if html.unescape(data_src) != item.get("streamUrl"):
+                errors.append(f"{rel}: item {item.get('id')!r} streamUrl != legacy data-src")
+            loss = (item.get("downloads") or {}).get("lossless")
+            if loss and "://" in str(loss.get("key", "")):
+                errors.append(f"{rel}: item {item.get('id')!r} downloads.lossless.key is a URL, expected an R2 key")
+        dupes = sorted({i for i in ids if ids.count(i) > 1})
+        if dupes:
+            errors.append(f"{rel}: DUPLICATE item ids on one page: {dupes}")
 
     return errors, n_track, n_rec, n_pages
 
@@ -445,6 +574,40 @@ def _selftest():
     assert any("WORKER_ORIGIN is not set" in e for e in missing_worker_origin), \
         f"expected an error when WORKER_ORIGIN is missing, got {missing_worker_origin}"
 
+    # check_song_engine_wiring() -- Stage 3a-foundation's always-on analogue
+    # of check_engine_wiring(), no allowlist to check against.
+    song_clean = (f"{SONG_ENGINE_FLAG}\n{PLAYER_TAG}\n{SONG_BOOT_TAG}></script>")
+    assert check_song_engine_wiring("songs/x", song_clean) == [], \
+        f"expected no errors on a clean song page, got {check_song_engine_wiring('songs/x', song_clean)}"
+
+    song_missing_flag = check_song_engine_wiring("songs/x", f"{PLAYER_TAG}\n{SONG_BOOT_TAG}></script>")
+    assert any("emits no engine flag" in e for e in song_missing_flag), \
+        f"expected an error when the song engine flag is missing, got {song_missing_flag}"
+
+    song_missing_boot = check_song_engine_wiring("songs/x", f"{SONG_ENGINE_FLAG}\n{PLAYER_TAG}")
+    assert any("must be emitted together" in e for e in song_missing_boot), \
+        f"expected an error when song-boot.js is missing but the flag is set, got {song_missing_boot}"
+
+    song_bad_order = check_song_engine_wiring(
+        "songs/x", f"{PLAYER_TAG}\n{SONG_ENGINE_FLAG}\n{SONG_BOOT_TAG}></script>")
+    assert any("must come BEFORE player.js" in e for e in song_bad_order), \
+        f"expected an error when the song engine flag comes after player.js, got {song_bad_order}"
+
+    # check_playback_ready_first() -- the readiness-contract snippet must be
+    # present and precede any other <script> tag.
+    ready_ok = check_playback_ready_first(
+        "x", f"<script>{PLAYBACK_READY_MARKER}(r){{}});</script><script src=\"/assets/player.js\"></script>")
+    assert ready_ok == [], f"expected no errors when the readiness snippet is first, got {ready_ok}"
+
+    ready_missing = check_playback_ready_first("x", '<script src="/assets/player.js"></script>')
+    assert any("missing window.PLAYBACK_HOST_READY" in e for e in ready_missing), \
+        f"expected an error when the readiness snippet is absent, got {ready_missing}"
+
+    ready_late = check_playback_ready_first(
+        "x", f"<script src=\"/assets/player.js\"></script><script>{PLAYBACK_READY_MARKER}(r){{}});</script>")
+    assert any("must be armed by the FIRST script" in e for e in ready_late), \
+        f"expected an error when the readiness snippet is not the first script, got {ready_late}"
+
 
 def main():
     _selftest()
@@ -478,7 +641,7 @@ def main():
             print(f"  ... and {len(errors) - 40} more")
         sys.exit(1)
     print(f"markup OK — {n_track + n_rec} items ({n_track} tracks, {n_rec} recordings) "
-          f"across {n_pages} generated show pages")
+          f"across {n_pages} generated show/song pages")
 
 
 if __name__ == "__main__":

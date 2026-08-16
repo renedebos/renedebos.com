@@ -88,12 +88,13 @@ def build_home():
         artist_links=artist_links,
         random_tape_script=RANDOM_TAPE_SCRIPT,
         jsonld=home_jsonld(),
+        playback_ready=PLAYBACK_READY_SNIPPETS["none"],
     )
 
 HOME_SHELL = '''<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+{playback_ready}<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Hannan Tapes</title>
 <meta name="description" content="Live recordings archive — Jerry Hannan, Sean Hannan, and Mad Hannans performing at clubs in Marin County in the late 1990s and early 2000s.">
@@ -293,9 +294,15 @@ def build_playlist():
         heading="Playlist",
         tagline="Roll your own set list from the archive",
         nav=site_nav("Playlist"),
+        # onerror -> 'none', not 'legacy': /playlist/ has no fallback engine to
+        # defer to (see playback_ready_onerror's own callers' comments) --
+        # 'none' lets a future mini-player construct its own controller on an
+        # otherwise-broken page instead.
         extra_scripts=('\n<script src="/assets/track-select.js"></script>'
-                       '\n<script type="module" src="/assets/playlist-boot.js"></script>'),
+                       f'\n<script type="module" src="/assets/playlist-boot.js" '
+                       f'onerror="{playback_ready_onerror("none")}"></script>'),
         pre_scripts=worker_origin,
+        playback_ready="deferred",
         main=f'''
   <section class="playlist">
     <p class="pl-intro">Filter the archive by artist, venue, source, or mood, then build a set — a fixed number of songs, a target length, or endless shuffle. Each playlist uses one randomly chosen performance of a song, so one played a dozen times over the years never repeats within a single set.</p>
@@ -959,7 +966,13 @@ def build_show(show):
     pre_scripts = ""
     if show["slug"] in CONTROLLER_ENGINE_SLUGS:
         pre_scripts = "<script>window.PLAYER_ENGINE = 'controller';</script>\n"
-        extra_scripts += '\n<script type="module" src="/assets/player-boot.js"></script>'
+        # onerror: a real 'error' event fires only on a genuine module
+        # load/parse failure (404, syntax error) -- see PLAYBACK_READY_SNIPPETS'
+        # comment and plans/dynamic-hugging-rossum.md's "Blocker A continued"
+        # section. An in-script throw during mount is a SEPARATE signal,
+        # handled inside player-boot.js's own auto-run catch block instead.
+        extra_scripts += (f'\n<script type="module" src="/assets/player-boot.js" '
+                          f'onerror="{playback_ready_onerror("legacy")}"></script>')
 
     if proc:
         # Open the collapsed technical-data table when linked to via #technical-data
@@ -981,7 +994,33 @@ def build_show(show):
         extra_scripts=extra_scripts,
         extra_head=show_jsonld(show, artist),
         pre_scripts=pre_scripts,
+        # Deterministic at build time: allowlisted shows defer to
+        # player-boot.js's own resolution; an excluded slug never emits a
+        # boot module at all, so 'legacy' (player.js's synchronous fallback)
+        # is the only outcome that page will ever have.
+        playback_ready="deferred" if show["slug"] in CONTROLLER_ENGINE_SLUGS else "legacy",
     )
+
+# ── song-page migration onto the shared controller (Phase 3 Stage
+# 3a-foundation) ────────────────────────────────────────────────────────────
+# Unconditional on every song page from the start -- unlike show pages'
+# CONTROLLER_ENGINE_SLUGS rollout (which needed a per-page canary/rollback
+# allowlist because every show page's markup shape had to be individually
+# verified against real waveform/hero-card combinations), song occurrence
+# rows are one uniform shape everywhere, so canary/default/removal-to-
+# fallback-only collapse into one step here. Reuses the SAME window.PLAYER_
+# ENGINE/PLAYER_ENGINE_MOUNTED flag pair show pages use: a document is never
+# both a show page and a song page, so there is no ambiguity in sharing the
+# name, and player.js's existing engine-selection gate (its
+# `window.PLAYER_ENGINE === 'controller'` check) needs no changes at all to
+# also cover song pages -- verified directly against player.js's real source
+# in scripts/test-player-boot.mjs's two gate tests.
+SONG_ENGINE_FLAG = "<script>window.PLAYER_ENGINE = 'controller';</script>\n"
+# onerror -> 'legacy': song-boot.js's fallback is initCustomPlayers()
+# (retained, not deleted -- see songs.js/build_songs_index()'s own comment),
+# mirroring player-boot.js's show-page handshake exactly.
+SONG_BOOT_SCRIPT = (f'\n<script type="module" src="/assets/song-boot.js" '
+                    f'onerror="{playback_ready_onerror("legacy")}"></script>')
 
 def build_songs_index():
     songs, cols = collect_songs()
@@ -1070,7 +1109,18 @@ def build_songs_index():
         url="https://renedebos.com/songs/", eyebrow="The Hannan Tapes",
         heading="Songs", tagline="Every song, and every time it was played",
         nav=site_nav("Songs"), main=main,
-        extra_scripts='\n<script src="/assets/track-select.js"></script>\n<script src="/assets/songs.js"></script>')
+        # Shared player engine (song-boot.js), unconditional on every song page
+        # since Stage 3a-foundation -- see SONG_BOOT_SCRIPTS' own comment.
+        # songs.js still loads: it owns the list/grid sort/filter/search
+        # controls AND the lazy occurrence-row insertion, and calls into
+        # song-boot.js's window.SONG_BOOT.mountRows() (falling back to the
+        # legacy initCustomPlayers() if song-boot.js never mounted) each time
+        # a <details> opens for the first time.
+        extra_scripts=('\n<script src="/assets/track-select.js"></script>'
+                       f'{SONG_BOOT_SCRIPT}'
+                       '\n<script src="/assets/songs.js"></script>'),
+        pre_scripts=SONG_ENGINE_FLAG,
+        playback_ready="deferred")
 
 def build_song_page(s):
     plural = "s" if s["plays"] != 1 else ""
@@ -1103,7 +1153,12 @@ def build_song_page(s):
         url=f"https://renedebos.com/songs/{s['slug']}/", eyebrow="The Hannan Tapes &middot; Song",
         heading=esc(s["canonical"]), tagline=f"Played {s['plays']} time{plural} across the archive",
         nav=site_nav("Songs"), main="".join(parts), extra_head=song_jsonld(s),
-        extra_scripts='\n<script src="/assets/track-select.js"></script>')
+        # Every occurrence row is server-rendered here (unlike /songs/'s lazy
+        # per-<details> insertion), so song-boot.js mounts the whole page's
+        # queue synchronously at parse time, same shape as a show page.
+        extra_scripts=f'\n<script src="/assets/track-select.js"></script>{SONG_BOOT_SCRIPT}',
+        pre_scripts=SONG_ENGINE_FLAG,
+        playback_ready="deferred")
 
 def build_404():
     main = '''
@@ -1124,4 +1179,4 @@ def build_404():
         nav=site_nav(), main=main)
 
 
-__all__ = ['CONTROLLER_ENGINE_SLUGS', 'build_404', 'build_archive_data', 'build_contact', 'build_history', 'build_home', 'build_manual', 'build_player', 'build_playlist', 'build_process', 'build_search', 'build_show', 'build_song_page', 'build_songs_index', 'build_updates']
+__all__ = ['CONTROLLER_ENGINE_SLUGS', 'SONG_BOOT_SCRIPT', 'SONG_ENGINE_FLAG', 'build_404', 'build_archive_data', 'build_contact', 'build_history', 'build_home', 'build_manual', 'build_player', 'build_playlist', 'build_process', 'build_search', 'build_show', 'build_song_page', 'build_songs_index', 'build_updates']

@@ -56,6 +56,11 @@ def main():
     # import WaveSurfer (see its own header comment).
     write("assets/playlist-views.js", open(os.path.join(here, "playlist-views.js")).read())
     write("assets/playlist-boot.js", open(os.path.join(here, "playlist-boot.js")).read())
+    # Song-page migration onto the shared controller (Phase 3 Stage
+    # 3a-foundation) -- reuses player-views.js's CompactPlayerView, so no
+    # separate song-views.js exists.
+    write("assets/song-boot.js", open(os.path.join(here, "song-boot.js")).read())
+    write("assets/miniplayer-state.js", open(os.path.join(here, "miniplayer-state.js")).read())
     write("assets/songs.js", open(os.path.join(here, "songs.js")).read())
     write("assets/track-select.js", open(os.path.join(here, "track-select.js")).read())
     write("assets/archive-data.js", open(os.path.join(here, "archive-data.js")).read())

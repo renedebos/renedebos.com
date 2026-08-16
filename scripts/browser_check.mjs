@@ -603,6 +603,90 @@ async function checkPlaylistPage(context) {
   await page.close();
 }
 
+// Song pages (Phase 3 Stage 3a-foundation of plans/dynamic-hugging-
+// rossum.md): song-boot.js is unconditional on every song page now. Two
+// shapes to cover: /songs/<slug>/ (every row present at load, like a show
+// page) and /songs/ (rows inserted lazily per <details> — this is the
+// lazy-insertion/queue-extension path that has no equivalent on any other
+// page type, so it gets its own real-browser proof here rather than relying
+// on scripts/test-song-boot.mjs's fake-DOM coverage alone).
+async function checkSongPage(context) {
+  // ── /songs/<slug>/: synchronous mount, real playback ──
+  {
+    const url = '/songs/a-bunch-of-thyme/';
+    const page = await context.newPage();
+    const consoleErrors = [];
+    page.on('console', (m) => { if (m.type() === 'error' && !KNOWN_UNRELATED_CSP_WARNING.test(m.text())) consoleErrors.push(m.text()); });
+    page.on('pageerror', (e) => consoleErrors.push('pageerror: ' + e.message));
+
+    await page.goto(BASE + url, { waitUntil: 'load' });
+    await page.waitForFunction(() => window.PLAYER_ENGINE_MOUNTED === true, null, { timeout: 15000 });
+    const mountInfo = await page.evaluate(() => ({
+      hasBoot: !!window.SONG_BOOT, hasController: !!(window.SONG_BOOT && window.SONG_BOOT.controller),
+      queueLen: window.SONG_BOOT && window.SONG_BOOT.controller.queue.length,
+    }));
+    record(`${url}: mount (flag set, controller exposed on SONG_BOOT, every occurrence queued)`,
+      mountInfo.hasBoot && mountInfo.hasController && mountInfo.queueLen > 0, JSON.stringify(mountInfo));
+
+    const readinessValue = await page.evaluate(() => window.PLAYBACK_HOST_READY.then((v) => v));
+    record(`${url}: PLAYBACK_HOST_READY resolves controller/none`,
+      readinessValue && readinessValue.mode === 'controller' && readinessValue.initialIntent === 'none',
+      JSON.stringify(readinessValue));
+
+    await page.locator('.song-occ .play-btn').first().click();
+    await page.waitForTimeout(2000);
+    const playback = await page.evaluate(() => {
+      const c = window.SONG_BOOT.controller;
+      return { t: c.audioElement.currentTime, paused: c.audioElement.paused, state: c.state };
+    });
+    record(`${url}: real playback (controller.audioElement actually advances)`,
+      playback.t > 0.3 && !playback.paused && playback.state === 'playing', JSON.stringify(playback));
+
+    record(`${url}: no console errors`, consoleErrors.length === 0, consoleErrors.join(' | '));
+    await page.close();
+  }
+
+  // ── /songs/: lazy insertion + queue extension across two opened groups ──
+  {
+    const url = '/songs/';
+    const page = await context.newPage();
+    const consoleErrors = [];
+    page.on('console', (m) => { if (m.type() === 'error' && !KNOWN_UNRELATED_CSP_WARNING.test(m.text())) consoleErrors.push(m.text()); });
+    page.on('pageerror', (e) => consoleErrors.push('pageerror: ' + e.message));
+
+    await page.goto(BASE + url, { waitUntil: 'load' });
+    await page.waitForFunction(() => window.PLAYER_ENGINE_MOUNTED === true, null, { timeout: 15000 });
+    const zeroRowState = await page.evaluate(() => window.SONG_BOOT.controller.queue.length);
+    record(`${url}: mounts with zero rows initially (no <details> opened yet) instead of refusing to claim the page`,
+      zeroRowState === 0, `queueLen=${zeroRowState}`);
+
+    // Open two DIFFERENT song entries and confirm the SAME controller's
+    // queue grows across both -- the behavior scripts/test-song-boot.mjs's
+    // mountRows() tests prove against a fake DOM; this is the real-<details>
+    // real-fetch proof.
+    const details = page.locator('.song-item summary');
+    await details.nth(0).click();
+    await page.waitForTimeout(500);
+    const afterFirst = await page.evaluate(() => window.SONG_BOOT.controller.queue.length);
+    await details.nth(1).click();
+    await page.waitForTimeout(500);
+    const afterSecond = await page.evaluate(() => window.SONG_BOOT.controller.queue.length);
+    record(`${url}: opening a second song entry extends the SAME shared queue, not a fresh one`,
+      afterFirst > 0 && afterSecond > afterFirst, `after1=${afterFirst} after2=${afterSecond}`);
+
+    await page.locator('.song-occ .play-btn').first().click();
+    await page.waitForTimeout(2000);
+    const playback = await page.evaluate(() => {
+      const c = window.SONG_BOOT.controller;
+      return { t: c.audioElement.currentTime, paused: c.audioElement.paused };
+    });
+    record(`${url}: real playback from a lazily-inserted row`, playback.t > 0.3 && !playback.paused, JSON.stringify(playback));
+
+    record(`${url}: no console errors`, consoleErrors.length === 0, consoleErrors.join(' | '));
+    await page.close();
+  }
+}
+
 async function runBreakageTests(browser, copyDir, base) {
   // Test A: player-boot.js missing -> full legacy fallback.
   {
@@ -702,6 +786,86 @@ async function runBreakageTests(browser, copyDir, base) {
       renameSync(path + '.disabled', path);
     }
   }
+
+  // Test C (Phase 3 Stage 3a-foundation): song-boot.js missing -> a song
+  // detail page falls back to the retained initCustomPlayers() engine,
+  // exactly the same handshake shape as Test A above (player-boot.js
+  // missing on a show page), just the song-page counterpart.
+  {
+    const path = join(copyDir, 'assets', 'song-boot.js');
+    renameSync(path, path + '.disabled');
+    try {
+      const testCtx = await browser.newContext();
+      const page = await testCtx.newPage();
+      await page.goto(base + '/songs/a-bunch-of-thyme/', { waitUntil: 'load' });
+      await page.waitForTimeout(1000);
+
+      const flagState = await page.evaluate(() => ({ flag: window.PLAYER_ENGINE_MOUNTED, hasBoot: !!window.SONG_BOOT }));
+      record('breakage C1: missing song-boot.js never sets the mounted flag',
+        flagState.flag === undefined && !flagState.hasBoot, JSON.stringify(flagState));
+
+      // page.evaluate() can't hand back a Promise object itself across the
+      // context boundary (it doesn't structured-clone) -- await it INSIDE
+      // evaluate() and hand back the resolved value instead.
+      const readinessValue = await page.evaluate(() => window.PLAYBACK_HOST_READY.then((v) => v));
+      record('breakage C2: PLAYBACK_HOST_READY resolves to legacy mode, not left hanging',
+        readinessValue && readinessValue.mode === 'legacy', JSON.stringify(readinessValue));
+
+      await page.locator('.song-occ .play-btn').first().click();
+      await page.waitForTimeout(2000);
+      const occPlaying = await page.evaluate(() => {
+        const el = document.querySelector('.song-occ .custom-player');
+        return el && el._audio ? { found: true, t: el._audio.currentTime, paused: el._audio.paused } : { found: false };
+      });
+      record('breakage C3: legacy player.js drives the occurrence row (initCustomPlayers fallback)',
+        occPlaying.found && occPlaying.t > 0.3 && !occPlaying.paused, JSON.stringify(occPlaying));
+
+      await testCtx.close();
+    } finally {
+      renameSync(path + '.disabled', path);
+    }
+  }
+
+  // Test D (implementation review finding #8, 2026-08-15): playlist-boot.js
+  // missing. Unlike Tests A-C, /playlist/ has no fallback engine to hand off
+  // to (legacy playlist.js was deleted in Stage 2c) -- the required behavior
+  // is narrower but still real: the module tag's onerror= handler
+  // (build_playlist()'s `playback_ready_onerror('none')`, pages.py) must
+  // resolve window.PLAYBACK_HOST_READY to {mode:'none'} itself, rather than
+  // leaving it pending forever with nothing else around to ever settle it.
+  // A future mini-player consumer would otherwise hang waiting to learn
+  // whether it's safe to construct its own controller. Once that consumer
+  // exists, extend this test to the required exactly-one-controller
+  // assertion (round 4's disposition, player-consolidation-codex.md).
+  {
+    const path = join(copyDir, 'assets', 'playlist-boot.js');
+    renameSync(path, path + '.disabled');
+    try {
+      const testCtx = await browser.newContext();
+      const page = await testCtx.newPage();
+      await page.goto(base + '/playlist/', { waitUntil: 'load' });
+      await page.waitForTimeout(1000);
+
+      const flagState = await page.evaluate(() => ({ flag: window.PLAYLIST_ENGINE_MOUNTED, hasBoot: !!window.PLAYLIST_BOOT }));
+      record('breakage D1: missing playlist-boot.js never sets the mounted flag',
+        flagState.flag === undefined && !flagState.hasBoot, JSON.stringify(flagState));
+
+      // Raced against an in-page timeout so a REGRESSION (readiness left
+      // hanging) fails this assertion cleanly instead of hanging the whole
+      // script -- page.evaluate() would otherwise wait indefinitely for a
+      // promise that never settles.
+      const readinessValue = await page.evaluate(() => {
+        const timedOut = new Promise((resolve) => setTimeout(() => resolve({ mode: '__timed_out__' }), 5000));
+        return Promise.race([window.PLAYBACK_HOST_READY, timedOut]);
+      });
+      record('breakage D2: PLAYBACK_HOST_READY resolves to {mode:"none"} via the script tag\'s onerror=, not left hanging',
+        readinessValue && readinessValue.mode === 'none', JSON.stringify(readinessValue));
+
+      await testCtx.close();
+    } finally {
+      renameSync(path + '.disabled', path);
+    }
+  }
 }
 
 // ── prod-only checks (--prod / --base=<url>) ────────────────────────────
@@ -742,18 +906,21 @@ async function checkAssetHeaders(context) {
   }
 }
 
-// These non-show pages are deliberately narrow and fixed -- this confirms
-// the deploy didn't leak the controller engine onto pages that were never
-// switched over, and that real legacy playback still works on the pages
-// that matter most for that regression (both continuous-playback pages and
-// a song page). These 4 are structurally permanent regardless of how wide
-// CONTROLLER_ENGINE_SLUGS eventually grows -- the non-allowlisted SHOW page
-// is a separate, dynamically-picked entry, below.
+// These non-show, non-song pages are deliberately narrow and fixed -- this
+// confirms the deploy didn't leak the controller engine onto pages that were
+// never switched over, and that real legacy playback still works on the
+// pages that matter most for that regression. Song pages moved OFF this list
+// in Phase 3 Stage 3a-foundation -- they now run song-boot.js's controller
+// engine unconditionally (see checkSongPage() below for their own mount/
+// playback/fallback checks), so asserting PLAYER_ENGINE_MOUNTED===false
+// there would now be asserting the wrong thing. These 3 are structurally
+// permanent regardless of how wide CONTROLLER_ENGINE_SLUGS eventually grows
+// -- the non-allowlisted SHOW page is a separate, dynamically-picked entry,
+// below.
 const NON_ALLOWLISTED_PAGES = [
   '/',
   '/playlist/',
   '/player/',
-  '/songs/a-bunch-of-thyme/', // a song page, exercises initCustomPlayers
 ];
 
 // Picks a real, currently-non-allowlisted show page to sample, instead of a
@@ -932,24 +1099,40 @@ try {
     await plCtx.close();
   }
 
+  // Song pages (Phase 3 Stage 3a-foundation). Runs unconditionally, same as
+  // /playlist/ above -- song-boot.js is on every song page regardless of
+  // local/--prod.
+  {
+    const songCtx = await browser.newContext();
+    await checkSongPage(songCtx);
+    await songCtx.close();
+  }
+
   if (isRemote) {
     const ctx = await browser.newContext();
     await checkAssetHeaders(ctx);
     await checkNonAllowlistedPagesUnaffected(ctx);
     await ctx.close();
   } else {
-    // Isolated copy for the breakage tests -- assets/+shows/ only (everything
-    // the show-page breakage scenarios reference; /playlist/ no longer has a
-    // fallback-engine breakage scenario to test now that legacy playlist.js
-    // is gone -- see Stage 2c of plans/player-consolidation/: a missing
-    // playlist-boot.js is just a broken deploy, already caught by
-    // verify_markup.py/build.py's asset-existence checks and by the real
-    // /playlist/ smoke check above, not something worth a fake "graceful
-    // failure" assertion), on a SEPARATE port, so this script never renames a
-    // file inside the real working tree.
+    // Isolated copy for the breakage tests -- assets/+shows/+playlist/ (the
+    // show-page breakage scenarios' assets, plus /playlist/'s own markup for
+    // Test D below), on a SEPARATE port, so this script never renames a file
+    // inside the real working tree.
+    //
+    // /playlist/ has no FALLBACK ENGINE to test (legacy playlist.js is gone
+    // as of Stage 2c -- see plans/player-consolidation/) — that Stage-2c-era
+    // reasoning is still correct for what it originally addressed. It does
+    // NOT mean there's nothing left to test here, though (Phase 3 Stage
+    // 3a-foundation implementation review finding #8, 2026-08-15): the
+    // readiness contract added since then requires the module tag's onerror=
+    // handler to actually resolve window.PLAYBACK_HOST_READY to
+    // {mode:'none'} rather than leaving it pending forever, which is a real,
+    // independently-testable behavior a missing playlist-boot.js exercises —
+    // see Test D.
     const copyDir = mkdtempSync(join(tmpdir(), 'player-consolidation-browser-check-'));
     cpSync(join(ROOT, 'assets'), join(copyDir, 'assets'), { recursive: true });
     cpSync(join(ROOT, 'shows'), join(copyDir, 'shows'), { recursive: true });
+    cpSync(join(ROOT, 'playlist'), join(copyDir, 'playlist'), { recursive: true });
     const copyPort = PORT + 1;
     const copyServer = await startServer(copyDir, copyPort);
     try {

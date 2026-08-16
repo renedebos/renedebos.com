@@ -4,214 +4,210 @@
 
 **Phase 1 (all show pages on the shared `PlaybackController`) is complete,
 review-hardened, and live in production** — see git history / the plan's
-Phase 1 section for that work; not repeated here.
+Phase 1 section; not repeated here.
 
-**Phase 2 (`/playlist/` migration) is now fully complete — Stage 2c
-deleted the legacy `playlist.js` engine and its `?engine=` resolver the
-same day Stage 2b shipped.** Rene explicitly waived the originally-planned
-2+ week soak (the only realistic blast radius is client-side
-`savedPlaylists` localStorage, never audio files or server-side data) but
-did NOT waive the real-browser gate — `browser_check.mjs --prod` was run
-for real (not just syntax-checked, for the first time ever) after
-installing `playwright-chromium` into this environment, and a genuine bug
-that run surfaced was fixed before it passed clean. See "Done this
-session" below and the plan doc's Phase 2 section for the full record.
-**Not yet committed or pushed — this needs a review pass and Rene's
-go-ahead before it ships.**
+**Phase 2 (`/playlist/` migration) is fully complete, committed, merged,
+and confirmed live in production.** Stage 2c (deleting the legacy
+`playlist.js` engine) shipped via PR #14, commit `11dfb24`. Spot-checked
+against `renedebos.com`: `/assets/playlist.js` 404s, `/playlist/` serves
+only `playlist-boot.js`. Nothing further queued for Phase 2.
 
-## ✅ Done this session — Phase 2, start to Stage 2c (complete)
+**Phase 3 (sticky in-page mini-player) — Stage 3a-foundation is COMPLETE,
+review-hardened, and COMMITTED** (`ba23c76`, on top of `bf59f10`). Working
+tree is clean. Not yet pushed / no PR opened. The cross-tab ownership
+subsystem that was mid-redesign at the last handoff is now fully
+implemented and has survived **twelve** review rounds; the review loop was
+deliberately closed out (see "Why the review loop stopped"). Nothing in
+this stage ships user-visible UI — that starts at 3a-canary.
 
-1. **Scoped Phase 2** (Explore + Plan agents, then a Codex review of the
-   design itself, verified line-by-line before folding into the plan —
-   commit `a2f3e19`). Corrected 5 real defects in the first-draft design
-   (queue-change detection, hash-length bound, `playlist.js`'s deferral
-   conditional, `removeAt()` index-shift direction, the storage
-   dual-write direction) and recorded 4 decisions with Rene (3-stage
-   canary rollout, `prev()`-at-start restarts track 1, a fixed not
-   preserved unknown-id hash, 2+ week soak before Stage 2c).
+## ✅ Done this session
 
-2. **Implemented Stage 2a directly** (Claude wrote it, not Codex — Rene's
-   explicit standing preference, see `feedback_codex_write_claude_review.md`
-   in auto-memory): new `scripts/playlist-boot.js` +
-   `scripts/playlist-views.js`, `player-controller.js` gained
-   `queueRevision`/`onQueueExhausted`/`onExternalClaim`, `playlist.js`
-   gated to defer when `?engine=controller`. Shipped default-off
-   (`PLAYLIST_CONTROLLER_ENGINE = False`), canary via `?engine=controller`.
+### The fenced-lease ownership redesign — implemented, then rounds 6–12
 
-3. **Two Codex review rounds on the implementation**, both via
-   `/review-step`-style verify-then-disposition (never taken on the
-   review's word — every finding traced against actual code/tests before
-   acting):
-   - **Pre-merge round** (`player-consolidation-codex.md`'s "Phase 2 Stage
-     2a implementation review"): 7 findings, 5 fixed (transactional
-     mount/teardown, stuck "paused elsewhere" message, unconditional
-     highlight scan, `verify_markup.py`'s unimplemented default-literal
-     check, `appendQueue()` bound-after-normalize ordering), 1 test-gap
-     partially closed, 1 declined as pre-existing/out-of-scope.
-   - **Post-deploy round** (requested via a direct `mcp__codex__codex`
-     call rather than the script, scoped to what the first round missed
-     plus the untested deploy-fix commit): 5 findings, 4 fixed
-     (`verify_markup.py`'s both-absent blind spot, `MAX_SAVED_PLAYLISTS`
-     enforced on read not just write, a seek-drag freeze bug, a dead
-     `firstOrder` assertion plus a false coverage claim in a test
-     comment), 1 left as deliberate legacy parity (`syncHash()` drops the
-     `?engine=` param on empty queue — byte-identical to `playlist.js`,
-     Rene's explicit call to leave it).
+The previous handoff left a fully-designed-but-uncoded redesign, after
+five straight rounds each found the same bug shape (a multi-step commit
+spread across two Storage objects, with a rollback that could itself
+fail). That redesign was implemented, the scratch plan was folded into the
+permanent docs, and it then went through seven more `/review-step` rounds
+— **six of which found something real**. Every finding was independently
+reproduced with a standalone script before being accepted or declined;
+every fix removed the bug's *shape* rather than patching the instance.
 
-4. **Deployed to production** (PR #10, `4400531`) — **broke the deploy
-   workflow on merge**: `test-playlist-state.mjs` used a plain
-   `globalThis.navigator = {...}`, which throws under CI's Node (a
-   getter-only accessor there; same class of bug already fixed for
-   `test-player-controller.mjs` in `5078e47`, but this new file predated
-   that fix and local dev Node has no such global to catch it). Fixed and
-   redeployed (PR #11, `ed01f2f`).
+The shipped shape: `claimOwnership()` is exactly ONE `localStorage.setItem()`
+(nothing to roll back, ever); the fencing credential is a `{ownerId,
+ownerEpoch}` "lease" held in caller memory and re-derived at boot by
+`restoreLease()`; `writeSession()` gates every write on `hasValidLease()`
+checked fresh twice; `readEnvelope()` is tri-state so a read failure is
+never mistaken for "nothing there"; `withOwnershipLock()` fails closed
+with no Web Locks provider.
 
-5. **Rene did a full manual production pass** at `?engine=controller`:
-   mount, queue build/play, next/prev, share-link round-trip, saved
-   playlists, endless rollover, remove/shuffle, cross-tab external-claim,
-   `?engine=legacy` fallback — all confirmed working. One thing noticed
-   and deliberately left alone: playback controls vanish entirely once a
-   non-endless queue reaches its end (`currentItem` goes `null` → the
-   view hides the whole panel) — traced and confirmed byte-identical to
-   legacy `playlist.js:696`, not a Stage 2a regression.
+Round-by-round, with full findings/dispositions in `-codex.md`:
+- **6** — `hasValidLease()` was missing an identity check (a rotated tab
+  could still validate an old lease), plus three others. Fixed via a
+  shared `hasMatchingEnvelopeTuple()` predicate.
+- **7** — active-owner UX gap, a test-harness gap, `revokeLease()` missing
+  a read-back. Also one gap **investigated and deliberately left unfixed**
+  (see Durable facts).
+- **8** — `writeEnvelope()`, the actual commit path, never read back its
+  own write. It was the one storage write that hadn't already gotten that
+  treatment.
+- **9** — `rotateTabId()`/`claimOwnership()` never checked that a freshly
+  generated id/epoch actually *differed* from the value it replaced. Under
+  degraded entropy this let a "resolved" collision stay unresolved and two
+  consecutive claims mint the same `ownerEpoch` — reopening the round-5
+  stale-write bug via entropy instead of storage. Fixed with a shared,
+  bounded `generateDistinctFrom()`.
+- **10** — that fix didn't fail closed when its own pre-write read threw;
+  and `isTabProbeCollision()` treated an equal-nonce *genuine* collision as
+  no collision at all (two real clones each silently ignoring the other,
+  both restoring as owner).
+- **11** — round 8's fix had introduced its own mirror image (a landed
+  write plus one transient read throw reported as failure); collision
+  memoization keyed by nonce alone survived a rotation; concurrent losers
+  could generate identical replacement ids.
+- **12 (final)** — **no High or Medium findings.** Two Low findings, both
+  about the accuracy of Claude's own claims rather than the code: an
+  overstated test count/strength, and a self-flattering characterization
+  of why the loop should stop. Both confirmed and corrected.
 
-6. **Post-deploy hardening round shipped** (PR #12, `43b1a60`) with the 4
-   fixes from review round 2 above, each with a fail-then-pass-proven
-   regression test.
+### Why the review loop stopped (deliberate, recorded)
+Not "everything left is exotic" — that was an earlier, overstated version
+of the reasoning that round 12 pushed back on and that has been corrected
+in the plan (residual item 12). The honest version: the *collision*
+findings did trend toward the exotic (rounds 9–11 needed pinned entropy or
+3+ simultaneously duplicated tabs), but the *storage* findings did not —
+rounds 8 and 11 each needed only one ordinary transient storage failure.
+What actually justifies stopping is that **each round's fix was creating
+the surface for the next round's finding** (round 8's fix directly caused
+round 11's finding; round 9's directly caused round 10's), and round 12
+confirms nothing High/Medium remains. The validation this module needs now
+is **a real consumer**, not a thirteenth adversarial pass.
 
-7. **Stage 2b: flipped the default** (PR #13, `015ba65`) —
-   `PLAYLIST_CONTROLLER_ENGINE = True`. Confirmed on production: the
-   resolver's baked-in default literal is `true`, no-param `/playlist/`
-   now loads the controller engine, `?engine=legacy` still works.
-   `playlist.js` stays loaded as the runtime fallback through Stage 2c.
+## 🔧 Next up — Stage 3a-canary
 
-8. **Stage 2c: implemented same day, soak explicitly waived by Rene**
-   (client-side `savedPlaylists` localStorage is the only realistic blast
-   radius, never audio files or server data — see the plan doc's Phase 2
-   section for the full reasoning). The real-browser gate was kept, not
-   waived: installed `playwright-chromium` into this environment (it
-   wasn't here before) and ran `browser_check.mjs --prod` for real against
-   production for the first time ever (previously only syntax-checked).
-   - Deleted `scripts/playlist.js`/`assets/playlist.js` and the entire
-     `?engine=`/`window.PLAYLIST_ENGINE` resolver mechanism — `pages.py`'s
-     `build_playlist()`, `PLAYLIST_CONTROLLER_ENGINE`, and
-     `playlist-boot.js`'s auto-run gate all simplified to unconditional.
-   - `verify_markup.py`'s `check_playlist_engine_wiring()` rewritten for
-     single-engine reality (playlist-boot.js present exactly once, legacy
-     playlist.js and any leftover resolver wiring text absent,
-     `window.WORKER_ORIGIN` still set) with an expanded selftest.
-   - Storage dual-write: confirmed moot by construction — there was never
-     actual dual-write code, only a comment explaining why the flat key
-     stayed canonical; that comment is now simply accurate.
-   - `browser_check.mjs`'s `runPlaylistBreakageTest()` **deleted outright**
-     (not retargeted to a fake "graceful degradation" assertion — a Codex
-     review of that plan correctly called out that asserting "no mount
-     flag, no crash" after removing the only engine just blesses a dead
-     page as a pass, not a real test; a missing `playlist-boot.js` is
-     already caught by `verify_markup.py`/`build.py`'s asset checks and
-     the real smoke check). `checkPlaylistPage()` lost the
-     `?engine=controller` param and the legacy-dormancy step.
-   - **A real bug surfaced by actually running the check for real**: the
-     hash round-trip check's `page.goto()` "reload" navigated to a URL
-     byte-identical to the current one, which per the HTML spec is a
-     same-document navigation with no JS state reset — verified directly
-     against production. The check had never actually reloaded anything;
-     fixed by using `page.reload()` instead. Distinct from the pre-existing
-     `browser_check.mjs` timing flake noted in the plan doc's Phase 1
-     section (that one's a tight playback-timing assertion; this one was a
-     navigation-semantics bug in the check itself).
-   - `TAG_ORDER`'s home moved to `playlist-boot.js`; `PUBLISHING.md`'s two
-     references repointed there (`manual/index.html` picks it up on
-     rebuild — it's generated from `PUBLISHING.md`, not hand-edited).
-     `track-select.js`'s comments about integrating with `playlist.js`
-     updated to name `playlist-views.js`/`playlist-boot.js`.
-   - `site_worker.js:173` still has one stale `scripts/playlist.js`
-     comment — **left alone** (that file is deploy-infra's territory, not
-     this initiative's) and flagged here for that team to clean up.
-   - `test-playlist-state.mjs`: removed dead `window.PLAYLIST_ENGINE`
-     setup and a stale "playlist.js takes over" assertion message; added a
-     real test proving the controller mounts unconditionally even with a
-     stale `?engine=legacy` param on the URL (the module doesn't read
-     `location.search` at all anymore).
+Mini-player container + script **always emitted**, with a
+`MINI_PLAYER_ENABLED` flag controlling only the *runtime default*. An
+earlier draft gated emission itself behind the flag, which made a
+`?miniplayer=1` runtime override impossible to honor — don't reintroduce
+that. The flag does not exist in the codebase yet; this stage creates it.
 
-Local suites: **119/119 passing** (`test-player-boot.mjs` 23,
-`test-player-controller.mjs` 26, `test-player-views.mjs` 17,
-`test-playlist-state.mjs` 19, `test-playlist-views.mjs` 15). `build.py`,
-`build.py --check`, and `verify_markup.py` all clean. `browser_check.mjs
---prod`: **178/178** for real (first real run ever) — real playback, real
-cross-tab `BroadcastChannel` coordination between `/playlist/` and a show
-page, and the hash round-trip fix above all verified against the live
-site.
+This is also where `scripts/miniplayer-state.js` **gets its first real
+consumer**, which matters more than it sounds: several documented residual
+gaps are explicitly "caller contract" items that no code enforces yet
+because there is no caller. Building that coordinator is the point.
 
-## 🔧 Next up
+Read before starting:
+- `plans/player-consolidation/player-consolidation-plan.md` — Phase 3
+  stage shape, the full fenced-lease design, and **residual gaps 1–12**.
+- The **caller contract** comments in `scripts/miniplayer-state.js` (the
+  tab-collision handshake section). Three are load-bearing and each was
+  a real reproduced bug: refresh `myTabId` after anything that rotates it
+  (including `revokeLease()` escalation); disable ownership permanently on
+  `failed:true`; and **re-probe under the new identity after any
+  successful rotation**.
 
-Phase 2 is done. **Nothing from this session is committed or pushed yet**
-— it needs a review pass (Codex + Rene) before it ships; do that before
-starting anything else. After that: Phase 3 (`/player/` popup) is
-"not started," not scoped for this session, and not queued — see the plan
-doc for its outline if picked up later.
+Remaining stages after this: **3b-default** (route "Add to player" /
+`pl-player` into the mini-player; tombstoned migration off
+`continuous-player.js`'s old `playerState` key; 2+ week soak), then
+**3c-removal** (delete the popup code; `build_player()` becomes a redirect
+stub).
 
 ## Gotchas learned this session
 
-- **Node's CI runner (>=21) has a getter-only `navigator` global** —
-  `globalThis.navigator = {...}` throws there but silently works on
-  older local dev Node. Any new test file that needs to fake `navigator`
-  must use the `setGlobalNavigator()` `Object.defineProperty` pattern
-  (see `test-player-controller.mjs` or `test-playlist-state.mjs`), not a
-  plain assignment. This has now bitten twice (`5078e47`, `ed01f2f`) —
-  check for it explicitly in any future new test file touching
-  `navigator`.
-- **A Codex review round only reviews what you scope it to.** The first
-  round (pre-merge) never looked at the deploy-fix commit because it
-  didn't exist yet — worth an explicit "review what's new since the last
-  round, plus anything untouched" framing on a follow-up round, not just
-  "review the branch again" (which risks re-litigating settled findings
-  instead of finding new gaps).
-- **`git stash` can't target untracked new files** — for a fail-then-pass
-  proof on a brand-new file, `cp file /tmp/backup` + revert-in-place +
-  restore-via-`cp` is the reliable pattern this session settled on
-  throughout, not `git stash push -- <path>`.
-- **Deterministic tests involving `Math.random()`-based shuffle logic**
-  (e.g. endless-mode reshuffle) need `Math.random` monkey-patched
-  (restore in `finally`) to actually prove reordering happened — a test
-  that captures a "before" order and never asserts against it will pass
-  even if the reshuffle silently does nothing.
+- **When a test's name makes a strong claim, prove it fails without the
+  fix.** Round 12 caught two tests that asserted something the *pre-fix*
+  code would equally have satisfied — a residual-documenting test that
+  never proved the retry bound existed, and an "end-to-end" test that
+  hand-injected the very message the caller contract was supposed to
+  produce. Both were fixed, and the three-clone test was then verified
+  non-vacuous by temporarily deleting the re-probe and confirming a
+  failure (116/117), then restoring it.
+- **A tool going quiet is a symptom, not a null result.** An edit wrote a
+  literal NUL byte into a template string, which silently made `grep`
+  treat the whole source file as binary — every subsequent `grep` returned
+  nothing, which read at first like the file having lost its contents.
+  Diagnosed by checking byte offsets in Python. A null-byte check is now
+  part of the verification sweep; keep it there.
+- **Watch for a fix that over-corrects into the opposite bug.** Round 8
+  added write verification to stop a silent drop being reported as
+  success; round 11 found that same fix now reported a *landed* write as
+  failure on one transient read blip. Bounded retry resolved it. When you
+  close a false-positive, ask what false-negative you just opened.
+- **Guard against self-flattering summaries.** The rationale for stopping
+  the review loop was written in a way that made the remaining risk sound
+  more exotic than it was, and a review round caught it. Documentation
+  claims deserve the same reproduction standard as code claims.
+- Carried forward (still true): the `cp` backup/revert/restore pattern
+  beats `git stash` for multi-round edits; Node ≥21's `navigator` global
+  is getter-only, so use `setGlobalNavigator()` in new test files; and a
+  review round only reviews what you scope it to — but note the **inverse
+  is also now proven**: narrow "verify these fixes" rounds repeatedly came
+  back clean while the very next *broad* round immediately found several
+  real bugs the narrow framing had hidden. Use both.
 
 ## Durable facts (don't undo)
 
-- **Everything under "Durable facts" in this file's prior version (Phase
-  1 facts about `downloads.lossless`, recording-id keying, BroadcastChannel
-  wire format, deep-link autoplay, WaveSurfer failure blast radius, the
-  controller's `<audio>` element never being pre-appended) is unchanged
-  and still true** — not reproduced here again; see git history for this
-  file's Phase 1-era version, or the plan document, if the specifics are
-  needed.
-- **`/playlist/`'s BroadcastChannel wire format is still the legacy bare
-  string** — Phase 2 deliberately kept it unchanged (see the plan's
-  scoping section); no upgrade until Phase 3 (`/player/` migration) lets
-  every participant change together.
-- **The flat `savedPlaylists` localStorage key is still the canonical
-  store, now post-2c** — `playlist.js` is deleted and `playlist-boot.js`
-  is the only writer, so the reconciliation problem that motivated
-  deferring a versioned `v2` envelope is gone. A `v2` envelope is now
-  unblocked if anyone wants to pick it up, but nobody has asked for it —
-  don't treat this as queued work, just as no-longer-blocked.
-- **`syncHash()` still drops the whole query string (not just an
-  `?engine=` param — there's no such param anymore) when the queue
-  empties**, via `win.history.replaceState(null, '', win.location.pathname)`.
-  This used to specifically matter for `?engine=legacy`/`?engine=controller`;
-  now that those are gone it's a much lower-stakes generic quirk (any
-  other query param a visitor arrived with gets dropped too). Not fixed as
-  part of Stage 2c — nobody has asked for it, and it was never confirmed
-  as a real problem beyond the now-moot engine-param case.
-- Branch/worktree workflow: sync with `git fetch origin && git merge
-  origin/main` at session start and before a PR.
+- **Everything under "Durable facts" in this file's Phase-1/Phase-2-era
+  versions is unchanged and still true** (see git history:
+  `downloads.lossless`, recording-id keying, BroadcastChannel wire format
+  basics, deep-link autoplay, WaveSurfer failure blast radius, the
+  controller's `<audio>` element never being pre-appended, the flat
+  `savedPlaylists` key, `syncHash()`'s query-string-dropping quirk).
+- **The tab-collision handshake is no longer "out of scope, keep as-is"** —
+  that was true through round 9 and is now stale. Rounds 10–11 changed it:
+  `isTabProbeCollision()` **dropped its `myNonce` parameter** and treats
+  any same-tabId probe as a collision; `resolveCollision()` reports
+  `failed:true` when the nonces give no tie-break asymmetry, and memoizes
+  by the composite `(myTabId, theirNonce)`. `shouldRotateOnCollision()`'s
+  tie-break logic itself is unchanged and still solid.
+- **`tombstoneIfCurrent()` after a `revokeLease()` escalation is a known,
+  permanent residual gap** (plan item 8). The "obvious" fix (dropping the
+  identity check) was built, tested, and **rejected** — it lets a
+  collision-loser clear a *different* live document's legitimate state.
+  Purely cosmetic as-is. Two tests lock in both halves. Don't re-fix it.
+- **`restoreLease()` returns a candidate, not a guarantee** (plan item 9).
+  It is a single unlocked read. Any *write* under a superseded lease is
+  still correctly rejected, but a caller that resumes visible UI/audio
+  straight from `'restored'` without invalidation listeners has a window.
+  Closing it is 3a-canary's coordinator work.
+- **The BroadcastChannel wire-format upgrade (bare string →
+  `{version,type,senderId}`) is out of Phase 3 entirely** — a separate
+  future initiative.
+- **Phase 3's mini-player replaces `/player/` entirely** once it reaches
+  parity and passes a 2+ week production soak after 3b. Losing the popup's
+  genuinely gapless cross-page mechanism is a deliberate, recorded
+  tradeoff.
+- **`player.js`'s `initLegacyPlayback()` fallback and
+  `initCustomPlayers()`'s per-row engine are not being deleted in Phase
+  3** — deliberate degraded-mode safety nets the readiness contract
+  references.
+- **`assets/miniplayer-state.js` and `assets/song-boot.js` are build
+  outputs**, copied verbatim from `scripts/` by `scripts/build.py`. Edit
+  the `scripts/` copy and rebuild; a direct edit to `assets/` is silently
+  discarded. (Same relationship as `assets/site.css` — see `CLAUDE.md`.)
+- Branch/worktree workflow: `git fetch origin && git merge origin/main` at
+  session start and before a PR.
 
 ## Reference
 Runbook: `CLAUDE.md` → "Publishing a Split Show" (unrelated to this
 initiative, but the canonical project-wide instructions file). Player
-work: `plans/player-consolidation/` (plan + `player-consolidation-codex.md`
-for every review round's findings/dispositions/fixes, Phase 1 and Phase
-2 both). Tests: `node scripts/test-{player,playlist}-*.mjs`. Real-browser
-verification: `scripts/browser_check.mjs` (needs `playwright-chromium`;
-`--prod` points it at `https://renedebos.com`).
+work: `plans/player-consolidation/` — the plan doc plus `-codex.md`, which
+logs every review round's findings, Claude's disposition (confirmed /
+declined / already-handled, with reproduction evidence), and what shipped.
+**The fenced-lease design has been folded into the permanent plan doc**;
+`~/.claude/plans/dynamic-hugging-rossum.md` is superseded as a standalone
+reference and should not be treated as current.
+
+Tests: `node scripts/test-*.mjs` — 8 files, of which `test-fake-dom.mjs`
+is a helper rather than a suite. **260/260 passing** as of this handoff
+(117 of them in `test-miniplayer-state.mjs`). Also clean: `python3
+scripts/build.py`, `--check`, `python3 scripts/verify_markup.py
+--check-allowlist-coverage`, `node --check` on both edited JS files, zero
+null bytes, and `cmp scripts/miniplayer-state.js assets/miniplayer-state.js`.
+Real-browser verification: `scripts/browser_check.mjs` (needs
+`playwright-chromium`; `--prod` points it at `https://renedebos.com`).
+
+Also outstanding, unrelated to Phase 3: Rene wants to set up **custom
+skills** (`~/.claude/skills/` or a project `.claude/skills/`) — neither
+directory exists yet; the only skills present come from installed
+marketplace plugins. That work belongs on `main`, not this branch.

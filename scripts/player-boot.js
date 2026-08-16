@@ -181,26 +181,48 @@ function wireKeyboard(handle, doc, signal) {
 // hash change, but autoplay only on the initial arrival. (player.js's
 // focusHashTrack never autoplays a waveform row, and wavesurfer.js only ever
 // looks at the hash once, at build time.)
+//
+// Also where window.PLAYBACK_HOST_READY gets resolved for a successfully
+// mounted show page (readiness-contract, plans/dynamic-hugging-rossum.md's
+// "Blocker A continued") — deliberately HERE, on 'load', not at mount time:
+// resolving earlier would let a future mini-player start restoring a
+// persisted session before this deep-link decision is made, racing it. focus()
+// now returns whether it just fired setQueue(...,{autoplay:true}) so the
+// resolved initialIntent can tell "a real autoplay just happened" apart from
+// "nothing page-specific happened, restoration is safe" — module-load-failure
+// and in-script-throw are two separate, real signals handled elsewhere (the
+// module tag's onerror= attribute pages.py emits, and this file's own
+// auto-run catch block below), so between the three, every outcome is
+// covered without a generic timeout.
 function wireDeepLink(handle, doc, win, signal) {
   const focus = (allowAutoplay) => {
-    if (!win.location || !win.location.hash) return;
+    if (!win.location || !win.location.hash) return false;
     let el;
-    try { el = doc.querySelector(win.location.hash); } catch (e) { return; }
-    if (!el || !el.classList.contains('track-row')) return;
+    try { el = doc.querySelector(win.location.hash); } catch (e) { return false; }
+    if (!el || !el.classList.contains('track-row')) return false;
     doc.querySelectorAll('.track-row.target').forEach(r => {
       if (r !== el) r.classList.remove('target');
     });
     if (el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     el.classList.add('target');
-    if (!allowAutoplay) return;
-    if (new URLSearchParams(win.location.search).get('autoplay') !== '1') return;
+    if (!allowAutoplay) return false;
+    if (new URLSearchParams(win.location.search).get('autoplay') !== '1') return false;
     const index = handle.rowViews.findIndex(v => v.root === el);
-    if (index === -1) return;
+    if (index === -1) return false;
     handle.controller.setQueue(handle.rowItems, { startIndex: index, autoplay: true });
+    return true;
   };
   // Deliberately on 'load', matching player.js: scrollIntoView wants layout
   // settled, and a module runs well before that.
-  win.addEventListener('load', () => focus(true), { signal });
+  win.addEventListener('load', () => {
+    const autoplayed = focus(true);
+    if (win.__resolvePlaybackHost) {
+      win.__resolvePlaybackHost({
+        mode: 'controller', controller: handle.controller,
+        initialIntent: autoplayed ? 'autoplay' : 'none',
+      });
+    }
+  }, { signal });
   win.addEventListener('hashchange', () => focus(false), { signal });
 }
 
@@ -235,5 +257,14 @@ if (typeof window !== 'undefined' && window.PLAYER_ENGINE === 'controller'
     // Left deliberately visible: this path means the page just fell back to
     // the legacy engine, which is a thing worth seeing in a console.
     console.error('[player-boot] controller mount failed, falling back to the legacy player', e);
+    // Readiness-contract in-script-throw signal (plans/dynamic-hugging-
+    // rossum.md's "Blocker A continued"): resolved directly here, not by
+    // piggybacking on player.js's own separate, later-firing
+    // DOMContentLoaded listener that checks MOUNTED_FLAG and calls
+    // initLegacyPlayback() — that listener triggers the actual fallback
+    // engine, but 'legacy' mode here just means "a future mini-player should
+    // stay dormant on this page load," which is already true the instant
+    // this catch runs, regardless of when that separate listener gets to it.
+    if (window.__resolvePlaybackHost) window.__resolvePlaybackHost({ mode: 'legacy' });
   }
 }
