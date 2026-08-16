@@ -1137,10 +1137,18 @@ try {
     await checkNonAllowlistedPagesUnaffected(ctx);
     await ctx.close();
   } else {
-    // Isolated copy for the breakage tests -- assets/+shows/+playlist/ (the
-    // show-page breakage scenarios' assets, plus /playlist/'s own markup for
-    // Test D below), on a SEPARATE port, so this script never renames a file
-    // inside the real working tree.
+    // Isolated copy for the breakage tests -- assets/+shows/+playlist/+songs/
+    // (the show-page breakage scenarios' assets, plus /playlist/'s and
+    // /songs/'s own markup for Tests C and D below), on a SEPARATE port, so
+    // this script never renames a file inside the real working tree.
+    //
+    // songs/ was MISSING from this list until 2026-08-16, and the symptom is
+    // worth recording because it was silent in one direction and fatal in the
+    // other: Test C1 navigates to /songs/<slug>/ and asserts two window flags
+    // are absent, which a 404 page satisfies perfectly, so it passed
+    // vacuously; C2 then dereferenced window.PLAYBACK_HOST_READY on that same
+    // 404 page and took the whole run down with an uncaught TypeError. A
+    // check that navigates somewhere must be given somewhere to navigate to.
     //
     // /playlist/ has no FALLBACK ENGINE to test (legacy playlist.js is gone
     // as of Stage 2c -- see plans/player-consolidation/) — that Stage-2c-era
@@ -1156,6 +1164,7 @@ try {
     cpSync(join(ROOT, 'assets'), join(copyDir, 'assets'), { recursive: true });
     cpSync(join(ROOT, 'shows'), join(copyDir, 'shows'), { recursive: true });
     cpSync(join(ROOT, 'playlist'), join(copyDir, 'playlist'), { recursive: true });
+    cpSync(join(ROOT, 'songs'), join(copyDir, 'songs'), { recursive: true });
     const copyPort = PORT + 1;
     const copyServer = await startServer(copyDir, copyPort);
     try {
