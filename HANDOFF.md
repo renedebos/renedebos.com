@@ -22,39 +22,41 @@ user-visible UI — that starts at 3a-canary. The one user-facing change is
 song pages moving onto the shared `PlaybackController`, verified working
 in production.
 
-**Eleven commits sit on the branch, unmerged and unpushed.** Nothing is
-deployed; no PR is open. Newest first:
-- `18e7dc7` — applies the third Task 2 review round, plus three defects
-  that applying it uncovered (two of them on shipped surfaces)
-- `e96e532` — applies the second Task 2 review round
-- `940a1a6` — applies the first Task 2 review round
-- `bbc707f` — drops `model: sonnet` from the three project agent
-  definitions; Rene's change, so they inherit the session's model
-- `6b0790e` — **Stage 3a-canary Task 2: `MiniPlayerView`**
-- `5d2746d` — applies the Phase 0 review findings, plus Task 1's
-  `--player-*` aliases
-- `d4056ac` — Stage 3a-canary Phase 0: the integration contracts
-- `ffe0ae4` — merge from `origin/main` (session-start sync)
-- `40b31c1`, `5b19d28` — earlier HANDOFF updates
-- `825b3aa` — two stale `browser_check.mjs` assertions (see "Two incidents"
-  below); dev script only, rides along with 3a-canary's PR
+**Phase A Tasks 1–2 are MERGED (PR #17, merge commit `59e9c6b`) and
+VERIFIED LIVE IN PRODUCTION.** The branch is level with `origin/main` — 0
+ahead, 0 behind — and the worktree is clean. Nothing is queued.
 
-**Nothing on this branch is user-visible yet.** No generated HTML has
-changed since 3a-foundation shipped — Task 2 built the mini-player's view
-layer but nothing emits it into a page, exactly as `miniplayer-state.js` sat
-after 3a-foundation. The first genuinely visible change arrives at Task 6,
-when the container markup and the boot module land.
+Post-deploy verification actually performed (the runbook's "a green Action
+alone isn't proof" step):
+- `/assets/miniplayer-views.js` 200 and **byte-identical to source** — a URL
+  only this deploy can serve; same for `player-controller.js` and
+  `playlist-views.js`.
+- Both bug fixes confirmed present in the deployed bytes (`wasUnpaused` in
+  the controller, the `audio.paused || state === 'error'` guard in
+  `playlist-views.js`).
+- Regression checks hold: `/assets/playlist.js` still 404s (Stage 2c), and
+  `/`, `/playlist/`, `/songs/` all 200.
+- **Rene checked the user-visible fix by hand on `renedebos.com`: Prev on
+  track 1 of `/playlist/` now restarts the track instead of leaving the bar
+  on a spinner.**
 
-**Three shipped-surface files changed on this branch as a side effect of
-Task 2's reviews** — `player-controller.js`, `playlist-views.js`, and the
-two test fakes. Each fixes a real bug on a live page (details below); each
-is small and directly tested. Worth calling out in the PR description
-because a reader expecting a view-layer-only diff will not expect them.
+**Nothing shipped in this PR is user-visible except that fix.** No generated
+HTML changed — Task 2 built the mini-player's view layer, but nothing emits
+it into a page, exactly as `miniplayer-state.js` sat after 3a-foundation.
+The first genuinely visible mini-player change arrives at Task 6, when the
+container markup and the boot module land.
+
+**Three shipped-surface files changed as a side effect of Task 2's
+reviews** — `player-controller.js`, `playlist-views.js`, and the two test
+fakes. Each fixed a real bug on a live page (details below). They were
+landed in their own PR *deliberately*, ahead of Phase B: `player-controller.js`
+runs on every page's playback, and merging it alongside the coordinator would
+have made a production problem ambiguous between the two.
 
 ## ✅ Done this session (2026-08-16)
 
-Stage 3a-canary groundwork, then **Task 2 and its three review rounds**.
-Eleven commits, all local.
+Stage 3a-canary groundwork, then **Task 2 and its three review rounds**,
+shipped as PR #17.
 
 ### Phase A Task 2 — `scripts/miniplayer-views.js` (`MiniPlayerView`)
 The stage's first user-visible *surface*, though nothing emits it yet. A
@@ -162,6 +164,8 @@ Queue-origin contract assigns them `playSingleton()`. Verified empirically
 against production before rewriting them. Fix is `825b3aa`.
 
 ## 🔧 In progress — Stage 3a-canary (Phase 0 and Phase A Tasks 1–2 complete)
+
+**Task 2 is merged and live (PR #17); the branch is level with `main`.**
 
 **Next: Task 3** — the mini-player's CSS in *both* design systems
 (`scripts/site.css` and `scripts/home.css`), correct in light and dark in
@@ -597,10 +601,14 @@ Real-browser verification: `scripts/browser_check.mjs` — needs
 `playwright-chromium`, and on this machine it is a **global** install, so
 run it as `NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs`
 (the script's own error message tells you this too). `--prod` points it at
-`https://renedebos.com`. **185/185 against production, but that figure is
-from before Task 2 and it has NOT been re-run this session** — nothing on
-this branch is emitted into a page yet, so there is nothing new for it to
-check, but re-run it before any PR. `plans/player-consolidation/
+`https://renedebos.com`. Most recent numbers: **179/179 locally** (with
+`--skip-webkit`; only `playwright-chromium` is installed on this machine)
+and **182/185 against production** — the three non-passes are structural
+skips, not failures, because every published show is currently allowlisted
+so the "non-allowlisted show page" sub-checks have nothing to run against.
+The production run predates PR #17's deploy; the post-deploy verification
+above was done by hand instead. A full `--prod` sweep against the new deploy
+has NOT been run and is the one loose end from this session. `plans/player-consolidation/
 browser-check-miniplayer.draft.mjs` is a spec-ahead `checkMiniPlayer()`
 scenario written against the frozen contracts, deliberately not wired into
 any run path and not adopted until Phase C — every assertion in it would
