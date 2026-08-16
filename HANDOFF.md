@@ -2,6 +2,41 @@
 **Date:** 2026-08-16 · **Branch:** `player-consolidation`
 (worktree `/home/renedebos/renedebos.com-player-consolidation`)
 
+## ⛔ READ THIS FIRST — the plan changed on 2026-08-16
+
+**Phase 3 (the sticky in-page mini-player) is PARKED. Do not resume it. Do
+not run `/apply-review` against its findings.** An earlier version of this
+file told the next session to start with `/apply-review`; that instruction
+is void, and the two findings it referred to no longer need fixing (see
+"Why the two open findings are moot" below).
+
+**The next piece of work is the loudness variants** —
+`plans/loudness-variants/loudness-variants-plan.md`. First step there is a
+listening test on one show, not code.
+
+Rene's reasoning, in his words: the whole point of consolidating the players
+was to make a loudness feature buildable once instead of four times. Two
+things turned out to be true that change that calculation:
+
+1. **The consolidation is already ~80% done.** Show pages, `/playlist/`,
+   song pages and the `/songs/` matrix all run the shared
+   `PlaybackController`. Only the `/player/` popup is still its own engine.
+   The choice was never "build loudness four times."
+2. **Loudness does not need to run in the browser.** Rendering louder
+   variants as actual files with the existing, ear-validated transient-cap
+   engine reduces the player-side change to "which URL do I load" — small
+   enough that the remaining engine count stops mattering at all.
+
+Which leaves the mini-player as a large, complex feature serving nothing
+that was actually wanted. So it is parked, not deleted: everything is on the
+**`miniplayer-parked`** branch (commit `6bdecc6`), including Task 3's CSS,
+which was finished and fully verified but never committed to this branch.
+
+**What is still worth doing from the consolidation:** migrating the
+`/player/` popup onto `PlaybackController`. It kills the last duplicated
+shuffle implementation and the last independent engine. It is optional
+cleanup with no deadline — it blocks nothing now.
+
 **Phase 1 (all show pages on the shared `PlaybackController`) is complete,
 review-hardened, and live in production** — see git history / the plan's
 Phase 1 section; not repeated here.
@@ -12,19 +47,55 @@ and confirmed live in production.** Stage 2c (deleting the legacy
 against `renedebos.com`: `/assets/playlist.js` 404s, `/playlist/` serves
 only `playlist-boot.js`. Nothing further queued for Phase 2.
 
-**Phase 3 (sticky in-page mini-player) — Stage 3a-foundation is COMPLETE,
-review-hardened, MERGED, and VERIFIED LIVE IN PRODUCTION** (PR #15, plus
-PR #16 fixing a CI-only test failure). The cross-tab ownership subsystem
-that was mid-redesign at the last handoff is now fully implemented and has
-survived **twelve** review rounds; the review loop was deliberately closed
-out (see "Why the review loop stopped"). Nothing in this stage ships
-user-visible UI — that starts at 3a-canary. The one user-facing change is
-song pages moving onto the shared `PlaybackController`, verified working
-in production.
+**Phase 3 (sticky in-page mini-player) — PARKED 2026-08-16.** What follows
+is the record of what it reached before stopping; see the banner above for
+why it stopped.
 
-**Phase A Tasks 1–2 are MERGED (PR #17, merge commit `59e9c6b`) and
-VERIFIED LIVE IN PRODUCTION.** The branch is level with `origin/main` — 0
-ahead, 0 behind — and the worktree is clean. Nothing is queued.
+Stage 3a-foundation was COMPLETE, review-hardened, MERGED, and verified live
+(PR #15, plus PR #16 fixing a CI-only test failure). Its cross-tab ownership
+subsystem survived **twelve** review rounds before the loop was deliberately
+closed out (see "Why the review loop stopped"). Phase A Tasks 1–2 followed
+(PR #17, merge commit `59e9c6b`), also verified live. Task 3 (the bar's CSS
+in both design systems) was finished and fully verified but never committed
+here.
+
+**What is on this branch now:** nothing from Phase 3's own modules.
+`scripts/miniplayer-state.js`, `scripts/miniplayer-views.js`, their two test
+suites and their two `assets/` build outputs were deleted in `c4dd43c`. No
+page ever referenced them, so the deletion is invisible to visitors; it also
+stops deploying 112 KB of unreachable JavaScript.
+
+**What survives from Phase 3, and is worth keeping:**
+- Song pages run the shared `PlaybackController` (3a-foundation's one
+  user-facing change).
+- Three real bug fixes on live pages that Task 2's reviews turned up.
+- The `--player-*` token aliases Task 1 added to both stylesheets.
+- `onAnyExternalClaim()` / the ownership-event seam in
+  `player-controller.js` — no subscribers today, deliberately kept: inert,
+  tested, and not worth editing live code to remove.
+
+**Why the two open findings are moot.** The last review round confirmed two
+defects and, correctly, stopped before fixing them:
+- *The homepage spinner ignores reduced motion.* This existed **only**
+  because Task 3 added the first `@keyframes` to `home.css`. Task 3 is not
+  on this branch, so neither is the defect. Nothing to fix.
+- *The mini-player's seek control is a 3px tap target.* The mini-player half
+  went with the mini-player. **But the review also recorded that
+  `player-views.js` and `playlist-views.js` have the same 3px rail and were
+  deliberately out of scope** — meaning that tap target is live right now on
+  every show page and on `/playlist/`. It predates all of this work and is
+  unrelated to the mini-player. It is a genuine small mobile-usability issue
+  and it is now tracked on its own, below, so it does not get thrown away
+  with the plan it happened to be found in.
+
+**Open, unrelated to any of the above: the 3px seek rail on live players.**
+On mobile, seeking on a show page or `/playlist/` means hitting a 3px-high
+box anywhere away from the thumb. Fix shape (from the review record): give
+the range at least a 24px block-size while keeping the visual rail at 3px,
+and because `_paintRange()` assigns the `background` shorthand — which
+resets `background-size`/`-repeat`/`-position`, and inline style beats a CSS
+longhand — switch it to `backgroundImage` rather than reaching for
+`!important`. Small, self-contained, no dependency on any phase.
 
 Post-deploy verification actually performed (the runbook's "a green Action
 alone isn't proof" step):
