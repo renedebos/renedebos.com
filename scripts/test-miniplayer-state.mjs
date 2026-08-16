@@ -262,6 +262,56 @@ test('encodeItem bounds string field lengths', () => {
   assert.ok(out.artist.length <= 200);
 });
 
+// The mini-bar renders "artist · venue · date". Venue was missing from this
+// codec until 2026-08-16 — accurate when the codec was written, silently wrong
+// once MiniPlayerView shipped a stage later — so a restored session dropped it
+// while every view test, building its fixtures directly, stayed green.
+test('venue survives a full buildEnvelope -> JSON -> decodeEnvelope round trip', () => {
+  const env = buildEnvelope({
+    queue: [item('a', { venue: 'Cafe Java', artist: 'Jerry Hannan', dateDisplay: '1999-05-27' })],
+    currentItemId: 'a', ownerId: 't1', ownerEpoch: 'e1',
+  });
+  const back = decodeEnvelope(JSON.parse(JSON.stringify(env)));
+  assert.equal(back.queue[0].venue, 'Cafe Java');
+  assert.equal(encodeItem(item('a', { venue: 'x'.repeat(5000) })).venue.length, 200, 'and stays bounded');
+  assert.equal(encodeItem(item('a')).venue, null, 'a genuinely venue-less item stays null, not ""');
+});
+
+test('an envelope written before venue existed still decodes, with venue null', () => {
+  // Exactly what an older stored envelope looks like: no venue key at all. No
+  // ENVELOPE_VERSION bump was needed precisely because this path is identical
+  // to a venue-less item's.
+  const legacy = { version: 1, queue: [{ id: 'a', streamUrl: 'https://example.test/a.mp3', title: 'a' }],
+    currentItemId: 'a', positionSec: 0, playing: false, repeatOne: false, shuffleOn: false,
+    ownerId: 't1', ownerEpoch: 'e1' };
+  const back = decodeEnvelope(legacy);
+  assert.equal(back.queue[0].venue, null);
+});
+
+// pageUrl is the one persisted field that becomes an <a href>. localStorage is
+// same-origin-writable and this codec's premise is that what it reads back may
+// never have come from encodeItem(), so a scheme that EXECUTES is exactly the
+// class of value it exists to reject.
+test('pageUrl is rejected unless it is a same-origin root-relative path', () => {
+  const cases = [
+    ['/shows/mad-sweetwater-1999-05-18/#track-3', '/shows/mad-sweetwater-1999-05-18/#track-3'],
+    ['/songs/kilkelly-ireland/', '/songs/kilkelly-ireland/'],
+    ['javascript:globalThis.__x=1', ''],
+    ['JaVaScRiPt:alert(1)', ''],
+    ['data:text/html,<script>alert(1)</script>', ''],
+    ['//evil.test/shows/', ''],
+    ['https://evil.test/shows/', ''],
+    ['shows/relative/', ''],
+    ['', ''],
+  ];
+  for (const [input, want] of cases) {
+    assert.equal(encodeItem(item('a', { pageUrl: input })).pageUrl, want, `encode ${JSON.stringify(input)}`);
+    const back = decodeEnvelope({ version: 1, queue: [{ id: 'a', streamUrl: 'https://example.test/a.mp3',
+      title: 'a', pageUrl: input }], currentItemId: 'a', ownerId: 't', ownerEpoch: 'e' });
+    assert.equal(back.queue[0].pageUrl, want, `decode ${JSON.stringify(input)}`);
+  }
+});
+
 test('encodeItem omits fields a mini-bar never renders (peaksKey, full downloads payload)', () => {
   const out = encodeItem(item('a', { peaksKey: '7', downloads: { lossless: { key: 'huge/path.flac' } } }));
   assert.equal(out.peaksKey, undefined);

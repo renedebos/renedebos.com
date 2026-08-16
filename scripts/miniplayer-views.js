@@ -32,8 +32,23 @@ const PREV_ICON = '<svg viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2
 const NEXT_ICON = '<svg viewBox="0 0 16 16" fill="currentColor"><polygon points="2,2 2,14 12,8"/><rect x="12" y="2" width="2" height="12"/></svg>';
 const X_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
 
+// 'unknown date' rather than silently dropping the field: 18 real catalog
+// rows have no date (the sean-19-broadway-unknown-* set), and BOTH surfaces
+// this bar replaces say so explicitly -- playlist-views.js's trackMeta() and
+// continuous-player.js's now-playing line. Omitting it shows less than what it
+// replaces, on real content.
+// Same rule as miniplayer-state.js's boundedPath(): only a same-origin
+// root-relative path may become an href, which rejects every scheme,
+// protocol-relative "//host" and off-origin address in one check. Duplicated
+// rather than imported -- this module imports player-controller.js and nothing
+// else, deliberately, and three lines is a cheaper price than that property.
+function isSitePath(url) {
+  return typeof url === 'string' && url.charCodeAt(0) === 47 && url.charCodeAt(1) !== 47;
+}
+
 function trackMeta(item) {
-  return [item.artist, item.venue, item.dateDisplay || item.date].filter(Boolean).join(' · ');
+  return [item.artist, item.venue, item.dateDisplay || item.date || 'unknown date']
+    .filter(Boolean).join(' · ');
 }
 
 // ── shared base ────────────────────────────────────────────────────────────
@@ -185,19 +200,13 @@ export class MiniPlayerView extends QueueView {
       // post-deploy finding #4). The track changed out from under the seek
       // anyway, so there is nothing to preserve.
       this._seeking = false;
-      // Every cache below describes nodes that no longer exist.
-      //
-      // The controls one is REDUNDANT as the code stands, and the reasoning
-      // that says otherwise is wrong — worth recording, because it was
-      // believed until a mutation run contradicted it. The tempting argument
-      // is that two different ids can carry identical metadata (two takes of
-      // one song, same venue, date and duration), so _patchMeta() would
-      // early-return and leave the fresh button holding the template's
-      // generic "Play". It can't: _buildStructure() clears _lastMetaKey, so
-      // _patchMeta() always writes after a rebuild and always invalidates
-      // this key itself. Kept anyway as belt and braces — the property
-      // ("a fresh button never keeps the generic label") has a direct test,
-      // and neither path alone is load-bearing for it.
+      // Every cache below describes nodes that no longer exist — and the
+      // controls one is load-bearing now that its key depends on the title
+      // instead of being invalidated from _patchMeta(): two different ids can
+      // carry identical metadata (two takes of one song, same venue, date and
+      // duration), and without this the freshly built button would keep the
+      // template's generic "Play" for the whole track. Directly tested, and
+      // the test fails when this line alone is removed.
       this._lastQueueRevision = -1;
       this._lastControlsKey = null;
       this._errorKind = null;
@@ -264,11 +273,13 @@ export class MiniPlayerView extends QueueView {
   _patchMeta(item, dur) {
     const meta = trackMeta(item);
     const total = formatTime(dur);
-    // Written as an escape, never as a literal control character: an invisible
-    // byte in source is the same hazard as the NUL that once made grep treat a
-    // whole file as binary (HANDOFF.md). The separator itself matters — without
-    // one, a title and a URL could rearrange into the same key.
-    const key = [item.title, item.pageUrl, meta, total].join('\u001f');
+    // JSON, not a delimiter join. Any separator character can itself occur in
+    // the data — persisted titles and URLs are explicitly untrusted — and a pair
+    // that moves the separator across a field boundary then produces an
+    // identical key, leaving the bar rendering the previous track's title and
+    // link (reproduced). JSON.stringify cannot collide that way, and this runs
+    // only when something actually changed.
+    const key = JSON.stringify([item.title, item.pageUrl, meta, total]);
     if (key === this._lastMetaKey) return;
     this._lastMetaKey = key;
     if (this._titleEl) {
@@ -276,15 +287,20 @@ export class MiniPlayerView extends QueueView {
       // pageUrl defaults to '' in normalizeItem(); an <a href=""> reloads the
       // current page, while an <a> with no href at all is inert and unfocusable
       // — the correct degradation, and it keeps one node type across the change.
-      if (item.pageUrl) this._titleEl.setAttribute('href', item.pageUrl);
+      //
+      // The path check is the second of two: miniplayer-state.js's codec
+      // already rejects anything that isn't root-relative on both its read and
+      // write paths. Repeated here because this is the line that actually
+      // creates the link, and an item can reach a controller from somewhere
+      // other than that codec (a page's own data-item markup today, a future
+      // hash- or catalog-derived queue). A value that executes is not worth
+      // leaving to one layer.
+      if (isSitePath(item.pageUrl)) this._titleEl.setAttribute('href', item.pageUrl);
       else this._titleEl.removeAttribute('href');
     }
     if (this._metaEl) this._metaEl.textContent = meta;
     if (this._totalEl) this._totalEl.textContent = total;
     if (this._range) this._range.setAttribute('aria-label', 'Seek ' + item.title);
-    // The play button's accessible name carries the title too, so it has to be
-    // re-derived even when nothing about playback state changed.
-    this._lastControlsKey = null;
   }
 
   _patch(snapshot) {
@@ -305,7 +321,22 @@ export class MiniPlayerView extends QueueView {
       // The icon SVG is only rewritten when it would actually differ: _patch()
       // runs on every timeupdate (~4/sec), and the label/icon pair changes a
       // handful of times per track.
-      const key = verb + '|' + state;
+      // The title is IN the key rather than invalidated from elsewhere when it
+      // changes: the accessible name is 'Pause <title>', so the key deciding
+      // whether to rewrite it depends on every input it uses. The earlier shape
+      // kept verb+state here and had _patchMeta() reach over and null this key
+      // — correct, but it made the two paths redundant and therefore
+      // individually un-mutation-testable (post-fix review finding 5).
+      //
+      // Honest limit: **no test distinguishes this from plain verb+state**, and
+      // removing `+ item.title` leaves the suite green. Every reachable title
+      // change today arrives with either a rebuild (a new id) or a state
+      // transition (setQueue always moves state), each of which rewrites the
+      // label anyway. It is kept as construction rather than as a tested
+      // property, because the coordinator will soon feed this view metadata
+      // restored from storage, which is exactly where a same-id, same-state
+      // title change becomes reachable. Don't claim it is covered.
+      const key = verb + '|' + state + '|' + item.title;
       if (key !== this._lastControlsKey) {
         this._lastControlsKey = key;
         this._playBtn.innerHTML = state === 'loading' ? LOADING_ICON : (playing ? PAUSE_ICON : PLAY_ICON);

@@ -14,6 +14,9 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { PlaybackController } from './player-controller.js';
+// The real persistence codec, so at least one test crosses it: fixtures built
+// by hand are how a field the codec silently drops stays invisible here.
+import { buildEnvelope, decodeEnvelope } from './miniplayer-state.js';
 import {
   FakeElement, FakeDocument, FakeAudio, FakeResizeObserver, resizeObservers, loadMiniplayerViews,
 } from './test-fake-dom.mjs';
@@ -476,8 +479,14 @@ test('pressing the thumb and releasing without moving it does not freeze the ran
   c.destroy();
 });
 
-test('a drag that ends outside the control, or is cancelled, also ends the seek', async () => {
-  for (const endEvent of ['pointerup', 'touchcancel']) {
+// Each pair is a COHERENT lifecycle — the press event that really precedes
+// that release. An earlier version opened every iteration with `mousedown` and
+// then dispatched `touchcancel`, a sequence no browser produces: the touch
+// listener was never exercised at all, and deleting it left the suite green
+// (post-fix review finding 6, verified by mutation).
+test('a seek that ends outside the control, or is cancelled, ends on every input modality', async () => {
+  for (const [startEvent, endEvent] of [['mousedown', 'mouseup'], ['mousedown', 'pointerup'],
+    ['touchstart', 'touchend'], ['touchstart', 'touchcancel']]) {
     const c = makeController();
     const { root } = mount(c);
     c.setQueue([item('a')], { startIndex: 0, autoplay: true });
@@ -485,16 +494,88 @@ test('a drag that ends outside the control, or is cancelled, also ends the seek'
     c.audioElement.duration = 200;
 
     const range = root.querySelector('.progress-range');
-    root.dispatch('mousedown', { target: range });
+    root.dispatch(startEvent, { target: range });
+    // Frozen while the press is live — the thumb belongs to the user.
+    c.audioElement.currentTime = 20;
+    c.audioElement.dispatchEvent(new Event('timeupdate'));
+    assert.equal(range.value, 0, `${startEvent} must start a seek`);
+
     // Released over the page, not the range — the listener is on the document
     // for exactly this.
     globalThis.document.dispatch(endEvent, { target: globalThis.document });
     c.audioElement.currentTime = 100;
     c.audioElement.dispatchEvent(new Event('timeupdate'));
-    assert.equal(range.value, 500, `${endEvent} must end the seek`);
+    assert.equal(range.value, 500, `${startEvent} → ${endEvent} must end the seek`);
     c.destroy();
   }
 });
+
+// ── post-fix review findings, 2026-08-16 ──────────────────────────────────
+// Finding 1. Every other test here builds its fixtures directly and so never
+// crosses the persistence codec — which is exactly why a missing venue stayed
+// invisible. This one goes through the real envelope, both directions.
+test('an item restored through the real persistence codec still renders its venue', () => {
+  const env = buildEnvelope({
+    queue: [item('a', { venue: 'Cafe Java' })], currentItemId: 'a',
+    positionSec: 0, playing: false, ownerId: 't1', ownerEpoch: 'e1',
+  });
+  const restored = decodeEnvelope(JSON.parse(JSON.stringify(env)));
+  const c = makeController();
+  const { root } = mount(c);
+  c.restoreSession({ queue: restored.queue, currentItemId: restored.currentItemId });
+  assert.equal(root.querySelector('.mp-meta').textContent, 'Jerry Hannan · Cafe Java · 1999-05-27');
+  c.destroy();
+});
+
+// Finding 2. localStorage is same-origin-writable, so a corrupted or
+// hand-edited envelope is the threat model the plan already assumes — and this
+// is the line that turns a persisted string into a live link.
+test('a pageUrl that is not a same-origin path never becomes an href', () => {
+  for (const hostile of ['javascript:globalThis.__x=1', '//evil.test/shows/',
+    'https://evil.test/shows/', 'data:text/html,<script>alert(1)</script>']) {
+    const c = makeController();
+    const { root } = mount(c);
+    c.setQueue([item('a', { pageUrl: hostile })], { startIndex: 0 });
+    assert.equal(root.querySelector('.mp-title').getAttribute('href'), undefined,
+      `${hostile} must not become a link`);
+    assert.equal(root.querySelector('.mp-title').textContent, 'Song a', 'the title still renders');
+    c.destroy();
+  }
+});
+
+// Finding 3. The mirror image of the stale-metadata fix: a delimiter-joined
+// cache key collides when a separator moves across a field boundary, and the
+// persisted codec preserves any such character. The pair below produced one
+// identical key, leaving the previous track's title AND link on screen.
+test('two same-id items whose fields differ only by where a separator falls both render', () => {
+  const SEP = String.fromCharCode(31);
+  const c = makeController();
+  const { root } = mount(c);
+  c.setQueue([item('a', { title: 'A' + SEP + 'B', pageUrl: '/one/' })], { startIndex: 0 });
+  c.setQueue([item('a', { title: 'A', pageUrl: 'B' + SEP + '/one/' })], { startIndex: 0 });
+  assert.equal(root.querySelector('.mp-title').textContent, 'A',
+    'the bar must follow the controller, not a colliding cache key');
+  assert.equal(root.querySelector('.mp-title').getAttribute('href'), undefined,
+    'and the stale link must be gone (this one is not a site path either)');
+  c.destroy();
+});
+
+// Finding 4. 18 real catalog rows have no date (the sean-19-broadway-unknown-*
+// set). Both surfaces this bar replaces say "unknown date" rather than
+// dropping the field.
+test('a track with no date says so, matching the surfaces this bar replaces', () => {
+  const c = makeController();
+  const { root } = mount(c);
+  c.setQueue([item('a', { venue: '19 Broadway', date: null, dateDisplay: null })], { startIndex: 0 });
+  assert.equal(root.querySelector('.mp-meta').textContent, 'Jerry Hannan · 19 Broadway · unknown date');
+  c.destroy();
+});
+
+// Finding 5's other half — a title change under an unchanged id, with the
+// state unchanged too — is already covered by "fresh metadata under an
+// unchanged id is patched, link included": its `Pause New Title` assertion is
+// exactly what dropping `+ item.title` from the controls cache key breaks.
+// Verified by mutation rather than assumed; no second test needed.
 
 // Finding 5. controller.prev() no-ops before index 0 — a deliberate Phase 1
 // primitive — but the popup this bar replaces clamps to 0 and plays
@@ -538,11 +619,16 @@ test('Previous more than 3s into any track restarts it rather than stepping back
 // the cache key to a constant, which is a weaker property and passed this gap.
 //
 // The two items deliberately carry IDENTICAL metadata (two takes of one song
-// at one show: same title, venue, date, duration), differing only by id.
-// _patchMeta() therefore early-returns and cannot be what re-labels the
-// button, which is what makes the rebuild branch's own invalidation the thing
-// under test. Mutation that fails this: deleting `this._lastControlsKey = null`
-// from the rebuild branch of _render().
+// at one show: same title, venue, date, duration), differing only by id — so
+// _patchMeta() early-returns, the controls key (verb|state|title) is unchanged,
+// and the ONLY thing that can re-label the freshly built button is the rebuild
+// branch's own invalidation. Mutation that fails this: deleting
+// `this._lastControlsKey = null` from the rebuild branch of _render().
+//
+// An earlier version of this comment claimed the same thing while the code
+// ALSO invalidated from _patchMeta(), which made the two paths redundant and
+// the claim false — the post-fix review caught it, and the fix was to make the
+// controls key depend on the title directly rather than to reword the comment.
 test('an item change with NO state change still re-labels the play button', async () => {
   const c = makeController();
   const { root } = mount(c);

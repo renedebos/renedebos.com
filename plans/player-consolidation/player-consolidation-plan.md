@@ -2199,6 +2199,53 @@ threat model would not transfer to new surface. Carried forward:
   taken, because a fake that outlives its own teardown is how a
   confidently-wrong test gets believed later.
 
+**Second review round, 2026-08-16** (`-codex.md`, "Stage 3a-canary Phase A
+Task 2 post-fix review") — deliberately broad rather than a narrow "verify
+the fixes" pass, which is what made it worth running: six findings, all six
+confirmed by reproduction, none declined. Two were **contract breaks between
+Task 2's view and `miniplayer-state.js`**, invisible from either file alone:
+- **The persisted codec dropped `venue`.** `MiniPlayerView` renders
+  "artist · venue · date", but `encodeItem()`/`decodeItem()` never carried a
+  venue, so a session restored across navigation rendered
+  "Jerry Hannan · 1999-05-27". Every view test built its fixtures directly
+  and so never crossed the codec — the suite was green throughout. **The
+  general lesson, worth more than the fix:** `encodeItem()`'s comment
+  ("omits every field a mini-bar never renders") was *true when written* in
+  3a-foundation and was falsified a stage later by a new consumer. When a
+  view starts rendering a field, check that codec. Now fixed with a bounded
+  `venue` on both directions, no `ENVELOPE_VERSION` bump needed (an older
+  envelope decodes to `venue: null`, identical to a genuinely venue-less
+  item), and one views-suite test that deliberately goes through the real
+  envelope so a future dropped field cannot hide the same way.
+- **A persisted `pageUrl` reached `href` unvalidated** — `javascript:` and
+  off-origin values included. Not a live exploit path (`localStorage` is
+  same-origin, so anything that can write it already runs script here), but
+  `decodeItem()`'s stated contract is that it re-validates everything
+  *precisely because* the value may be hand-edited. Now **root-relative
+  paths only**, enforced in the codec's read AND write paths and again at
+  the render boundary — every real `pageUrl` in this project is one
+  (`/shows/<slug>/#track-N`, `/songs/<slug>/`, verified across generated
+  markup and the whole catalog), so the rule costs nothing.
+
+The other four: the metadata cache key was delimiter-joined and could
+**collide** when a separator moved across a field boundary (the mirror image
+of the previous round's own fix — now `JSON.stringify`); tracks with no date
+rendered *less* than the two surfaces this bar replaces, which both say
+"unknown date" (18 real catalog rows, the `sean-19-broadway-unknown-*` set);
+the previous round's corrected comment was fixed in the source and **left
+standing, still wrong, in the test** — fixed by making the controls cache key
+depend on the title directly rather than by rewording; and the touch
+seek-release test used an impossible `mousedown`→`touchcancel` sequence, so
+deleting the `touchstart` listener left the suite green.
+
+**Mutation results, stated precisely: 11 of 12 caught.** The exception is
+keeping `item.title` inside the controls cache key — removing it leaves the
+suite green, because every reachable title change today arrives with either
+a rebuild or a state transition, each of which rewrites the label anyway. It
+is kept as construction, not as a tested property, and the code says so: the
+coordinator will soon feed this view metadata restored from storage, which
+is where a same-id, same-state title change becomes reachable.
+
 **Review round, 2026-08-16** (`-codex.md`, "Stage 3a-canary Phase 0 and Task
 1 review") — five findings, all confirmed and all fixed. Two changed work
 this section had already marked complete, which is why the status words

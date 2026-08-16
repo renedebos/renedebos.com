@@ -5199,3 +5199,193 @@ Not fixed here, deliberately: the shared one-shot-`AbortController` shape and
 the `change`-only seek-end in `player-views.js` / `playlist-views.js`. Finding
 4 is a live bug in both shipped surfaces; touching them is Rene's call and a
 separate change, since they are on every show, song and playlist page.
+
+---
+
+## Stage 3a-canary Phase A Task 2 post-fix review — 2026-08-16
+
+1. **Medium — Persisted sessions lose the venue that `MiniPlayerView` expects to render.**
+
+   Evidence: [`trackMeta()`](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-views.js:35) includes `item.venue`, but [`encodeItem()`](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:101) and [`decodeItem()`](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:145) omit it. The tests bypass persistence by constructing fixtures containing `venue` directly at [`test-miniplayer-views.mjs:29`](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-views.mjs:29). A real `buildEnvelope()` → JSON → `decodeEnvelope()` → `restoreSession()` probe rendered `Jerry Hannan · 1999-05-27`, silently dropping `Cafe Java`.
+
+   Why it matters: cross-navigation restoration is the feature’s core path. On a page with no fresh page-owned queue to replace the restored item, the missing venue persists indefinitely. This also contradicts `miniplayer-state.js`’s claim that its slim codec omits only fields the mini-bar never renders and the plan’s assertion that Task 2 is done.
+
+   Suggested fix: add a bounded `venue` field to both codec directions and add an integration test that round-trips a realistic item through the envelope codec before rendering it.
+
+2. **Medium — Untrusted persisted `pageUrl` values become executable or external links without validation.**
+
+   Evidence: persisted URLs receive only length truncation at [`miniplayer-state.js:77`](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:77) and [`miniplayer-state.js:161`](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-state.js:161); `normalizeItem()` also accepts them verbatim at [`player-controller.js:106`](/home/renedebos/renedebos.com-player-consolidation/scripts/player-controller.js:106). `_patchMeta()` then assigns the value directly to `href` at [`miniplayer-views.js:274`](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-views.js:274). A probe produced `href="javascript:globalThis.__clicked=1"`. This conflicts with the plan’s explicit treatment of `localStorage` as untrusted input at [`player-consolidation-plan.md:640`](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:640).
+
+   Why it matters: corrupted, hand-edited, or obsolete persisted state can turn the mini-player’s prominent title into an unexpected navigation or stored script URL.
+
+   Suggested fix: validate persisted `pageUrl` values as root-relative site paths—reject blank-excepted values beginning with `//`, containing a non-HTTP scheme, or resolving off-origin—and repeat that validation at the rendering boundary. Add `javascript:`, protocol-relative, and external-origin fixtures.
+
+3. **Low — `_patchMeta()`’s delimiter-based cache key can collide and leave stale metadata.**
+
+   Evidence: [`miniplayer-views.js:271`](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-views.js:271) joins untrusted strings using `\u001f`, while the persisted codec preserves that character. Two same-ID items with `(title, pageUrl)` values `("a\u001fb", "c")` and `("a", "b\u001fc")` generate the same key. A probe left the first title and link rendered while `controller.currentItem` held the second. This disproves the applied-review claim that metadata is patched “whenever it differs” at [`player-consolidation-codex.md:5158`](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-codex.md:5158).
+
+   Why it matters: this is a mirror-image bug introduced by the stale-metadata fix itself. It is unlikely with generated catalog data but reachable through the explicitly untrusted persistence path.
+
+   Suggested fix: cache `JSON.stringify([title, pageUrl, meta, total])` or retain and compare the individual output fields. Add a delimiter-containing regression fixture.
+
+4. **Low — Unknown-date tracks regress the metadata shown by both replaced queue surfaces.**
+
+   Evidence: [`trackMeta()`](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-views.js:35) simply filters away a missing date. The popup being replaced renders `"unknown date"` at [`continuous-player.js:92`](/home/renedebos/renedebos.com-player-consolidation/scripts/continuous-player.js:92), as does the current playlist view at [`playlist-views.js:74`](/home/renedebos/renedebos.com-player-consolidation/scripts/playlist-views.js:74). The real catalog contains 18 null-date tracks, while every mini-player fixture supplies a date.
+
+   Why it matters: these real tracks display less information after the mini-player migration, and the convenient fixture hides the parity regression.
+
+   Suggested fix: use `item.dateDisplay || item.date || 'unknown date'` and add a fixture derived from an actual null-date catalog row.
+
+5. **Low — The item-change test still claims to isolate a cache invalidation that it does not test.**
+
+   Evidence: [`test-miniplayer-views.mjs:540`](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-views.mjs:540) says `_patchMeta()` early-returns and deleting the rebuild branch’s `_lastControlsKey = null` fails the test. In reality `_buildStructure()` clears `_lastMetaKey` at [`miniplayer-views.js:250`](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-views.js:250), forcing `_patchMeta()` to run and independently invalidate the controls key at line 287. Mutation probes produced:
+
+   - rebuild invalidation removed: `Play Kilkelly Ireland`
+   - metadata invalidation removed: `Play Kilkelly Ireland`
+   - both removed: generic `Play`
+
+   Why it matters: the test passes for a different reason than its commentary states, recreating the exact false mutation-confidence problem the first review identified. The plan correctly says only removing both paths fails, but the suite still contradicts it.
+
+   Suggested fix: remove the redundant rebuild invalidation and correct the test commentary, or explicitly mutation-test both removals together. Prefer including the title in the controls cache key so the dependency is direct.
+
+6. **Low — Touch seek-release coverage uses an impossible mixed event sequence.**
+
+   Evidence: the production path begins touch seeking on `touchstart` at [`miniplayer-views.js:116`](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-views.js:116), but the cancellation test starts every iteration with `mousedown` and then dispatches `touchcancel` at [`test-miniplayer-views.mjs:479`](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-views.mjs:479). No test dispatches `touchstart`; deleting that listener leaves the suite green.
+
+   Why it matters: the document-level release listeners are covered for mouse state, but the mobile lifecycle they purport to prove is not.
+
+   Suggested fix: test coherent `touchstart → timeupdate → touchend/touchcancel` sequences, including an assertion that progress remains frozen before release and resumes afterward.
+
+**Verification during this review**
+
+- `python3 scripts/build.py --check` — passed: 31 shows, 680 curated tracks.
+- All `node scripts/test-*.mjs` suites — passed: 310/310.
+- `python3 scripts/verify_markup.py` — passed: 1,427 items across 166 pages.
+- `python3 scripts/verify_markup.py --check-allowlist-coverage` — passed: all 30 public shows covered.
+- `node --check` on the Task 2 JavaScript files, scoped and worktree-wide `git diff --check` — passed.
+- `cmp scripts/miniplayer-views.js assets/miniplayer-views.js` — passed; the registered build asset is byte-identical.
+- Focused persisted-codec, cache-collision, unsafe-URL, and cache-invalidation mutation probes — reproduced the findings above.
+_Review generated 2026-08-16 11:51:09 PDT by `scripts/codex_review.sh` (codex exec, read-only)._
+
+### Disposition (Claude, 2026-08-16)
+
+**All six confirmed by independent reproduction.** This was the deliberately
+broad round the project's own record says to run after a narrow one, and it
+earned its keep: findings 1 and 4 are *contract* breaks between Task 2's view
+and code that shipped in 3a-foundation, which no amount of scrutiny of
+`miniplayer-views.js` alone would have surfaced, and finding 3 is precisely
+the "a fix opens its own mirror-image bug" pattern this round was asked to
+look for — introduced by the previous round's own metadata fix.
+
+1. **CONFIRMED (Medium).** A real `buildEnvelope()` → JSON → `decodeEnvelope()`
+   → `restoreSession()` round trip renders `Jerry Hannan · 1999-05-27`: the
+   persisted item's keys are `id, kind, streamUrl, title, artist, dateDisplay,
+   durationSec, playLabel, pageUrl` — no `venue`. Every test fixture builds
+   items directly and so never crosses the codec, which is why the suite is
+   green. Note the second half of the damage: `encodeItem()`'s own comment
+   says it "omits every field a mini-bar never renders." That was *true* when
+   3a-foundation wrote it and Task 2 falsified it, so the comment must move
+   with the fix. Restoration across navigation is this feature's whole point,
+   so this is a genuine "Task 2 is not done" finding, not a nicety.
+2. **CONFIRMED (Medium), with the threat model stated honestly.** Reproduced
+   at both boundaries: the codec preserves `javascript:alert(1)` verbatim, and
+   `_patchMeta()` assigns it straight to `href`. It is **not** a live exploit
+   path — `localStorage` is same-origin, so anything able to write it can
+   already run script on the page — which is why this is Medium rather than
+   High. It is still worth closing: `decodeItem()`'s stated contract is that it
+   re-validates everything *precisely because* the value may not have come
+   from `encodeItem()` at all, and a scheme that executes is exactly the class
+   of value that contract exists to reject. Fix at both ends (root-relative
+   paths only), not just the render boundary.
+3. **CONFIRMED (Low), and it is my own fix's mirror image.** Reproduced only
+   after correcting my first attempt's construction — the colliding pair has
+   to move the separator across the field boundary (`title:"A\u001fB",
+   pageUrl:"/one/"` vs `title:"A", pageUrl:"B\u001f/one/"`). With those, the
+   bar keeps rendering the OLD title and the OLD href while
+   `controller.currentItem` holds the new one. Unreachable from generated
+   catalog data; reachable through the explicitly-untrusted persistence path.
+   `JSON.stringify` removes the class of bug rather than picking a rarer
+   delimiter.
+4. **CONFIRMED (Low).** Verified against the real catalog, not the claim:
+   `assets/tracks.json` has exactly 18 rows with no `showDate`, all of them
+   the `sean-19-broadway-unknown-*` set. The bar renders
+   `Jerry Hannan · 19 Broadway`, while both surfaces it replaces render an
+   explicit `unknown date` (`continuous-player.js`, `playlist-views.js`). A
+   parity regression on real content, hidden by fixtures that all carry a date.
+5. **CONFIRMED (Low), and this one is squarely mine.** The previous round
+   caught the same wrong reasoning; I corrected it in `miniplayer-views.js`
+   and left the identical falsified claim standing in the test's own comment,
+   which is the "a test comment can be confidently wrong about the harness"
+   gotcha repeating within one session. Taking the reviewer's *stronger*
+   suggestion rather than just editing prose: put the title into the controls
+   cache key so the button's label depends on it directly, keep the rebuild
+   invalidation (fresh nodes genuinely need it), and drop `_patchMeta()`'s
+   cross-invalidation — then each path is individually mutation-checkable and
+   the redundancy that made the claim untestable is gone.
+6. **CONFIRMED (Low).** Verified by mutation rather than by reading: deleting
+   the `touchstart` listener outright leaves the suite at 28/28. The touch
+   iteration of the release test opens with `mousedown`, so the mobile
+   lifecycle it claims to cover is never exercised.
+
+Nothing declined this round. Fixes are not applied here — this is the review
+step only.
+
+### Applied (Claude, 2026-08-16)
+
+All six fixed. Suites: 28 → 32 (views) and 122 → 125 (state); **310 → 317
+across the whole set**, green on Node 20 and simulated Node 24. Twelve
+mutations were run against the fixes; **eleven were caught**, and the one that
+was not is documented below rather than papered over.
+
+1. **FIXED.** Bounded `venue` on both codec directions, plus the comment that
+   had gone stale under it. No `ENVELOPE_VERSION` bump: an envelope written
+   before this decodes to `venue: null`, which is exactly what a genuinely
+   venue-less item yields, so one read path handles both and there is no
+   migration to get wrong (a test pins that). Three mutations caught, including
+   dropping venue from the read path alone. The views suite now imports the
+   real `buildEnvelope`/`decodeEnvelope` for one test that crosses the codec
+   end to end — the structural fix for *how* this hid, not just for the field.
+2. **FIXED at both ends.** `boundedPath()` in the codec (read and write) and
+   `isSitePath()` at the render boundary: root-relative only, which rejects
+   every scheme, protocol-relative `//host`, and off-origin address in one
+   check. Four mutations caught, including allowing `//host` through alone.
+   The two rules are duplicated rather than shared because this view imports
+   `player-controller.js` and nothing else, deliberately; three lines is
+   cheaper than that property.
+3. **FIXED.** `JSON.stringify` for the metadata cache key. The regression test
+   uses the exact colliding pair (a separator moved across a field boundary)
+   and fails when the delimiter join is restored.
+4. **FIXED.** `'unknown date'` fallback, matching `playlist-views.js` and
+   `continuous-player.js`. Test built from a real null-date catalog row shape.
+5. **FIXED, by construction rather than by rewording.** The controls cache key
+   is now `verb|state|title` and `_patchMeta()` no longer reaches over to null
+   it, so the rebuild-branch invalidation is individually mutation-checkable —
+   removing that one line now fails the identical-metadata test, which it did
+   not before. The test comment is corrected, and records that its earlier
+   version was wrong.
+
+   **The one uncaught mutation.** Removing `+ item.title` from the key leaves
+   all 32 tests green. Every reachable title change today arrives with either a
+   rebuild (new id) or a state transition (`setQueue()` always moves state),
+   either of which rewrites the label anyway, so no test can distinguish the
+   two shapes. The title stays in the key as construction, not as a tested
+   property, and the code comment says exactly that — the coordinator will soon
+   feed this view metadata restored from storage, which is where a same-id,
+   same-state title change becomes reachable. Recorded here so a later round
+   does not "discover" the same gap and treat it as new.
+6. **FIXED.** The release test now walks four coherent pairs
+   (`mousedown→mouseup`, `mousedown→pointerup`, `touchstart→touchend`,
+   `touchstart→touchcancel`) and asserts the range is frozen *before* release
+   as well as moving after it. Deleting either the `touchstart` listener or the
+   document-level release listeners now fails it; before, deleting `touchstart`
+   left the suite at 28/28.
+
+Verification: `build.py --check`, `build.py` (with its generated-markup check),
+`verify_markup.py --check-allowlist-coverage`, `node --check` on both changed
+modules, source/asset `cmp` for both, and the C0-control-byte sweep — all
+clean. No generated HTML changed; the bar still is not emitted into any page.
+
+Note for whoever reads this next: `miniplayer-state.js` was modified for the
+first time since its twelve-round hardening. Both changes are additive
+validation inside the codec's own stated contract, its full suite passes
+(125/125), and no ownership/lease code was touched.

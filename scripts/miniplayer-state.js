@@ -70,12 +70,34 @@ export const MAX_PERSISTED_QUEUE_ITEMS = 1000;
 const MAX_ID_LEN = 200;
 const MAX_TITLE_LEN = 300;
 const MAX_ARTIST_LEN = 200;
+const MAX_VENUE_LEN = 200;
 const MAX_DATE_LEN = 100;
 const MAX_LABEL_LEN = 400;
 const MAX_URL_LEN = 2000;
 
 function boundedString(v, max) {
   return typeof v === 'string' ? v.slice(0, max) : '';
+}
+
+// pageUrl is the one persisted field that becomes an <a href> in the DOM, so
+// length-bounding it is not enough: a `javascript:` value out of a hand-edited
+// or corrupted envelope would be a link that executes, and this module's whole
+// premise is that what it reads back may never have come from encodeItem() at
+// all. Only same-origin ROOT-RELATIVE paths survive — every real pageUrl in
+// this project is one ("/shows/<slug>/#track-N", "/songs/<slug>/"; verified
+// across the generated markup and the whole track catalog), so the rule costs
+// nothing and rejects every scheme, protocol-relative "//host" and off-origin
+// address in a single check. Anything else becomes '', which the view renders
+// as a title with no href at all.
+//
+// Applied on BOTH the write and read paths, and again at the render boundary
+// in miniplayer-views.js. Belt and braces is deliberate here: a value that
+// executes is not the kind of thing to leave to one layer.
+function boundedPath(v, max) {
+  const s = boundedString(v, max);
+  if (s.charCodeAt(0) !== 47) return '';        // must start with '/'
+  if (s.charCodeAt(1) === 47) return '';        // but "//host" is protocol-relative, i.e. off-origin
+  return s;
 }
 
 // Real booleans only — a corrupt string value ("true", 1, "yes") must not
@@ -98,6 +120,21 @@ function finiteNonNegative(v, fallback) {
 // field's length, since this travels through localStorage (shared-origin,
 // anything else on the site could have written it) rather than build-time-
 // bounded markup.
+//
+// `venue` was added 2026-08-16, and the omission is worth recording because
+// of HOW it happened: this comment's "omits every field a mini-bar never
+// renders" was accurate when it was written in Stage 3a-foundation, and Task
+// 2's MiniPlayerView — which renders "artist · venue · date" — silently
+// falsified it a stage later. Every view test built its fixtures directly, so
+// nothing crossed this codec and the suite stayed green while a restored
+// session rendered "Jerry Hannan · 1999-05-27" with the venue gone. A field
+// this codec drops is invisible until something renders it; when a consumer
+// starts rendering a new field, check this list.
+//
+// No ENVELOPE_VERSION bump: an envelope written before this decodes with
+// venue absent, which yields null — exactly what a genuinely venue-less item
+// yields — so old and new envelopes are both handled by the same read path
+// with no migration.
 export function encodeItem(item) {
   if (!item || typeof item !== 'object') throw new TypeError('playable item must be an object');
   const id = boundedString(item.id, MAX_ID_LEN);
@@ -110,11 +147,12 @@ export function encodeItem(item) {
     streamUrl,
     title: boundedString(item.title, MAX_TITLE_LEN) || 'Untitled',
     artist: boundedString(item.artist, MAX_ARTIST_LEN),
+    venue: boundedString(item.venue, MAX_VENUE_LEN) || null,
     dateDisplay: boundedString(item.dateDisplay, MAX_DATE_LEN) || null,
     durationSec: typeof item.durationSec === 'number' && isFinite(item.durationSec) && item.durationSec >= 0
       ? item.durationSec : null,
     playLabel: boundedString(item.playLabel, MAX_LABEL_LEN),
-    pageUrl: boundedString(item.pageUrl, MAX_URL_LEN),
+    pageUrl: boundedPath(item.pageUrl, MAX_URL_LEN),
   };
 }
 
@@ -154,11 +192,12 @@ function decodeItem(raw) {
     streamUrl,
     title: boundedString(raw.title, MAX_TITLE_LEN) || 'Untitled',
     artist: boundedString(raw.artist, MAX_ARTIST_LEN),
+    venue: boundedString(raw.venue, MAX_VENUE_LEN) || null,
     dateDisplay: boundedString(raw.dateDisplay, MAX_DATE_LEN) || null,
     durationSec: typeof raw.durationSec === 'number' && isFinite(raw.durationSec) && raw.durationSec >= 0
       ? raw.durationSec : null,
     playLabel: boundedString(raw.playLabel, MAX_LABEL_LEN),
-    pageUrl: boundedString(raw.pageUrl, MAX_URL_LEN),
+    pageUrl: boundedPath(raw.pageUrl, MAX_URL_LEN),
   };
 }
 
