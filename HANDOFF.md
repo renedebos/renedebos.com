@@ -138,6 +138,29 @@ consumer**, which matters more than it sounds: several documented residual
 gaps are explicitly "caller contract" items that no code enforces yet
 because there is no caller. Building that coordinator is the point.
 
+**Starting state, verified 2026-08-15** (so the next session doesn't
+re-derive it). Everything on the *controller* side that the mini-player
+needs already exists and shipped:
+- `PlaybackController` has `restoreSession()`, `snapshot()`,
+  `lastPlayError`, and the unconditional `onAnyExternalClaim` hook — the
+  last two were added specifically for this stage (a browser-blocked
+  autoplay resolves rather than rejects, so the Resume affordance needs
+  an explicit signal; and the *conditional* claim callback never fires
+  for a paused restored tab).
+- The `PLAYBACK_HOST_READY` readiness contract is wired across all four
+  boot paths — `player-boot.js`, `song-boot.js`, `playlist-boot.js`, and
+  `fragments.py`'s `{mode:'none'}`/`{mode:'legacy'}` inline variants.
+- `scripts/miniplayer-state.js` is complete and consumed by nothing.
+
+What does **not** exist yet, i.e. the actual scope of this stage: the
+mini-player view class (`player-views.js` has `PlayerView`,
+`CompactPlayerView`, `HeroPlayerView` — no mini), the container markup in
+`page_shell()`, its CSS, the coordinator joining `miniplayer-state.js` to
+the controller, and `MINI_PLAYER_ENABLED` itself. Note the split this
+implies: the logic layer is hardened and heavily tested, while this stage
+is mostly *new* surface — view, markup, CSS, page template — so don't
+expect round 6–12's threat model to transfer to it.
+
 Read before starting:
 - `plans/player-consolidation/player-consolidation-plan.md` — Phase 3
   stage shape, the full fenced-lease design, and **residual gaps 1–12**.
