@@ -200,6 +200,34 @@ function serializingLockProvider() {
 // critical section, it just doesn't queue concurrent callers.
 const TEST_LOCK = nonSerializingLockProvider();
 
+// Runs `fn` with `globalThis.navigator` forced to `value` (pass `undefined`
+// to make it genuinely absent), restoring the original afterward.
+//
+// The three "no lock provider" tests below used to just ASSERT that no
+// global `navigator` existed, which silently made them
+// environment-dependent: they passed on Node 20 (no `navigator` global at
+// all) and failed the moment CI ran them on Node 24, which ships one. The
+// module actually keys off `navigator.locks` -- absent on every Node
+// version to date -- so the fail-closed behavior was always correct; it was
+// the test's premise-check that was wrong, and a real CI failure on
+// 2026-08-16 is what surfaced it. Controlling the global explicitly makes
+// these tests prove the behavior on any runtime instead of re-breaking on
+// the next Node upgrade, and lets us cover the REAL BROWSER path (a
+// `navigator.locks` that genuinely exists) too, which nothing tested
+// before. `defineProperty` rather than assignment because Node >=21's
+// `navigator` is a getter-only accessor.
+function withNavigator(value, fn) {
+  const original = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+  try {
+    if (value === undefined) delete globalThis.navigator;
+    else Object.defineProperty(globalThis, 'navigator', { value, configurable: true });
+    return fn();
+  } finally {
+    if (original) Object.defineProperty(globalThis, 'navigator', original);
+    else delete globalThis.navigator;
+  }
+}
+
 const tests = [];
 function test(name, fn) { tests.push({ name, fn }); }
 
@@ -1053,15 +1081,35 @@ test('claimOwnership: preserves the existing envelope\'s queue/position content 
   assert.equal(reclaim.envelope.positionSec, 42, 'position must survive a reclaim');
 });
 
-test('claimOwnership: with no lock provider and no navigator.locks, takes the degraded no-lock path and writes nothing', async () => {
-  assert.equal(typeof globalThis.navigator, 'undefined',
-    'sanity check on this test\'s own premise -- if a later Node version ships a global navigator.locks, this test needs updating');
+// Runs against BOTH shapes a lock-less runtime can take -- no `navigator`
+// at all (Node <=20, and older browsers) and a `navigator` that simply has
+// no `.locks` (Node >=21; also any browser without Web Locks) -- since the
+// module's check is `navigator.locks`, not `navigator`.
+for (const [label, nav] of [['no navigator at all', undefined], ['a navigator without .locks', { userAgent: 'test' }]]) {
+  test(`claimOwnership: with no lock provider and ${label}, takes the degraded no-lock path and writes nothing`, async () => {
+    const local = fakeStorage();
+    const session = fakeStorage();
+    establishTabId(session);
+    const result = await withNavigator(nav, () => claimOwnership(local, session));
+    assert.deepEqual(result, { ok: false, lease: null, envelope: null, reason: 'no-lock' });
+    assert.equal(readEnvelope(local).status, 'absent', 'the fail-closed no-lock path must never write anything');
+  });
+}
+
+// The actual production path, which nothing covered before: no provider is
+// injected, but the runtime DOES have Web Locks, so the module must find and
+// use the real global rather than falling into its degraded path.
+test('critical: with no injected provider but a real navigator.locks available, claimOwnership() uses it instead of failing closed', async () => {
   const local = fakeStorage();
   const session = fakeStorage();
   establishTabId(session);
-  const result = await claimOwnership(local, session);
-  assert.deepEqual(result, { ok: false, lease: null, envelope: null, reason: 'no-lock' });
-  assert.equal(readEnvelope(local).status, 'absent', 'the fail-closed no-lock path must never write anything');
+  const namesSeen = [];
+  const fakeLocks = { request: (name, callback) => { namesSeen.push(name); return Promise.resolve(callback()); } };
+
+  const result = await withNavigator({ locks: fakeLocks }, () => claimOwnership(local, session));
+  assert.equal(result.ok, true, 'must not take the degraded no-lock path when Web Locks genuinely exists');
+  assert.deepEqual(namesSeen, [OWNERSHIP_LOCK_NAME], 'and must request the documented lock name from the real global');
+  assert.equal(readEnvelope(local).envelope.ownerId, result.lease.ownerId);
 });
 
 test('claimOwnership: requests the documented OWNERSHIP_LOCK_NAME from an injected provider', async () => {
@@ -1158,7 +1206,8 @@ test('writeSession: with no lock provider and no navigator.locks, takes the degr
   establishTabId(session);
   const claim = await claimOwnership(local, session, serializingLockProvider()); // claim via an injected provider so it succeeds despite the no-lock default below
   const before = readEnvelope(local).envelope;
-  const wrote = await writeSession(local, session, claim.lease, { queue: [item('x')], currentItemId: 'x', positionSec: 1, playing: true });
+  const wrote = await withNavigator({ userAgent: 'test' }, () =>
+    writeSession(local, session, claim.lease, { queue: [item('x')], currentItemId: 'x', positionSec: 1, playing: true }));
   assert.equal(wrote, false);
   assert.deepEqual(readEnvelope(local).envelope, before, 'no-lock writeSession() must never touch the envelope');
 });
@@ -1171,7 +1220,7 @@ test('tombstoneIfCurrent: with no lock provider and no navigator.locks, takes th
   await writeSession(local, session, claim.lease, { queue: [item('a1')], currentItemId: 'a1', positionSec: 1, playing: true }, serializingLockProvider());
   const before = readEnvelope(local).envelope;
   const setItemCallsBefore = local._counts.setItem;
-  const result = await tombstoneIfCurrent(local, session, claim.lease);
+  const result = await withNavigator({ userAgent: 'test' }, () => tombstoneIfCurrent(local, session, claim.lease));
   assert.equal(result, false);
   assert.equal(local._counts.setItem, setItemCallsBefore, 'the fail-closed no-lock path must never even attempt a setItem() call, not merely leave the decoded content looking unchanged');
   assert.deepEqual(readEnvelope(local).envelope, before, 'no-lock tombstoneIfCurrent() must never touch the envelope');
