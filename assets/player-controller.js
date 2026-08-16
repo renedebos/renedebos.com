@@ -137,9 +137,16 @@ export class PlaybackController {
   // correct and unchanged for ITS purpose — e.g. not showing a false "paused
   // elsewhere" message on an already-paused tab — but that same gating means
   // it can never fire for a merely-restored, never-played tab, which is
-  // exactly the case ownership tracking needs to observe). No caller in this
-  // stage; built and available for the mini-player boot script a later stage
-  // adds.
+  // exactly the case ownership tracking needs to observe).
+  //
+  // This constructor option is NOT sufficient on its own for the mini-player,
+  // which ADOPTS a controller someone else constructed: player-boot.js:60 and
+  // song-boot.js:69 both call `new PlaybackController()` with no arguments, so
+  // there is no option to pass. See onAnyExternalClaim()/onOwnershipEvent()
+  // below — the post-construction subscriptions — and the ownership-sequence
+  // fields, which together let a late subscriber recover events it was not yet
+  // around for. The option is retained and is simply registered as the first
+  // subscriber.
   constructor({ audio = new Audio(), mediaSession = true, onQueueExhausted = null,
                 onExternalClaim: onExternalClaimCallback = null,
                 onAnyExternalClaim = null } = {}) {
@@ -147,7 +154,6 @@ export class PlaybackController {
     this.audio.preload = 'none';
     this._onQueueExhausted = onQueueExhausted;
     this._onExternalClaimCallback = onExternalClaimCallback;
-    this._onAnyExternalClaim = onAnyExternalClaim;
 
     this._queue = [];
     this._idx = -1;
@@ -172,9 +178,53 @@ export class PlaybackController {
     // telling a blocked-autoplay NotAllowedError apart from a real decode/
     // network error. Cleared at the start of every fresh _playIndex() attempt.
     this._lastPlayError = null;
+    // Which item that error belongs to. Without this, an error survives a queue
+    // change (it is cleared ONLY at construction and at the start of a play
+    // attempt), so a stale blocked-autoplay NotAllowedError would render a
+    // "Resume" affordance against a completely different track. A consumer must
+    // trust _lastPlayError only while this matches the current item's id.
+    this._lastPlayErrorItemId = null;
+
+    // ── ownership event sequence ──
+    // ONE monotonic counter across all three ownership-relevant events, plus
+    // the kind of the most recent one. Deliberately not separate per-kind
+    // counters: two counters cannot express ORDER, and order is exactly what
+    // decides ownership. "played, then was externally claimed" and "was
+    // externally claimed, then played, then paused" both end at
+    // {paused, local:1, external:1} under per-kind counters, yet only the
+    // second should still own the session.
+    //
+    // Kinds, in the order they can occur for one playback episode:
+    //   'play-attempt'   -- bumped SYNCHRONOUSLY in _playIndex(), before any
+    //                       media event. A row click starts playback
+    //                       synchronously (player-views.js:406) while 'playing'
+    //                       is a much later media event, so a consumer that
+    //                       waited for playback to actually begin could restore
+    //                       a stale session over the item the user just picked.
+    //                       This kind SUPPRESSES restoration; it does not claim.
+    //   'local-play'     -- the media 'play' event: playback requested or
+    //                       resumed. This is the CLAIM trigger. Deliberately
+    //                       not the 'playing' STATE, which is also reached on
+    //                       every rebuffer recovery ('waiting' -> 'playing'
+    //                       below) and would mint a fresh ownership epoch on
+    //                       every buffering hiccup.
+    //   'external-claim' -- another document/controller claimed playback.
+    //
+    // A consumer that subscribes late reads {ownershipSeq, lastOwnershipEvent}
+    // off snapshot() and compares against what it has already processed, rather
+    // than needing events buffered on its behalf. Subscribe FIRST and read the
+    // snapshot SECOND, then process idempotently by sequence number, so an
+    // event landing between the two is neither missed nor handled twice.
+    this._ownershipSeq = 0;
+    this._lastOwnershipEvent = null;
+    this._ownershipSubs = new Set();
+
+    this._anyExternalClaimSubs = new Set();
+    if (onAnyExternalClaim) this._anyExternalClaimSubs.add(onAnyExternalClaim);
 
     this._unclaim = onExternalClaim(this, () => {
-      if (this._onAnyExternalClaim) this._onAnyExternalClaim();
+      this._bumpOwnership('external-claim');
+      this._notifyAnyExternalClaim();
       if (this._state === 'playing' || this._state === 'loading') {
         this.pause();
         if (this._onExternalClaimCallback) this._onExternalClaimCallback();
@@ -187,7 +237,10 @@ export class PlaybackController {
     this._abort = new AbortController();
     const on = (type, fn) => this.audio.addEventListener(type, fn, { signal: this._abort.signal });
 
-    on('play', () => { claim(this); this._syncMediaPlaybackState(); });
+    // Bumped BEFORE claim(this), which synchronously runs other in-document
+    // controllers' claim listeners — so their 'external-claim' bump is
+    // correctly ordered after this one.
+    on('play', () => { this._bumpOwnership('local-play'); claim(this); this._syncMediaPlaybackState(); });
     on('playing', () => { this._setState('playing'); this._notify(); });
     on('waiting', () => { this._setState('loading'); this._notify(); });
     on('pause', () => {
@@ -637,6 +690,11 @@ export class PlaybackController {
     this._unclaim();
     this._views.forEach(v => v.onDetach());
     this._views.clear();
+    // Same reasoning as _views: a destroyed controller must not keep driving
+    // anything that outlives it. Cleared before the audio teardown below, so
+    // the pause() it performs cannot reach a subscriber.
+    this._ownershipSubs.clear();
+    this._anyExternalClaimSubs.clear();
     this._abort.abort();               // removes every audio listener added in the constructor
     if (!this.audio.paused) this.audio.pause();
     if (this._mediaSessionEnabled) {
@@ -654,18 +712,67 @@ export class PlaybackController {
     this._destroyed = true;
   }
 
+  // ── post-construction subscriptions ──
+  // Both return an unsubscribe function and are safe to call on an
+  // already-destroyed controller (they no-op and hand back a no-op).
+  //
+  // onAnyExternalClaim() is the unconditional variant, deliberately keeping the
+  // constructor option's name: it fires on EVERY external claim regardless of
+  // this controller's state, unlike the conditional onExternalClaim callback
+  // (which only fires when a claim actually interrupted playback here, and so
+  // can never reach a merely-restored, never-played tab). miniplayer-state.js's
+  // caller contracts are written in terms of this name.
+  onAnyExternalClaim(fn) {
+    if (typeof fn !== 'function' || this._destroyed) return () => {};
+    this._anyExternalClaimSubs.add(fn);
+    return () => this._anyExternalClaimSubs.delete(fn);
+  }
+
+  // The general seam: every ownership event, in order, as {seq, kind}. See the
+  // _ownershipSeq field comment for the kinds and why order matters.
+  onOwnershipEvent(fn) {
+    if (typeof fn !== 'function' || this._destroyed) return () => {};
+    this._ownershipSubs.add(fn);
+    return () => this._ownershipSubs.delete(fn);
+  }
+
   // ── internals ──
+  _bumpOwnership(kind) {
+    this._lastOwnershipEvent = kind;
+    const seq = ++this._ownershipSeq;
+    // Isolated per subscriber, same principle as _notify(): one consumer
+    // throwing must not stop the others, and must not propagate back into the
+    // media event handler or play() path that triggered this.
+    this._ownershipSubs.forEach(fn => {
+      try { fn({ seq, kind }); } catch (e) { console.error('[player-controller] ownership subscriber threw', e); }
+    });
+  }
+
+  _notifyAnyExternalClaim() {
+    this._anyExternalClaimSubs.forEach(fn => {
+      try { fn(); } catch (e) { console.error('[player-controller] external-claim subscriber threw', e); }
+    });
+  }
+
   _playIndex(index) {
     const item = this._queue[index];
     if (!item) return Promise.resolve();
     const gen = ++this._gen;
     this._idx = index;
+    // Synchronous, before any media event — see the _ownershipSeq comment. A
+    // consumer uses this to stop restoring a stale session over an item the
+    // user has already chosen, even if the load is slow or fails outright.
+    this._bumpOwnership('play-attempt');
     // Capture BEFORE _setState('loading') overwrites it. A rejected play()
     // promise puts the controller in 'error' without ever setting audio.error,
     // so checking after would silently skip the reload on exactly that path.
     const retrying = this._state === 'error' || !!this.audio.error;
     this._setState('loading');
-    this._lastPlayError = null; // a fresh attempt starts clean; see its own field comment
+    // A fresh attempt starts clean; see the fields' own comments. Cleared as a
+    // pair — an id without an error, or an error without its id, would let a
+    // consumer mis-attribute one to the other.
+    this._lastPlayError = null;
+    this._lastPlayErrorItemId = null;
     // Assign src BEFORE notifying views, and notify BEFORE play().
     //
     // Order matters in both directions and is load-bearing:
@@ -702,6 +809,9 @@ export class PlaybackController {
     // MediaError) has no .name at all, which still correctly falls through
     // to null here rather than being mistaken for NotAllowedError.
     this._lastPlayError = { name: (err && err.name) || null, message: (err && err.message) || null };
+    // Set as a pair with the error, from the item the attempt was actually for.
+    const item = this._queue[this._idx];
+    this._lastPlayErrorItemId = item ? item.id : null;
     this._setState('error');
     this._notify();
   }
@@ -741,6 +851,13 @@ export class PlaybackController {
       repeatOne: this._repeatOne,
       shuffleOn: this._shuffleOn,
       lastPlayError: this._lastPlayError,
+      // Trust lastPlayError only while this equals currentItem.id — see the
+      // field's own comment.
+      lastPlayErrorItemId: this._lastPlayErrorItemId,
+      // See the _ownershipSeq field comment: subscribe first, read this second,
+      // then process idempotently by seq.
+      ownershipSeq: this._ownershipSeq,
+      lastOwnershipEvent: this._lastOwnershipEvent,
     };
   }
 

@@ -611,6 +611,121 @@ export function rotateTabId(sessionStore) {
 export const TAB_PROBE_MESSAGE = 'mini-player-tab-probe';
 export const TAB_PROBE_REPLY_MESSAGE = 'mini-player-tab-probe-reply';
 
+// CALLER CONTRACT — the handshake gets its OWN BroadcastChannel, and it must
+// NOT be 'hannan-playback' (2026-08-16, Stage 3a-canary Task 0.2). This module
+// is DOM-free and constructs no channel itself, so nothing here can enforce it;
+// exported as a name for the same reason OWNERSHIP_LOCK_NAME is.
+//
+// Why it matters, reproduced directly rather than reasoned about: all three
+// playback engines treat ANY message that is not their own id string as a
+// claim on playback and pause immediately --
+//   player-controller.js:  channel.onmessage = e => { if (e.data !== selfId) ... }
+//   player.js:             playbackChannel.onmessage = e => { if (e.data !== playbackId) ... }
+//   continuous-player.js:  if (e.data !== playbackId && !audio.paused) audio.pause()
+// A probe is a structured object, so it is never equal to any of those id
+// strings. Posting handshake traffic on 'hannan-playback' therefore pauses
+// audio in every other tab on the site -- verified against a real
+// PlaybackController with a real BroadcastChannel: state went 'playing' ->
+// 'paused' on a single probe. The regression test lives in
+// test-player-controller.mjs, since proving this needs a real controller.
+export const OWNERSHIP_CHANNEL_NAME = 'hannan-miniplayer-ownership';
+
+// CALLER CONTRACT — fail closed if the ownership channel cannot be created.
+// Every engine on this site wraps BroadcastChannel construction in a try/catch
+// and carries on with a null handle (player-controller.js:23 and friends),
+// because private-browsing and hardened configurations really do throw -- so an
+// unavailable channel is a live case, not a theoretical one.
+//
+// For PLAYBACK that degrades harmlessly (the page just stops coordinating).
+// For OWNERSHIP it does not: without the channel there is no way to run the
+// tab-collision handshake, and without the handshake a cloned sessionStorage
+// identity (window.open()/tab duplication -- see the section above) is
+// undetectable, so two live documents can both pass restoreLease() as
+// 'restored'. Persistent ownership is therefore unsafe and the caller MUST
+// disable it for the document's entire lifetime, exactly as it does for
+// establishTabId() returning null or a handshake reporting failed:true.
+// Ordinary in-page playback continues normally; only cross-navigation
+// persistence is given up. Same posture, and the same reasoning, as
+// withOwnershipLock()'s fail-closed decision below.
+
+// CALLER CONTRACT — handshake SETTLEMENT policy (2026-08-16, Stage 3a-canary
+// Task 0.3). restoreLease() must run only "after the tab-collision handshake
+// has converged" (its own comment, and residual gap 3 in the plan). That is a
+// requirement, not an algorithm: replies arrive asynchronously and this module
+// is deliberately timer-free, so nothing here can implement it. The policy the
+// coordinator implements:
+//
+//   1. Boot order is: establishTabId() -> create the ownership channel ->
+//      INSTALL the message listener -> broadcast the first probe -> start a
+//      settle timer. Installing before probing matters: a reply to our own
+//      probe can arrive before we would otherwise have started listening.
+//   2. SETTLE_MS is a quiet period, not a deadline. Any collision resolved in
+//      the meantime RESTARTS it, because a rotation changes our identity and
+//      the mandatory re-probe under the new id has to get its own quiet window
+//      (see the re-probe contract above). Ordinary replies that name someone
+//      else's tabId do not restart it.
+//   3. When the timer fires with no unresolved collision, the handshake has
+//      settled -> call restoreLease() and apply whatever it returns.
+//   4. Settlement gates the INITIAL restore only. The listener stays live for
+//      the whole document lifetime -- a tab duplicated an hour later probes
+//      then, and this document must still reply and still resolve.
+//      Concrete values, so this is a decision and not a TBD: SETTLE_MS = 250
+//      and MAX_SETTLE_ROUNDS = 5, both defined in the coordinator (this module
+//      stays timer-free). 250ms because same-origin BroadcastChannel delivery
+//      is typically sub-millisecond but a busy main thread in the OTHER tab can
+//      delay its reply, and a quarter second during page load is imperceptible
+//      -- the mini-player simply has nothing to show yet. 5 rounds bounds the
+//      worst case at ~1.25s before giving up.
+//   5. Bounded, with a give-up state: after MAX_SETTLE_ROUNDS restarts,
+//      convergence is not happening (a pathological entropy source is the
+//      documented way this occurs -- residual gap 11). DISABLE PERSISTENCE for
+//      the document's lifetime and stop restarting. Ordinary in-page playback
+//      is untouched; only cross-navigation persistence is given up, exactly as
+//      for a failed:true handshake or an unavailable channel.
+//   6. Teardown: clear the timer and close the channel on destroy/pagehide.
+//
+// Note this bounded give-up is the protocol residual gap 11 explicitly
+// DECLINED to build inside this module, on the grounds that it was
+// disproportionate "for a module that, as of this stage, has no consumer to
+// exercise it." There is a consumer now, and the caller is the right level for
+// it -- the module stays pure and timer-free, and the give-up state lives where
+// the timers already are.
+//
+// A test that only drives a synchronous fake channel cannot exercise any of
+// this: delivery ordering IS the thing under test. Task 4's suite must deliver
+// probes/replies with injected delay and out of order.
+
+// CALLER CONTRACT — watch STATE_KEY via the 'storage' event, and treat a
+// changed ownership tuple as a FULL loss (2026-08-16, Stage 3a-canary Task
+// 0.7). Install the listener BEFORE applying anything restoreLease() returned
+// -- that ordering is what closes residual gap 9, where a 'restored' result is
+// a candidate rather than a guarantee because it is a single unlocked read.
+//
+// Not every ownership change announces itself on the playback channel. Since
+// Task 0.1 the ownership claim is hooked to the media 'play' event, so a claim
+// that comes with audio does also post a playback claim -- but these do not:
+//   - Close: writes a fresh epoch and an empty session while STOPPING.
+//   - initialIntent:'autoplay' claiming at restore time without a 'play' event
+//     ever landing (a blocked autoplay -- see the stage's initialIntent rules).
+//   - Any document whose playback BroadcastChannel construction threw
+//     (player-controller.js:23 and friends all tolerate that) receives no claim
+//     messages at all, yet can still read localStorage perfectly well.
+//
+// On a tuple change, route through the SAME loss path as a collision rotation
+// -- do not merely drop the lease. Dropping it alone makes further WRITES
+// impossible (hasValidLease()'s peekTabId/tuple checks) while leaving this tab
+// audibly playing, out of sync with what is durably recorded: exactly the
+// hazard the rotated:true contract above exists to prevent, arriving by a
+// different route. In order:
+//   1. drop the in-memory lease synchronously;
+//   2. pause/relinquish active playback (the caller's playback layer);
+//   3. revokeLease() with the CAPTURED PRIOR lease, not the dropped null;
+//   4. if that reports escalated:true, refresh myTabId -- same as everywhere
+//      else a TAB_ID_KEY rotation can happen.
+//
+// The test harness therefore needs a fake event target alongside its fake
+// storage and fake channel.
+
 // Purely random output (no orderable/timestamp component -- see
 // shouldRotateOnCollision()'s comment for why that matters), via
 // crypto.getRandomValues() when available (every secure context this site's

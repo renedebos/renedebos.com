@@ -125,7 +125,7 @@ against production first (queue 0 at mount → 1 after playing a row → still
 1 after a second row, audio advancing each time — exactly the contract),
 then rewrote the assertions. Fix is `825b3aa`, still on the branch.
 
-## 🔧 Next up — Stage 3a-canary
+## 🔧 In progress — Stage 3a-canary (Phase 0 complete)
 
 Mini-player container + script **always emitted**, with a
 `MINI_PLAYER_ENABLED` flag controlling only the *runtime default*. An
@@ -138,15 +138,62 @@ consumer**, which matters more than it sounds: several documented residual
 gaps are explicitly "caller contract" items that no code enforces yet
 because there is no caller. Building that coordinator is the point.
 
-**Starting state, verified 2026-08-15** (so the next session doesn't
-re-derive it). Everything on the *controller* side that the mini-player
-needs already exists and shipped:
+**Planned across three Codex review rounds** (8, 7, then 7 findings — all
+verified against the source before folding in), which restructured the
+stage around a **Phase 0** that closes integration contracts *before* any
+UI work. The full task breakdown with acceptance criteria lives in
+`~/.claude/plans/imperative-frolicking-widget.md`; the checklist and every
+recorded decision are in the plan doc's Phase 3 section.
+
+**Phase 0 is done** (0.1–0.9), all gates green, nothing user-visible
+changed. What landed in code: the `PlaybackController` additions below
+(0.1), and `OWNERSHIP_CHANNEL_NAME` plus three new caller contracts in
+`miniplayer-state.js` — dedicated ownership channel with a fail-closed
+rule (0.2), the handshake settlement policy (0.3, `SETTLE_MS` 250 /
+`MAX_SETTLE_ROUNDS` 5, with the bounded give-up that residual gap 11
+declined to build *inside* the module — the caller is the right level for
+it now that one exists), and `storage`-event invalidation routing through
+the full loss path (0.7). Close/save-cadence/restored-play/`initialIntent`
+policy (0.4–0.6, 0.9) and the emission policy (0.8) are recorded in the
+plan doc.
+
+**Next: Phase A** — `--player-*` aliases in `home.css` (it defines none,
+despite `player-views.js` claiming both token systems do), then
+`scripts/miniplayer-views.js`, then the CSS in both design systems.
+
+**Starting state, verified 2026-08-15, CORRECTED 2026-08-16.** The earlier
+version of this section said "everything on the *controller* side that the
+mini-player needs already exists and shipped." **That was false**, and it
+was believed and repeated when Stage 3a-canary was first planned. The
+primitives shipped, but they were unreachable on the path that matters:
 - `PlaybackController` has `restoreSession()`, `snapshot()`,
   `lastPlayError`, and the unconditional `onAnyExternalClaim` hook — the
   last two were added specifically for this stage (a browser-blocked
   autoplay resolves rather than rejects, so the Resume affordance needs
   an explicit signal; and the *conditional* claim callback never fires
   for a paused restored tab).
+- **But `onAnyExternalClaim` was constructor-only**, and the mini-player
+  *adopts* a controller someone else built: `player-boot.js:60` and
+  `song-boot.js:69` both call `new PlaybackController()` with no arguments,
+  so there was no option to pass. Fixed in Stage 3a-canary Task 0.1 —
+  `onAnyExternalClaim(fn)` and `onOwnershipEvent(fn)` are now
+  post-construction subscriptions returning an unsubscribe.
+- **Subscription alone was still not enough.** The controller is built at
+  module-parse time but readiness only resolves on `window.load`
+  (`player-boot.js:217`) — on a show page that gap spans the entire page
+  load, and a user pressing play or another tab claiming inside it is
+  invisible to a listener installed afterward. `snapshot()` now carries
+  `ownershipSeq` + `lastOwnershipEvent` (one monotonic sequence, kinds
+  `play-attempt`/`local-play`/`external-claim`) so a late subscriber
+  recovers by comparison. Subscribe first, read the snapshot second.
+- **Ownership claims hook the media `play` event, never the `'playing'`
+  state.** Every rebuffer is `playing → loading → playing`
+  (`player-controller.js`'s `waiting`/`playing` listeners), so claiming on
+  the state would mint a fresh ownership epoch on every buffering hiccup.
+  There is a direct regression test for this.
+- `snapshot()` also carries `lastPlayErrorItemId`: `lastPlayError` is never
+  cleared on a queue change, so without the id a stale `NotAllowedError`
+  would render "Resume" against a different track.
 - The `PLAYBACK_HOST_READY` readiness contract is wired across all four
   boot paths — `player-boot.js`, `song-boot.js`, `playlist-boot.js`, and
   `fragments.py`'s `{mode:'none'}`/`{mode:'legacy'}` inline variants.
@@ -292,9 +339,23 @@ declined / already-handled, with reproduction evidence), and what shipped.
 `~/.claude/plans/dynamic-hugging-rossum.md` is superseded as a standalone
 reference and should not be treated as current.
 
+**The plan's Phase 3 section was condensed on 2026-08-15**: it now carries
+the design, the stage shape, and residual gaps 1–12 only. The
+round-by-round review narrative (the twelve post-redesign rounds plus the
+pre-redesign claim-token rounds) moved into `-codex.md`, where every
+finding's evidence and disposition already lived — the plan's "Review
+history" subsection is the map from round to `-codex.md` entry, and keeps
+a compressed record of what the broad rounds found. Residual-gap item
+**numbers are load-bearing** (referenced from this file and from
+`-codex.md`) — don't renumber them. The same treatment has NOT been
+applied to the Phase 1/Phase 2 sections, which still carry their full
+inline review narrative despite both phases being shipped and closed;
+that's the obvious next trim if the file gets unwieldy again.
+
 Tests: `node scripts/test-*.mjs` — 8 files, of which `test-fake-dom.mjs`
-is a helper rather than a suite. **262/262 passing** as of this handoff
-(119 of them in `test-miniplayer-state.mjs`), on **both** Node 20 and a
+is a helper rather than a suite. **278/278 passing** as of this handoff
+(119 in `test-miniplayer-state.mjs`, 57 in `test-player-controller.mjs`
+after Stage 3a-canary Phase 0 added 16), on **both** Node 20 and a
 simulated Node 24. Also clean: `python3 scripts/build.py`, `--check`,
 `python3 scripts/verify_markup.py --check-allowlist-coverage`, `node
 --check`, zero null bytes, and `cmp scripts/miniplayer-state.js
