@@ -1,5 +1,5 @@
 # Session Handoff — Hannan Recordings (renedebos.com)
-**Date:** 2026-08-15 · **Branch:** `player-consolidation`
+**Date:** 2026-08-16 · **Branch:** `player-consolidation`
 (worktree `/home/renedebos/renedebos.com-player-consolidation`)
 
 **Phase 1 (all show pages on the shared `PlaybackController`) is complete,
@@ -22,108 +22,90 @@ user-visible UI — that starts at 3a-canary. The one user-facing change is
 song pages moving onto the shared `PlaybackController`, verified working
 in production.
 
-**One commit sits on the branch, unmerged: `825b3aa`** — fixes two stale
-`browser_check.mjs` assertions (see "Two incidents" below). It touches only
-that dev script, nothing shipped, so it can ride along with 3a-canary's PR
-rather than needing one of its own.
+**Six commits sit on the branch, unmerged and unpushed.** Nothing is
+deployed; no PR is open. Newest first:
+- `5d2746d` — applies the Phase 0 review findings, plus Task 1's
+  `--player-*` aliases
+- `d4056ac` — Stage 3a-canary Phase 0: the integration contracts
+- `ffe0ae4` — merge from `origin/main` (session-start sync)
+- `40b31c1`, `5b19d28` — earlier HANDOFF updates
+- `825b3aa` — two stale `browser_check.mjs` assertions (see "Two incidents"
+  below); dev script only, rides along with 3a-canary's PR
 
-## ✅ Done this session
+**Nothing on this branch is user-visible yet.** Every commit so far is
+plumbing, docs, or tests; no generated HTML has changed since 3a-foundation
+shipped. The stage's first visible surface is Task 2's `MiniPlayerView`.
 
-### The fenced-lease ownership redesign — implemented, then rounds 6–12
+## ✅ Done this session (2026-08-16)
 
-The previous handoff left a fully-designed-but-uncoded redesign, after
-five straight rounds each found the same bug shape (a multi-step commit
-spread across two Storage objects, with a rollback that could itself
-fail). That redesign was implemented, the scratch plan was folded into the
-permanent docs, and it then went through seven more `/review-step` rounds
-— **six of which found something real**. Every finding was independently
-reproduced with a standalone script before being accepted or declined;
-every fix removed the bug's *shape* rather than patching the instance.
+All of it is Stage 3a-canary groundwork plus one documentation cleanup. Two
+commits, both local.
 
-The shipped shape: `claimOwnership()` is exactly ONE `localStorage.setItem()`
-(nothing to roll back, ever); the fencing credential is a `{ownerId,
-ownerEpoch}` "lease" held in caller memory and re-derived at boot by
-`restoreLease()`; `writeSession()` gates every write on `hasValidLease()`
-checked fresh twice; `readEnvelope()` is tri-state so a read failure is
-never mistaken for "nothing there"; `withOwnershipLock()` fails closed
-with no Web Locks provider.
+### The plan doc's Phase 3 section was condensed
+902 lines → 581. The round-by-round review narrative (the twelve
+post-redesign rounds plus the pre-redesign claim-token rounds) moved into
+`-codex.md`, where every finding's evidence and disposition already lived;
+a "Review history" subsection maps round → entry and keeps a compressed
+record of what the broad rounds found. **Residual-gap item numbers are
+load-bearing** (referenced from this file and `-codex.md`) — don't renumber.
+Verified nothing was lost by extracting all 141 backticked identifiers from
+the deleted block and confirming each still appears somewhere. Phase 1 and
+Phase 2's sections still carry their full inline narrative and are the
+obvious next trim if the file gets unwieldy.
 
-Round-by-round, with full findings/dispositions in `-codex.md`:
-- **6** — `hasValidLease()` was missing an identity check (a rotated tab
-  could still validate an old lease), plus three others. Fixed via a
-  shared `hasMatchingEnvelopeTuple()` predicate.
-- **7** — active-owner UX gap, a test-harness gap, `revokeLease()` missing
-  a read-back. Also one gap **investigated and deliberately left unfixed**
-  (see Durable facts).
-- **8** — `writeEnvelope()`, the actual commit path, never read back its
-  own write. It was the one storage write that hadn't already gotten that
-  treatment.
-- **9** — `rotateTabId()`/`claimOwnership()` never checked that a freshly
-  generated id/epoch actually *differed* from the value it replaced. Under
-  degraded entropy this let a "resolved" collision stay unresolved and two
-  consecutive claims mint the same `ownerEpoch` — reopening the round-5
-  stale-write bug via entropy instead of storage. Fixed with a shared,
-  bounded `generateDistinctFrom()`.
-- **10** — that fix didn't fail closed when its own pre-write read threw;
-  and `isTabProbeCollision()` treated an equal-nonce *genuine* collision as
-  no collision at all (two real clones each silently ignoring the other,
-  both restoring as owner).
-- **11** — round 8's fix had introduced its own mirror image (a landed
-  write plus one transient read throw reported as failure); collision
-  memoization keyed by nonce alone survived a rotation; concurrent losers
-  could generate identical replacement ids.
-- **12 (final)** — **no High or Medium findings.** Two Low findings, both
-  about the accuracy of Claude's own claims rather than the code: an
-  overstated test count/strength, and a self-flattering characterization
-  of why the loop should stop. Both confirmed and corrected.
+### Stage 3a-canary was planned, then re-planned twice
+Three Codex rounds against the *plan* found 8, 7, and 7 gaps. That
+restructured the stage around a **Phase 0** that closes integration
+contracts before any UI work — without it, several would have surfaced
+halfway through building the coordinator. Round 3 also overturned a
+decision made from round 2 (see the `play`-event trigger below). Full task
+breakdown with acceptance criteria:
+`~/.claude/plans/imperative-frolicking-widget.md`.
 
-### Why the review loop stopped (deliberate, recorded)
-Not "everything left is exotic" — that was an earlier, overstated version
-of the reasoning that round 12 pushed back on and that has been corrected
-in the plan (residual item 12). The honest version: the *collision*
-findings did trend toward the exotic (rounds 9–11 needed pinned entropy or
-3+ simultaneously duplicated tabs), but the *storage* findings did not —
-rounds 8 and 11 each needed only one ordinary transient storage failure.
-What actually justifies stopping is that **each round's fix was creating
-the surface for the next round's finding** (round 8's fix directly caused
-round 11's finding; round 9's directly caused round 10's), and round 12
-confirms nothing High/Medium remains. The validation this module needs now
-is **a real consumer**, not a thirteenth adversarial pass.
+### Phase 0 implemented, reviewed, and its findings applied
+`PlaybackController` gained post-construction `onAnyExternalClaim(fn)` and
+`onOwnershipEvent(fn)`, one monotonic `ownershipSeq` + `lastOwnershipEvent`,
+and `lastPlayErrorItemId`. `miniplayer-state.js` gained
+`OWNERSHIP_CHANNEL_NAME`, `tabIdentityLockName()`, and four caller
+contracts. A `/review-step` round then found five issues — all confirmed by
+independent reproduction, all fixed in `5d2746d`. Details in the "In
+progress" section below and in `-codex.md`.
 
-### Shipping it — and two incidents worth reading
+### Phase A Task 1
+`home.css` gained the `--player-accent`/`--player-track`/`--player-surface`
+aliases it had never defined, despite `player-views.js` claiming both token
+systems did. Harmless until now — nothing importing that file ever ran on
+the homepage, where the mini-player will. Declared once in `:root`, not per
+theme block: `var()` resolves against the referenced token on the same
+element, which `site.css` has relied on since Phase 1. Verified in real
+Chromium across light, OS-dark and explicit-toggle on both stylesheets.
 
-Merged PR #15, then **the deploy Action failed at the test gate**. The
-"Deploy renedebos-site Worker" step was correctly *skipped*, so production
-was never touched — the gate did its job. Two separate things surfaced,
-neither of them a bug in shipped code:
+### Previous sessions, compressed
+The fenced-lease ownership redesign and its twelve review rounds are no
+longer narrated here — see the plan doc's "Review history" subsection and
+`-codex.md`. The one-line version: `claimOwnership()` is exactly ONE
+`localStorage.setItem()`, the `{ownerId, ownerEpoch}` lease lives in caller
+memory and is re-derived by `restoreLease()`, `writeSession()` gates on
+`hasValidLease()` checked fresh twice, `readEnvelope()` is tri-state, and
+`withOwnershipLock()` fails closed with no Web Locks provider.
 
-**1. A test that only failed on CI's Node.** Three "no lock provider"
-tests asserted `typeof globalThis.navigator === 'undefined'` as a premise
-check. That holds on Node 20 (local) but not Node 24 (CI's
-`ubuntu-latest` default; `deploy.yml` deliberately does not pin it — see
-its comment for why). The module keys off `navigator.locks`, which no Node
-version ships, so the fail-closed behavior was always correct on CI too;
-only the premise-check was wrong. The test's own comment had *predicted*
-this exact failure and it was not acted on. Fixed in PR #16 by controlling
-the global explicitly (`withNavigator()` helper, `defineProperty` since
-Node ≥21's `navigator` is getter-only), covering both lock-less shapes,
-plus new coverage for the real browser path (a genuine `navigator.locks`
-present with no injected provider) that nothing tested before. Verified by
-simulating Node 24 locally: old code reproduces CI's exact 116/117, new
-code passes.
+### Shipping 3a-foundation — two incidents still worth reading
 
-**2. Two browser_check assertions that contradicted the design.** The
-first real production run of the song-page migration failed two checks on
-song pages. Investigated as a possible live regression before anything
-else — it was the *checks* that were wrong. Both asserted that song
-occurrences accumulate into a growing shared queue; the plan's
-**Queue-origin contract** assigns them `playSingleton()` semantics, and
-`song-boot.js`'s own header says "every occurrence row is its own length-1
-singleton queue, never merged with any other row's." The checks had
-conflated *shared controller* with *shared queue*. Verified empirically
-against production first (queue 0 at mount → 1 after playing a row → still
-1 after a second row, audio advancing each time — exactly the contract),
-then rewrote the assertions. Fix is `825b3aa`, still on the branch.
+**1. A test that only failed on CI's Node.** Three "no lock provider" tests
+asserted `typeof globalThis.navigator === 'undefined'` as a premise check.
+True on Node 20 (local), false on Node 24 (CI's `ubuntu-latest` default;
+`deploy.yml` deliberately does not pin it). The module keys off
+`navigator.locks`, which no Node ships, so behavior was always correct — only
+the premise was wrong. The test's own comment had *predicted* this and it
+was not acted on. Fixed in PR #16 with `withNavigator()`/`defineProperty`.
+Simulating Node 24 locally reproduced CI exactly.
+
+**2. Two browser_check assertions that contradicted the design.** The first
+production run of the song-page migration failed two checks. Investigated as
+a possible live regression first — it was the *checks* that were wrong. Both
+asserted that song occurrences accumulate into a shared queue; the
+Queue-origin contract assigns them `playSingleton()`. Verified empirically
+against production before rewriting them. Fix is `825b3aa`.
 
 ## 🔧 In progress — Stage 3a-canary (Phase 0 complete)
 
@@ -145,21 +127,36 @@ UI work. The full task breakdown with acceptance criteria lives in
 `~/.claude/plans/imperative-frolicking-widget.md`; the checklist and every
 recorded decision are in the plan doc's Phase 3 section.
 
-**Phase 0 is done** (0.1–0.9), all gates green, nothing user-visible
-changed. What landed in code: the `PlaybackController` additions below
-(0.1), and `OWNERSHIP_CHANNEL_NAME` plus three new caller contracts in
-`miniplayer-state.js` — dedicated ownership channel with a fail-closed
-rule (0.2), the handshake settlement policy (0.3, `SETTLE_MS` 250 /
-`MAX_SETTLE_ROUNDS` 5, with the bounded give-up that residual gap 11
-declined to build *inside* the module — the caller is the right level for
-it now that one exists), and `storage`-event invalidation routing through
-the full loss path (0.7). Close/save-cadence/restored-play/`initialIntent`
-policy (0.4–0.6, 0.9) and the emission policy (0.8) are recorded in the
-plan doc.
+**Phase 0 is done and its review applied**, all gates green, nothing
+user-visible changed. The plan doc's checklist now uses strict status
+words — **implemented** means code plus a mutation-checked test, **decided**
+means a written contract awaiting the coordinator in Task 4. A review round
+found that distinction was being blurred, so don't re-blur it.
 
-**Next: Phase A** — `--player-*` aliases in `home.css` (it defines none,
-despite `player-views.js` claiming both token systems do), then
-`scripts/miniplayer-views.js`, then the CSS in both design systems.
+- **0.1 implemented** — the `PlaybackController` additions listed below.
+- **0.2 SUPERSEDED, not done** — `OWNERSHIP_CHANNEL_NAME` and its hazard
+  test survive, but the probe/reply handshake is no longer the collision
+  mechanism, so the coordinator opens no ownership channel at all.
+- **0.3 decided; `tabIdentityLockName()` implemented** — the settle timer
+  was replaced by a document-lifetime Web Lock (see Durable facts).
+- **0.4–0.6, 0.9 decided** — Close fencing, save cadence, restored-play
+  rule, `initialIntent` disposition. In the plan doc.
+- **0.7 decided** — `storage` is a wake-up signal only: re-read and
+  re-validate against the captured lease before acting. Nothing routes
+  anything yet.
+- **0.8 decided** — eligible-page set (enumerated from source: 11 builders
+  eligible, `/process/`, `/manual/`, `/player/` correctly excluded), boot
+  cost, flag ownership, height measurement.
+
+**The Phase 0 review, 2026-08-16** (`-codex.md`, "Stage 3a-canary Phase 0
+and Task 1 review") — five findings, all confirmed by independent
+reproduction, all fixed in `5d2746d`. Two invalidated work already marked
+complete, which is why the status words above exist. The three worth
+carrying forward are in Durable facts and Gotchas below.
+
+**Next: Phase A Task 2** — `scripts/miniplayer-views.js`
+(`MiniPlayerView`), then Task 3's CSS in both design systems. Task 1 is
+done. Task 2 is the stage's first user-visible surface.
 
 **Starting state, verified 2026-08-15, CORRECTED 2026-08-16.** The earlier
 version of this section said "everything on the *controller* side that the
@@ -211,12 +208,12 @@ expect round 6–12's threat model to transfer to it.
 Read before starting:
 - `plans/player-consolidation/player-consolidation-plan.md` — Phase 3
   stage shape, the full fenced-lease design, and **residual gaps 1–12**.
-- The **caller contract** comments in `scripts/miniplayer-state.js` (the
-  tab-collision handshake section). Three are load-bearing and each was
-  a real reproduced bug: refresh `myTabId` after anything that rotates it
-  (including `revokeLease()` escalation); disable ownership permanently on
-  `failed:true`; and **re-probe under the new identity after any
-  successful rotation**.
+- The **caller contract** comments in `scripts/miniplayer-state.js`. The
+  tab-identity lock contract supersedes the handshake ones for collision
+  handling (see Durable facts); still load-bearing regardless of mechanism:
+  refresh `myTabId` after anything that rotates it (including a
+  `revokeLease()` escalation), and disable ownership permanently on any
+  unrecoverable identity failure.
 
 Remaining stages after this: **3b-default** (route "Add to player" /
 `pl-player` into the mini-player; tombstoned migration off
@@ -226,6 +223,40 @@ stub).
 
 ## Gotchas learned this session
 
+- **Ask "what mutation would make this fail?" while writing the test, not
+  after.** Two vacuous tests turned up in Phase 0 alone — a `destroy()` one
+  I caught myself, and a single-sequence one a review caught. Both had the
+  identical shape: they asserted a *consequence* that some other mechanism
+  already guaranteed, instead of the property named in the test. The
+  `destroy()` test passed with its fix deleted because `_unclaim()` had
+  already made the event impossible; the sequence test passed with per-kind
+  counters substituted because it only ever checked `lastOwnershipEvent`.
+  Twice in one phase is a pattern. Mutation-check every behavioural test
+  before believing it — this project has now shipped three that passed for
+  the wrong reason.
+- **A test comment can be confidently wrong about the harness.** The
+  sequence test's comment claimed each controller "saw one local play and
+  one external claim." `claimListeners` is module-scope, so four live
+  controllers share one registry and each actually saw *three* external
+  claims. Instrumenting the real event stream took two minutes and
+  contradicted the comment immediately. If a test's comment describes
+  what other objects did, verify it rather than reasoning it.
+- **Reproduce the hazard before designing around it.** Before adding a
+  separate ownership channel I posted a probe-shaped object on
+  `hannan-playback` against a real controller and watched it go
+  `playing → paused`. That took one throwaway script and turned a plausible
+  argument into a fact — and the resulting regression test asserts the
+  hazard *still exists*, so nobody deletes the separation later on the
+  grounds that it looks unnecessary.
+- **Verifying a claim can be cheaper than defending it.** I asserted that
+  declaring CSS aliases once in `:root` follows the theme. Rather than
+  argue from the `site.css` precedent, a short Playwright script read the
+  computed values across light, OS-dark and explicit-toggle on both
+  stylesheets. Settled in one run.
+- **A grep can match a comment that says the opposite.** My first
+  page-eligibility scan reported `build_player` as using `page_shell()`,
+  because it matched that string inside the function's own "NOT
+  page_shell()" comment. Strip comments before classifying code.
 - **"All tests pass" is scoped to the runtime you ran them on.** Local is
   Node 20; CI is Node 24. A green local run said nothing about three tests
   whose premise was a Node-20-only fact, and the failure only appeared
@@ -294,6 +325,37 @@ stub).
   `browser_check.mjs` assertions once claimed the opposite and failed
   against production; they were the thing that was wrong. **Don't
   "restore" them.**
+- **The tab-identity Web Lock is the SOLE collision arbiter — the
+  probe/reply handshake is superseded** (2026-08-16). A document holds an
+  exclusive lock named `miniplayer-tab:<id>` for its whole lifetime;
+  acquiring it is *positive* proof the identity is uniquely its own. This
+  replaced a 250 ms quiet-period timer, which could only ever offer absence
+  of evidence — a frozen or throttled tab holding a cloned identity can
+  reply after any timer fires, producing exactly the double-owner window the
+  mechanism exists to prevent. **The coordinator must not also run the
+  handshake:** two independent rotation mechanisms can disagree and move
+  `TAB_ID_KEY` while the document still holds only the old id's lock. The
+  handshake helpers stay in the file (hardened, and deleting them is a
+  separate decision) but nothing drives them. Full acquisition contract —
+  `{ifAvailable:true}`, separate acquisition signal, never await `request()`
+  during boot, bounded retry then disable persistence, re-acquire after any
+  rotation including a `revokeLease()` escalation, and the BFCache rule — is
+  in `miniplayer-state.js`. `tabIdentityLockName()` bounds and validates the
+  id because `peekTabId()` does neither and `sessionStorage` is user-editable.
+- **Ownership claims hook the media `play` EVENT, never the `'playing'`
+  STATE, and both `play`/`playing` are ignored when `audio.paused` is
+  already true.** Every rebuffer is `playing → loading → playing`, so the
+  state would mint an ownership epoch per buffering hiccup. And `pause()`
+  flips `paused` synchronously while `play`/`playing` arrive as queued media
+  tasks that it does not cancel — without the guard a paused controller
+  claimed ownership and reported `state:'playing'` while silent. Both have
+  direct regression tests. Don't "simplify" either back.
+- **`storage` events are a wake-up signal only — never act on
+  `event.newValue`.** It can be stale by delivery: another tab writes and
+  queues event A, the user plays locally and this tab claims lease B, then A
+  arrives carrying the older value. Acting on it drops a valid lease and
+  revokes a current epoch. Re-read and re-run `hasValidLease()` against the
+  captured lease; do nothing if it still validates.
 - **The tab-collision handshake is no longer "out of scope, keep as-is"** —
   that was true through round 9 and is now stale. Rounds 10–11 changed it:
   `isTabProbeCollision()` **dropped its `myNonce` parameter** and treats
@@ -353,10 +415,12 @@ inline review narrative despite both phases being shipped and closed;
 that's the obvious next trim if the file gets unwieldy again.
 
 Tests: `node scripts/test-*.mjs` — 8 files, of which `test-fake-dom.mjs`
-is a helper rather than a suite. **278/278 passing** as of this handoff
-(119 in `test-miniplayer-state.mjs`, 57 in `test-player-controller.mjs`
-after Stage 3a-canary Phase 0 added 16), on **both** Node 20 and a
-simulated Node 24. Also clean: `python3 scripts/build.py`, `--check`,
+is a helper rather than a suite. **282/282 passing** as of this handoff
+(122 in `test-miniplayer-state.mjs`, 58 in `test-player-controller.mjs`;
+Stage 3a-canary Phase 0 and its review round added 20 between them), on
+**both** Node 20 and a simulated Node 24. Simulate Node 24 with
+`node --import <preload> …` where the preload defines a getter-only
+`navigator` global — CI runs Node 24 and local dev runs Node 20. Also clean: `python3 scripts/build.py`, `--check`,
 `python3 scripts/verify_markup.py --check-allowlist-coverage`, `node
 --check`, zero null bytes, and `cmp scripts/miniplayer-state.js
 assets/miniplayer-state.js`.
