@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>window.PLAYBACK_HOST_READY = new Promise(function(resolve){window.__resolvePlaybackHost = resolve;});</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Jerry Hannan Live at Cafe Java — 1999-04-08</title>
@@ -417,7 +418,7 @@
 <script src="/assets/player.js"></script>
 <script src="/assets/track-select.js"></script>
 <script>window.WS_PEAKS_URL = "/assets/peaks/jerry-cafe-java-1999-04-08.json";</script>
-<script type="module" src="/assets/player-boot.js"></script>
+<script type="module" src="/assets/player-boot.js" onerror="window.__resolvePlaybackHost&amp;&amp;window.__resolvePlaybackHost({mode:'legacy'})"></script>
 <script>(function(){function o(){var e=location.hash&&document.getElementById(location.hash.slice(1));if(e&&e.tagName==='DETAILS')e.open=true;}o();addEventListener("hashchange",o);})();</script>
 </body>
 </html>

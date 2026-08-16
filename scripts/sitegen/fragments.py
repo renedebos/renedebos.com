@@ -143,7 +143,7 @@ def show_zip_button_html(show):
     return (f'<script>window.ZIP_MANIFEST = {json.dumps(manifest, ensure_ascii=False)};</script>'
             f'<button type="button" class="zip-download-btn" title="{esc(title)}">{ZIP_SVG} Download ZIP</button>')
 
-def player(file, duration=None, download_file=None, version=None, label=None):
+def player(file, duration=None, download_file=None, version=None, label=None, item_attr=""):
     """A custom-player row: play button, progress bar, and (optionally) a
     password-protected download button.
 
@@ -154,6 +154,15 @@ def player(file, duration=None, download_file=None, version=None, label=None):
     goes live immediately. `label` (song/artist/date) becomes the play
     button's accessible name — otherwise a screen reader hears "Play" on
     every single instance with no way to tell them apart.
+
+    `item_attr` is an already-built `data-item="..."` attribute (see
+    playable_item_attr()) to place on the SAME element as `data-src` — the
+    shape song-page occurrence rows need so song-boot.js's PlayerView
+    can bind directly to this `.custom-player` div (mirroring how a
+    waveform-less show-page track row carries both `data-src` and `data-item`
+    on `.track-row.custom-player` itself, per build_show()). Default "" keeps
+    recording_card()'s Hero cards — which carry their item on the OUTER
+    `.recording-item`, not this inner player — byte-identical.
     """
     stream = stream_url(file, version)
     end_label = f'<span class="time-label">{esc(duration)}</span>' if duration else ""
@@ -166,7 +175,8 @@ def player(file, duration=None, download_file=None, version=None, label=None):
     play_label = f' {esc(label)}' if label else ""
     play_data = f' data-play-label="{esc(label)}"' if label else ""
     seek_label = f'Seek{play_label}' if label else "Seek"
-    return f'''<div class="custom-player" data-src="{esc(stream)}">
+    item_html = f" {item_attr}" if item_attr else ""
+    return f'''<div class="custom-player" data-src="{esc(stream)}"{item_html}>
           <button class="play-btn" aria-label="Play{play_label}"{play_data}>{PLAY_SVG}</button>
           <div class="progress-wrap">
             <input type="range" class="progress-range" min="0" max="1000" value="0" step="1" aria-label="{seek_label}" aria-valuetext="0:00{f' of {esc(duration)}' if duration else ''}">
@@ -215,8 +225,67 @@ def recording_card(title, meta_pairs, badge, file, stream_file=None, play_label=
         {play}
       </div>'''
 
+# ── playback-readiness contract (Phase 3 Stage 3a-foundation) ───────────────
+# One signal every content page exposes for "this page's own playback boot
+# has finished deciding what it's doing" -- a future sticky mini-player (not
+# built yet this stage) needs to tell "adopt this page's controller" from
+# "this page has nothing, restore my own session" from "a non-controller
+# engine is active, stay dormant" apart, without racing a slow-but-healthy
+# boot (a generic wall-clock timeout was tried and rejected across two plan
+# review rounds -- see plans/dynamic-hugging-rossum.md's Round 3 section --
+# because it can fire before a legitimately slower mount finishes and cause a
+# second, competing controller to get constructed).
+#
+# Emitted as the FIRST script in the page, before any module/boot script tag,
+# so window.PLAYBACK_HOST_READY exists before any boot module could possibly
+# look for it. Two shapes:
+#   'none'     -- resolved immediately, synchronously, right after arming the
+#                 promise. For pages known at BUILD TIME to load no boot
+#                 module (search/contact/updates/history/archive-data/404,
+#                 the homepage) -- there is no timing question on these pages
+#                 at all, so page_shell() defaults to this.
+#   'deferred' -- armed but left unresolved; the page's own boot module
+#                 resolves it later, after its real intent (deep-link/
+#                 autoplay decision, hash hydration, mount failure) is known.
+#                 Used by show pages, song pages, and /playlist/ -- see
+#                 player-boot.js/song-boot.js/playlist-boot.js and this
+#                 function's callers in pages.py.
+# Resolves to a tagged union: {mode:'controller', controller, initialIntent}
+# | {mode:'legacy'} | {mode:'none'}, where initialIntent is one of
+# 'autoplay' | 'page-queue' | 'none'. See plans/dynamic-hugging-rossum.md's
+# "Blocker A continued" section for the full per-page-type resolution timing
+# and failure-path reasoning -- nothing consumes this promise yet this stage
+# (the mini-player itself ships in a later stage), so this is pure,
+# unconsumed infrastructure, verified only by its own shape.
+PLAYBACK_READY_ARM = ("window.PLAYBACK_HOST_READY = new Promise(function(resolve){"
+                      "window.__resolvePlaybackHost = resolve;});")
+# module-script onerror handlers (a boot module 404s/fails to parse) share this
+# guarded call so a page whose readiness promise was already settled some other
+# way can't throw resolving it a second time -- resolve() itself is a no-op on
+# an already-settled promise, but window.__resolvePlaybackHost might not exist
+# at all if this snippet's own arming script somehow didn't run.
+def playback_ready_onerror(mode):
+    return f"window.__resolvePlaybackHost&amp;&amp;window.__resolvePlaybackHost({{mode:'{mode}'}})"
+
+PLAYBACK_READY_SNIPPETS = {
+    # Known at build time to load no boot module -- resolved immediately,
+    # synchronously, right after arming. No timing question on these pages.
+    "none": f"<script>{PLAYBACK_READY_ARM}window.__resolvePlaybackHost({{mode:'none'}});</script>\n",
+    # Known at build time to run ONLY the synchronous legacy engine (a show
+    # page whose slug is in CONTROLLER_ENGINE_EXCLUDED_SLUGS, so no boot
+    # module is emitted at all -- player.js's own top-level `else` branch is
+    # the only engine that will ever run here, and it runs synchronously at
+    # parse time). Deterministic at build time the same way "none" is, just a
+    # different known outcome -- not a runtime signal from player.js itself.
+    "legacy": f"<script>{PLAYBACK_READY_ARM}window.__resolvePlaybackHost({{mode:'legacy'}});</script>\n",
+    # Armed but left unresolved -- the page's own boot module (player-boot.js,
+    # song-boot.js, playlist-boot.js) resolves it later, once its real intent
+    # is known. See each module's own resolution-call comments.
+    "deferred": f"<script>{PLAYBACK_READY_ARM}</script>\n",
+}
+
 def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main, extra_scripts="",
-               extra_head="", pre_scripts=""):
+               extra_head="", pre_scripts="", playback_ready="none"):
     """`pre_scripts` is injected immediately BEFORE player.js.
 
     Only one thing needs that slot today: the shared-player engine flag
@@ -224,11 +293,18 @@ def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main,
     decides at parse time whether to register its playback handlers, so a flag
     set anywhere later could never win. Default "" keeps every other page's
     output byte-identical.
+
+    `playback_ready` selects which PLAYBACK_READY_SNIPPETS entry to emit as
+    the page's very first script — see that dict's comment for the contract.
+    Default "none" (resolved immediately) keeps every page that doesn't pass
+    "deferred" byte-identical apart from this one addition.
     """
+    if playback_ready not in PLAYBACK_READY_SNIPPETS:
+        raise ValueError(f"page_shell: unknown playback_ready={playback_ready!r}")
     return f'''<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+{PLAYBACK_READY_SNIPPETS[playback_ready]}<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{esc(title)}</title>
 <meta name="description" content="{esc(description)}">
@@ -718,9 +794,32 @@ def contact_block():
 
 def _song_occ_html(o, song_title):
     label = f'{song_title}, {o["artist_name"]}, {o["date"]}'
-    p = player(o["file"], duration=o.get("duration"), version=o["ver"], label=label)
     anchor = f'{esc(o["url"])}#track-{o["num"]}'
     track_id = f'{o["slug"]}-{o["num"]:02d}'
+    # song-boot.js reads this the same way player-boot.js reads a show-page
+    # track row's data-item -- see playable_item_attr()'s own docstring for the
+    # schema. peaks_key is omitted (None): occurrence rows stream the MP3
+    # proxy and have no waveform, matching songs.js's occRowHtml() (the
+    # lazily-rendered index-page counterpart to this server-rendered row) --
+    # keep the two builders in sync if this schema changes.
+    item_attr = playable_item_attr(
+        item_id=track_id,
+        kind="track",
+        stream=stream_url(o["file"], o["ver"]),
+        title=song_title,
+        artist=o["artist_name"],
+        venue=o["venue"],
+        date=o["date"],
+        date_display=o["date"],
+        duration_label=o.get("duration"),
+        peaks_key=None,
+        page_url=anchor,
+        play_label=label,
+        lossless_file=o.get("flac"),
+        lossless_size_mb=o.get("flac_size_mb"),
+        dropouts=False,
+    )
+    p = player(o["file"], duration=o.get("duration"), version=o["ver"], label=label, item_attr=item_attr)
     add_btn = track_add_button(track_id)
     sizes = []
     if o.get("flac_size_mb"):
@@ -844,4 +943,4 @@ def song_jsonld(s):
     })
 
 
-__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', 'STATUS_BLURB', '_pre_edit_class', '_pre_edit_label', '_show_label', '_song_occ_html', '_src_tag', 'contact_block', 'content', 'dl_button', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'playable_item_attr', 'player', 'recording_card', 'recording_item_id', 'show_jsonld', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'track_add_button', 'updates_list']
+__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'PLAYBACK_READY_ARM', 'PLAYBACK_READY_SNIPPETS', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', 'STATUS_BLURB', '_pre_edit_class', '_pre_edit_label', '_show_label', '_song_occ_html', '_src_tag', 'contact_block', 'content', 'dl_button', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'playable_item_attr', 'playback_ready_onerror', 'player', 'recording_card', 'recording_item_id', 'show_jsonld', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'track_add_button', 'updates_list']

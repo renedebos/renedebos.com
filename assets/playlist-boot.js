@@ -37,6 +37,14 @@ const MAX_HASH_LENGTH = 65536;
 const MAX_QUEUE_IDS = 1000;
 const MAX_SAVED_PLAYLISTS = 100;
 const MAX_PLAYLIST_NAME = 120;
+// Local to the ONE catalog fetch below -- implementation review finding #6
+// (2026-08-15). NOT a generic page-wide readiness timeout (that was
+// explicitly rejected in the design review for racing a slow-but-healthy
+// load into constructing a second controller); see the fetch call's own
+// comment. test-fake-dom.mjs's loadPlaylistBoot() substitutes a short
+// test-scale value for this constant so the "never resolves" test doesn't
+// need to wait out the real duration.
+const CATALOG_FETCH_TIMEOUT_MS = 10000;
 
 const SAVED_KEY = 'savedPlaylists';
 
@@ -346,16 +354,48 @@ export function bootPlaylistPage(doc, win) {
     }
   }
 
+  // Shape-only check for whether the CURRENT url hash is syntactically a
+  // recognized #p=id,id,... share link -- deliberately catalog-independent
+  // (mirrors hydrateFromHash()'s own early-return shape checks below: hash
+  // present, within the length bound, matching the #p= pattern), since it
+  // needs to be answerable even when CATALOG has never loaded at all.
+  // Implementation review finding #4 (2026-08-15): the catalog-fetch
+  // .catch() branch used to hardcode recognized:false regardless of what the
+  // hash actually contained, reporting a genuine share link hit by a
+  // transient network failure identically to "no hash at all" -- the same
+  // failure class the previous round's finding #5 fix addressed for the
+  // all-unknown-ids success-path case, just reachable via a different path
+  // (network failure instead of stale ids) that fix didn't cover. Resolving
+  // ids against CATALOG is NOT needed to answer "is this syntactically a
+  // share link" -- only the hash's own shape is.
+  function hashIsRecognizedShareLink() {
+    const raw = win.location.hash;
+    return !!raw && raw.length <= MAX_HASH_LENGTH && /^#p=([\w.,-]+)/.test(raw);
+  }
+
   // ── hash hydration (untrusted input -- see the bounds above) ──
+  // Returns { recognized, hadIds }, not a bare boolean (implementation
+  // review finding #5, 2026-08-15): `recognized` is true whenever a #p=
+  // hash was present and matched the expected shape -- a real page-level
+  // decision was made, even when that decision produces an EMPTY queue (the
+  // all-unknown-ids branch below, which explicitly clears the queue and
+  // shows "None of the tracks..."). `hadIds` is true only when that decision
+  // produced a non-empty queue. Conflating the two used to report a
+  // recognized-but-all-unknown share link identically to "no hash at all" —
+  // a future mini-player restoring its own persisted session onto this
+  // controller because initialIntent said that was safe would silently
+  // contradict both the URL the visitor followed and the status message
+  // just shown to them. See resolveReady() below for how `recognized` alone
+  // (not `hadIds`) is what actually decides initialIntent.
   function hydrateFromHash() {
     const raw = win.location.hash;
-    if (!raw) return false;
+    if (!raw) return { recognized: false, hadIds: false };
     if (raw.length > MAX_HASH_LENGTH) {
       statusEl.textContent = 'That share link is too long to use.';
-      return false;
+      return { recognized: false, hadIds: false };
     }
     const m = raw.match(/^#p=([\w.,-]+)/);
-    if (!m) return false;
+    if (!m) return { recognized: false, hadIds: false };
     let ids = m[1].split(',');
     if (ids.length > MAX_QUEUE_IDS) {
       ids = ids.slice(0, MAX_QUEUE_IDS);
@@ -369,10 +409,10 @@ export function bootPlaylistPage(doc, win) {
       // else). setQueue([]) clears all three consistently instead.
       controller.setQueue([]);
       statusEl.textContent = 'None of the tracks in that link are in the archive anymore.';
-      return false;
+      return { recognized: true, hadIds: false };
     }
     controller.setQueue(rows.map(itemFromCatalogRow), { startIndex: 0, autoplay: false });
-    return true;
+    return { recognized: true, hadIds: true };
   }
 
   // ── controller + views ──
@@ -607,9 +647,35 @@ export function bootPlaylistPage(doc, win) {
       if (e.key === SAVED_KEY) renderSaved();
     }, { signal: abort.signal });
 
+    // Set once the catalog fetch below actually starts; cleared on whichever
+    // of {resolves, rejects, destroy() runs first} happens first, so a
+    // page torn down before the catalog settles doesn't leave a stray timer
+    // around to abort() a fetch nobody cares about anymore (harmless either
+    // way -- see the fetch call's own comment -- but needless).
+    let catalogTimeoutId = null;
+    // Implementation review finding #5 (2026-08-15): destroy() used to clear
+    // the TIMEOUT that would eventually abort the catalog fetch, but never
+    // aborted the fetch's own AbortController directly -- so a page torn
+    // down while the catalog request was still in flight left that request
+    // running past teardown, with its .then()/.catch() continuation still
+    // scheduled to run later against an already-destroyed controller.
+    // Declared here (before `handle`, which references it) so destroy() can
+    // reach it; the actual AbortController is constructed below, right next
+    // to the fetch() call it belongs to -- by the time destroy() could ever
+    // actually be invoked (only via the `handle` this function returns), the
+    // synchronous code between here and there has already run, so the
+    // closure is never read before it's assigned.
+    let destroyed = false;
+    const catalogAbort = new AbortController();
     const handle = {
       controller,
-      destroy() { abort.abort(); controller.destroy(); },
+      destroy() {
+        destroyed = true;
+        abort.abort();
+        if (catalogTimeoutId != null) clearTimeout(catalogTimeoutId);
+        catalogAbort.abort();
+        controller.destroy();
+      },
     };
 
     renderSaved();  // needs no catalog -- names/counts come straight from storage
@@ -619,28 +685,108 @@ export function bootPlaylistPage(doc, win) {
     // above it, though -- kicking off fetch() itself is synchronous, and its
     // own .then/.catch chain is independently isolated (a catalog failure
     // degrades the status line, same as legacy, rather than throwing here).
-    fetch('/assets/tracks.json')
-      .then((r) => r.json())
+    // Readiness-contract resolution (plans/dynamic-hugging-rossum.md's
+    // "Blocker A continued"): /playlist/ resolves only once BOTH
+    // hydrateFromHash()'s first pass and the catalog fetch's first
+    // .then()/.catch() have run -- as this file's structure stands today,
+    // hydrateFromHash() is only ever reachable FROM the catalog's success
+    // continuation (there is nothing meaningful to hydrate against without a
+    // catalog), so the two are already sequenced, not concurrent: both
+    // "events" the plan asks to wait for happen together, right here, in the
+    // success case. In the failure case only the catalog settles (hydration
+    // never gets a chance to run at all, for the same reason) -- resolving
+    // there too is what keeps this from hanging forever on a genuinely
+    // broken catalog fetch, matching the plan's "never zero (hung)" bar.
+    //
+    // Takes hydrateFromHash()'s full { recognized, hadIds } result, not just
+    // hadIds: initialIntent must be 'page-queue' for ANY recognized #p=
+    // decision, including the all-unknown-ids one that clears the queue --
+    // see hydrateFromHash()'s own comment (implementation review finding #5).
+    function resolveReady(hydration) {
+      if (win.__resolvePlaybackHost) {
+        win.__resolvePlaybackHost({
+          mode: 'controller', controller,
+          initialIntent: hydration.recognized ? 'page-queue' : 'none',
+        });
+      }
+    }
+    // A local timeout scoped ONLY to this one fetch call -- before this fix,
+    // readiness resolved solely from the fetch's own .then()/.catch() chain,
+    // so a request that never SETTLES at all (not just one that rejects -- a
+    // genuinely stalled connection) left PLAYBACK_HOST_READY pending forever.
+    // Aborting on timeout routes straight into the SAME .catch() below as any
+    // other network failure -- no separate branch, and critically, no second
+    // controller ever gets constructed anywhere as a result (there is only
+    // ever the one controller already built above, regardless of catalog
+    // outcome) -- this is deliberately NOT the generic page-wide host timeout
+    // the design review rejected.
+    catalogTimeoutId = setTimeout(() => catalogAbort.abort(), CATALOG_FETCH_TIMEOUT_MS);
+    fetch('/assets/tracks.json', { signal: catalogAbort.signal })
+      .then((r) => {
+        // Round-3 correction (2026-08-15): this guard was previously ONLY on
+        // the second .then() below, so a request that settled successfully
+        // after destroy() (see the comment on the next .then()) still had
+        // its response body parsed here first -- wasted work, and contrary
+        // to the "both continuations check destroyed first" claim this file
+        // made about itself. Checked here too so a destroyed handle's fetch
+        // does nothing at all past this point, not even parse the response.
+        if (destroyed) return null;
+        return r.json();
+      })
       .then((data) => {
+        // Finding #5's extra guard: destroy() above aborts catalogAbort
+        // directly now, which is normally enough on its own to make this
+        // continuation never run at all (an aborted fetch rejects, landing
+        // in .catch() below, not here) -- but a request that was already
+        // past the point of no return over the network by the time destroy()
+        // ran can still settle successfully regardless of the abort signal.
+        // This flag is what actually stops a destroyed handle's continuation
+        // from touching the (already-destroyed) controller/DOM in that case.
+        // (The .then() above already returns null instead of a real body
+        // once destroyed, so `data` arrives here as null in that case too --
+        // re-checked regardless, since relying on that alone would silently
+        // break if the guard above were ever removed.)
+        if (destroyed) return;
+        clearTimeout(catalogTimeoutId);
         CATALOG = data;
         catalogById.clear();
         data.forEach((row) => catalogById.set(row.id, row));
         renderFilters();
         renderLength();
         updateStatus();
-        hydrateFromHash();
+        const hydration = hydrateFromHash();
         // The initial renderSaved() above ran against an empty catalog (by
         // design, so names/counts show immediately from storage alone) --
         // redo it now that resolveCatalogRows() can actually look tracks up,
         // for the Download buttons' size tooltips.
         renderSaved();
+        resolveReady(hydration);
       })
-      .catch((e) => { statusEl.textContent = 'Could not load the track catalog: ' + e; });
+      .catch((e) => {
+        if (destroyed) return; // see the .then() branch's comment above
+        clearTimeout(catalogTimeoutId);
+        statusEl.textContent = 'Could not load the track catalog: ' + e;
+        // Finding #4 (2026-08-15): a genuine #p=a,b share link, hit by a
+        // transient network failure or the timeout above, must not be
+        // reported identically to "no hash at all" -- that would let a
+        // future mini-player silently restore an unrelated persisted session
+        // over what the URL explicitly asked for. hashIsRecognizedShareLink()
+        // needs no catalog to answer this -- only the hash's own shape.
+        resolveReady({ recognized: hashIsRecognizedShareLink(), hadIds: false });
+      });
 
     return handle;
   } catch (e) {
     abort.abort();
+    // Destroy any partially-constructed controller BEFORE resolving --
+    // nothing half-built should be left listening/holding the <audio>
+    // element by the time a future mini-player might see 'none' and decide
+    // to construct its own. Resolves 'none', not 'legacy': /playlist/ has no
+    // fallback engine to defer to (see the module tag's onerror= attribute
+    // in pages.py's build_playlist() for the same reasoning on the sibling
+    // module-load-failure signal).
     controller.destroy();
+    if (win.__resolvePlaybackHost) win.__resolvePlaybackHost({ mode: 'none' });
     throw e;
   }
 }
@@ -657,5 +803,13 @@ if (typeof window !== 'undefined' && !window[MOUNTED_FLAG]) {
     window[MOUNTED_FLAG] = true;
   } catch (e) {
     console.error('[playlist-boot] controller mount failed', e);
+    // Readiness-contract backstop: bootPlaylistPage()'s own try/catch
+    // already resolves 'none' for anything that throws AFTER its controller
+    // is constructed — but the required-markup-missing check at the very
+    // top of that function throws BEFORE `new PlaybackController(...)` even
+    // runs, bypassing that catch entirely. Resolving here too closes that
+    // gap; a second resolve() call on an already-settled promise is a
+    // harmless no-op, so this is safe to run unconditionally alongside it.
+    if (window.__resolvePlaybackHost) window.__resolvePlaybackHost({ mode: 'none' });
   }
 }

@@ -4,11 +4,12 @@
 // elements and hand-duplicated queue logic in player.js, wavesurfer.js,
 // playlist.js, and continuous-player.js (see plans/player-consolidation/).
 //
-// Show pages are the only consumer so far. The queue/shuffle/repeat/reorder
-// surface is deliberately general enough to be the foundation /playlist/ and
-// /player/ migrate onto later — but that is an intended foundation, not a
-// proven drop-in: only removeAt()'s behavior has actually been verified
-// against those engines so far, so expect real adaptation work there.
+// Show pages (Phase 1), /playlist/ (Phase 2), and song pages (Phase 3 Stage
+// 3a-foundation, via song-boot.js) all run this now. /player/'s popup is
+// still the one holdout engine — the queue/shuffle/repeat/reorder surface
+// was built general enough to be its foundation too, but that migration
+// hasn't happened yet (tracked as a later Phase 3 stage in
+// plans/dynamic-hugging-rossum.md, alongside the sticky mini-player itself).
 
 // ── playback coordination (same page + other tabs/windows) ─────────────────
 // A claim announces "I'm playing now": broadcast to every other tab/window
@@ -127,12 +128,26 @@ export class PlaybackController {
   // needed for a "paused — playback started somewhere else" status message
   // without reaching for the ambient legacy onExternalClaim(fn, owner)
   // global. Show pages pass nothing and are unaffected.
+  //
+  // onAnyExternalClaim: a SECOND, unconditional callback invoked on every
+  // external claim regardless of this controller's current state — added for
+  // Phase 3 Stage 3a-foundation's durable cross-tab ownership bookkeeping
+  // (see miniplayer-state.js), which needs to learn about a claim even while
+  // this controller was already paused (onExternalClaim's gating below is
+  // correct and unchanged for ITS purpose — e.g. not showing a false "paused
+  // elsewhere" message on an already-paused tab — but that same gating means
+  // it can never fire for a merely-restored, never-played tab, which is
+  // exactly the case ownership tracking needs to observe). No caller in this
+  // stage; built and available for the mini-player boot script a later stage
+  // adds.
   constructor({ audio = new Audio(), mediaSession = true, onQueueExhausted = null,
-                onExternalClaim: onExternalClaimCallback = null } = {}) {
+                onExternalClaim: onExternalClaimCallback = null,
+                onAnyExternalClaim = null } = {}) {
     this.audio = audio;
     this.audio.preload = 'none';
     this._onQueueExhausted = onQueueExhausted;
     this._onExternalClaimCallback = onExternalClaimCallback;
+    this._onAnyExternalClaim = onAnyExternalClaim;
 
     this._queue = [];
     this._idx = -1;
@@ -150,8 +165,16 @@ export class PlaybackController {
     this._views = new Set();
     this._destroyed = false;
     this._mediaSessionEnabled = mediaSession && typeof navigator !== 'undefined' && 'mediaSession' in navigator;
+    // Structured result of the most recent failed play attempt — see
+    // _handleError()/snapshot(). play() itself always resolves (never
+    // rejects; _playIndex()'s internal .catch() below sees to that), so this
+    // is the only way a caller can observe WHY an attempt failed, including
+    // telling a blocked-autoplay NotAllowedError apart from a real decode/
+    // network error. Cleared at the start of every fresh _playIndex() attempt.
+    this._lastPlayError = null;
 
     this._unclaim = onExternalClaim(this, () => {
+      if (this._onAnyExternalClaim) this._onAnyExternalClaim();
       if (this._state === 'playing' || this._state === 'loading') {
         this.pause();
         if (this._onExternalClaimCallback) this._onExternalClaimCallback();
@@ -277,6 +300,109 @@ export class PlaybackController {
       this._notify();
     }
     return fresh.length;
+  }
+
+  // Hydrates the controller from a persisted session envelope (Phase 3
+  // Stage 3a-foundation's miniplayer-state.js codec) — deliberately separate
+  // from setQueue(), which every live call site also uses today, so
+  // overloading its contract risks a footgun elsewhere (setQueue()'s
+  // autoplay:false branch is a "cue, don't play" operation for a queue the
+  // CALLER already has fully in hand; restoreSession() is "reconstruct a
+  // session from storage", a different enough shape — resolving an id
+  // instead of an index, deferring the seek — to earn its own method).
+  //
+  // No caller in this stage: a later stage's mini-player boot script is the
+  // first real consumer. Implemented and unit-tested now per the plan.
+  //
+  // Takes an id, not a raw index, because currentItemId has to survive a
+  // queue that was filtered on read (a corrupt persisted entry dropped) —
+  // an index recorded before filtering could point at the wrong item
+  // afterward, or past the end; an id resolved AFTER filtering cannot.
+  //
+  // Explicitly assigns audio.src: setQueue(items, {autoplay:false}) does NOT
+  // do this (only _playIndex() does), so a restore built on setQueue() alone
+  // would leave nothing loaded/seekable — verified directly against
+  // setQueue()'s own body above.
+  //
+  // Seeks to positionSec only once the browser actually reports a duration
+  // (the 'loadedmetadata' event) — seeking earlier is unreliable/a no-op in
+  // several browsers. That deferred seek is guarded by `_queueRevision`
+  // (captured at restore time) plus the restored item's own id — NOT `_gen`
+  // (implementation review finding #4, 2026-08-15): `_playIndex()` bumps
+  // `_gen` unconditionally on every single play() attempt, including one
+  // that simply RESUMES the exact item this restore just cued (the plan's
+  // own "attempt play() only when permitted" resume flow) — a `_gen` guard
+  // would invalidate the deferred seek before metadata ever has a chance to
+  // load, silently losing the restored position on the most common resume
+  // path. `_queueRevision` only changes when the queue's membership/order
+  // actually changes (setQueue/appendQueue/restoreSession/removeAt/reorder/
+  // toggleShuffle) — never by play()/pause()/seek() themselves — so it
+  // survives a same-item resume while still being invalidated by a genuinely
+  // new restore or queue mutation; the item-id check on top of it additionally
+  // covers the user navigating within the SAME queue (next()/prev()/a
+  // different row's singleton) to a different track before metadata loads,
+  // which changes `_idx` without bumping `_queueRevision` at all.
+  //
+  // Shuffle-restoration is an honest, documented limitation, not hidden: a
+  // restored queue is already in whatever order it was saved in (already
+  // shuffled, if shuffleOn was true when saved), but the ORIGINAL pre-shuffle
+  // order was never persisted (miniplayer-state.js's codec doesn't carry it —
+  // see its own comment), so _unshuffledQueue starts null here. Toggling
+  // shuffle off after a restore therefore can't reorder back to the literal
+  // pre-shuffle order — toggleShuffle() already degrades gracefully for
+  // exactly this case (flips the flag, leaves the queue order as-is, rather
+  // than throwing or losing items), so nothing further is needed here.
+  restoreSession({ queue = [], currentItemId = null, repeatOne = false,
+                    shuffleOn = false, positionSec = 0 } = {}) {
+    if (this._destroyed) return;
+    ++this._gen; // invalidates any in-flight play() promise from BEFORE this restore
+    this._queue = queue.slice(0, MAX_QUEUE_ITEMS).map(normalizeItem);
+    ++this._queueRevision;
+    const queueRevision = this._queueRevision; // captured for the deferred seek below
+    this._repeatOne = !!repeatOne;
+    this._shuffleOn = !!shuffleOn;
+    this._unshuffledQueue = null;
+    if (!this.audio.paused) this.audio.pause();
+
+    const idx = currentItemId != null
+      ? this._queue.findIndex(t => t.id === currentItemId) : -1;
+    if (idx === -1) {
+      this._idx = -1;
+      this._setState('idle');
+      this._updateMediaMetadata();
+      this._notify();
+      return;
+    }
+    this._idx = idx;
+    const item = this._queue[idx];
+    this._currentSrc = item.streamUrl;
+    this.audio.src = item.streamUrl;
+    // Cued, not playing — matches setQueue()'s own "idle" convention for a
+    // queue that has a valid currentItem but nothing actually playing yet
+    // (see setQueue()'s non-autoplay branch above). Restoring visual state
+    // immediately and attempting play() only when explicitly permitted is
+    // the plan's own decision (no promise of automatic resume on restore).
+    this._setState('idle');
+    this._updateMediaMetadata();
+    this._notify();
+
+    if (positionSec > 0) {
+      const restoredItemId = item.id;
+      const onMeta = () => {
+        // Superseded by a genuinely new restore or queue mutation -- do not
+        // seek a stale track. Deliberately NOT `_gen` -- see this method's
+        // own comment above for why that would also (incorrectly) block a
+        // plain resume of the very item just restored.
+        if (this._queueRevision !== queueRevision) return;
+        // The queue itself hasn't changed, but the CURRENT item might have
+        // (next()/prev()/a different singleton click, none of which bump
+        // _queueRevision) -- only seek if we're still looking at the exact
+        // item this restore cued.
+        if (this._idx === -1 || this._queue[this._idx].id !== restoredItemId) return;
+        this.seek(positionSec);
+      };
+      this.audio.addEventListener('loadedmetadata', onMeta, { once: true, signal: this._abort.signal });
+    }
   }
 
   // Drops one item in place. Deliberately reproduces the existing
@@ -539,6 +665,7 @@ export class PlaybackController {
     // so checking after would silently skip the reload on exactly that path.
     const retrying = this._state === 'error' || !!this.audio.error;
     this._setState('loading');
+    this._lastPlayError = null; // a fresh attempt starts clean; see its own field comment
     // Assign src BEFORE notifying views, and notify BEFORE play().
     //
     // Order matters in both directions and is load-bearing:
@@ -570,6 +697,11 @@ export class PlaybackController {
 
   _handleError(err) {
     if (err && err.name === 'AbortError') return; // pause()/a newer play() interrupted this one — not a real failure
+    // err.name distinguishes a blocked-autoplay NotAllowedError from any
+    // other failure; a native audio 'error' event (this.audio.error, a
+    // MediaError) has no .name at all, which still correctly falls through
+    // to null here rather than being mistaken for NotAllowedError.
+    this._lastPlayError = { name: (err && err.name) || null, message: (err && err.message) || null };
     this._setState('error');
     this._notify();
   }
@@ -608,6 +740,7 @@ export class PlaybackController {
       queueRevision: this._queueRevision,
       repeatOne: this._repeatOne,
       shuffleOn: this._shuffleOn,
+      lastPlayError: this._lastPlayError,
     };
   }
 

@@ -11,6 +11,7 @@ import assert from 'node:assert/strict';
 import { PlaybackController } from './player-controller.js';
 import {
   FakeElement, FakeDocument, FakeWindow, FakeAudio, loadPlaylistBoot,
+  TEST_CATALOG_FETCH_TIMEOUT_MS,
 } from './test-fake-dom.mjs';
 
 globalThis.getComputedStyle = () => ({ getPropertyValue: () => '' });
@@ -85,6 +86,11 @@ async function boot({ hash = '', search = '', storage = {}, catalogFail = false 
   globalThis.window = win;
   globalThis.localStorage = fakeStorage(storage);
   setGlobalNavigator({}); // no 'mediaSession' key at all -- `'mediaSession' in navigator` must be false
+  // Readiness-contract resolution (plans/dynamic-hugging-rossum.md) — a test
+  // reads `readiness()` to see what playlist-boot.js resolved
+  // window.PLAYBACK_HOST_READY to.
+  let readiness = null;
+  win.__resolvePlaybackHost = (v) => { readiness = v; };
   const CATALOG = ['a', 'b', 'c', 'd', 'e'].map((id) => catalogRow(id));
   globalThis.fetch = (url) => {
     if (String(url).includes('tracks.json')) {
@@ -94,7 +100,10 @@ async function boot({ hash = '', search = '', storage = {}, catalogFail = false 
   };
   const mod = await loadPlaylistBoot();
   await new Promise((r) => setTimeout(r, 0)); // let the catalog fetch's .then chain resolve
-  return { doc, win, handle: win.PLAYLIST_BOOT, c: win.PLAYLIST_BOOT && win.PLAYLIST_BOOT.controller, mod };
+  return {
+    doc, win, handle: win.PLAYLIST_BOOT, c: win.PLAYLIST_BOOT && win.PLAYLIST_BOOT.controller, mod,
+    readiness: () => readiness,
+  };
 }
 
 const tick = () => new Promise((r) => setTimeout(r, 0));
@@ -180,6 +189,293 @@ test('a mount failure AFTER views are already mounted still tears everything dow
   } finally {
     PlaybackController.prototype.destroy = realDestroy;
   }
+});
+
+// ── readiness contract (Phase 3 Stage 3a-foundation) ──────────────────────
+// /playlist/ resolves window.PLAYBACK_HOST_READY once both hydrateFromHash()
+// and the catalog fetch's first .then()/.catch() have settled -- all three
+// failure modes need covering explicitly (only the module-tag onerror= case
+// is browser-only; the other two are exercised here). See playlist-boot.js's
+// own resolveReady()/auto-run comments for the reasoning.
+test('readiness resolves to controller/page-queue when the hash had real ids', async () => {
+  const { readiness } = await boot({ hash: '#p=b,d' });
+  try {
+    assert.ok(readiness());
+    assert.equal(readiness().mode, 'controller');
+    assert.equal(readiness().initialIntent, 'page-queue');
+  } finally { const c = readiness().controller; if (c) c.destroy(); }
+});
+
+test('readiness resolves to controller/none when there is no hash at all', async () => {
+  const { readiness } = await boot();
+  try {
+    assert.equal(readiness().mode, 'controller');
+    assert.equal(readiness().initialIntent, 'none');
+  } finally { readiness().controller.destroy(); }
+});
+
+// Implementation review finding #5 (2026-08-15): a RECOGNIZED #p= hash whose
+// ids are all unknown/stale is a real page-level decision (hydrateFromHash()
+// explicitly clears the queue and shows "None of the tracks..."), not the
+// same thing as no hash being present at all. This must resolve 'page-queue',
+// not 'none' -- a future mini-player would otherwise treat a stale-but-
+// explicit share link as "nothing happened, safe to restore my own session",
+// silently overriding both the URL the visitor followed and the status
+// message just shown to them. (This test used to assert 'none' here, which
+// was the bug this finding caught -- it was testing the wrong contract.)
+test('readiness resolves to controller/page-queue when the hash was recognized but every id in it is unknown', async () => {
+  const { readiness, doc } = await boot({ hash: '#p=nope,also-nope' });
+  try {
+    assert.equal(readiness().mode, 'controller');
+    assert.equal(readiness().initialIntent, 'page-queue',
+      'a recognized #p= hash is a page-level decision even when it resolves to zero tracks -- must not be reported the same as "no hash at all"');
+    assert.equal(readiness().controller.queue.length, 0);
+    assert.ok(doc.getElementById('pl-status').textContent.includes('None of the tracks'));
+  } finally { readiness().controller.destroy(); }
+});
+
+// Catalog-fetch-only failure: the controller/views still mount fine (there
+// is nothing wrong with the page itself), only the catalog request failed --
+// still resolves 'controller' (the controller genuinely exists), never
+// leaves the promise hanging.
+test('readiness still resolves (controller/none) when the catalog fetch itself fails, never hangs', async () => {
+  const { readiness, doc } = await boot({ catalogFail: true });
+  try {
+    assert.ok(readiness(), 'a broken catalog must not leave PLAYBACK_HOST_READY pending forever');
+    assert.equal(readiness().mode, 'controller');
+    assert.equal(readiness().initialIntent, 'none');
+    assert.ok(doc.getElementById('pl-status').textContent.includes('Could not load'));
+  } finally { readiness().controller.destroy(); }
+});
+
+// Implementation review finding #6 (2026-08-15): the previous test above
+// covers a fetch that REJECTS immediately -- it says nothing about a fetch
+// that never settles at all (a genuinely stalled connection), which the
+// existing .then()/.catch()-only readiness resolution had no fallback for.
+// This test's fake fetch never resolves or rejects ON ITS OWN -- it only
+// ever settles by having its AbortSignal aborted, exactly mirroring real
+// fetch()'s actual abort contract -- so this specifically exercises the
+// LOCAL catalog-fetch timeout mechanism, not just "any rejection eventually
+// happens." Manual setup (not the shared boot() helper) for full control
+// over timing: boot() only waits one tick after loadPlaylistBoot(), nowhere
+// near test-fake-dom.mjs's shrunk (but still nonzero) timeout duration.
+test('a catalog fetch that never settles at all still resolves readiness via the local timeout, rather than hanging forever', async () => {
+  const { doc } = playlistDoc();
+  const win = new FakeWindow({});
+  win.WORKER_ORIGIN = 'https://x';
+  win.history = { replaceState: () => {} };
+  win.location.pathname = '/playlist/';
+  win.location.href = 'https://renedebos.com/playlist/';
+  win.location.origin = 'https://renedebos.com';
+  win.prompt = () => null;
+  win.confirm = () => true;
+  let readiness = null;
+  win.__resolvePlaybackHost = (v) => { readiness = v; };
+  globalThis.document = doc;
+  globalThis.window = win;
+  globalThis.localStorage = fakeStorage();
+  setGlobalNavigator({});
+  globalThis.fetch = (url, opts) => new Promise((resolve, reject) => {
+    if (opts && opts.signal) {
+      opts.signal.addEventListener('abort', () => {
+        const err = new Error('The operation was aborted');
+        err.name = 'AbortError';
+        reject(err);
+      });
+    }
+    // Deliberately never calls resolve()/reject() on its own.
+  });
+
+  await loadPlaylistBoot();
+  try {
+    assert.equal(readiness, null,
+      'readiness must not resolve immediately -- this proves the test is actually exercising the timeout, not an instant rejection');
+
+    // Wait comfortably past the (test-fake-dom.mjs-shrunk) timeout.
+    await new Promise((r) => setTimeout(r, TEST_CATALOG_FETCH_TIMEOUT_MS * 5));
+
+    assert.ok(readiness, 'a catalog fetch that never settles must not leave PLAYBACK_HOST_READY pending forever');
+    assert.equal(readiness.mode, 'controller', 'the controller/shell itself mounted fine -- only the catalog stalled');
+    assert.equal(readiness.initialIntent, 'none');
+    assert.ok(doc.getElementById('pl-status').textContent.includes('Could not load'),
+      'the timeout must degrade exactly like any other catalog failure, not a distinct silent path');
+  } finally {
+    if (win.PLAYLIST_BOOT) win.PLAYLIST_BOOT.controller.destroy();
+  }
+});
+
+// Implementation review finding #4 (2026-08-15): the catalog-fetch .catch()
+// branch used to hardcode {recognized:false, hadIds:false} regardless of
+// what the URL hash actually contained -- a genuine #p=a,b share link, hit
+// by a transient network failure, was reported identically to "no hash at
+// all." The all-unknown-ids test above (finding #5, previous round) only
+// covers the SUCCESS path; this covers the identical failure class on the
+// FAILURE path, which that fix did not touch. `catalogFail` here means the
+// fetch call itself REJECTS (immediate network failure), not the timeout --
+// the next test below covers the timeout mechanism with a hash present too.
+test('a catalog fetch REJECTION with an explicit #p= share link in the hash still resolves page-queue intent, not none', async () => {
+  const { readiness } = await boot({ hash: '#p=b,d', catalogFail: true });
+  try {
+    assert.ok(readiness());
+    assert.equal(readiness().mode, 'controller');
+    assert.equal(readiness().initialIntent, 'page-queue',
+      'a genuine share link hit by a transient catalog failure must not be reported the same as "no hash at all" -- a future mini-player could otherwise silently restore an unrelated persisted session over what the URL explicitly asked for');
+  } finally { readiness().controller.destroy(); }
+});
+
+// Same failure class, but via the LOCAL TIMEOUT mechanism (finding #6,
+// previous round) rather than an immediate rejection -- a fetch that never
+// settles on its own, with an explicit #p= hash present, must ALSO preserve
+// page-queue intent once the timeout aborts it, not just the
+// immediate-rejection path covered above.
+test('a catalog fetch that never settles, with an explicit #p= hash present, still resolves page-queue intent via the local timeout', async () => {
+  const { doc } = playlistDoc();
+  const win = new FakeWindow({ hash: '#p=b,d' });
+  win.WORKER_ORIGIN = 'https://x';
+  win.history = { replaceState: () => {} };
+  win.location.pathname = '/playlist/';
+  win.location.href = 'https://renedebos.com/playlist/#p=b,d';
+  win.location.origin = 'https://renedebos.com';
+  win.prompt = () => null;
+  win.confirm = () => true;
+  let readiness = null;
+  win.__resolvePlaybackHost = (v) => { readiness = v; };
+  globalThis.document = doc;
+  globalThis.window = win;
+  globalThis.localStorage = fakeStorage();
+  setGlobalNavigator({});
+  globalThis.fetch = (url, opts) => new Promise((resolve, reject) => {
+    if (opts && opts.signal) {
+      opts.signal.addEventListener('abort', () => {
+        const err = new Error('The operation was aborted');
+        err.name = 'AbortError';
+        reject(err);
+      });
+    }
+    // Deliberately never calls resolve()/reject() on its own.
+  });
+
+  await loadPlaylistBoot();
+  try {
+    assert.equal(readiness, null);
+    await new Promise((r) => setTimeout(r, TEST_CATALOG_FETCH_TIMEOUT_MS * 5));
+    assert.ok(readiness, 'a catalog fetch that never settles must not leave PLAYBACK_HOST_READY pending forever');
+    assert.equal(readiness.initialIntent, 'page-queue',
+      'the local-timeout path must ALSO preserve an explicit share-link intent, not just the immediate-rejection path above');
+  } finally {
+    if (win.PLAYLIST_BOOT) win.PLAYLIST_BOOT.controller.destroy();
+  }
+});
+
+// Implementation review finding #5 (2026-08-15): destroy() used to clear the
+// catalog-fetch timeout but never abort the fetch's own AbortController --
+// a page torn down while the catalog request was still in flight left that
+// request running past teardown, with its continuation still scheduled to
+// act on an already-destroyed controller. This fake fetch deliberately does
+// NOT honor the abort signal at all (it only settles when the test manually
+// resolves it) -- modeling the review's own scenario ("a never-settling
+// fetch therefore remains pending forever after destroy... a later
+// successful fetch can resolve readiness with an already-destroyed
+// controller") and isolating the SEPARATE "destroyed" flag guard (the fix's
+// second half) from whether abort() itself would have been enough.
+test('destroy() during an in-flight catalog fetch aborts it directly and prevents the continuation from acting afterward', async () => {
+  const { doc } = playlistDoc();
+  // Seeded with the real generated page's actual initial text
+  // (pages.py's pl-status markup), not left blank -- so the assertion below
+  // proves the status line is genuinely UNTOUCHED post-destroy, not merely
+  // that it happens to still equal whatever empty default this fixture
+  // started with.
+  const initialStatusText = 'Loading the track catalog…';
+  doc.getElementById('pl-status').textContent = initialStatusText;
+  const win = new FakeWindow({});
+  win.WORKER_ORIGIN = 'https://x';
+  win.history = { replaceState: () => {} };
+  win.location.pathname = '/playlist/';
+  win.location.href = 'https://renedebos.com/playlist/';
+  win.location.origin = 'https://renedebos.com';
+  win.prompt = () => null;
+  win.confirm = () => true;
+  let readiness = null;
+  win.__resolvePlaybackHost = (v) => { readiness = v; };
+  globalThis.document = doc;
+  globalThis.window = win;
+  globalThis.localStorage = fakeStorage();
+  setGlobalNavigator({});
+
+  let capturedSignal = null;
+  let resolveFetch;
+  globalThis.fetch = (url, opts) => {
+    capturedSignal = opts && opts.signal;
+    return new Promise((resolve) => { resolveFetch = resolve; });
+  };
+
+  await loadPlaylistBoot();
+  const handle = win.PLAYLIST_BOOT;
+  assert.ok(handle, 'must have mounted synchronously before the catalog settles');
+  assert.equal(readiness, null, 'readiness must still be pending -- the catalog fetch has not settled yet');
+
+  handle.destroy();
+  assert.ok(capturedSignal && capturedSignal.aborted,
+    'destroy() must abort the in-flight catalog fetch\'s own AbortController directly, not just clear the timeout');
+
+  // The fetch settles SUCCESSFULLY well after destroy() ran (this fake never
+  // reacted to the abort signal at all -- see the test's own comment above).
+  // Round-3 correction (2026-08-15): json() call-tracking added -- the FIRST
+  // .then() previously had no destroyed guard at all, so this fake's json()
+  // genuinely got invoked post-destroy even though nothing observable
+  // happened afterward. The guard now added to that first .then() must stop
+  // json() itself from ever being called on a destroyed handle, not just
+  // stop the later data-handling step from acting on its result.
+  let jsonCalled = false;
+  resolveFetch({ json: () => { jsonCalled = true; return Promise.resolve([]); } });
+  await tick(); await tick(); await tick(); // headroom: guard now short-circuits before r.json() ever runs
+
+  assert.equal(jsonCalled, false,
+    'a destroyed handle\'s fetch continuation must not even parse the response body, not just avoid acting on it');
+  assert.equal(readiness, null,
+    'a destroyed handle\'s catalog continuation must never resolve readiness -- nothing should still be listening for it');
+  assert.equal(doc.getElementById('pl-status').textContent, initialStatusText,
+    'the continuation must not touch the DOM after destroy() either -- the status line must remain exactly what it was');
+});
+
+// In-script throw during mount (script loaded fine, something inside it
+// threw) -- resolves 'none', destroying any partially-constructed controller
+// first. Covers both the "controller was constructed, then something later
+// failed" path AND the "required markup missing" path that throws BEFORE
+// `new PlaybackController()` even runs (the auto-run block's own backstop).
+test('readiness resolves to none on an in-script throw AFTER the controller was constructed', async () => {
+  const { doc } = playlistDoc();
+  const win = new FakeWindow({});
+  win.WORKER_ORIGIN = 'https://x';
+  let readiness = null;
+  win.__resolvePlaybackHost = (v) => { readiness = v; };
+  globalThis.document = doc;
+  globalThis.window = win;
+  globalThis.localStorage = fakeStorage();
+  setGlobalNavigator({});
+  globalThis.fetch = () => Promise.resolve({ json: () => Promise.resolve([]) });
+  const presetsEl = doc.querySelector('.pl-presets');
+  presetsEl.addEventListener = () => { throw new Error('injected post-mount wiring failure'); };
+  await loadPlaylistBoot();
+  assert.equal(win.PLAYLIST_BOOT, undefined);
+  assert.ok(readiness, 'must resolve even though the controller that was briefly constructed got destroyed again');
+  assert.equal(readiness.mode, 'none');
+});
+
+test('readiness resolves to none when required markup is missing, before any controller is ever constructed', async () => {
+  const { doc } = playlistDoc();
+  doc.getElementById('pl-queue').remove();
+  const win = new FakeWindow({});
+  let readiness = null;
+  win.__resolvePlaybackHost = (v) => { readiness = v; };
+  globalThis.document = doc;
+  globalThis.window = win;
+  globalThis.localStorage = fakeStorage();
+  globalThis.fetch = () => Promise.resolve({ json: () => Promise.resolve([]) });
+  await loadPlaylistBoot();
+  assert.equal(win.PLAYLIST_ENGINE_MOUNTED, undefined);
+  assert.ok(readiness, 'the auto-run-level backstop must resolve this -- bootPlaylistPage\'s own try/catch never runs (the throw is above it)');
+  assert.equal(readiness.mode, 'none');
 });
 
 // Codex review finding #2 (same review): the "paused elsewhere" status

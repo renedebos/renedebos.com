@@ -99,6 +99,11 @@ async function boot({ rows = 3, heroes = 1, flag = true, hash = '', search = '',
   if (peaksUrl) win.WS_PEAKS_URL = peaksUrl;
   globalThis.document = doc;
   globalThis.window = win;
+  // Readiness-contract resolution (plans/dynamic-hugging-rossum.md) — a test
+  // reads `readiness` after dispatching 'load' to see what player-boot.js
+  // resolved window.PLAYBACK_HOST_READY to.
+  let readiness = null;
+  win.__resolvePlaybackHost = (v) => { readiness = v; };
   const body = { json: () => Promise.resolve(peaks) };
   // holdPeaks keeps the response pending until the test releases it — the only
   // way to observe the window between "mounted" and "peaks applied", since
@@ -114,6 +119,7 @@ async function boot({ rows = 3, heroes = 1, flag = true, hash = '', search = '',
     doc, win, release,
     handle: win.PLAYER_BOOT,
     c: win.PLAYER_BOOT && win.PLAYER_BOOT.controller,
+    readiness: () => readiness,
   };
 }
 
@@ -348,6 +354,60 @@ test('a later hashchange re-targets but never autoplays', async () => {
       'the previous deep-link highlight is cleared');
     assert.equal(c.currentIndex, 2, 'the newly hashed row must not start playing');
   } finally { c.destroy(); }
+});
+
+// ── readiness contract (Phase 3 Stage 3a-foundation) ─────────────────────
+// Show pages resolve PLAYBACK_HOST_READY only AFTER the deep-link/autoplay
+// decision, on window.load — not at mount time — specifically so a future
+// mini-player can't start restoring a persisted session before that
+// decision is made and race it. This is the ordering the plan's round 3
+// correction exists for.
+test('readiness resolves to controller/autoplay when a deep link actually autoplayed', async () => {
+  const { win, readiness } = await boot({ rows: 4, hash: '#track-3', search: '?autoplay=1' });
+  try {
+    assert.equal(readiness(), null, 'must not resolve before window.load — the deep-link decision has not happened yet');
+    win.dispatch('load');
+    await tick();
+    assert.ok(readiness(), 'must resolve once window.load has run');
+    assert.equal(readiness().mode, 'controller');
+    assert.equal(readiness().initialIntent, 'autoplay');
+    assert.equal(readiness().controller, win.PLAYER_BOOT.controller);
+  } finally { win.PLAYER_BOOT.controller.destroy(); }
+});
+
+test('readiness resolves to controller/none when there is no deep link at all', async () => {
+  const { win, readiness } = await boot({ rows: 4 });
+  try {
+    win.dispatch('load');
+    await tick();
+    assert.equal(readiness().mode, 'controller');
+    assert.equal(readiness().initialIntent, 'none', 'nothing page-specific happened -- a future mini-player restore is safe');
+  } finally { win.PLAYER_BOOT.controller.destroy(); }
+});
+
+test('readiness resolves to controller/none for a hash present but without ?autoplay=1 (highlight-only deep link)', async () => {
+  const { win, readiness } = await boot({ rows: 4, hash: '#track-2' }); // no ?autoplay=1
+  try {
+    win.dispatch('load');
+    await tick();
+    assert.equal(readiness().initialIntent, 'none', 'highlighting a row is not the same as a real autoplay request');
+  } finally { win.PLAYER_BOOT.controller.destroy(); }
+});
+
+test('readiness resolves to legacy on a mount failure (in-script throw), independent of the later DOMContentLoaded fallback trigger', async () => {
+  const quiet = console.error;
+  console.error = () => {};
+  try {
+    const { win, readiness } = await boot({ rows: 3, badRow: 2 });
+    assert.equal(win.PLAYER_ENGINE_MOUNTED, undefined);
+    assert.ok(readiness(), 'must resolve immediately from the auto-run catch block, not wait for player.js\'s separate DOMContentLoaded listener');
+    assert.equal(readiness().mode, 'legacy');
+  } finally { console.error = quiet; }
+});
+
+test('a page without the engine flag never touches PLAYBACK_HOST_READY at all (nothing to resolve — that page\'s readiness snippet already resolved "legacy" itself, at build time)', async () => {
+  const { readiness } = await boot({ flag: false });
+  assert.equal(readiness(), null, 'player-boot.js never even runs its auto-run block on a non-flagged page');
 });
 
 test('a hash pointing at something that is not a track row is ignored', async () => {

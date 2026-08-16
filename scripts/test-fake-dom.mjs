@@ -319,6 +319,20 @@ export async function loadPlayerBoot() {
   return import(dataUrl(src));
 }
 
+// song-boot.js reuses player-views.js (plain PlayerView — every occurrence
+// row is its own singleton, unlike player-boot.js's CompactPlayerView) —
+// same rewrite/stub shape, same "importing it IS running the bootstrap"
+// caveat as loadPlayerBoot().
+let songBootSeq = 0;
+export async function loadSongBoot() {
+  await loadPlayerViews();
+  const src = read('song-boot.js')
+    .replace("from '/assets/player-controller.js';", `from '${controllerUrl}';`)
+    .replace("from '/assets/player-views.js';", `from '${viewsUrl}';`)
+    + `\n// instance ${++songBootSeq}\n`;
+  return import(dataUrl(src));
+}
+
 // playlist-views.js has no WaveSurfer dependency to stub — a plain rewrite.
 let playlistViewsUrl = null;
 export async function loadPlaylistViews() {
@@ -330,12 +344,19 @@ export async function loadPlaylistViews() {
 }
 
 // Same "importing it IS running the bootstrap" shape as loadPlayerBoot().
+// Also shrinks the catalog-fetch-local timeout (implementation review
+// finding #6) to a test-scale duration -- every OTHER test's fake fetch
+// resolves/rejects on a microtask well within this, so the substitution is
+// unobservable there; only the dedicated never-resolving-fetch test actually
+// needs to wait this long.
 let playlistBootSeq = 0;
+export const TEST_CATALOG_FETCH_TIMEOUT_MS = 20;
 export async function loadPlaylistBoot() {
   await loadPlaylistViews();
   const src = read('playlist-boot.js')
     .replace("from '/assets/player-controller.js';", `from '${controllerUrl}';`)
     .replace("from '/assets/playlist-views.js';", `from '${playlistViewsUrl}';`)
+    .replace('const CATALOG_FETCH_TIMEOUT_MS = 10000;', `const CATALOG_FETCH_TIMEOUT_MS = ${TEST_CATALOG_FETCH_TIMEOUT_MS};`)
     + `\n// instance ${++playlistBootSeq}\n`;
   return import(dataUrl(src));
 }
