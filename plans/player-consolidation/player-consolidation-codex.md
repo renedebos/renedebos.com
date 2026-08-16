@@ -4998,3 +4998,204 @@ on both Node 20 and a simulated Node 24 (was 278). `build.py`, `--check`,
 
 Checkpoint 0 is met again on the corrected evidence. Per `/apply-review`, work
 stops here rather than starting Phase A's next task.
+
+---
+
+## Stage 3a-canary Phase A Task 2 review — 2026-08-16
+
+1. **High — A detached `MiniPlayerView` cannot be remounted, leaving a visible but inert bar with no reserved page space.**
+
+   Evidence: the abort controller is created once at [scripts/miniplayer-views.js:53](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-views.js:53), permanently aborted during detach at [scripts/miniplayer-views.js:62](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-views.js:62), then reused during reattachment at [scripts/miniplayer-views.js:56](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-views.js:56). Detach clears the height but does not reset or hide the rendered structure at [scripts/miniplayer-views.js:128](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-views.js:128); remounting the same item skips `_buildStructure()` and therefore never restarts height observation at [scripts/miniplayer-views.js:141](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-views.js:141). The tests cover detach only, never remount, at [scripts/test-miniplayer-views.mjs:324](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-views.mjs:324) and [scripts/test-miniplayer-views.mjs:369](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-views.mjs:369). A focused probe produced `hidden:false`, no `--miniplayer-height`, and a Play click that left the controller paused.
+
+   Why it matters: the recorded Close lifecycle unmounts the view and says a later play brings it back at [player-consolidation-plan.md:2181](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2181). The natural remount implementation cannot satisfy that contract.
+
+   Suggested fix: create a fresh `AbortController` on every attachment and fully reset/hide the view during detach so remount rebuilds the structure and `ResizeObserver`. Add an unmount→remount test asserting restored height, active controls, and a new observer.
+
+2. **Medium — Unknown-duration items permanently display `0:00` as their total after the browser learns the real duration.**
+
+   Evidence: the visible total is built once from nullable `item.durationSec` at [scripts/miniplayer-views.js:183](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-views.js:183), while later progress and ARIA updates use `audio.duration` at [scripts/miniplayer-views.js:235](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-views.js:235). The fixture gives every item a convenient 200-second duration at [scripts/test-miniplayer-views.mjs:29](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-views.mjs:29). A probe with `durationSec:null` followed by `audio.duration=245` displayed `0:00`, while the range announced `0:05 of 4:05`.
+
+   Why it matters: nullable duration is part of the playable-item contract. The visible UI and accessibility state disagree for exactly those items.
+
+   Suggested fix: retain the total-time element and update it when the resolved duration changes, using a cached duration to avoid per-tick writes. Add a null-duration fixture that receives duration metadata after mounting.
+
+3. **Medium — Replacing a queue item with fresh data under the same ID leaves stale title, link, artist, and duration visible.**
+
+   Evidence: structure is keyed only on `currentItem.id` at [scripts/miniplayer-views.js:141](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-views.js:141), while all metadata and the seek label are written only in `_buildStructure()` at [scripts/miniplayer-views.js:172](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-views.js:172). `PlaybackController.setQueue()` legitimately replaces normalized item objects at [scripts/player-controller.js:325](/home/renedebos/renedebos.com-player-consolidation/scripts/player-controller.js:325). A focused restore-old-item→setQueue-fresh-same-ID probe continued showing every old value.
+
+   Why it matters: a persisted session can contain older metadata than a newly generated page. Clicking that same track can make the controller use the fresh queue while the mini-player continues linking to and describing the stale item.
+
+   Suggested fix: patch metadata nodes separately from transport controls, keyed by the relevant metadata fields, so focus-bearing buttons remain intact. Add an integration test that restores old persisted metadata and then supplies a fresh same-ID queue item.
+
+4. **Medium — Pressing the seek thumb without changing it can freeze the range and its ARIA value indefinitely.**
+
+   Evidence: `mousedown`/`touchstart` sets `_seeking`, but only `change` clears it at [scripts/miniplayer-views.js:111](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-views.js:111). Subsequent updates then skip both the range and `aria-valuetext` at [scripts/miniplayer-views.js:237](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-views.js:237). The suite tests only a drag that explicitly dispatches `change` at [scripts/test-miniplayer-views.mjs:195](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-views.mjs:195). A mousedown→mouseup-with-no-change probe left the range at 10% and ARIA at `0:20` while the visible current time advanced to `1:40`.
+
+   Why it matters: an unchanged click, canceled touch, or release outside the control need not produce `change`, leaving user-visible progress permanently divergent.
+
+   Suggested fix: clear seeking on pointer/mouse/touch release and cancellation, including release outside the range, with listeners covered by the attachment signal. Test no-change release and cancellation paths.
+
+5. **Low — Previous at the start of the queue regresses the popup behavior this mini-player will replace.**
+
+   Evidence: the mini-player calls `controller.prev()` directly at [scripts/miniplayer-views.js:99](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-views.js:99), which no-ops before index zero at [scripts/player-controller.js:626](/home/renedebos/renedebos.com-player-consolidation/scripts/player-controller.js:626). The popup clamps a negative index back to zero and plays it at [scripts/continuous-player.js:112](/home/renedebos/renedebos.com-player-consolidation/scripts/continuous-player.js:112). The current test only exercises index 1→0 at [scripts/test-miniplayer-views.mjs:173](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-views.mjs:173).
+
+   Why it matters: on track one, Previous currently restarts/resumes the track; the replacement control silently does nothing.
+
+   Suggested fix: add a mini-player `_prev()` policy matching `PlaylistNowPlayingView`/the popup, and test both paused and playing states at index zero.
+
+6. **Low — The plan overclaims that every acceptance criterion is mutation-checked.**
+
+   Evidence: the plan explicitly says removing controls-cache invalidation fails its named test at [player-consolidation-plan.md:2139](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2139). An in-memory mutation removing every `this._lastControlsKey = null` still passed all 20 Task 2 tests. The item-change test checks metadata and range identity, but not the replacement button’s icon or accessible label, at [scripts/test-miniplayer-views.mjs:132](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-views.mjs:132).
+
+   Why it matters: a same-state item switch can leave the newly created button with its generic `aria-label="Play"` while the suite and plan report this regression as caught.
+
+   Suggested fix: switch items without changing state and assert the new item-specific label/icon. Until that test exists, revise the plan’s “all seven” claim.
+
+7. **Low — `FakeResizeObserver` does not enforce real teardown or delivery ordering.**
+
+   Evidence: `resize()` invokes the callback synchronously and still does so after `disconnect()` empties its targets at [scripts/test-fake-dom.mjs:257](/home/renedebos/renedebos.com-player-consolidation/scripts/test-fake-dom.mjs:257).
+
+   Why it matters: lifecycle tests using this fake cannot detect callbacks delivered around detach or accidentally invoked after observation ends.
+
+   Suggested fix: queue delivery and make it a no-op when disconnected or targetless; add a detach-before-delivery test.
+
+**Verification during this review**
+
+- `python3 scripts/build.py --check` — passed: 31 shows, 680 curated tracks.
+- All `node scripts/test-*.mjs` files — passed: 302/302 executable tests; `test-fake-dom.mjs` loaded successfully as a harness-only module.
+- `python3 scripts/verify_markup.py` — passed: 1,427 items across 166 pages.
+- `python3 scripts/verify_markup.py --check-allowlist-coverage` — passed.
+- `node --check` on the three changed JavaScript files, source↔asset `cmp`, and scoped `git diff --check` — passed.
+- Focused detach/remount, unknown-duration, same-ID replacement, no-change seek, and queue-start Previous probes — reproduced the findings above.
+- Controls-cache invalidation mutation run — unexpectedly passed 20/20, disproving the plan claim.
+- `NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs` — could not run in this read-only environment: Playwright failed creating `/tmp/playwright-artifacts-*` with `EROFS`; WebKit was also unavailable.
+_Review generated 2026-08-16 11:02:18 PDT by `scripts/codex_review.sh` (codex exec, read-only)._
+
+### Disposition (Claude, 2026-08-16)
+
+All seven verified by direct reproduction against the committed code (probe
+script, not inspection). **Six confirmed, one accepted in half.** Nothing was
+declined outright — an unusually clean round for the reviewer, and worth
+noting that this stage's *new-surface* work drew a different class of finding
+than the ownership module's rounds 6–12 did (lifecycle and UI-state bugs, not
+storage races), exactly as the plan predicted when it warned that round 6–12's
+threat model would not transfer to Task 2.
+
+1. **CONFIRMED (High).** Reproduced all three halves: after `unmount()` the bar
+   keeps `hidden=false` with 1288 chars of stale markup; after remounting the
+   same instance the height variable is still absent, and a click on the play
+   button leaves the controller untouched (`paused` unchanged) because
+   `QueueView`'s single `AbortController` was permanently aborted by the first
+   `onDetach()`. The remount path is on the recorded Close contract ("a later
+   genuine `play` brings it back"), so this is reachable by design, not
+   hypothetically. Note the one-shot-`AbortController` shape is inherited from
+   `player-views.js`/`playlist-views.js`, where it is harmless because no view
+   is ever remounted; the mini-player is the first view with a real
+   detach/reattach cycle. Fix: fresh `AbortController` per `onAttach()`, and
+   `onDetach()` resets render state + hides the root so a remount rebuilds.
+2. **CONFIRMED (Medium).** A `durationSec:null` item shows a permanent `0:00`
+   total while the range announces `0:05 of 4:05` from the resolved
+   `audio.duration` — the visible UI and the accessible name disagree for
+   exactly the items the schema says may be nullable.
+3. **CONFIRMED (Medium).** A same-id item carrying fresh metadata keeps the old
+   title *and the old `href`* (`Old Title` / `/shows/old/` after a `setQueue()`
+   with `New Title` / `/shows/new/`). Cosmetic in effect, but the stale link is
+   the sharp edge: the bar would send the listener to a page for a track the
+   controller is no longer playing.
+4. **CONFIRMED (Medium).** Pressing the thumb and releasing without moving it
+   emits no `change`, so `_seeking` stays true for the rest of the track:
+   reproduced with the range frozen at `0` and `aria-valuetext` at `0:00 of
+   3:20` while the visible current time read `1:40`. **This is the same
+   mousedown/touchstart-plus-`change` shape `player-views.js` and
+   `playlist-views.js` already ship** — the finding is correct about the
+   mini-player and, unprompted, identifies a live bug in two shipped surfaces.
+   Fixing those two is a separate decision for Rene, not part of Task 2.
+5. **CONFIRMED (Low).** Verified against the code it compares to:
+   `continuous-player.js:206,273` call `playAt(idx - 1)`, and `playAt()` clamps
+   `i < 0` to `0` and plays — so the popup restarts track one, while
+   `controller.prev()` no-ops before index 0. `PlaylistNowPlayingView._prev()`
+   already implements the restart parity for the same reason. Adopting it here
+   is consistency with two existing surfaces, not a new policy.
+6. **CONFIRMED (Low), both halves.** Ran the reviewer's mutation: removing all
+   three `this._lastControlsKey = null` invalidations passes 20/20. The
+   mutation this session actually ran was a *weaker* one (pinning the cache key
+   to a constant), which is not the same property, so the plan's "all seven
+   mutation-checked" is an overclaim and will be corrected rather than
+   defended. The defect it hides is real and reachable: a `removeAt()` that
+   changes the item while `state` stays `'paused'` leaves the new button
+   labelled generically `"Play"` instead of `"Play Song b"` — confirmed under
+   the mutation.
+7. **ACCEPTED IN PART (Low).** Making `resize()` a no-op once `disconnect()`
+   has run is worth the one line: a fake that behaves unlike the platform is
+   how a confidently-wrong test comment gets believed later (this session's own
+   gotcha). It also turns the existing disconnect assertion from a flag check
+   into a behavioural one. **Declining the async-delivery half** — queueing
+   delivery would force every height test to await for no property under test,
+   and the view already nulls `_ro` at teardown so it has no post-disconnect
+   path of its own.
+
+Not attempted by this review: `browser_check.mjs` (the sandbox is read-only,
+so Playwright could not write its artifacts). The bar is not emitted into any
+page yet, so there is nothing for it to check on this task regardless — it
+becomes load-bearing at Task 6.
+
+### Applied (Claude, 2026-08-16)
+
+All six confirmed findings fixed, plus the accepted half of 7. Suite went
+20 → 28 tests; 310/310 across all suites on Node 20 and simulated Node 24.
+Every fix below was mutation-checked — the mutation named for it was applied
+and the test written for it failed.
+
+1. **FIXED.** Fresh `AbortController` per `onAttach()`, and `onDetach()` now
+   hides the bar, drops its markup and resets render state so a remount
+   rebuilds and re-observes height. One test drives unmount → remount and
+   asserts the bar is visible, its height republished, and a play click
+   actually reaching the controller. Three separate mutations fail it
+   (reusing the controller, skipping the hide, skipping the state reset).
+2. **FIXED.** The displayed total now derives from the same resolved duration
+   the range announces, so the two cannot disagree; mutation (reading
+   `item.durationSec` instead) fails the new null-duration test.
+3. **FIXED.** Metadata — title, `href`, meta line, total, the range's
+   `aria-label`, and the play button's accessible name — is patched whenever
+   it differs, keyed on the fields themselves rather than on `id`. The
+   focus-bearing buttons are untouched by a metadata change (asserted).
+   Mutation (keying on `item.id`) fails two tests. **Bonus from the split:**
+   the markup template interpolates nothing, so `esc()` was deleted — there is
+   no escaping left to get wrong.
+4. **FIXED.** `mouseup`/`pointerup`/`pointercancel`/`touchend`/`touchcancel`
+   on the **document** (a drag routinely ends outside the control), scoped to
+   the attachment's abort signal. Two tests: press-and-release-without-moving,
+   and release-outside / cancel. Mutation (dropping the listeners) fails both.
+5. **FIXED.** `_prev()` mirroring `PlaylistNowPlayingView`'s: >3 s restarts,
+   index > 0 steps back, index 0 restarts and plays. Two tests; mutation
+   (calling `controller.prev()` directly) fails the queue-start one. The
+   shared primitive is untouched.
+6. **FIXED, and the reviewer was right twice over.** The missing test exists
+   and asserts the property end-to-end. But the interesting part is what
+   writing it exposed: a first attempt reasoned that two ids with identical
+   metadata would make `_patchMeta()` early-return, leaving the rebuild
+   branch's invalidation load-bearing. **That reasoning is wrong** —
+   `_buildStructure()` clears `_lastMetaKey`, so `_patchMeta()` always writes
+   after a rebuild and always invalidates the controls key itself. A mutation
+   run contradicted the claim within a minute (both single-line mutations
+   passed 28/28); removing **both** paths does fail the test. The wrong
+   reasoning is now recorded in the code comment rather than quietly deleted,
+   and the plan's "all seven mutation-checked" line is corrected to "six",
+   with the seventh stated at the precision the evidence actually supports.
+   That is the second time this stage that a confidently-written claim about
+   *other* code's behaviour was falsified by running it instead of arguing it.
+7. **HALF APPLIED, as dispositioned.** `FakeResizeObserver.resize()` is now a
+   no-op once `disconnect()` has run, and the unmount test asserts that
+   behaviourally instead of reading the flag. Async delivery still declined.
+
+Also fixed en route, not a review finding: a literal `0x1f` control byte had
+ended up inside the metadata-key separator string, typed as a character rather
+than an escape. It is now written as a `\u001f` escape, and the verification
+sweep is widened from NUL only to every C0 control character except
+tab/newline/CR — the NUL incident recorded in `HANDOFF.md` is the same hazard
+one byte over, and this one survived a full green test run without complaint.
+
+Not fixed here, deliberately: the shared one-shot-`AbortController` shape and
+the `change`-only seek-end in `player-views.js` / `playlist-views.js`. Finding
+4 is a live bug in both shipped surfaces; touching them is Rene's call and a
+separate change, since they are on every show, song and playlist page.

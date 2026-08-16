@@ -2136,12 +2136,68 @@ Two properties of Task 2 that Task 3 and the coordinator have to match:
   fresh epoch → empty write → drop the lease) belongs to the coordinator. A
   test asserts the view leaves `state`/`queue`/visibility alone.
 
-All seven of the task's acceptance criteria are mutation-checked (the
+Six of the task's seven acceptance criteria are mutation-checked (the
 round-12 lesson): rebuilding on `state`, dropping the `_seeking` reset,
 dropping the `lastPlayErrorItemId` attribution check, never creating the
 `ResizeObserver`, gating prev/next on queue-array identity instead of
-`queueRevision`, stopping playback on Close, and never invalidating the
-icon/label cache each fail exactly the test written for them.
+`queueRevision`, and stopping playback on Close each fail exactly the test
+written for them.
+
+**The seventh was an overclaim, corrected 2026-08-16 after the Task 2
+review.** The icon/label cache mutation actually run (pinning the cache key
+to a constant) is a *weaker* property than the one the claim implied;
+removing the cache's **invalidation** passed all 20 tests, and the defect
+that hid — a fresh play button keeping the template's generic
+`aria-label="Play"` after an item change with no state change — had no test
+at all. There is one now, and it fails when the invalidation is removed. Two
+independent paths happen to enforce that property today, so only removing
+**both** fails the test; the plan claim is now stated at that precision
+rather than per-line. A comment in the rebuild branch asserting the two
+paths were independent was itself wrong and is corrected in place — the
+mutation run is what caught it.
+
+**Review round, 2026-08-16** (`-codex.md`, "Stage 3a-canary Phase A Task 2
+review") — seven findings, six confirmed by reproduction and fixed, one
+accepted in half. The class of finding was completely different from the
+ownership module's rounds 6–12 (lifecycle and UI-state bugs, not storage
+races), exactly as this section predicted when it warned that round 6–12's
+threat model would not transfer to new surface. Carried forward:
+- **A view's `AbortController` must be created per attachment, not once.**
+  `onDetach()` aborts it permanently and `addEventListener` with an aborted
+  signal registers nothing, so a remounted view was silently inert — every
+  control dead. The recorded Close contract ("a later genuine `play` brings
+  it back") *is* a remount, so this was on the main path. `onDetach()` now
+  also hides and resets, so the remount rebuilds. **`player-views.js` and
+  `playlist-views.js` share the one-shot shape**; it is harmless there only
+  because no view of theirs is ever remounted. Don't "simplify" this back to
+  match them.
+- **Item data is patched, never written once at build time.** `setQueue()`
+  legitimately replaces the item object under an unchanged `id` (a restored
+  session carrying older metadata, then the page's own fresh queue), which
+  left a stale title and a stale link pointing at a track no longer playing.
+  The displayed total now comes from the same resolved duration the range
+  announces, so a nullable `durationSec` can no longer show a permanent
+  `0:00` beside a range saying `4:05`. A side effect worth keeping: the
+  markup template interpolates nothing at all now, so there is no escaping
+  left to get wrong.
+- **`'change'` alone cannot end a seek.** A press that doesn't move the thumb
+  changes no value and emits no `change`, freezing the range and its
+  `aria-valuetext` for the rest of the track while the visible clock kept
+  counting. Release and cancellation are listened for on the **document**,
+  since a drag routinely ends with the pointer outside the control.
+  **`player-views.js` and `playlist-views.js` have the identical
+  mousedown/touchstart-plus-`change` shape and the same live bug** — fixing
+  those two is a separate decision, not part of this stage.
+- **Previous at the queue start restarts the track** rather than no-opping,
+  matching both `PlaylistNowPlayingView._prev()` and the popup this bar
+  replaces (`continuous-player.js`'s `playAt()` clamps a negative index to 0
+  and plays it). The shared `controller.prev()` primitive is deliberately
+  left alone.
+- Declined: making the test harness's fake `ResizeObserver` deliver
+  asynchronously. It would force every height assertion to await for no
+  property under test. The "stops delivering after `disconnect()`" half was
+  taken, because a fake that outlives its own teardown is how a
+  confidently-wrong test gets believed later.
 
 **Review round, 2026-08-16** (`-codex.md`, "Stage 3a-canary Phase 0 and Task
 1 review") — five findings, all confirmed and all fixed. Two changed work

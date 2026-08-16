@@ -88,12 +88,14 @@ test('the bar stays hidden while nothing is playing, and reveals itself on the f
   c.destroy();
 });
 
-test('an item with no pageUrl renders its title as a span, never an empty-href link', () => {
+test('an item with no pageUrl gets a title with no href at all, never an empty one', () => {
   const c = makeController();
   const { root } = mount(c);
   c.setQueue([item('a', { pageUrl: '' })], { startIndex: 0 });
   const title = root.querySelector('.mp-title');
-  assert.equal(title.tagName, 'SPAN', 'an <a href=""> reloads the current page when clicked');
+  assert.equal(title.textContent, 'Song a');
+  assert.equal(title.getAttribute('href'), undefined,
+    'an <a href=""> reloads the current page when clicked; an <a> with no href is inert');
   c.destroy();
 });
 
@@ -368,13 +370,195 @@ test('--miniplayer-height is republished when the bar resizes after first paint'
 
 test('unmounting disconnects the observer and clears the height', () => {
   const c = makeController();
-  const { view } = mount(c);
+  const { root, view } = mount(c);
   c.setQueue([item('a')], { startIndex: 0 });
   const observer = resizeObservers[resizeObservers.length - 1];
 
   c.unmount(view);
-  assert.equal(observer.disconnected, true, 'a detached view must not keep publishing layout');
+  assert.equal(observer.disconnected, true);
   assert.equal(styleOf().getPropertyValue(HEIGHT_VAR), '');
+  // Behavioural, not just the flag: a disconnected observer that still
+  // delivered would republish layout for a bar that is no longer there.
+  root._rect = { left: 0, width: 800, top: 0, height: 120 };
+  observer.resize();
+  assert.equal(styleOf().getPropertyValue(HEIGHT_VAR), '',
+    'a detached view must not keep publishing layout');
+  c.destroy();
+});
+
+// ── review findings, 2026-08-16 ────────────────────────────────────────────
+// Finding 1. QueueView's AbortController is created once and aborted for good
+// by onDetach(); addEventListener with an already-aborted signal registers
+// nothing, so a remounted view was silently inert. The remount path is the
+// recorded Close contract's own ("a later genuine play brings it back").
+// Mutation that fails this: moving `this._abort = new AbortController()` back
+// to the constructor.
+test('a view unmounted and remounted comes back fully alive', async () => {
+  const c = makeController();
+  const { root, view } = mount(c);
+  c.setQueue([item('a'), item('b')], { startIndex: 0, autoplay: true });
+  await tick();
+
+  c.unmount(view);
+  assert.equal(root.hidden, true, 'a detached bar must not stay on screen');
+  assert.equal(root.innerHTML, '', 'nor keep stale markup addressable');
+  assert.equal(styleOf().getPropertyValue(HEIGHT_VAR), '');
+
+  c.mount(view);
+  assert.equal(root.hidden, false, 'remounting rebuilds the bar');
+  assert.equal(styleOf().getPropertyValue(HEIGHT_VAR), '56px', 'and re-reserves its space');
+  root.dispatch('click', { target: root.querySelector('.mp-play') });
+  assert.equal(c.audioElement.paused, true, 'and its controls actually reach the controller again');
+  c.destroy();
+});
+
+// Finding 2. durationSec is nullable by schema. The total was written once at
+// build time, so it showed 0:00 forever while the range announced the real
+// duration the moment the browser reported one.
+test('a null-duration item shows the real total once the browser reports one', async () => {
+  const c = makeController();
+  const { root } = mount(c);
+  c.setQueue([item('a', { durationSec: null })], { startIndex: 0, autoplay: true });
+  await tick();
+  assert.equal(root.querySelector('.mp-time-total').textContent, '0:00', 'premise: nothing known yet');
+
+  c.audioElement.duration = 245;
+  c.audioElement.currentTime = 5;
+  c.audioElement.dispatchEvent(new Event('timeupdate'));
+  assert.equal(root.querySelector('.mp-time-total').textContent, '4:05');
+  assert.equal(root.querySelector('.progress-range').getAttribute('aria-valuetext'), '0:05 of 4:05',
+    'the visible total and the announced one must come from the same resolved duration');
+  c.destroy();
+});
+
+// Finding 3. setQueue() legitimately replaces the item object under the same
+// id — a restored session carrying older metadata, then the page's own fresh
+// queue. Keying the whole render on the id alone left every field stale.
+test('fresh metadata under an unchanged id is patched, link included', async () => {
+  const c = makeController();
+  const { root } = mount(c);
+  c.setQueue([item('a', { title: 'Old Title', pageUrl: '/shows/old/' })], { startIndex: 0, autoplay: true });
+  await tick();
+  const btn = root.querySelector('.mp-play');
+
+  c.setQueue([item('a', { title: 'New Title', pageUrl: '/shows/new/', venue: 'Sweetwater' })],
+    { startIndex: 0, autoplay: true });
+  await tick();
+  assert.equal(root.querySelector('.mp-title').textContent, 'New Title');
+  assert.equal(root.querySelector('.mp-title').getAttribute('href'), '/shows/new/',
+    'a stale link would send the listener to a page for a track that is no longer playing');
+  assert.equal(root.querySelector('.mp-meta').textContent, 'Jerry Hannan · Sweetwater · 1999-05-27');
+  assert.equal(root.querySelector('.progress-range').getAttribute('aria-label'), 'Seek New Title');
+  assert.equal(btn.getAttribute('aria-label'), 'Pause New Title',
+    "the button's accessible name carries the title, so it must be re-derived too");
+  assert.equal(root.querySelector('.mp-play'), btn, 'and none of that may replace the focus-bearing button');
+  c.destroy();
+});
+
+// Finding 4. A press that doesn't move the thumb changes no value, so no
+// 'change' is emitted and _seeking stayed true for the rest of the track.
+// Mutation that fails this: dropping the document-level release listeners.
+test('pressing the thumb and releasing without moving it does not freeze the range', async () => {
+  const c = makeController();
+  const { root } = mount(c);
+  c.setQueue([item('a')], { startIndex: 0, autoplay: true });
+  await tick();
+  c.audioElement.duration = 200;
+
+  const range = root.querySelector('.progress-range');
+  root.dispatch('mousedown', { target: range });
+  globalThis.document.dispatch('mouseup', { target: range });   // no 'change': nothing moved
+  c.audioElement.currentTime = 100;
+  c.audioElement.dispatchEvent(new Event('timeupdate'));
+  assert.equal(range.value, 500, 'the range must resume following playback after the press ends');
+  assert.equal(range.getAttribute('aria-valuetext'), '1:40 of 3:20',
+    'the announced position must not diverge from the visible clock');
+  c.destroy();
+});
+
+test('a drag that ends outside the control, or is cancelled, also ends the seek', async () => {
+  for (const endEvent of ['pointerup', 'touchcancel']) {
+    const c = makeController();
+    const { root } = mount(c);
+    c.setQueue([item('a')], { startIndex: 0, autoplay: true });
+    await tick();
+    c.audioElement.duration = 200;
+
+    const range = root.querySelector('.progress-range');
+    root.dispatch('mousedown', { target: range });
+    // Released over the page, not the range — the listener is on the document
+    // for exactly this.
+    globalThis.document.dispatch(endEvent, { target: globalThis.document });
+    c.audioElement.currentTime = 100;
+    c.audioElement.dispatchEvent(new Event('timeupdate'));
+    assert.equal(range.value, 500, `${endEvent} must end the seek`);
+    c.destroy();
+  }
+});
+
+// Finding 5. controller.prev() no-ops before index 0 — a deliberate Phase 1
+// primitive — but the popup this bar replaces clamps to 0 and plays
+// (continuous-player.js's playAt()), and PlaylistNowPlayingView already
+// replicates that at the view level.
+test('Previous on the first track restarts it instead of doing nothing', async () => {
+  const c = makeController();
+  const { root } = mount(c);
+  c.setQueue([item('a'), item('b')], { startIndex: 0, autoplay: true });
+  await tick();
+  c.audioElement.duration = 200;
+  c.audioElement.currentTime = 2;              // under the 3s restart threshold
+
+  root.dispatch('click', { target: root.querySelector('.mp-prev') });
+  await tick();
+  assert.equal(c.currentIndex, 0);
+  assert.equal(c.audioElement.currentTime, 0, 'Previous at the queue start restarts the track');
+  assert.equal(c.audioElement.paused, false, 'and leaves it playing');
+  c.destroy();
+});
+
+test('Previous more than 3s into any track restarts it rather than stepping back', async () => {
+  const c = makeController();
+  const { root } = mount(c);
+  c.setQueue([item('a'), item('b')], { startIndex: 1, autoplay: true });
+  await tick();
+  c.audioElement.duration = 200;
+  c.audioElement.currentTime = 30;
+
+  root.dispatch('click', { target: root.querySelector('.mp-prev') });
+  await tick();
+  assert.equal(c.currentIndex, 1, 'the 3s convention wins over stepping back');
+  assert.equal(c.audioElement.currentTime, 0);
+  c.destroy();
+});
+
+// Finding 6. The item can change while `state` does not — removeAt() on the
+// current index while paused does exactly that — and the icon/label cache is
+// keyed on verb+state, so without invalidation the freshly built button keeps
+// the template's generic aria-label="Play". The earlier mutation run pinned
+// the cache key to a constant, which is a weaker property and passed this gap.
+//
+// The two items deliberately carry IDENTICAL metadata (two takes of one song
+// at one show: same title, venue, date, duration), differing only by id.
+// _patchMeta() therefore early-returns and cannot be what re-labels the
+// button, which is what makes the rebuild branch's own invalidation the thing
+// under test. Mutation that fails this: deleting `this._lastControlsKey = null`
+// from the rebuild branch of _render().
+test('an item change with NO state change still re-labels the play button', async () => {
+  const c = makeController();
+  const { root } = mount(c);
+  const take1 = item('take1', { title: 'Kilkelly Ireland', pageUrl: '/shows/one-show/' });
+  const take2 = item('take2', { title: 'Kilkelly Ireland', pageUrl: '/shows/one-show/' });
+  c.setQueue([take1, take2], { startIndex: 0, autoplay: true });
+  await tick();
+  c.pause();
+  await tick();
+  assert.equal(c.state, 'paused', 'premise: paused before');
+
+  c.removeAt(0);                               // current item becomes take2, state stays 'paused'
+  assert.equal(c.state, 'paused', 'premise: still paused after');
+  assert.equal(c.currentItem.id, 'take2');
+  assert.equal(root.querySelector('.mp-play').getAttribute('aria-label'), 'Play Kilkelly Ireland',
+    'a fresh button left with the template\'s generic "Play" names no track at all');
   c.destroy();
 });
 

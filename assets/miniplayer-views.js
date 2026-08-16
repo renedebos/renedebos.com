@@ -26,9 +26,6 @@ const RANGE_MAX = 1000;
 // REMOVED, not zeroed, whenever the bar isn't showing.
 export const HEIGHT_VAR = '--miniplayer-height';
 
-const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) =>
-  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-
 // Same monochrome set the other engines use (kept local — player-controller.js
 // only exports the three icons every engine needs).
 const PREV_ICON = '<svg viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2" width="2" height="12"/><polygon points="14,2 14,14 4,8"/></svg>';
@@ -55,6 +52,13 @@ export class QueueView {
 
   onAttach(controller) {
     this.controller = controller;
+    // A FRESH AbortController per attachment. onDetach() aborts permanently,
+    // and addEventListener with an already-aborted signal registers nothing at
+    // all — so reusing the constructor's one made a remounted view silently
+    // inert, every control dead (Task 2 review finding 1, reproduced). The
+    // sibling view modules get away with one because no view of theirs is ever
+    // remounted; this bar's Close-then-play cycle is exactly a remount.
+    this._abort = new AbortController();
     this._wireEvents(this._abort.signal);
     this._render(controller.snapshot());
   }
@@ -96,7 +100,7 @@ export class MiniPlayerView extends QueueView {
       // control that must never appear dead.
       if (act === 'close') { this.onClose(); return; }
       if (!this.controller) return;
-      if (act === 'prev') { this.controller.prev(); return; }
+      if (act === 'prev') { this._prev(); return; }
       if (act === 'next') { this.controller.next(); return; }
       // Play/pause, Resume (blocked autoplay) and Retry (a real failure) are
       // one control: toggle() already routes an 'error' state to play() rather
@@ -111,6 +115,19 @@ export class MiniPlayerView extends QueueView {
     this.root.addEventListener('mousedown', (e) => { if (this._isRange(e)) this._seeking = true; }, { signal });
     this.root.addEventListener('touchstart', (e) => { if (this._isRange(e)) this._seeking = true; }, { signal });
     this.root.addEventListener('change', (e) => { if (this._isRange(e)) this._seeking = false; }, { signal });
+    // 'change' alone is not enough to END a seek: a press that doesn't move the
+    // thumb changes no value, so no 'change' is ever emitted and _seeking would
+    // stay true for the rest of the track — the range and its aria-valuetext
+    // frozen while the visible clock kept counting (Task 2 review finding 4,
+    // reproduced). Release and cancellation are listened for on the DOCUMENT
+    // because a drag routinely ends with the pointer outside the control.
+    // Scoped to the same abort signal, so a detached view leaves nothing behind.
+    if (typeof document !== 'undefined') {
+      const endSeek = () => { this._seeking = false; };
+      ['mouseup', 'pointerup', 'pointercancel', 'touchend', 'touchcancel'].forEach((type) => {
+        document.addEventListener(type, endSeek, { signal });
+      });
+    }
     this.root.addEventListener('input', (e) => {
       const range = this._isRange(e);
       if (!range || !this.controller) return;
@@ -125,7 +142,28 @@ export class MiniPlayerView extends QueueView {
     return e.target && e.target.closest ? e.target.closest('.progress-range') : null;
   }
 
+  // Previous at the START of the queue restarts the current track rather than
+  // doing nothing. controller.prev() no-ops before index 0 — a deliberate
+  // Phase 1 primitive show pages rely on — so the parity is replicated at the
+  // view level, exactly as PlaylistNowPlayingView._prev() already does, rather
+  // than changing shared code. It matches the popup this bar replaces:
+  // continuous-player.js calls playAt(idx - 1), and playAt() clamps a negative
+  // index to 0 and plays it.
+  _prev() {
+    const c = this.controller;
+    const audio = c.audioElement;
+    if (audio.currentTime > 3) { c.seek(0); return; }
+    if (c.currentIndex > 0) { c.prev(); return; }
+    c.seek(0);
+    c.play();
+  }
+
+  // A detached view must leave nothing rendered and nothing reserved: the bar
+  // is hidden, its markup dropped, and its render state reset, so a later
+  // remount rebuilds the structure (and restarts height observation) instead
+  // of short-circuiting on a currentItem.id that never changed.
   onDetach() {
+    this._hide();
     this._teardownHeight();
     super.onDetach();
   }
@@ -139,7 +177,7 @@ export class MiniPlayerView extends QueueView {
     const item = snapshot.currentItem;
     if (!item) { this._hide(); return; }
     if (item.id !== this._currentId) {
-      this._buildStructure(item);
+      this._buildStructure();
       this._currentId = item.id;
       // A drag/press-and-hold in progress on the OLD range element (mousedown
       // fired, 'change' has not) would leave this stuck true forever once that
@@ -147,7 +185,19 @@ export class MiniPlayerView extends QueueView {
       // post-deploy finding #4). The track changed out from under the seek
       // anyway, so there is nothing to preserve.
       this._seeking = false;
-      // Both caches describe nodes that no longer exist.
+      // Every cache below describes nodes that no longer exist.
+      //
+      // The controls one is REDUNDANT as the code stands, and the reasoning
+      // that says otherwise is wrong — worth recording, because it was
+      // believed until a mutation run contradicted it. The tempting argument
+      // is that two different ids can carry identical metadata (two takes of
+      // one song, same venue, date and duration), so _patchMeta() would
+      // early-return and leave the fresh button holding the template's
+      // generic "Play". It can't: _buildStructure() clears _lastMetaKey, so
+      // _patchMeta() always writes after a rebuild and always invalidates
+      // this key itself. Kept anyway as belt and braces — the property
+      // ("a fresh button never keeps the generic label") has a direct test,
+      // and neither path alone is load-bearing for it.
       this._lastQueueRevision = -1;
       this._lastControlsKey = null;
       this._errorKind = null;
@@ -161,29 +211,28 @@ export class MiniPlayerView extends QueueView {
     if (this._currentId === null) return;   // nothing was ever built
     this.root.innerHTML = '';
     this._currentId = null;
-    this._playBtn = this._prevBtn = this._nextBtn = this._range = this._timeCur = null;
+    this._playBtn = this._prevBtn = this._nextBtn = this._range = null;
+    this._timeCur = this._titleEl = this._metaEl = this._totalEl = null;
     this._errorEl = null;
     this._errorKind = null;
     this._seeking = false;
     this._lastQueueRevision = -1;
     this._lastControlsKey = null;
+    this._lastMetaKey = null;
   }
 
-  _buildStructure(item) {
+  // Structure only — every piece of item data is written by _patchMeta()
+  // below. That split is deliberate: the template interpolates nothing, so
+  // there is no escaping to get wrong, and metadata can change under a stable
+  // currentItem.id without a rebuild (finding 3).
+  _buildStructure() {
     this.root.hidden = false;
-    // pageUrl defaults to '' in normalizeItem(); an <a href=""> would reload
-    // the current page, so the title is only a link when there is a real one.
-    const title = item.pageUrl
-      ? '<a class="mp-title" href="' + esc(item.pageUrl) + '">' + esc(item.title) + '</a>'
-      : '<span class="mp-title">' + esc(item.title) + '</span>';
     this.root.innerHTML =
       '<button type="button" class="mp-btn mp-play" data-act="play" aria-label="Play">' + PLAY_ICON + '</button>'
-      + '<div class="mp-info">' + title
-      + '<span class="mp-meta">' + esc(trackMeta(item)) + '</span></div>'
+      + '<div class="mp-info"><a class="mp-title"></a><span class="mp-meta"></span></div>'
       + '<div class="mp-progress"><span class="mp-time mp-time-current">0:00</span>'
-      + '<input type="range" class="progress-range" min="0" max="' + RANGE_MAX + '" value="0" step="1" '
-      + 'aria-label="Seek ' + esc(item.title) + '" aria-valuetext="0:00 of ' + formatTime(item.durationSec) + '">'
-      + '<span class="mp-time mp-time-total">' + formatTime(item.durationSec) + '</span></div>'
+      + '<input type="range" class="progress-range" min="0" max="' + RANGE_MAX + '" value="0" step="1">'
+      + '<span class="mp-time mp-time-total"></span></div>'
       + '<div class="mp-controls">'
       + '<button type="button" class="mp-btn mp-prev" data-act="prev" aria-label="Previous track">' + PREV_ICON + '</button>'
       + '<button type="button" class="mp-btn mp-next" data-act="next" aria-label="Next track">' + NEXT_ICON + '</button>'
@@ -194,8 +243,48 @@ export class MiniPlayerView extends QueueView {
     this._nextBtn = this.root.querySelector('.mp-next');
     this._range = this.root.querySelector('.progress-range');
     this._timeCur = this.root.querySelector('.mp-time-current');
+    this._titleEl = this.root.querySelector('.mp-title');
+    this._metaEl = this.root.querySelector('.mp-meta');
+    this._totalEl = this.root.querySelector('.mp-time-total');
     this._errorEl = null;
+    this._lastMetaKey = null;              // nothing has been written into it yet
     this._observeHeight();
+  }
+
+  // Item data, patched whenever it actually differs — NOT written once at
+  // build time. Two reasons, both reproduced (findings 2 and 3):
+  //   - setQueue() legitimately replaces the item object under the same id
+  //     (a restored session carrying older metadata, then the page's own
+  //     fresh queue), which left a stale title and, worse, a stale link to a
+  //     track the controller was no longer playing;
+  //   - `durationSec` is nullable by schema, so a total written once showed a
+  //     permanent 0:00 while the range announced the real duration the moment
+  //     the browser reported one. The displayed total now comes from the SAME
+  //     resolved duration the range uses, so the two cannot disagree.
+  _patchMeta(item, dur) {
+    const meta = trackMeta(item);
+    const total = formatTime(dur);
+    // Written as an escape, never as a literal control character: an invisible
+    // byte in source is the same hazard as the NUL that once made grep treat a
+    // whole file as binary (HANDOFF.md). The separator itself matters — without
+    // one, a title and a URL could rearrange into the same key.
+    const key = [item.title, item.pageUrl, meta, total].join('\u001f');
+    if (key === this._lastMetaKey) return;
+    this._lastMetaKey = key;
+    if (this._titleEl) {
+      this._titleEl.textContent = item.title;
+      // pageUrl defaults to '' in normalizeItem(); an <a href=""> reloads the
+      // current page, while an <a> with no href at all is inert and unfocusable
+      // — the correct degradation, and it keeps one node type across the change.
+      if (item.pageUrl) this._titleEl.setAttribute('href', item.pageUrl);
+      else this._titleEl.removeAttribute('href');
+    }
+    if (this._metaEl) this._metaEl.textContent = meta;
+    if (this._totalEl) this._totalEl.textContent = total;
+    if (this._range) this._range.setAttribute('aria-label', 'Seek ' + item.title);
+    // The play button's accessible name carries the title too, so it has to be
+    // re-derived even when nothing about playback state changed.
+    this._lastControlsKey = null;
   }
 
   _patch(snapshot) {
@@ -203,6 +292,10 @@ export class MiniPlayerView extends QueueView {
     const state = snapshot.state;
     const audio = this.controller ? this.controller.audioElement : null;
     const failure = this._failureKind(snapshot, item);
+    // The one duration both the visible total and the range's announcement are
+    // derived from — see _patchMeta().
+    const dur = audio && isFinite(audio.duration) ? audio.duration : (item.durationSec || 0);
+    this._patchMeta(item, dur);
 
     if (this._playBtn) {
       const playing = state === 'playing' || state === 'loading';
@@ -233,7 +326,6 @@ export class MiniPlayerView extends QueueView {
     }
 
     const t = audio ? audio.currentTime : 0;
-    const dur = audio && isFinite(audio.duration) ? audio.duration : (item.durationSec || 0);
     if (!this._seeking && this._range) {
       const pct = dur ? (t / dur) * 100 : 0;
       this._range.value = Math.round(pct * RANGE_MAX / 100);

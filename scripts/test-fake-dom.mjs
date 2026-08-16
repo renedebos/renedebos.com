@@ -117,6 +117,7 @@ export class FakeElement {
   scrollIntoView() { this.scrolledIntoView = true; }
   setAttribute(k, v) { this.attributes[k] = v; }
   getAttribute(k) { return this.attributes[k]; }
+  removeAttribute(k) { delete this.attributes[k]; }
   addEventListener(type, fn, opts) { addListener(this._listeners, type, fn, opts); }
   dispatch(type, evt = {}) { dispatchListeners(this._listeners, type, evt); }
   querySelector(sel) { return this.querySelectorAll(sel)[0] || null; }
@@ -258,8 +259,13 @@ export class FakeResizeObserver {
   constructor(cb) { this.cb = cb; this.targets = []; this.disconnected = false; resizeObservers.push(this); }
   observe(el) { this.targets.push(el); }
   disconnect() { this.disconnected = true; this.targets = []; }
-  // What the browser does asynchronously after a layout change.
-  resize() { this.cb([], this); }
+  // What the browser does after a layout change — and, like the platform, does
+  // NOT do once disconnect() has run. Delivery stays synchronous (the real one
+  // is async, but nothing here tests delivery timing, and making it async would
+  // force every height assertion to await for no property under test); the
+  // no-op-after-disconnect half is modelled because a fake that outlives its
+  // disconnect is exactly how a confidently-wrong test gets believed later.
+  resize() { if (!this.disconnected) this.cb([], this); }
 }
 
 export class FakeAudio extends EventTarget {
