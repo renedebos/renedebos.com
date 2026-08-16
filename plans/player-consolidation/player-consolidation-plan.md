@@ -2117,6 +2117,32 @@ now explicit.
 coordinator (identity/ownership, then session apply/save); then markup,
 flag, invariants, browser checks, and the canary deploy.
 
+**Phase A progress.** Task 1 (the `--player-*` aliases `home.css` had never
+defined) and **Task 2 (`scripts/miniplayer-views.js` — `MiniPlayerView`)**
+are done; Task 3's CSS in both design systems is next. Nothing is emitted
+into any page yet — the module is built and copied to `assets/` but no
+generated HTML references it, exactly as `miniplayer-state.js` sat after
+3a-foundation.
+
+Two properties of Task 2 that Task 3 and the coordinator have to match:
+- **`--miniplayer-height` is REMOVED, not zeroed**, whenever the bar isn't
+  showing, so every consumer must read it as `var(--miniplayer-height, 0px)`.
+  The published value is the bar's border-box height, which already contains
+  the `env(safe-area-inset-bottom)` the bar carries as its own bottom
+  padding — so the CSS must put the inset there, and consumers **add** the
+  variable to their existing spacing rather than replacing it.
+- **The view owns no stop/clear policy.** Close emits a callback and changes
+  nothing about playback or the queue; the recorded Close sequence (dismiss →
+  fresh epoch → empty write → drop the lease) belongs to the coordinator. A
+  test asserts the view leaves `state`/`queue`/visibility alone.
+
+All seven of the task's acceptance criteria are mutation-checked (the
+round-12 lesson): rebuilding on `state`, dropping the `_seeking` reset,
+dropping the `lastPlayErrorItemId` attribution check, never creating the
+`ResizeObserver`, gating prev/next on queue-array identity instead of
+`queueRevision`, stopping playback on Close, and never invalidating the
+icon/label cache each fail exactly the test written for them.
+
 **Review round, 2026-08-16** (`-codex.md`, "Stage 3a-canary Phase 0 and Task
 1 review") — five findings, all confirmed and all fixed. Two changed work
 this section had already marked complete, which is why the status words

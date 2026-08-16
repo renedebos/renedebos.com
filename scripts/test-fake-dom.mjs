@@ -49,6 +49,16 @@ function dispatchListeners(listeners, type, evt) {
   (listeners[type] || []).slice().forEach(({ fn }) => fn(evt));
 }
 
+// Direct property assignment (`style.background = ...`) is what the row/hero
+// views use; the mini-player publishes a custom property on <html> instead,
+// which only the setProperty/removeProperty pair can express. Both work here,
+// and a removed custom property reads back as '' exactly as in a browser.
+export class FakeStyle {
+  setProperty(name, value) { this[name] = String(value); }
+  removeProperty(name) { const had = this[name]; delete this[name]; return had === undefined ? '' : had; }
+  getPropertyValue(name) { return this[name] === undefined ? '' : this[name]; }
+}
+
 export class FakeElement {
   constructor(tag, classes = [], attrs = {}) {
     this.tagName = tag.toUpperCase();
@@ -57,7 +67,7 @@ export class FakeElement {
     this.dataset = {};
     this.attributes = {};
     this.children = [];
-    this.style = {};
+    this.style = new FakeStyle();
     this.id = '';
     this._rawHTML = '';             // set directly -- the innerHTML setter parses via
                                      // parseHTMLFragment(), which itself constructs
@@ -240,6 +250,18 @@ export class FakeWindow {
   dispatch(type, evt = {}) { dispatchListeners(this._listeners, type, evt); }
 }
 
+// The mini-player republishes --miniplayer-height from a ResizeObserver. Node
+// has none, and there is no layout here to drive one anyway, so tests set the
+// bar's _rect and call resize() to stand in for the browser firing it.
+export const resizeObservers = [];
+export class FakeResizeObserver {
+  constructor(cb) { this.cb = cb; this.targets = []; this.disconnected = false; resizeObservers.push(this); }
+  observe(el) { this.targets.push(el); }
+  disconnect() { this.disconnected = true; this.targets = []; }
+  // What the browser does asynchronously after a layout change.
+  resize() { this.cb([], this); }
+}
+
 export class FakeAudio extends EventTarget {
   constructor() {
     super();
@@ -341,6 +363,22 @@ export async function loadPlaylistViews() {
       .replace("from '/assets/player-controller.js';", `from '${controllerUrl}';`));
   }
   return import(playlistViewsUrl);
+}
+
+// miniplayer-views.js imports player-controller.js and nothing else — that is
+// a load-bearing property of the module (a WaveSurfer asset problem must not
+// reach the pages the mini-player ships on), so the rewrite below is
+// deliberately the ONLY specifier substitution: if the file ever grows a
+// second /assets/ import, it fails to resolve here rather than passing
+// silently. test-miniplayer-views.mjs asserts the same thing on the source
+// text directly.
+let miniplayerViewsUrl = null;
+export async function loadMiniplayerViews() {
+  if (!miniplayerViewsUrl) {
+    miniplayerViewsUrl = dataUrl(read('miniplayer-views.js')
+      .replace("from '/assets/player-controller.js';", `from '${controllerUrl}';`));
+  }
+  return import(miniplayerViewsUrl);
 }
 
 // Same "importing it IS running the bootstrap" shape as loadPlayerBoot().
