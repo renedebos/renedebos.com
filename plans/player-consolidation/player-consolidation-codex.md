@@ -5578,3 +5578,130 @@ the previous round's fixes, which is the documented signal that the loop has
 stopped finding pre-existing problems and started chasing its own tail. The
 validation this code needs now is a real consumer (Task 4/5) and a browser,
 not a fourth adversarial pass.
+
+---
+
+## Stage 3a-canary Phase A Task 3 CSS review — 2026-08-16
+
+1. **Medium — The mini-player seek control has only a 3px track and 11px thumb, making it an unreliable touch target.**
+
+   Evidence: the view emits a custom-styled range at [miniplayer-views.js:270](/home/renedebos/renedebos.com-player-consolidation/scripts/miniplayer-views.js:270). Both implementations set the element to 3px high and its thumb to 11px ([site.css:768](/home/renedebos/renedebos.com-player-consolidation/scripts/site.css:768), [home.css:408](/home/renedebos/renedebos.com-player-consolidation/scripts/home.css:408)). The mini-player override changes only flex sizing ([site.css:1950](/home/renedebos/renedebos.com-player-consolidation/scripts/site.css:1950), [home.css:549](/home/renedebos/renedebos.com-player-consolidation/scripts/home.css:549)); the mobile rules enlarge every button but not the range ([site.css:1984](/home/renedebos/renedebos.com-player-consolidation/scripts/site.css:1984), [home.css:583](/home/renedebos/renedebos.com-player-consolidation/scripts/home.css:583)).
+
+   Why it matters: away from the thumb, users must hit a 3px-high box to seek. Browser-specific touch slop should not be assumed, particularly after removing native appearance.
+
+   Suggested fix: give `.mp-progress .progress-range` at least a 24px block-size while keeping the visual rail 3px. Because JavaScript currently assigns the `background` shorthand, switch it to `backgroundImage` if background sizing is used. Add a 320px browser assertion for the input’s bounding-box height and taps near both ends.
+
+2. **Medium — Homepage reduced-motion mode leaves the new loading spinner infinitely animating.**
+
+   Evidence: `LOADING_ICON` specifies `animation: spin 0.75s linear infinite` inline at [player-controller.js:56](/home/renedebos/renedebos.com-player-consolidation/scripts/player-controller.js:56). The new homepage keyframes are at [home.css:401](/home/renedebos/renedebos.com-player-consolidation/scripts/home.css:401), but its reduced-motion rule changes only duration at [home.css:379](/home/renedebos/renedebos.com-player-consolidation/scripts/home.css:379). The `infinite` iteration count therefore remains. The corresponding site rule correctly limits iterations to one at [site.css:79](/home/renedebos/renedebos.com-player-consolidation/scripts/site.css:79).
+
+   Why it matters: visitors requesting reduced motion receive a perpetually scheduled, extremely rapid animation on the homepage—the opposite of the requested preference. The theme/viewport browser matrix did not exercise reduced motion.
+
+   Suggested fix: add `animation-iteration-count: 1 !important` to `home.css`’s reduced-motion rule, matching `site.css`, and test the spinner’s computed iteration count.
+
+3. **Low — The plan’s “Task 3 verified” claim is not reproducible and omits both toast consumers.**
+
+   Evidence: the plan describes the fixture itself as throwaway at [player-consolidation-plan.md:2160](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2160), and its recorded assertions mention only `footer` and `.track-select-bar` movement at [player-consolidation-plan.md:2165](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2165). The two `.dl-toast` changes are at [site.css:1288](/home/renedebos/renedebos.com-player-consolidation/scripts/site.css:1288) and [home.css:333](/home/renedebos/renedebos.com-player-consolidation/scripts/home.css:333). The retained browser draft measures only the bar itself at [browser-check-miniplayer.draft.mjs:106](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/browser-check-miniplayer.draft.mjs:106); it never queries a footer, selection bar, or toast. The plan also calls these “four consumers,” although there are five CSS declarations.
+
+   Why it matters: removing either toast offset—or allowing the deliberately identical blocks to drift—still leaves every committed check green. Later work cannot reproduce the stated 312/312 evidence.
+
+   Suggested fix: retain the Task 3 fixture or extend the permanent browser check to assert all five spacing declarations under both stylesheets. Add a fast Node/build invariant that extracts the mini-player blocks and compares them byte-for-byte while rejecting non-`--player-*` token references.
+
+4. **Low — The plan incorrectly says the unit fixture already assumes the exact `id`/class root contract.**
+
+   Evidence: the plan says `<div id="mini-player" class="mini-player" hidden>` matches the existing test fixture at [player-consolidation-plan.md:2128](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/player-consolidation-plan.md:2128). The fixture actually creates only a classed, hidden element, with no `id`, at [test-miniplayer-views.mjs:48](/home/renedebos/renedebos.com-player-consolidation/scripts/test-miniplayer-views.mjs:48). Only the draft browser check assumes `#mini-player` at [browser-check-miniplayer.draft.mjs:36](/home/renedebos/renedebos.com-player-consolidation/plans/player-consolidation/browser-check-miniplayer.draft.mjs:36).
+
+   Why it matters: `MiniPlayerView` receives a root directly, so its suite cannot detect Task 4 or Task 6 emitting/querying the wrong ID despite the plan claiming this contract is already represented.
+
+   Suggested fix: correct the plan now, set the fixture’s `id` explicitly, and add a generated-markup/coordinator test that locates the root through `#mini-player` once emission lands.
+
+**Verification during this review**
+
+- `python3 scripts/build.py --check` — passed: 31 shows, 680 curated tracks.
+- Every `node scripts/test-*.mjs` suite — passed: 327/327; the fake-DOM harness loaded successfully.
+- `python3 scripts/verify_markup.py` — passed: 1,427 items across 166 pages.
+- `python3 scripts/verify_markup.py --check-allowlist-coverage` — passed.
+- Source-to-asset `cmp` for both CSS files — passed.
+- Extracted mini-player blocks — byte-identical; no non-`--player-*` token references found.
+- `git diff --check` and `node --check plans/player-consolidation/browser-check-miniplayer.draft.mjs` — passed.
+- `NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs --skip-webkit` — could not run: Playwright failed creating `/tmp/playwright-artifacts-*` on the read-only filesystem (`EROFS`).
+_Review generated 2026-08-16 14:56:16 PDT by `scripts/codex_review.sh` (codex exec, read-only)._
+
+### Disposition (Claude, 2026-08-16)
+
+All four reproduced against the code before dispositioning; two are real
+defects, two are documentation/coverage gaps with one suggestion declined.
+
+**1. Range touch target — CONFIRMED (real defect, in scope).** Measured in
+Chromium against the mounted bar: the seek input's border box is **3px tall**
+at every width — `site.css @320: 3px x 226px`, `@1200: 3px x 493px`,
+`home.css @320: 3px x 226px`. The 3px rail is the site-wide treatment shipped
+since Phase 1 (`.custom-player`, `.pl-progress`), so Task 3 did not introduce
+it — but Task 3's own 600px block enlarges every *button* to 44/38px and
+leaves the seek control at 3px, which is an inconsistency inside this task's
+work, and "tap targets adequate" is one of its four acceptance criteria. The
+mini-player is also the mobile-primary surface in a way the show-page rows
+are not. Codex's note about the paint mechanism is correct and load-bearing:
+`_paintRange()` assigns the **`background` shorthand**
+(`miniplayer-views.js:418`), which resets `background-size`/`-repeat`/
+`-position` to their initial values, and inline style beats a CSS longhand —
+so a tall-box/thin-rail fix done with background sizing needs either
+`!important` on the longhands or the JS switched to `backgroundImage`. The
+latter is the honest fix. Scope note: this touches `miniplayer-views.js`
+(a Task 2 file) as well as the shared CSS block. `player-views.js` and
+`playlist-views.js` have the same 3px pattern and are deliberately NOT in
+scope — same call as the `'change'`-alone seek bug in Task 2's first round.
+
+**2. Homepage reduced-motion spinner — CONFIRMED (real defect, one line).**
+Reproduced with `reducedMotion: 'reduce'` on both stylesheets, reading the
+spinner's computed style: `site.css ... iteration-count=1`, **`home.css ...
+iteration-count=infinite`** (duration `1e-06s` in both). `home.css`'s
+reduced-motion block sets only `transition-duration` and `animation-duration`;
+`site.css`'s also sets `animation-iteration-count: 1 !important`. The gap
+predates this task but was inert — `@keyframes spin` (`home.css:401`) is the
+**only** keyframes in that file and Task 3 added it, so Task 3 is what makes a
+"reduce motion" visitor get a perpetually rescheduled 1µs animation. In scope.
+
+**3. Unreproducible verification claim — CONFIRMED in substance.**
+- *The two `.dl-toast` offsets were never asserted* — correct, the fixture's
+  `measure()` never queried a toast. Measured now: the toast moves by exactly
+  the bar height on both stylesheets (`19.2 -> 109.778` against a 90.578px bar;
+  `19.2 -> 81.622` against 62.422px; `19.2 -> 109.231` against 90.031px), so
+  the **code is right and the claim was over-broad**, not the other way round.
+- *"four consumers" vs five declarations* — correct, a factual error. It is
+  `footer` x2, `.track-select-bar` x1, `.dl-toast` x2 = five declarations
+  across three kinds. Both the plan and `HANDOFF.md` say "four".
+- *A committed check should exist* — agreed, and the cheapest durable answer
+  is Codex's own second suggestion: a static invariant that extracts the
+  `.mini-player`/`.mp-*` block from both stylesheets, asserts byte-equality,
+  and rejects any non-`--player-*` token reference inside it. That converts a
+  one-off script run into a permanent gate.
+- *Retaining the throwaway fixture* — DECLINED as stated. Permanent browser
+  coverage is explicitly Task 8 (`checkMiniPlayer()`), and this repo already
+  carries one unwired spec-ahead file and treats that as a hazard, not a
+  pattern to repeat. The spacing/toast assertions belong in the draft
+  scenario so Task 8 inherits them.
+
+**4. Root-contract wording — CONFIRMED on the wording; the fixture change
+DECLINED.** `test-miniplayer-views.mjs:48` is
+`new FakeElement('div', ['mini-player'], { hidden: true })` — class, no id;
+`browser-check-miniplayer.draft.mjs:36` is the one assuming `#mini-player`.
+The plan's "consistent with what the test fixture and the draft browser check
+already assumed" is true only distributively and reads as claiming the fixture
+carries the id. Worth tightening in both the plan and `HANDOFF.md`.
+Declining "set the fixture's `id` explicitly": `MiniPlayerView` is handed a
+root object and never queries an id, so the assertion would hold with the
+contract deleted — a vacuous test, which is the specific failure mode this
+project has now caught three times (the `destroy()` test, the single-sequence
+test, the retry-bound test). The real enforcement is `verify_markup.py`
+asserting the emitted markup, which is **Task 7** and already planned; Codex's
+own "add a generated-markup test once emission lands" is that task.
+
+**What I would change if approved:** fix 1 (range hit box, CSS + the
+`backgroundImage` switch in `miniplayer-views.js`, with a 320px browser
+assertion on the input's box height), fix 2 (one line in `home.css`, with a
+reduced-motion assertion), add the static byte-equality/alias-purity invariant
+from 3, correct "four consumers" -> five and the root-contract sentence in both
+the plan and `HANDOFF.md`, and fold the five spacing assertions plus the toast
+into the Task 8 draft scenario. No change to `player-views.js`,
+`playlist-views.js`, or the unit fixture.

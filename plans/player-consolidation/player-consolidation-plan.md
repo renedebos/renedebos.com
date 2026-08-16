@@ -2117,12 +2117,69 @@ now explicit.
 coordinator (identity/ownership, then session apply/save); then markup,
 flag, invariants, browser checks, and the canary deploy.
 
-**Phase A progress.** Task 1 (the `--player-*` aliases `home.css` had never
-defined) and **Task 2 (`scripts/miniplayer-views.js` — `MiniPlayerView`)**
-are done; Task 3's CSS in both design systems is next. Nothing is emitted
-into any page yet — the module is built and copied to `assets/` but no
-generated HTML references it, exactly as `miniplayer-state.js` sat after
-3a-foundation.
+**Phase A is complete.** Task 1 (the `--player-*` aliases `home.css` had
+never defined), **Task 2 (`scripts/miniplayer-views.js` — `MiniPlayerView`)**
+and **Task 3 (the bar's CSS in both design systems)** are all done. Nothing
+is emitted into any page yet — the module and its CSS are built and copied to
+`assets/` but no generated HTML references either, exactly as
+`miniplayer-state.js` sat after 3a-foundation. Phase B's coordinator is next.
+
+**Two contracts Task 3 fixed that Tasks 4 and 6 must honor:**
+- **The root element is `<div id="mini-player" class="mini-player" hidden>`** —
+  id for JS, class for CSS, the house convention `#pl-now`/`.pl-now`
+  (`pages.py:334`) and `#cp-now`/`.pl-now` (`pages.py:646`) already set. Task 6
+  emits exactly this; `MiniPlayerView` adopts a root and never creates one.
+  Consistent with what the test fixture and the draft browser check already
+  assumed, so nothing had to change to adopt it.
+- **The `--player-*` alias set is now seven, not three.** `--player-text`,
+  `--player-muted`, `--player-border` and `--player-mono` joined
+  accent/track/surface in both `:root` blocks, declared once each (not per
+  theme block) for the same reason Task 1 recorded. This is what lets the
+  entire `.mini-player`/`.mp-*` rule block be **byte-identical** in `site.css`
+  and `home.css`, which a script can check — the two files otherwise share only
+  five token names, so a component living in both would have had two copies
+  free to drift. `--player-mono` is a literal in `home.css` because that file
+  has no font tokens at all.
+
+**Task 3, 2026-08-16.** `site.css` and `home.css` both gained the bar's rules;
+`home.css` additionally got a from-scratch port of the three primitives it had
+never had but `miniplayer-views.js` hard-depends on — `@keyframes spin` (the
+loading icon animates inline), `.progress-range`, and `.player-error-msg`.
+`site.css`'s originals deliberately keep their raw token names: they ship on
+every show page and `/playlist/`, and the aliases resolve to identical values,
+so retargeting them would be churn on live rules for no behavior change.
+Four consumers now **add** `var(--miniplayer-height, 0px)` to their existing
+spacing rather than replacing it — `footer` in both files, plus `site.css`'s
+`.track-select-bar` and both files' `.dl-toast` (z-index 100 puts the toast
+above the bar's 50, so it would otherwise sit on top of it).
+
+Play/pause is the outline treatment `.play-btn` already uses rather than the
+filled `.pl-btn-play` one, which needs no on-accent token — `site.css` has
+none and hardcodes `white`, ~2.2:1 against its dark-mode accent.
+
+**Verified in a real browser, which is the only thing that can verify this
+task** — a throwaway Playwright fixture mounted the real
+`assets/miniplayer-views.js` against a stub controller inside real built
+pages: **312/312** across both stylesheets × {light, OS-dark, toggled dark,
+toggled light} × {1200px, 320px}, plus the error affordance on each.
+`--miniplayer-height` matched the border-box height every time, `footer` and
+`.track-select-bar` moved by exactly that much and back, nothing overflowed at
+320px, and prev/next genuinely collapsed for a singleton queue. Two real
+defects surfaced that reading the CSS would not have:
+- **At 320px the bar came out three rows, not two.** Flex breaks lines using
+  each item's *flex-basis* and only shrinks what already landed on a line, so
+  `.mp-info`'s 8rem basis pushed the controls onto a line of their own before
+  the shrink that would have fitted them could happen. Fixed with
+  `flex-basis: 0` at the breakpoint.
+- **The title rendered underlined on `site.css` and not on `home.css`.**
+  `home.css` resets `a` globally; `site.css` has no `a` rule at all, so the UA
+  underline applied on one and not the other — precisely the divergence the
+  identical block exists to prevent, and invisible from either file alone.
+  `.mp-title` now sets `text-decoration` explicitly.
+
+Honest limit: `env(safe-area-inset-bottom)` resolves to 0 in desktop Chromium,
+so the fixture proves the declaration parses and the fallback padding is
+correct, not that a notched phone gets the inset. That needs a real device.
 
 Two properties of Task 2 that Task 3 and the coordinator have to match:
 - **`--miniplayer-height` is REMOVED, not zeroed**, whenever the bar isn't

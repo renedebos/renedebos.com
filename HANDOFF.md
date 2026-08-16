@@ -23,8 +23,18 @@ song pages moving onto the shared `PlaybackController`, verified working
 in production.
 
 **Phase A Tasks 1–2 are MERGED (PR #17, merge commit `59e9c6b`) and
-VERIFIED LIVE IN PRODUCTION.** The branch is level with `origin/main` — 0
-ahead, 0 behind — and the worktree is clean. Nothing is queued.
+VERIFIED LIVE IN PRODUCTION.**
+
+**Task 3 is built and verified, but NOT COMMITTED, and a review round left
+two confirmed defects unfixed.** Six files are modified in the worktree:
+`scripts/site.css`, `scripts/home.css`, their two `assets/` build outputs,
+and the two plan docs. **Read "Task 3's review — two defects still open"
+below before doing anything else with this branch.**
+
+⚠️ **START HERE NEXT SESSION.** The review was run (`/review-step`) and its
+findings dispositioned in `-codex.md` under "Stage 3a-canary Phase A Task 3
+CSS review" → "Disposition (Claude, 2026-08-16)". Nothing from it has been
+applied — `/apply-review` is the next action, not Phase B.
 
 Post-deploy verification actually performed (the runbook's "a green Action
 alone isn't proof" step):
@@ -56,7 +66,101 @@ have made a production problem ambiguous between the two.
 ## ✅ Done this session (2026-08-16)
 
 Stage 3a-canary groundwork, then **Task 2 and its three review rounds**,
-shipped as PR #17.
+shipped as PR #17 — and then **Task 3**, which finishes Phase A.
+
+### Phase A Task 3 — the mini-player's CSS, in both design systems
+The bar's rules now live in `scripts/site.css` and `scripts/home.css`.
+Nothing emits them; the first visible mini-player is still Task 6.
+
+**Three decisions that Tasks 4 and 6 inherit:**
+- **The root element is `<div id="mini-player" class="mini-player" hidden>`.**
+  Id for JS, class for CSS — the house convention `#pl-now`/`.pl-now` and
+  `#cp-now`/`.pl-now` already set. `MiniPlayerView` adopts a root and never
+  creates one, so Task 6 must emit exactly this. It matches what the test
+  fixture and the draft browser check already assumed.
+- **The `--player-*` alias set went from three to seven** — `--player-text`,
+  `--player-muted`, `--player-border`, `--player-mono`, declared once each in
+  both `:root` blocks (not per theme block, same reasoning Task 1 recorded).
+  That is what lets the whole `.mini-player`/`.mp-*` block be
+  **byte-identical** in the two files, checkable by script. Without it the
+  block would have been two ports free to drift, since `site.css` and
+  `home.css` otherwise share only five token names. `--player-mono` is a
+  literal in `home.css`: that file has no font tokens at all.
+- **Play/pause is the outline treatment**, not the filled `.pl-btn-play` one.
+  It needs no on-accent token — `site.css` has none and hardcodes `white`,
+  about 2.2:1 against its own dark-mode accent.
+
+`home.css` also got a from-scratch port of three primitives it never had but
+`miniplayer-views.js` hard-depends on: `@keyframes spin` (the loading icon
+animates inline), `.progress-range`, and `.player-error-msg`. `site.css`'s
+originals deliberately keep their raw token names — they ship on every show
+page and `/playlist/`, and the aliases resolve to identical values, so
+retargeting them would be churn on live rules for zero behavior change.
+
+Four consumers now **add** `var(--miniplayer-height, 0px)` to their existing
+spacing: `footer` in both files, `site.css`'s `.track-select-bar`, and
+`.dl-toast` in both — the toast sits at z-index 100, above the bar's 50, so
+without the shift it renders on top of the bar rather than above it.
+
+**Verified in a real browser, 312/312**, which is the only thing that can
+verify this task — the deterministic suites say nothing about CSS and the
+fake DOM reports `clientWidth: 0`. A throwaway Playwright fixture mounted the
+real `assets/miniplayer-views.js` against a stub controller inside real built
+pages, across both stylesheets × {light, OS-dark, toggled dark, toggled
+light} × {1200px, 320px}, plus the error affordance on each.
+`--miniplayer-height` matched the border-box height every time and was
+**removed** (not zeroed) on hide; `footer` and `.track-select-bar` moved by
+exactly that much and back; nothing overflowed at 320px; prev/next genuinely
+collapsed for a singleton queue while Close survived.
+
+Honest limit: `env(safe-area-inset-bottom)` is 0 in desktop Chromium, so what
+is proven is that the declaration parses and the fallback padding is right —
+a notched device is still unverified.
+
+### Task 3's review — two defects still open, nothing applied
+A `/review-step` round found four things; all four were reproduced before
+being dispositioned. Full detail, including what was declined and why, is in
+`-codex.md`'s "Stage 3a-canary Phase A Task 3 CSS review" + its Disposition
+block. **Confirmed and NOT yet fixed:**
+
+1. **The seek control is a 3px tap target.** Measured on the mounted bar:
+   3px × 226px at 320px, 3px × 493px at 1200px, both stylesheets. The 3px
+   rail is the site-wide treatment shipped since Phase 1, so Task 3 didn't
+   introduce it — but Task 3's own 600px block enlarges every *button* to
+   44/38px and leaves the range at 3px, and "tap targets adequate" is one of
+   its acceptance criteria. **The trap in fixing it:** `_paintRange()`
+   assigns the `background` **shorthand** (`miniplayer-views.js:418`), which
+   resets `background-size`/`-repeat`/`-position` to initial, and inline
+   style beats a CSS longhand — so a tall-box/thin-rail fix needs either
+   `!important` on the longhands or the JS switched to `backgroundImage`.
+   The latter is the honest fix and means touching a Task 2 file.
+   `player-views.js`/`playlist-views.js` share the pattern and are
+   deliberately out of scope, same call as Task 2's `'change'`-alone bug.
+2. **The homepage spinner ignores reduced motion.** With
+   `reducedMotion: 'reduce'`: `site.css` computes `iteration-count: 1`,
+   `home.css` computes **`infinite`** (duration `1e-06s` in both), because
+   `home.css`'s reduced-motion block sets duration but not
+   `animation-iteration-count`. Inert until now — `@keyframes spin` is the
+   only keyframes in that file and **Task 3 added it**, so Task 3 is what
+   turns a reduce-motion request into a perpetually rescheduled 1µs
+   animation. One line.
+
+Also confirmed, and both are errors in the docs above rather than in code:
+**the two `.dl-toast` offsets were never asserted** by the fixture (measured
+since — they move by exactly the bar height, so the code is right and the
+"verified" claim was over-broad), and **"four consumers" is wrong: it is five
+declarations** (`footer` ×2, `.track-select-bar` ×1, `.dl-toast` ×2). The
+agreed durable fix is a static invariant extracting the `.mini-player`/`.mp-*`
+block from both stylesheets, asserting byte-equality and rejecting any
+non-`--player-*` token inside it.
+
+**Two suggestions were DECLINED — don't re-raise them:** keeping the
+throwaway fixture in-repo (permanent browser coverage is Task 8, and this
+repo already treats its one unwired spec-ahead file as a hazard, not a
+pattern), and setting the unit fixture's `id` (the view is handed a root
+object and never queries an id, so that assertion would pass with the
+contract deleted — the vacuous-test failure mode this project has already
+caught three times; real enforcement is `verify_markup.py`, i.e. Task 7).
 
 ### Phase A Task 2 — `scripts/miniplayer-views.js` (`MiniPlayerView`)
 The stage's first user-visible *surface*, though nothing emits it yet. A
@@ -163,17 +267,17 @@ asserted that song occurrences accumulate into a shared queue; the
 Queue-origin contract assigns them `playSingleton()`. Verified empirically
 against production before rewriting them. Fix is `825b3aa`.
 
-## 🔧 In progress — Stage 3a-canary (Phase 0 and Phase A Tasks 1–2 complete)
+## 🔧 In progress — Stage 3a-canary (Phase 0 and all of Phase A complete)
 
-**Task 2 is merged and live (PR #17); the branch is level with `main`.**
+**Task 2 is merged and live (PR #17). Task 3 is done and verified but sits
+uncommitted in the worktree** — `scripts/site.css`, `scripts/home.css`, and
+their two `assets/` build outputs, nothing else.
 
-**Next: Task 3** — the mini-player's CSS in *both* design systems
-(`scripts/site.css` and `scripts/home.css`), correct in light and dark in
-each, which finishes Phase A. Full spec in the working copy; the two
-Task-2 contracts it has to honor are listed under "Done this session"
-above. After that, Phase B's coordinator (Tasks 4–5) — the highest-risk
-work in the stage, and the first real consumer `miniplayer-state.js` has
-ever had.
+**Next: Phase B's coordinator (Tasks 4–5)** — the highest-risk work in the
+stage, and the first real consumer `miniplayer-state.js` has ever had. Task 4
+owns `myTabId`, `ownershipDisabled`, the in-memory lease, the tab-identity
+Web Lock's acquisition/retry/BFCache lifecycle, and the `storage` listener —
+and opens **no** ownership channel (see Durable facts).
 
 
 Mini-player container + script **always emitted**, with a
@@ -293,6 +397,33 @@ stub).
 
 ## Gotchas learned this session
 
+- **CSS is the one thing here that only a browser can verify — and it found
+  two defects reading the file would not have.** Task 3's fixture caught
+  (1) a **three-row** bar at 320px where the design called for two: flex
+  breaks lines using each item's *flex-basis* and only shrinks what already
+  landed on a line, so `.mp-info`'s 8rem basis pushed the controls onto their
+  own line before the shrink that would have fitted them could happen;
+  (2) the title rendering **underlined on `site.css` and not on `home.css`**,
+  because `home.css` resets `a` globally and `site.css` has no `a` rule at
+  all, so the UA underline applied on exactly one — invisible from either
+  file alone, and precisely the divergence an "identical block" exists to
+  prevent. Screenshots caught the second one; no assertion I had written
+  would have.
+- **A component that renders in two design systems should read one alias
+  vocabulary, not two token vocabularies.** `site.css` and `home.css` share
+  only five token names, so the natural move (port it, swapping names — what
+  `home.css` already does for `.pw-*`/`.dl-toast`) produces two copies free
+  to drift, where a dark-mode mistake in one is invisible from the other.
+  Extending the `--player-*` aliases to seven made the block byte-identical
+  and therefore **diffable by script**, which is a check rather than a habit.
+  Worth the four extra tokens.
+- **Check which ports the existing harness uses before picking one.** My
+  fixture took 8124; `browser_check.mjs` uses `PORT + 1` = 8124 for the
+  temp copy its breakage tests serve. A stray fixture server left that port
+  answering with the *intact* site, so 11 breakage tests failed with a
+  signature that read exactly like a real regression in freshly-changed
+  code. It was infrastructure. Diagnosed with `ss -ltnp`; the fixture is on
+  8135 now.
 - **A test fake that is wrong about the platform hides real bugs — plural.**
   `FakeAudio.play()` fired `play`/`playing` on every call, and assigning
   `src` did not set `paused`. Neither matches the platform (WHATWG's
@@ -460,7 +591,23 @@ stub).
 - **`--miniplayer-height` is removed, not zeroed**, when the bar is hidden.
   Consumers must read `var(--miniplayer-height, 0px)`. The published value is
   the border-box height, so the bar's own CSS must carry
-  `env(safe-area-inset-bottom)` as bottom padding for it to be included.
+  `env(safe-area-inset-bottom)` as bottom padding for it to be included —
+  Task 3's CSS does, declared as a separate `padding-bottom` after the
+  shorthand so a browser without `env()` keeps the plain padding rather than
+  dropping the declaration entirely. Four consumers **add** it to their own
+  spacing: `footer` in both stylesheets, `.track-select-bar` (site.css), and
+  `.dl-toast` in both.
+- **The mini-player's root is `<div id="mini-player" class="mini-player"
+  hidden>`** — id for JS, class for CSS, matching `#pl-now`/`.pl-now`. The
+  view adopts it and never creates one, so Task 6's markup must match exactly.
+- **The `.mini-player`/`.mp-*` CSS block is byte-identical in `site.css` and
+  `home.css` on purpose, and reads ONLY `--player-*` aliases** — which is why
+  that set is seven, not the three Task 1 added. Don't "tidy" a rule into
+  either file's native token names: that reintroduces two copies free to
+  drift, which is the failure mode the identity exists to make checkable.
+  `.mini-player[hidden]` and `.mp-btn[hidden]` both need explicit
+  `display: none` — an author `display` beats the UA `[hidden]` rule, the same
+  trap `.pl-now[hidden]` documents.
 - **The mini-player view owns no stop/clear policy.** Close emits a callback
   and changes nothing about playback, the queue, or its own visibility.
 
@@ -601,8 +748,12 @@ Real-browser verification: `scripts/browser_check.mjs` — needs
 `playwright-chromium`, and on this machine it is a **global** install, so
 run it as `NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs`
 (the script's own error message tells you this too). `--prod` points it at
-`https://renedebos.com`. Most recent numbers: **179/179 locally** (with
-`--skip-webkit`; only `playwright-chromium` is installed on this machine)
+`https://renedebos.com`. **Beware the port**: it serves on 8123 and its
+breakage-test copy on 8124, so never leave another local server on either —
+a stray one makes the breakage tests load the intact site and fail in a way
+that reads like a live regression. Most recent numbers: **179/179 locally**,
+re-run after Task 3's CSS (with `--skip-webkit`; only `playwright-chromium`
+is installed on this machine)
 and **182/185 against production** — the three non-passes are structural
 skips, not failures, because every published show is currently allowlisted
 so the "non-allowlisted show page" sub-checks have nothing to run against.
