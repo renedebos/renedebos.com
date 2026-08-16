@@ -10,6 +10,12 @@
 
 import assert from 'node:assert/strict';
 import { PlaybackController } from './player-controller.js';
+// Task 0.2's channel separation is a cross-module invariant: the name lives in
+// miniplayer-state.js (which is DOM-free and constructs no channel), but only a
+// real PlaybackController can demonstrate why it has to be separate.
+import {
+  OWNERSHIP_CHANNEL_NAME, TAB_PROBE_MESSAGE, TAB_PROBE_REPLY_MESSAGE,
+} from './miniplayer-state.js';
 
 // Node >=21 defines a getter-only `navigator` global (the Navigator API) —
 // plain `globalThis.navigator = {...}` throws against it ("which has only a
@@ -42,9 +48,15 @@ class FakeAudio extends EventTarget {
     this.pendingPlay = null;
   }
   get src() { return this._src; }
-  set src(v) { this._src = v; this.error = null; this.loadCount = (this.loadCount || 0) + 1; }
-  load() { this.error = null; }
+  // Assigning src runs the media element load algorithm, which sets paused to
+  // true (HTML standard). Modelled because play() below only fires its events
+  // on a paused -> playing transition, exactly like a browser: that pair of
+  // rules is what makes "switch track" and "replay the current track" behave
+  // differently, and the difference was a real bug (see the repeat-one test).
+  set src(v) { this._src = v; this.error = null; this.paused = true; this.loadCount = (this.loadCount || 0) + 1; }
+  load() { this.error = null; this.paused = true; }
   play() {
+    const wasPaused = this.paused;
     this.paused = false;
     if (this.autoplayBehavior === 'manual') {
       let resolve, reject;
@@ -57,10 +69,14 @@ class FakeAudio extends EventTarget {
       err.name = 'NotAllowedError';
       return Promise.reject(err);
     }
-    queueMicrotask(() => {
-      this.dispatchEvent(new Event('play'));
-      this.dispatchEvent(new Event('playing'));
-    });
+    // WHATWG's internal play steps fire these only when the element was
+    // actually paused. An already-playing element is seeked/resumed silently.
+    if (wasPaused) {
+      queueMicrotask(() => {
+        this.dispatchEvent(new Event('play'));
+        this.dispatchEvent(new Event('playing'));
+      });
+    }
     return Promise.resolve();
   }
   pause() {
@@ -135,6 +151,46 @@ test('repeat-one restarts the same item and resets currentTime on ended', async 
     assert.equal(audio.currentTime, 0, 'ended handler must reset currentTime before replaying');
     await tick();
     assert.equal(c.currentItem.id, 'a', 'repeat-one must not advance to the next queue item');
+    assert.equal(c.state, 'playing');
+  } finally { c.destroy(); }
+});
+
+// Replaying the CURRENT item assigns no src, so no load happens; and `ended`
+// does not set paused, so play() fires no play/playing event either (WHATWG
+// internal play steps). Without the correction in _playIndex() the controller
+// would sit in 'loading' forever while audio played on — the test above passed
+// only because this file's FakeAudio used to fire those events unconditionally.
+// Reachable two ways today: repeat-one's replay, and /playlist/'s endless
+// rollover when the reshuffle puts the just-finished track back at index 0.
+// Mutation that fails this: dropping the `!reloading && wasUnpaused` correction.
+test('replaying the current item on an unpaused element ends in playing, never stuck in loading', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    c.setQueue([item('a'), item('b')], { startIndex: 0, autoplay: true });
+    await tick();
+    assert.equal(c.state, 'playing', 'premise: playing, and the element is not paused');
+    assert.equal(audio.paused, false);
+    const loads = audio.loadCount;
+
+    c.play(0);                       // same item, same src: nothing reloads
+    await tick();
+    assert.equal(audio.loadCount, loads, 'premise: no reload happened, so no load events either');
+    assert.equal(c.state, 'playing', 'a silent resume must still leave the controller in playing');
+  } finally { c.destroy(); }
+});
+
+// A genuine track change DOES reload, so it keeps the ordinary
+// loading -> playing path — the correction above must not short-circuit it.
+test('switching tracks still goes through loading and lands in playing', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    c.setQueue([item('a'), item('b')], { startIndex: 0, autoplay: true });
+    await tick();
+    c.play(1);
+    assert.equal(c.state, 'loading', 'a real load is pending, so loading is the truthful state');
+    await tick();
     assert.equal(c.state, 'playing');
   } finally { c.destroy(); }
 });
@@ -824,6 +880,376 @@ test('onAnyExternalClaim fires on every external claim regardless of state, unli
     assert.equal(gatedClaims, 1, 'the gated callback fires this time since a was playing');
     assert.equal(anyClaims, 2, 'the unconditional hook keeps firing every time, gated or not');
   } finally { a.destroy(); b.destroy(); }
+});
+
+// ── Stage 3a-canary Task 0.1: post-construction subscriptions + ownership
+// sequence. The mini-player ADOPTS controllers that player-boot.js:60 and
+// song-boot.js:69 construct with no arguments, so the constructor options
+// alone are unreachable for it. ───────────────────────────────────────────
+
+test('onAnyExternalClaim() subscribes AFTER construction — the adopt path, where no constructor option was ever passed', async () => {
+  const audioA = new FakeAudio();
+  const audioB = new FakeAudio();
+  // Constructed exactly the way player-boot.js/song-boot.js do it: no options.
+  const a = new PlaybackController({ audio: audioA, mediaSession: false });
+  const b = new PlaybackController({ audio: audioB, mediaSession: false });
+  let claims = 0;
+  try {
+    const off = a.onAnyExternalClaim(() => { claims++; });
+    b.setQueue([item('x')], { startIndex: 0, autoplay: true });
+    await tick();
+    assert.equal(claims, 1, 'a late subscriber must receive claims on a controller it did not construct');
+
+    off();
+    b.setQueue([item('y')], { startIndex: 0, autoplay: true });
+    await tick();
+    assert.equal(claims, 1, 'unsubscribe must actually detach');
+  } finally { a.destroy(); b.destroy(); }
+});
+
+test('the constructor option and a post-construction subscriber both fire, and neither displaces the other', async () => {
+  const audioA = new FakeAudio();
+  const audioB = new FakeAudio();
+  let viaOption = 0;
+  let viaMethod = 0;
+  const a = new PlaybackController({
+    audio: audioA, mediaSession: false, onAnyExternalClaim: () => { viaOption++; },
+  });
+  const b = new PlaybackController({ audio: audioB, mediaSession: false });
+  try {
+    a.onAnyExternalClaim(() => { viaMethod++; });
+    b.setQueue([item('x')], { startIndex: 0, autoplay: true });
+    await tick();
+    assert.equal(viaOption, 1, 'the retained constructor option must still fire');
+    assert.equal(viaMethod, 1, 'and the post-construction subscriber alongside it');
+  } finally { a.destroy(); b.destroy(); }
+});
+
+test('ownership events arrive in order as {seq, kind}: play-attempt, then local-play', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  const seen = [];
+  try {
+    c.onOwnershipEvent(e => seen.push(e));
+    c.setQueue([item('a')], { startIndex: 0, autoplay: true });
+    await tick();
+    assert.deepEqual(seen.map(e => e.kind), ['play-attempt', 'local-play'],
+      'the synchronous attempt must be observable before the media play event');
+    assert.deepEqual(seen.map(e => e.seq), [1, 2], 'one monotonic sequence, not per-kind counters');
+  } finally { c.destroy(); }
+});
+
+test('play-attempt is observable synchronously, before the play promise settles', async () => {
+  const audio = new FakeAudio();
+  audio.autoplayBehavior = 'manual'; // play() never settles
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    assert.equal(c.snapshot().ownershipSeq, 0);
+    c.setQueue([item('a')], { startIndex: 0, autoplay: true });
+    // No await: this is the whole point. A row click (player-views.js:406)
+    // starts playback synchronously, and the consumer must be able to see that
+    // an attempt happened without waiting for playback to actually begin.
+    const snap = c.snapshot();
+    assert.equal(snap.ownershipSeq, 1, 'the attempt must be visible with zero awaits');
+    assert.equal(snap.lastOwnershipEvent, 'play-attempt');
+  } finally { c.destroy(); }
+});
+
+test('a REBUFFER (waiting -> playing) does NOT bump the ownership sequence — the epoch-storm guard', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    c.setQueue([item('a')], { startIndex: 0, autoplay: true });
+    await tick();
+    const afterPlay = c.snapshot().ownershipSeq;
+    assert.equal(c.state, 'playing');
+
+    // Exactly what an ordinary network stall produces: the state machine goes
+    // 'playing' -> 'loading' -> 'playing' (player-controller.js's 'waiting' and
+    // 'playing' listeners). Claiming on the STATE would mint a fresh ownership
+    // epoch here — a lock acquisition, a write and a read-back — on every
+    // buffering hiccup. Claiming on the 'play' EVENT, which does not fire on
+    // rebuffer recovery, must not.
+    audio.dispatchEvent(new Event('waiting'));
+    assert.equal(c.state, 'loading', 'premise: a rebuffer really does move the state machine');
+    audio.dispatchEvent(new Event('playing'));
+    assert.equal(c.state, 'playing', 'premise: and back again');
+
+    assert.equal(c.snapshot().ownershipSeq, afterPlay,
+      'no ownership event may be emitted for recovery within the same playback episode');
+  } finally { c.destroy(); }
+});
+
+// Rewritten 2026-08-16 after a review round proved the previous version
+// vacuous: splitting _bumpOwnership() into per-kind counters exposing
+// Math.max(localSeq, externalSeq) — a direct violation of the single-sequence
+// contract this test is named for — left all 57 tests green, because it only
+// ever asserted lastOwnershipEvent, which split counters also get right.
+//
+// Its comment was wrong too. claimListeners is module-scope
+// (player-controller.js:25), so four simultaneously-live controllers share one
+// registry and each receives THREE external claims, not the one the comment
+// claimed. The scenarios now run one ISOLATED PAIR at a time, torn down before
+// the next is built, and assert the exact {seq, kind} stream.
+test('the ownership stream is ONE monotonic sequence spanning local and external events, with consecutive seq values', async () => {
+  const mk = () => {
+    const audio = new FakeAudio();
+    const c = new PlaybackController({ audio, mediaSession: false });
+    const seen = [];
+    c.onOwnershipEvent(e => seen.push(e));
+    return { audio, c, seen };
+  };
+
+  // Scenario 1 — this tab plays, then loses to another tab.
+  let mine = mk(); let rival = mk();
+  try {
+    mine.c.setQueue([item('a')], { startIndex: 0, autoplay: true });
+    await tick();
+    rival.c.setQueue([item('r')], { startIndex: 0, autoplay: true });
+    await tick();
+    assert.deepEqual(mine.seen.map(e => e.kind), ['play-attempt', 'local-play', 'external-claim'],
+      'exact stream, not just its last element');
+    assert.deepEqual(mine.seen.map(e => e.seq), [1, 2, 3],
+      'consecutive across BOTH local and external kinds — per-kind counters cannot produce this');
+    assert.equal(mine.c.state, 'paused');
+  } finally { mine.c.destroy(); rival.c.destroy(); }
+
+  // Scenario 2 — another tab claims first, then this tab plays, then pauses.
+  // Torn down and rebuilt so the shared claim registry holds exactly one pair.
+  mine = mk(); rival = mk();
+  try {
+    rival.c.setQueue([item('r')], { startIndex: 0, autoplay: true });
+    await tick();
+    mine.c.setQueue([item('a')], { startIndex: 0, autoplay: true });
+    await tick();
+    mine.c.pause();
+    await tick();
+    assert.deepEqual(mine.seen.map(e => e.kind), ['external-claim', 'play-attempt', 'local-play'],
+      'the mirror-image ordering');
+    assert.deepEqual(mine.seen.map(e => e.seq), [1, 2, 3], 'one shared counter, still consecutive');
+    assert.equal(mine.c.state, 'paused');
+  } finally { mine.c.destroy(); rival.c.destroy(); }
+
+  // The two scenarios end identically under any per-kind scheme (both paused,
+  // both one local + one external), and are told apart ONLY by event order.
+  // Only the second tab legitimately still owns the session.
+});
+
+test('a queued play event delivered after an intervening pause claims nothing and reports nothing playing', async () => {
+  const a = { audio: new FakeAudio() };
+  const b = { audio: new FakeAudio() };
+  a.c = new PlaybackController({ audio: a.audio, mediaSession: false });
+  b.c = new PlaybackController({ audio: b.audio, mediaSession: false });
+  try {
+    // Both started in the SAME task, before either queued 'play' event runs —
+    // play()/pause() flip `paused` synchronously but deliver 'play'/'playing'
+    // as queued tasks, and pause() does not cancel an already-queued one.
+    a.c.setQueue([item('a')], { startIndex: 0, autoplay: true });
+    b.c.setQueue([item('b')], { startIndex: 0, autoplay: true });
+    await tick();
+
+    // Whichever one lost is paused; it must not have re-claimed on the way out.
+    for (const [name, x] of [['a', a], ['b', b]]) {
+      if (!x.audio.paused) continue;
+      assert.equal(x.c.snapshot().lastOwnershipEvent, 'external-claim',
+        `${name} is paused, so its last ownership event must be the claim that paused it — `
+        + 'a stale queued play event must not mint a fresh ownership epoch for silent audio');
+      assert.notEqual(x.c.state, 'playing',
+        `${name} reports playing while its audio is paused`);
+    }
+    assert.ok(a.audio.paused || b.audio.paused, 'premise: one of them really did lose');
+  } finally { a.c.destroy(); b.c.destroy(); }
+});
+
+test('a late subscriber recovers a pre-subscription event by comparing snapshot().ownershipSeq', async () => {
+  const audioA = new FakeAudio();
+  const audioB = new FakeAudio();
+  const a = new PlaybackController({ audio: audioA, mediaSession: false });
+  const b = new PlaybackController({ audio: audioB, mediaSession: false });
+  try {
+    // This is the pre-adoption window: player-boot.js:60 constructs the
+    // controller, but readiness only resolves on window.load (player-boot.js:217).
+    // Everything here happens before the mini-player ever sees the controller.
+    b.setQueue([item('x')], { startIndex: 0, autoplay: true });
+    await tick();
+
+    // Now the consumer finally adopts. Subscribe FIRST, read the snapshot
+    // SECOND, then process by sequence.
+    const received = [];
+    a.onOwnershipEvent(e => received.push(e.seq));
+    const adoptedAt = a.snapshot().ownershipSeq;
+
+    assert.ok(adoptedAt > 0, 'the missed claim is still visible in the sequence');
+    assert.equal(a.snapshot().lastOwnershipEvent, 'external-claim',
+      'and its kind is recoverable, so the consumer knows not to restore as owner');
+    assert.deepEqual(received, [], 'nothing was replayed as a live event — recovery is by comparison');
+  } finally { a.destroy(); b.destroy(); }
+});
+
+test('lastPlayErrorItemId pins an error to its item, so a stale failure cannot mislabel a different track', async () => {
+  const audio = new FakeAudio();
+  audio.autoplayBehavior = 'reject';
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    c.setQueue([item('a'), item('b')], { startIndex: 0, autoplay: true });
+    await tick();
+    let snap = c.snapshot();
+    assert.equal(snap.lastPlayError.name, 'NotAllowedError');
+    assert.equal(snap.lastPlayErrorItemId, 'a', 'the error is pinned to the item it happened on');
+    assert.equal(snap.lastPlayErrorItemId, snap.currentItem.id,
+      'and matches the current item, so a Resume affordance is correct here');
+
+    // Move to a different item WITHOUT playing: setQueue(no autoplay) does not
+    // start an attempt, so nothing clears the error. Before this field existed
+    // the stale NotAllowedError would have rendered "Resume" against item b.
+    c.setQueue([item('b')], { startIndex: 0, autoplay: false });
+    snap = c.snapshot();
+    assert.equal(snap.lastPlayError.name, 'NotAllowedError', 'the error itself is still there (unchanged behavior)');
+    assert.notEqual(snap.lastPlayErrorItemId, snap.currentItem.id,
+      'but it no longer matches the current item, which is how a consumer knows to ignore it');
+  } finally { c.destroy(); }
+});
+
+test('lastPlayError and lastPlayErrorItemId are cleared as a pair by a fresh attempt', async () => {
+  const audio = new FakeAudio();
+  audio.autoplayBehavior = 'reject';
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    c.setQueue([item('a')], { startIndex: 0, autoplay: true });
+    await tick();
+    assert.equal(c.snapshot().lastPlayErrorItemId, 'a');
+
+    audio.autoplayBehavior = 'succeed';
+    c.play(0);
+    await tick();
+    const snap = c.snapshot();
+    assert.equal(snap.lastPlayError, null);
+    assert.equal(snap.lastPlayErrorItemId, null, 'never an id left behind without its error');
+  } finally { c.destroy(); }
+});
+
+test('a throwing subscriber cannot break the claim/pause path or the other subscribers', async () => {
+  const audioA = new FakeAudio();
+  const audioB = new FakeAudio();
+  const a = new PlaybackController({ audio: audioA, mediaSession: false });
+  const b = new PlaybackController({ audio: audioB, mediaSession: false });
+  const realError = console.error;
+  console.error = () => {};
+  let secondRan = 0;
+  try {
+    a.setQueue([item('a')], { startIndex: 0, autoplay: true });
+    await tick();
+    a.onAnyExternalClaim(() => { throw new Error('subscriber blew up'); });
+    a.onAnyExternalClaim(() => { secondRan++; });
+    a.onOwnershipEvent(() => { throw new Error('ownership subscriber blew up'); });
+
+    b.setQueue([item('x')], { startIndex: 0, autoplay: true });
+    await tick();
+
+    assert.equal(secondRan, 1, 'a later subscriber still runs after an earlier one threw');
+    assert.equal(a.state, 'paused', 'and the external-claim pause itself still happened');
+  } finally { console.error = realError; a.destroy(); b.destroy(); }
+});
+
+test('no ownership event can reach a destroyed controller (via _unclaim/_abort, NOT via the subscriber sets)', async () => {
+  const audioA = new FakeAudio();
+  const audioB = new FakeAudio();
+  const a = new PlaybackController({ audio: audioA, mediaSession: false });
+  const b = new PlaybackController({ audio: audioB, mediaSession: false });
+  let claims = 0;
+  try {
+    a.onAnyExternalClaim(() => { claims++; });
+    a.destroy();
+    b.setQueue([item('x')], { startIndex: 0, autoplay: true });
+    await tick();
+    assert.equal(claims, 0, 'destroy() detaches the claim listener itself, so nothing is left to deliver');
+  } finally { b.destroy(); }
+});
+
+// Deliberately a white-box assertion, and deliberately NOT phrased as
+// "subscribers stop firing after destroy" — that phrasing passes with the
+// clearing removed entirely, because destroy()'s _unclaim()/_abort.abort()
+// already make it impossible for any event to be raised (verified by mutation:
+// deleting the two .clear() calls leaves a behavioural test fully green).
+// What the clearing actually buys is reference release: a mini-player
+// coordinator subscribes with a closure over itself, so a controller that kept
+// its subscriber set populated would pin that whole object graph for as long as
+// the controller is reachable. Same reason _views.clear() sits directly above.
+test('destroy() RELEASES subscriber references, so a coordinator holding a back-reference is collectable', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  c.onAnyExternalClaim(() => {});
+  c.onOwnershipEvent(() => {});
+  assert.equal(c._anyExternalClaimSubs.size, 1, 'premise: the subscription really was retained');
+  assert.equal(c._ownershipSubs.size, 1);
+
+  c.destroy();
+  assert.equal(c._anyExternalClaimSubs.size, 0, 'destroy() must not leave subscriber closures pinned');
+  assert.equal(c._ownershipSubs.size, 0);
+});
+
+test('subscribing after destroy retains nothing, and still returns an unsubscribe so callers need no special case', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  c.destroy();
+
+  const off = c.onAnyExternalClaim(() => {});
+  const offOwn = c.onOwnershipEvent(() => {});
+  assert.equal(typeof off, 'function');
+  assert.equal(typeof offOwn, 'function');
+  assert.equal(c._anyExternalClaimSubs.size, 0, 'a late subscription on a dead controller must not re-pin references');
+  assert.equal(c._ownershipSubs.size, 0);
+  off(); offOwn(); // must not throw
+});
+
+// ── Stage 3a-canary Task 0.2: the ownership handshake needs its OWN channel.
+// These use a REAL BroadcastChannel (Node ships one) against a real
+// controller — the hazard is not something a fake can demonstrate. ─────────
+
+test('HAZARD: a probe object on hannan-playback really does pause live playback — this is why the channel must be separate', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  const ch = new BroadcastChannel('hannan-playback');
+  try {
+    c.setQueue([item('a')], { startIndex: 0, autoplay: true });
+    await tick();
+    assert.equal(c.state, 'playing', 'premise: playback is genuinely running');
+
+    // Exactly the message shape the handshake sends. Every playback engine
+    // compares with `e.data !== <own id string>`, and an object is never equal
+    // to a string, so this reads as an external claim.
+    ch.postMessage({ type: TAB_PROBE_MESSAGE, tabId: 't1', nonce: 'n1' });
+    await tick();
+
+    assert.equal(c.state, 'paused',
+      'if this ever stops being true the separation below is no longer load-bearing — reassess rather than deleting it');
+  } finally { ch.close(); c.destroy(); }
+});
+
+test('probe/reply traffic on the ownership channel pauses nothing', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  const ch = new BroadcastChannel(OWNERSHIP_CHANNEL_NAME);
+  let claims = 0;
+  try {
+    c.onAnyExternalClaim(() => { claims++; });
+    c.setQueue([item('a')], { startIndex: 0, autoplay: true });
+    await tick();
+    assert.equal(c.state, 'playing');
+
+    ch.postMessage({ type: TAB_PROBE_MESSAGE, tabId: 't1', nonce: 'n1' });
+    ch.postMessage({ type: TAB_PROBE_REPLY_MESSAGE, tabId: 't1', nonce: 'n2' });
+    await tick();
+
+    assert.equal(c.state, 'playing', 'a whole handshake must be inaudible to playback');
+    assert.equal(claims, 0, 'and must not register as an ownership event either');
+  } finally { ch.close(); c.destroy(); }
+});
+
+test('the ownership channel name is not the playback channel name', async () => {
+  assert.notEqual(OWNERSHIP_CHANNEL_NAME, 'hannan-playback',
+    'the entire point of Task 0.2 — a shared name reintroduces the hazard above');
+  assert.ok(OWNERSHIP_CHANNEL_NAME, 'and it must actually be a usable name');
 });
 
 // ── runner ─────────────────────────────────────────────────────────────

@@ -350,7 +350,17 @@ export class PlaylistNowPlayingView extends QueueView {
     if (audio.currentTime > 3) { c.seek(0); return; }
     if (c.currentIndex > 0) { c.prev(); return; }
     c.seek(0);
-    c.play();
+    // Only start playback when it is not already running (fixed 2026-08-16;
+    // MiniPlayerView._prev() carries the identical guard and the same note).
+    // play() on an already-playing element resolves WITHOUT firing
+    // play/playing — WHATWG's internal play steps fire those only on a
+    // paused -> playing transition — while _playIndex() has already set state
+    // 'loading' and is waiting for exactly that event. Pressing Prev on track 1
+    // of a playing queue therefore left #pl-now showing its loading spinner for
+    // the rest of the track. This shipped in Phase 2 and the test above passed
+    // throughout, because FakeAudio.play() used to queue both events
+    // unconditionally; making the fake honest is what surfaced it.
+    if (audio.paused || c.state === 'error') c.play();
   }
 
   // Mirrors PlayerView._setError (player-views.js) — a hard failure

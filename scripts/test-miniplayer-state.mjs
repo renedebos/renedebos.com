@@ -20,6 +20,7 @@ import {
   tombstoneIfCurrent, MAX_PERSISTED_QUEUE_ITEMS, OWNERSHIP_LOCK_NAME,
   TAB_PROBE_MESSAGE, TAB_PROBE_REPLY_MESSAGE, generateNonce, isTabProbeCollision,
   isTabProbeReplyForMe, shouldRotateOnCollision, handleIncomingProbe, handleIncomingProbeReply,
+  tabIdentityLockName, TAB_IDENTITY_LOCK_PREFIX, MAX_PERSISTED_QUEUE_ITEMS as _MPQI,
 } from './miniplayer-state.js';
 
 // ── fake storage — one shared fake localStorage per test (real localStorage
@@ -259,6 +260,81 @@ test('encodeItem bounds string field lengths', () => {
   const out = encodeItem(item('a', { title: 'x'.repeat(5000), artist: 'y'.repeat(5000) }));
   assert.ok(out.title.length <= 300);
   assert.ok(out.artist.length <= 200);
+});
+
+// The mini-bar renders "artist · venue · date". Venue was missing from this
+// codec until 2026-08-16 — accurate when the codec was written, silently wrong
+// once MiniPlayerView shipped a stage later — so a restored session dropped it
+// while every view test, building its fixtures directly, stayed green.
+test('venue survives a full buildEnvelope -> JSON -> decodeEnvelope round trip', () => {
+  const env = buildEnvelope({
+    queue: [item('a', { venue: 'Cafe Java', artist: 'Jerry Hannan', dateDisplay: '1999-05-27' })],
+    currentItemId: 'a', ownerId: 't1', ownerEpoch: 'e1',
+  });
+  const back = decodeEnvelope(JSON.parse(JSON.stringify(env)));
+  assert.equal(back.queue[0].venue, 'Cafe Java');
+  assert.equal(encodeItem(item('a', { venue: 'x'.repeat(5000) })).venue.length, 200, 'and stays bounded');
+  assert.equal(encodeItem(item('a')).venue, null, 'a genuinely venue-less item stays null, not ""');
+});
+
+// `date` is the same gap as venue, one field over: MiniPlayerView falls back to
+// it when dateDisplay is null, and the codec did not carry it, so a round trip
+// turned a date-only item into "unknown date".
+test('date survives the round trip too, independently of dateDisplay', () => {
+  const env = buildEnvelope({
+    queue: [item('a', { date: '1999-05-27', dateDisplay: null })],
+    currentItemId: 'a', ownerId: 't1', ownerEpoch: 'e1',
+  });
+  const back = decodeEnvelope(JSON.parse(JSON.stringify(env)));
+  assert.equal(back.queue[0].date, '1999-05-27');
+  assert.equal(back.queue[0].dateDisplay, null, 'and the two stay independent');
+  assert.equal(encodeItem(item('a', { date: 'x'.repeat(5000) })).date.length, 100, 'bounded like the rest');
+});
+
+test('an envelope written before venue existed still decodes, with venue null', () => {
+  // Exactly what an older stored envelope looks like: no venue key at all. No
+  // ENVELOPE_VERSION bump was needed precisely because this path is identical
+  // to a venue-less item's.
+  const legacy = { version: 1, queue: [{ id: 'a', streamUrl: 'https://example.test/a.mp3', title: 'a' }],
+    currentItemId: 'a', positionSec: 0, playing: false, repeatOne: false, shuffleOn: false,
+    ownerId: 't1', ownerEpoch: 'e1' };
+  const back = decodeEnvelope(legacy);
+  assert.equal(back.queue[0].venue, null);
+});
+
+// pageUrl is the one persisted field that becomes an <a href>. localStorage is
+// same-origin-writable and this codec's premise is that what it reads back may
+// never have come from encodeItem(), so a scheme that EXECUTES is exactly the
+// class of value it exists to reject.
+test('pageUrl is rejected unless it is a same-origin root-relative path', () => {
+  const cases = [
+    ['/shows/mad-sweetwater-1999-05-18/#track-3', '/shows/mad-sweetwater-1999-05-18/#track-3'],
+    ['/songs/kilkelly-ireland/', '/songs/kilkelly-ireland/'],
+    ['javascript:globalThis.__x=1', ''],
+    ['JaVaScRiPt:alert(1)', ''],
+    ['data:text/html,<script>alert(1)</script>', ''],
+    ['//evil.test/shows/', ''],
+    ['https://evil.test/shows/', ''],
+    ['shows/relative/', ''],
+    ['', ''],
+    // Normalization, not characters: each of these passed the original
+    // character-level check and resolved OFF-ORIGIN in a real URL parser.
+    // Backslash is a path separator for special schemes; tab, CR and LF are
+    // stripped before parsing, leaving "//evil.test/" behind.
+    ['/' + String.fromCharCode(92) + 'evil.test/shows/a', ''],
+    ['/' + String.fromCharCode(9) + '/evil.test/', ''],
+    ['/' + String.fromCharCode(10) + '/evil.test/', ''],
+    ['/' + String.fromCharCode(13) + '/evil.test/', ''],
+    // ...while an ordinary path with a fragment, a query and a space still
+    // survives: the rule is about origin, not about tidiness.
+    ['/shows/a b/?x=1#track-2', '/shows/a b/?x=1#track-2'],
+  ];
+  for (const [input, want] of cases) {
+    assert.equal(encodeItem(item('a', { pageUrl: input })).pageUrl, want, `encode ${JSON.stringify(input)}`);
+    const back = decodeEnvelope({ version: 1, queue: [{ id: 'a', streamUrl: 'https://example.test/a.mp3',
+      title: 'a', pageUrl: input }], currentItemId: 'a', ownerId: 't', ownerEpoch: 'e' });
+    assert.equal(back.queue[0].pageUrl, want, `decode ${JSON.stringify(input)}`);
+  }
 });
 
 test('encodeItem omits fields a mini-bar never renders (peaksKey, full downloads payload)', () => {
@@ -1970,6 +2046,40 @@ test('documents: the caller-side pattern of checking disabled before calling res
   assert.equal(yRef.disabled ? null : restoreLease(local, yBlockedSession).status, null,
     'documents the required pattern: never reaching restoreLease() once disabled is what would avoid the dual-restoration outcome the hazard test above demonstrates -- contingent on a real caller actually implementing this check, which nothing yet does');
   assert.equal(restoreLease(local, xSession).status, 'restored', 'X, the genuine winner, is completely unaffected');
+});
+
+
+// ── tab-identity lock name (2026-08-16, Task 0.3's replacement for the
+// quiet-period settle timer) ────────────────────────────────────────────
+test('tabIdentityLockName() namespaces the id, so no stored value can produce a reserved name', () => {
+  assert.equal(tabIdentityLockName('abc'), TAB_IDENTITY_LOCK_PREFIX + 'abc');
+  // Web Locks reserves names beginning with U+002D HYPHEN-MINUS (request()
+  // rejects with NotSupportedError). A corrupted or hand-edited tab id could
+  // easily start with one; the prefix means the result never can.
+  const hostile = tabIdentityLockName('-evil');
+  assert.ok(hostile && !hostile.startsWith('-'),
+    'a leading-hyphen id must still yield a usable, non-reserved lock name');
+});
+
+test('tabIdentityLockName() rejects unusable ids — peekTabId() does no validation of its own', () => {
+  // peekTabId() hands back whatever sessionStorage holds, unbounded and
+  // unvalidated, and sessionStorage is editable by anyone with devtools open.
+  assert.equal(tabIdentityLockName(''), null, 'empty');
+  assert.equal(tabIdentityLockName(null), null, 'null — what peekTabId returns on failure');
+  assert.equal(tabIdentityLockName(undefined), null, 'undefined');
+  assert.equal(tabIdentityLockName(123), null, 'non-string');
+  assert.equal(tabIdentityLockName({}), null, 'object');
+  assert.equal(tabIdentityLockName('x'.repeat(100000)), null,
+    'an unbounded id must not become an unbounded lock name');
+});
+
+test('tabIdentityLockName() accepts a real generated tab id', () => {
+  const store = fakeStorage();
+  const id = establishTabId(store);
+  assert.ok(id, 'premise: an id was actually established');
+  const name = tabIdentityLockName(id);
+  assert.ok(name && name.startsWith(TAB_IDENTITY_LOCK_PREFIX));
+  assert.ok(!name.startsWith('-'));
 });
 
 // ── runner ─────────────────────────────────────────────────────────────

@@ -70,12 +70,51 @@ export const MAX_PERSISTED_QUEUE_ITEMS = 1000;
 const MAX_ID_LEN = 200;
 const MAX_TITLE_LEN = 300;
 const MAX_ARTIST_LEN = 200;
+const MAX_VENUE_LEN = 200;
 const MAX_DATE_LEN = 100;
 const MAX_LABEL_LEN = 400;
 const MAX_URL_LEN = 2000;
 
 function boundedString(v, max) {
   return typeof v === 'string' ? v.slice(0, max) : '';
+}
+
+// pageUrl is the one persisted field that becomes an <a href> in the DOM, so
+// length-bounding it is not enough: a `javascript:` value out of a hand-edited
+// or corrupted envelope would be a link that executes, and this module's whole
+// premise is that what it reads back may never have come from encodeItem() at
+// all. Only same-origin ROOT-RELATIVE paths survive — every real pageUrl in
+// this project is one ("/shows/<slug>/#track-N", "/songs/<slug>/"; verified
+// across the generated markup and the whole track catalog), so the rule costs
+// nothing. Anything else becomes '', which the view renders as a title with no
+// href at all.
+//
+// **Resolved with the URL parser, not by inspecting characters.** The first
+// version of this function required a leading "/" and rejected a literal second
+// one, which is not the question a browser answers: "/\evil.test/x" resolves to
+// https://evil.test/x (backslash is a path separator for special schemes), and a
+// tab, CR or LF before the second slash is STRIPPED before parsing, so
+// "/<TAB>/evil.test/" is protocol-relative by the time it matters. All four
+// passed the character check and were reproduced resolving off-origin. Parsing
+// against a sentinel origin asks the browser's own question instead of
+// approximating it; the sentinel uses the reserved .invalid TLD so it can never
+// collide with a real origin. URL is a standard global in both browsers and
+// Node, so the module stays DOM-free and testable exactly as before.
+//
+// Applied on BOTH the write and read paths, and again at the render boundary
+// in miniplayer-views.js. Belt and braces is deliberate here: a value that
+// executes is not the kind of thing to leave to one layer.
+const PATH_SENTINEL_ORIGIN = 'https://miniplayer.invalid';
+
+function boundedPath(v, max) {
+  const s = boundedString(v, max);
+  if (s.charCodeAt(0) !== 47) return '';        // must start with '/'
+  try {
+    if (new URL(s, PATH_SENTINEL_ORIGIN).origin !== PATH_SENTINEL_ORIGIN) return '';
+  } catch (e) {
+    return '';                                  // unparseable is not a site path either
+  }
+  return s;
 }
 
 // Real booleans only — a corrupt string value ("true", 1, "yes") must not
@@ -98,6 +137,29 @@ function finiteNonNegative(v, fallback) {
 // field's length, since this travels through localStorage (shared-origin,
 // anything else on the site could have written it) rather than build-time-
 // bounded markup.
+//
+// `venue` and `date` were both added 2026-08-16 — venue first, then date one
+// review round later, which is the part worth recording. This comment's "omits
+// every field a mini-bar never renders" was accurate when it was written in
+// Stage 3a-foundation, and Task 2's MiniPlayerView — which renders
+// "artist · venue · date" — silently falsified it a stage later. Every view
+// test built its fixtures directly, so nothing crossed this codec and the suite
+// stayed green while a restored session rendered "Jerry Hannan · 1999-05-27"
+// with the venue gone.
+//
+// Fixing venue alone then left `date` in exactly the same state one field over:
+// the view falls back to it when dateDisplay is null, and a round trip turned
+// such an item into "unknown date". No current producer populates one without
+// the other (checked: all 1,427 generated items carry dateDisplay), so that one
+// was a contract gap rather than a live regression — but "omits only what the
+// bar never renders" had by then been wrong twice. **The invariant to hold: if
+// MiniPlayerView renders a field, this projection carries it.** When a consumer
+// starts rendering a new field, come back here.
+//
+// No ENVELOPE_VERSION bump for either: an envelope written before them decodes
+// with the field absent, which yields null — exactly what a genuinely
+// venue-less or date-less item yields — so old and new envelopes are both
+// handled by the same read path with no migration.
 export function encodeItem(item) {
   if (!item || typeof item !== 'object') throw new TypeError('playable item must be an object');
   const id = boundedString(item.id, MAX_ID_LEN);
@@ -110,11 +172,13 @@ export function encodeItem(item) {
     streamUrl,
     title: boundedString(item.title, MAX_TITLE_LEN) || 'Untitled',
     artist: boundedString(item.artist, MAX_ARTIST_LEN),
+    venue: boundedString(item.venue, MAX_VENUE_LEN) || null,
+    date: boundedString(item.date, MAX_DATE_LEN) || null,
     dateDisplay: boundedString(item.dateDisplay, MAX_DATE_LEN) || null,
     durationSec: typeof item.durationSec === 'number' && isFinite(item.durationSec) && item.durationSec >= 0
       ? item.durationSec : null,
     playLabel: boundedString(item.playLabel, MAX_LABEL_LEN),
-    pageUrl: boundedString(item.pageUrl, MAX_URL_LEN),
+    pageUrl: boundedPath(item.pageUrl, MAX_URL_LEN),
   };
 }
 
@@ -154,11 +218,13 @@ function decodeItem(raw) {
     streamUrl,
     title: boundedString(raw.title, MAX_TITLE_LEN) || 'Untitled',
     artist: boundedString(raw.artist, MAX_ARTIST_LEN),
+    venue: boundedString(raw.venue, MAX_VENUE_LEN) || null,
+    date: boundedString(raw.date, MAX_DATE_LEN) || null,
     dateDisplay: boundedString(raw.dateDisplay, MAX_DATE_LEN) || null,
     durationSec: typeof raw.durationSec === 'number' && isFinite(raw.durationSec) && raw.durationSec >= 0
       ? raw.durationSec : null,
     playLabel: boundedString(raw.playLabel, MAX_LABEL_LEN),
-    pageUrl: boundedString(raw.pageUrl, MAX_URL_LEN),
+    pageUrl: boundedPath(raw.pageUrl, MAX_URL_LEN),
   };
 }
 
@@ -610,6 +676,184 @@ export function rotateTabId(sessionStore) {
 //   tabChannel.postMessage({ type: TAB_PROBE_MESSAGE, tabId: myTabId, nonce: myNonce });
 export const TAB_PROBE_MESSAGE = 'mini-player-tab-probe';
 export const TAB_PROBE_REPLY_MESSAGE = 'mini-player-tab-probe-reply';
+
+// CALLER CONTRACT — the handshake gets its OWN BroadcastChannel, and it must
+// NOT be 'hannan-playback' (2026-08-16, Stage 3a-canary Task 0.2). This module
+// is DOM-free and constructs no channel itself, so nothing here can enforce it;
+// exported as a name for the same reason OWNERSHIP_LOCK_NAME is.
+//
+// Why it matters, reproduced directly rather than reasoned about: all three
+// playback engines treat ANY message that is not their own id string as a
+// claim on playback and pause immediately --
+//   player-controller.js:  channel.onmessage = e => { if (e.data !== selfId) ... }
+//   player.js:             playbackChannel.onmessage = e => { if (e.data !== playbackId) ... }
+//   continuous-player.js:  if (e.data !== playbackId && !audio.paused) audio.pause()
+// A probe is a structured object, so it is never equal to any of those id
+// strings. Posting handshake traffic on 'hannan-playback' therefore pauses
+// audio in every other tab on the site -- verified against a real
+// PlaybackController with a real BroadcastChannel: state went 'playing' ->
+// 'paused' on a single probe. The regression test lives in
+// test-player-controller.mjs, since proving this needs a real controller.
+// SUPERSEDED as the collision mechanism (2026-08-16) -- see the tab-identity
+// lock below, which replaced the probe/reply handshake as the sole arbiter.
+// The name and its hazard test are KEPT deliberately: the hazard is not
+// specific to the handshake. ANY BroadcastChannel this feature ever opens must
+// avoid 'hannan-playback', because a structured message there pauses audio in
+// every other tab site-wide. Keeping the constant and its regression test
+// preserves that guard for whatever opens a channel next; nothing is required
+// to use it, and the coordinator does not.
+export const OWNERSHIP_CHANNEL_NAME = 'hannan-miniplayer-ownership';
+
+// ── tab-identity lock ────────────────────────────────────────────────────
+// The lock a document holds for its whole lifetime to prove its tab id is
+// UNIQUELY its own. Acquiring it is positive evidence of uniqueness; the
+// quiet-period timer it replaced could only ever offer absence of evidence
+// (see the settlement policy below for the full reasoning).
+export const TAB_IDENTITY_LOCK_PREFIX = 'miniplayer-tab:';
+
+// Builds the lock name for a tab id, or null if the id is unusable.
+//
+// The id is UNTRUSTED: peekTabId() hands back whatever sessionStorage holds,
+// with no validation and no length bound, and sessionStorage is editable by
+// anyone with devtools open. Every other externally-sourced string in this
+// module is bounded (see the codec's MAX_* constants); this one feeds a Web
+// Lock name, so it gets the same treatment.
+//
+// The prefix also settles the spec's one naming rule for free: a lock name
+// beginning with U+002D HYPHEN-MINUS is reserved and makes request() reject
+// with NotSupportedError. Prefixed names always start with 'm', so no id --
+// however corrupted -- can produce a reserved name.
+export function tabIdentityLockName(tabId) {
+  if (typeof tabId !== 'string') return null;
+  if (!tabId || tabId.length > MAX_ID_LEN) return null;
+  return TAB_IDENTITY_LOCK_PREFIX + tabId;
+}
+
+// CALLER CONTRACT — fail closed if the ownership channel cannot be created.
+// Every engine on this site wraps BroadcastChannel construction in a try/catch
+// and carries on with a null handle (player-controller.js:23 and friends),
+// because private-browsing and hardened configurations really do throw -- so an
+// unavailable channel is a live case, not a theoretical one.
+//
+// For PLAYBACK that degrades harmlessly (the page just stops coordinating).
+// For OWNERSHIP it does not: without the channel there is no way to run the
+// tab-collision handshake, and without the handshake a cloned sessionStorage
+// identity (window.open()/tab duplication -- see the section above) is
+// undetectable, so two live documents can both pass restoreLease() as
+// 'restored'. Persistent ownership is therefore unsafe and the caller MUST
+// disable it for the document's entire lifetime, exactly as it does for
+// establishTabId() returning null or a handshake reporting failed:true.
+// Ordinary in-page playback continues normally; only cross-navigation
+// persistence is given up. Same posture, and the same reasoning, as
+// withOwnershipLock()'s fail-closed decision below.
+
+// CALLER CONTRACT — identity uniqueness via a TAB-IDENTITY LOCK (2026-08-16,
+// Stage 3a-canary Task 0.3, REPLACING the quiet-period timer this contract
+// originally specified).
+//
+// restoreLease() must run only once this document knows its tab id is uniquely
+// its own (its own comment, and residual gap 3). The first attempt at that was
+// a 250ms quiet period after broadcasting a probe: silence meant settled. A
+// review round correctly rejected it -- BroadcastChannel has no delivery
+// deadline, so a frozen, background-throttled, or merely busy tab holding the
+// cloned identity can reply AFTER the timer fires. Silence is absence of
+// evidence, and the failure it permits is precisely the double-owner window
+// the whole mechanism exists to prevent: the newcomer restores and starts
+// playing while the original is still audible, and the late reply only repairs
+// ownership afterwards.
+//
+// A Web Lock keyed by the tab id gives POSITIVE evidence instead. Acquisition
+// is proof that no other live document holds that identity; there is no timer
+// and no heuristic. Web Locks is already a hard dependency here
+// (withOwnershipLock() disables persistence without it), so this adds no new
+// platform requirement and reuses the same fail-closed path.
+//
+//   1. Boot: establishTabId() -> tabIdentityLockName() -> request that lock
+//      with {ifAvailable: true}.
+//   2. ACQUIRED -> this identity is provably unique. Proceed to restoreLease().
+//   3. NOT ACQUIRED (callback invoked with null) -> another live document is
+//      already this tab id, i.e. this document is a clone. rotateTabId() and
+//      retry, up to MAX_IDENTITY_ATTEMPTS. Exhausting the retries, a missing
+//      Web Locks API, or any thrown request() disables persistence for the
+//      document's lifetime -- ordinary in-page playback is untouched.
+//   4. HOLD IT FOR THE DOCUMENT'S LIFETIME. The lock is released when its
+//      callback settles, so the callback returns a promise that is never
+//      resolved. Signal acquisition through a SEPARATE channel (resolve a
+//      deferred from inside the callback); never await request()'s own promise
+//      during boot, or boot waits forever by construction.
+//   5. Re-acquire on every rotation. revokeLease()'s escalation path rotates
+//      TAB_ID_KEY too (see its contract above), so after ANY rotation the
+//      document must acquire the NEW id's lock before it is allowed to claim
+//      or restore again. Acquire the new lock BEFORE releasing the old one
+//      where possible, so the old identity is never briefly free for a clone
+//      to take.
+//   6. BFCache. A bfcached document is alive and still holds its lock, which
+//      is correct -- restoring it must not find its identity stolen. Do NOT
+//      blanket-release on pagehide: a released lock plus a
+//      pageshow.persisted restore leaves the document holding an identity it
+//      no longer owns. Either keep the lock across bfcache, or release on
+//      pagehide AND re-acquire in pageshow (checking event.persisted) before
+//      any persistence work happens. This needs real browser verification of
+//      ordinary navigation, Back/Forward restore, tab duplication, and tab
+//      close -- held locks vs. bfcache is an area where browser behavior is
+//      still moving.
+//
+// This lock is the SOLE identity-collision arbiter. The coordinator must NOT
+// also run the probe/reply handshake below: two independent rotation
+// mechanisms can disagree, moving TAB_ID_KEY to a new value while the document
+// still holds only the OLD id's lock. The handshake helpers stay in this file
+// untouched -- they are hardened, and deleting them is a separate decision --
+// but nothing in the coordinator drives them.
+//
+// Concrete values, so this is a decision and not a TBD: MAX_IDENTITY_ATTEMPTS
+// = 5, defined in the coordinator. There is no timer and therefore no quiet
+// period, no settle rounds, and none of the arithmetic the previous version of
+// this contract got wrong.
+
+// CALLER CONTRACT — watch STATE_KEY via the 'storage' event, and treat a
+// changed ownership tuple as a FULL loss (2026-08-16, Stage 3a-canary Task
+// 0.7). Install the listener BEFORE applying anything restoreLease() returned
+// -- that ordering is what closes residual gap 9, where a 'restored' result is
+// a candidate rather than a guarantee because it is a single unlocked read.
+//
+// Not every ownership change announces itself on the playback channel. Since
+// Task 0.1 the ownership claim is hooked to the media 'play' event, so a claim
+// that comes with audio does also post a playback claim -- but these do not:
+//   - Close: writes a fresh epoch and an empty session while STOPPING.
+//   - initialIntent:'autoplay' claiming at restore time without a 'play' event
+//     ever landing (a blocked autoplay -- see the stage's initialIntent rules).
+//   - Any document whose playback BroadcastChannel construction threw
+//     (player-controller.js:23 and friends all tolerate that) receives no claim
+//     messages at all, yet can still read localStorage perfectly well.
+//
+// A 'storage' event is a WAKE-UP SIGNAL ONLY. Never act on event.newValue.
+// Storage events are queued tasks delivered to other storage objects, so the
+// value they carry can already be stale by the time the handler runs, and this
+// sequence is entirely legal: another tab writes and queues event A; before A
+// is delivered, the user plays here and this document claims lease B; A then
+// arrives carrying its older newValue. Acting on it would drop B, pause valid
+// playback, and revoke an epoch that is still current -- the user's newer
+// action losing to stale notification data.
+//
+// So on delivery: re-read storage and re-run hasValidLease() against the
+// CAPTURED lease. If it still validates, do nothing at all. Only enter the
+// loss path when the fresh read says ownership genuinely moved.
+//
+// Then route through the SAME loss path as a collision rotation -- do not
+// merely drop the lease. Dropping it alone makes further WRITES impossible
+// (hasValidLease()'s peekTabId/tuple checks) while leaving this tab audibly
+// playing, out of sync with what is durably recorded: exactly the hazard the
+// rotated:true contract above exists to prevent, arriving by a different
+// route. In order:
+//   1. drop the in-memory lease synchronously;
+//   2. pause/relinquish active playback (the caller's playback layer);
+//   3. revokeLease() with the CAPTURED PRIOR lease, not the dropped null;
+//   4. if that reports escalated:true, refresh myTabId -- same as everywhere
+//      else a TAB_ID_KEY rotation can happen.
+//
+// The test harness therefore needs a fake event target alongside its fake
+// storage, including a delayed-delivery case where a local reclaim lands
+// before an older queued event is dispatched.
 
 // Purely random output (no orderable/timestamp component -- see
 // shouldRotateOnCollision()'s comment for why that matters), via

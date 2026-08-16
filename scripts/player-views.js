@@ -16,9 +16,16 @@ import { PLAY_ICON, PAUSE_ICON, LOADING_ICON, formatTime } from '/assets/player-
 const RANGE_MAX = 1000;
 const WAVE_HEIGHT = 38;
 
-// Read once per document. These are namespaced aliases the two token systems
-// (site.css / home.css) both define, so the player never depends on either
-// system's own variable names — see the CSS-token row in the plan's gap table.
+// Read once per document. These are namespaced aliases both token systems
+// (site.css / home.css) define, so the player never depends on either system's
+// own variable names — see the CSS-token row in the plan's gap table.
+//
+// That was aspirational until 2026-08-16: only site.css actually defined them.
+// It went unnoticed because nothing importing this file ever ran on the
+// homepage, so the hardcoded fallbacks below were always what home.css pages
+// would have used. home.css defines all three now (added for the mini-player,
+// which does render there), and the fallbacks are back to being a genuine
+// last resort rather than the homepage's real values.
 const rootStyle = getComputedStyle(document.documentElement);
 const token = (name, fallback) => (rootStyle.getPropertyValue(name) || fallback).trim();
 const ACCENT = token('--player-accent', '#2c4a3e');

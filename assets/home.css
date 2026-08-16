@@ -4,6 +4,24 @@
   --accent: #2c4a3e; --accent-hover: #3a5f50; --accent-dim: #e8efe8;
   --highlight: #b8862a;
   --on-accent: #ffffff;
+
+  /* Namespaced aliases the shared player component reads, so it never depends
+     on either token system's own variable names — the same three site.css
+     declares (site.css:24-26), pointed at this file's equivalents. Added
+     2026-08-16 for the mini-player, which unlike every earlier player surface
+     also renders on the homepage; player-views.js had long claimed both
+     systems defined these, but only site.css ever did.
+
+     Declared ONCE here rather than in each theme block on purpose: a custom
+     property whose value is a var() reference resolves against whatever the
+     referenced token computes to on the same element, and the three blocks
+     below all redefine --accent/--hairline/--panel on :root itself. So these
+     follow the theme automatically. site.css does exactly this and has been
+     live since Phase 1 — repeating them per block would be redundant, and two
+     copies that could drift apart. */
+  --player-accent: var(--accent);
+  --player-track: var(--hairline);
+  --player-surface: var(--panel);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {

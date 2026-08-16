@@ -49,6 +49,16 @@ function dispatchListeners(listeners, type, evt) {
   (listeners[type] || []).slice().forEach(({ fn }) => fn(evt));
 }
 
+// Direct property assignment (`style.background = ...`) is what the row/hero
+// views use; the mini-player publishes a custom property on <html> instead,
+// which only the setProperty/removeProperty pair can express. Both work here,
+// and a removed custom property reads back as '' exactly as in a browser.
+export class FakeStyle {
+  setProperty(name, value) { this[name] = String(value); }
+  removeProperty(name) { const had = this[name]; delete this[name]; return had === undefined ? '' : had; }
+  getPropertyValue(name) { return this[name] === undefined ? '' : this[name]; }
+}
+
 export class FakeElement {
   constructor(tag, classes = [], attrs = {}) {
     this.tagName = tag.toUpperCase();
@@ -57,7 +67,7 @@ export class FakeElement {
     this.dataset = {};
     this.attributes = {};
     this.children = [];
-    this.style = {};
+    this.style = new FakeStyle();
     this.id = '';
     this._rawHTML = '';             // set directly -- the innerHTML setter parses via
                                      // parseHTMLFragment(), which itself constructs
@@ -107,6 +117,7 @@ export class FakeElement {
   scrollIntoView() { this.scrolledIntoView = true; }
   setAttribute(k, v) { this.attributes[k] = v; }
   getAttribute(k) { return this.attributes[k]; }
+  removeAttribute(k) { delete this.attributes[k]; }
   addEventListener(type, fn, opts) { addListener(this._listeners, type, fn, opts); }
   dispatch(type, evt = {}) { dispatchListeners(this._listeners, type, evt); }
   querySelector(sel) { return this.querySelectorAll(sel)[0] || null; }
@@ -240,6 +251,23 @@ export class FakeWindow {
   dispatch(type, evt = {}) { dispatchListeners(this._listeners, type, evt); }
 }
 
+// The mini-player republishes --miniplayer-height from a ResizeObserver. Node
+// has none, and there is no layout here to drive one anyway, so tests set the
+// bar's _rect and call resize() to stand in for the browser firing it.
+export const resizeObservers = [];
+export class FakeResizeObserver {
+  constructor(cb) { this.cb = cb; this.targets = []; this.disconnected = false; resizeObservers.push(this); }
+  observe(el) { this.targets.push(el); }
+  disconnect() { this.disconnected = true; this.targets = []; }
+  // What the browser does after a layout change — and, like the platform, does
+  // NOT do once disconnect() has run. Delivery stays synchronous (the real one
+  // is async, but nothing here tests delivery timing, and making it async would
+  // force every height assertion to await for no property under test); the
+  // no-op-after-disconnect half is modelled because a fake that outlives its
+  // disconnect is exactly how a confidently-wrong test gets believed later.
+  resize() { if (!this.disconnected) this.cb([], this); }
+}
+
 export class FakeAudio extends EventTarget {
   constructor() {
     super();
@@ -247,9 +275,30 @@ export class FakeAudio extends EventTarget {
     this.paused = true; this.error = null; this.playbackRate = 1;
   }
   get src() { return this._src; }
-  set src(v) { this._src = v; this.error = null; this.loadCount = (this.loadCount || 0) + 1; }
-  load() { this.error = null; }
+  // Assigning src runs the media element load algorithm, and that algorithm
+  // SETS PAUSED TO TRUE (HTML standard, "media element load algorithm"). It is
+  // modelled here because play()'s transition rule below makes it observable:
+  // switching tracks assigns src first, so the play() that follows really is a
+  // paused -> playing transition and really does fire play/playing — which is
+  // why an ordinary track change works while calling play() on an untouched,
+  // already-playing element does not.
+  set src(v) {
+    this._src = v;
+    this.error = null;
+    this.paused = true;
+    this.loadCount = (this.loadCount || 0) + 1;
+  }
+  load() { this.error = null; this.paused = true; }
+  // Fires play/playing ONLY on a paused -> playing transition, which is what
+  // WHATWG's internal play steps do: calling play() on an element that is
+  // already playing resolves the promise and fires nothing. The earlier version
+  // queued both events unconditionally, and that lie hid a real bug — a view
+  // calling play() on an already-playing element left the controller in
+  // 'loading' forever, waiting for a `playing` event a browser never sends
+  // (third-round review finding 2). A fake that asserts transitions the
+  // platform does not make is worse than no fake.
   play() {
+    if (!this.paused) return Promise.resolve();
     this.paused = false;
     queueMicrotask(() => { this.dispatchEvent(new Event('play')); this.dispatchEvent(new Event('playing')); });
     return Promise.resolve();
@@ -341,6 +390,22 @@ export async function loadPlaylistViews() {
       .replace("from '/assets/player-controller.js';", `from '${controllerUrl}';`));
   }
   return import(playlistViewsUrl);
+}
+
+// miniplayer-views.js imports player-controller.js and nothing else — that is
+// a load-bearing property of the module (a WaveSurfer asset problem must not
+// reach the pages the mini-player ships on), so the rewrite below is
+// deliberately the ONLY specifier substitution: if the file ever grows a
+// second /assets/ import, it fails to resolve here rather than passing
+// silently. test-miniplayer-views.mjs asserts the same thing on the source
+// text directly.
+let miniplayerViewsUrl = null;
+export async function loadMiniplayerViews() {
+  if (!miniplayerViewsUrl) {
+    miniplayerViewsUrl = dataUrl(read('miniplayer-views.js')
+      .replace("from '/assets/player-controller.js';", `from '${controllerUrl}';`));
+  }
+  return import(miniplayerViewsUrl);
 }
 
 // Same "importing it IS running the bootstrap" shape as loadPlayerBoot().
