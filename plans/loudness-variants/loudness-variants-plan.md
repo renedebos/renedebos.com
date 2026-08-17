@@ -1,6 +1,6 @@
 # Loudness variants: Feature Proposal
 
-Status: **pilot passed on 2026-08-16. One variant, at −14 LUFS.**
+Status: **both listening tests PASSED (2026-08-16). One variant, at −14 LUFS, cleared for the archive-wide render.**
 Created 2026-08-16, when the client-side loudness phase of
 `plans/player-consolidation/` was moved out of the browser.
 
@@ -13,8 +13,9 @@ Created 2026-08-16, when the client-side loudness phase of
 >    modes are **Archive (−20)** and **Loud (−14)**.
 > 2. **The applause-limiter's precedence gets fixed** (§4a below) so the 42
 >    applause-limited tracks in the archive can reach the loud target too.
-> 3. **One more listening check before the campaign** —
->    `mad-cafe-java-1999-09-09`, the archive's hardest show (§3b).
+> 3. **Hard-show check DONE and passed** —
+>    `mad-cafe-java-1999-09-09` (§3b). 99.7% of the archive needs less
+>    processing than what was approved there, so no shave ceiling is needed.
 >
 > The loudness-matched A/B is the load-bearing detail in decision 1: it
 > strips out the "louder always sounds better" bias, so a pass there is a
@@ -33,9 +34,9 @@ the right default and it is not changing. But −20 LUFS is quiet in a car, on
 phone speakers, or against anything else in a browser tab, and a visitor has
 no way to ask for more than their volume slider can give.
 
-**Deliverable:** two additional pre-rendered variants of every curated
-track, selectable in the player, with the archival version remaining the
-default and the download.
+**Deliverable:** one additional pre-rendered variant of every curated
+track at −14 LUFS, selectable in the player, with the archival −20 version
+remaining the default and the download.
 
 ## 2. The decision that shapes everything: offline, not Web Audio
 
@@ -125,7 +126,45 @@ because gain is trimmed to honour the raised ceiling.
   times shorter than the measurement window and barely moves the number.
   Engagement duration from the render log is the more sensitive signal.
 
-### 3b. Step 1b — the hard-show check (in progress)
+### 3b. Step 1b — the hard-show check — DONE 2026-08-16, PASSED
+
+`mad-cafe-java-1999-09-09` rendered at −14 against a locally rendered −20
+control. **Rene listened loudness-matched and could not hear a difference.**
+Same verdict as the pilot, at roughly double the processing depth.
+
+What that verdict covers, measured:
+
+| | Pilot (07-19) | Cafe Java |
+|---|---|---|
+| Cap engagement, median | 3.4 % | **5.8 %** |
+| Cap engagement, max | 5.7 % | **10.4 %** |
+| Deepest cap | 8.75 dB | **13.2 dB** |
+| Mean LRA change | −0.55 LU | −0.68 LU |
+| Worst LRA change | −1.1 LU | −1.1 LU |
+
+**Coverage: 678 of 680 tracks (99.7 %) need less shaving than the 13.2 dB
+just approved.** The only two beyond it are `jerry-19-broadway-2001-01-08` #8
+"The Wind" (14.2 dB) and `jerry-19-broadway-2001-01-15` #26 "Dope World"
+(13.6 dB) — 1.0 and 0.4 dB past the tested depth. **No shave ceiling is
+needed**; the fallback contemplated below is not being taken.
+
+Note the LRA/engagement divergence: Cafe Java is worked about twice as hard
+as the pilot on engagement, and LRA barely moves (−0.68 vs −0.55). LRA is
+too blunt to be the acceptance test for this mode. The ear was the test, as
+planned.
+
+**The A/B must be served as MP3, not FLAC.** The first build served 24-bit
+48 kHz FLAC (41 MB/track) and Chrome on the Chromebook could not decode it in
+real time — audible stutter on every file, every variant, matched or not,
+which read convincingly as dropouts in the audio. The local server was not at
+fault (210 MB/s measured), nor was the audio (a dip detector found identical
+level dips in source, −20 and −14, to a tenth of a dB; `silencedetect` found
+no mid-song gaps at all). Rene's observation that the live site was clean is
+what identified it — the site streams MP3. Rebuild on the 320 kbps MP3s the
+render already produces, and re-measure loudness on those, since MP3
+encoding shifts true peak and the engine applies a small MP3-only gain trim.
+
+### 3c. The original hard-show rationale (superseded by the result above)
 
 The pilot show turned out to sit at the archive median (6.0 dB of shave
 needed for −14, against an archive median of 6.1), so the verdict covers
