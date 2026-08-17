@@ -339,23 +339,109 @@ the opt-in loud variant**. The −20 archive still renders it at −23.65 throug
 the applause path, untouched. `CLAUDE.md`'s ban on capping repeatedly-loud
 material stands for the archive; the exception is the loud variant alone.
 
-## 4. Step 2 — the render campaign (only after step 1 passes)
+## 4. Step 2 — the render campaign
 
-Open questions to settle **with** the pilot's evidence, not before:
+### 4-decisions — SETTLED 2026-08-17
 
-- **Targets.** −17 / −14 are candidates, not decisions.
-- **Which tracks get a variant.** Every track, or only those with enough
-  headroom to gain ≥ 1 dB? A "Louder" mode that is inaudibly different on
-  half the catalog is a worse experience than one that is honestly absent.
-- **Tracks that decline the cap.** Some will land short of target. Does the
-  variant ship at its honest reduced level, or not ship for that track?
-- **Format.** MP3 only (streaming), or FLAC too? Downloads should almost
-  certainly stay archival — the variants are a listening convenience, not a
-  second master.
+**Target: −14 LUFS, one variant.** (§3, §3b.)
+
+**Which tracks: all 680.** The "only tracks that gain ≥ 1 dB" filter is moot.
+The archive is uniformly −20.0 LUFS (median; min −24.5), so every track gains
+at least 3 dB and 643 gain ≥ 6 dB. There is no subset where "Louder" would be
+inaudible, so there is no honest reason to omit any track.
+
+**Source: the published −20 archive FLACs, not the original hand-edited
+source.** Rene's call, and the A/B below cleared the one objection to it.
+
+- For the 423 `linear` / `linear-reduced` tracks this is *provably identical*
+  to rendering from source: the published file is the source times one
+  constant, and FLAC is lossless.
+- For the other 257 it means two limiter passes instead of one. Total
+  attenuation is the same either way — a tcap track at −20/−1 dBTP needs
+  ~6 dB more shave to reach −14, which is the same total as the ~11 dB one
+  pass from source would have applied.
+- **The decisive argument is not cost, it is correctness.** Re-staging 30
+  shows from Drive is precisely the operation that has failed before: the
+  `prepare` run that destroyed hand-edited fades (2026-08-11) and the export
+  that drifted back to "I Need a Lover" after "Hear Me" had been published.
+  Deriving from the archive makes it structurally impossible for the variant
+  to disagree with the archive — same edits, same NR, same fades, guaranteed
+  — and makes the variant reproducible by anyone from public files.
+- Note this also means the shave figures here are *incremental*. From source
+  the required attenuation is larger and far more than 151 tracks would need
+  a max-gr override.
+
+**Format: MP3 only** (~5.6 GB added; FLAC too would be ~30.7 GB). The variant
+is a streaming convenience; downloads stay archival at −20. This also matches
+the finding that 24-bit FLAC is too heavy to stream reliably on Rene's
+Chromebook and reads as dropouts.
+
+### 4-ab — the double-limiting A/B, PASSED 2026-08-17
+
+The one real objection to rendering from the archive was that a second
+limiter pass, acting on peaks the first pass had already flattened into
+plateaus, might behave differently from one pass on raw spikes. Tested on the
+two heaviest cap cases of the hardest show, `mad-cafe-java-1999-09-09` tracks
+21 (Rocky Road, 13.2 dB) and 22 (The Kiss / Da Da Da, 10.7 dB — the one with
+the hand-drawn fade). Blind, loudness-matched, synced, as MP3.
+
+The from-source side was **byte-identical to the approved pilot render**
+(md5 `ece83ce0`, `fa07d2ad`), so the comparison was against the genuine
+article rather than a re-approximation.
+
+| | 21 src → arch | 22 src → arch |
+|---|---|---|
+| Cap engagement | 5.8 % → **7.1 %** | 7.2 % → **8.2 %** |
+| Longest event | 0.55 s → **0.65 s** | 0.30 s → **0.35 s** |
+| Near-peak density | 0.3 % → **2.8 %** | 0.2 % → **2.6 %** |
+| LRA (MP3) | 11.5 → 11.4 LU | 15.8 → 15.6 LU |
+
+**Rene heard no difference on either track, fade included.**
+
+**Read the near-peak number correctly.** Its ~9× jump is mostly a *yardstick*
+effect, not added density: the first pass cut the tallest peaks down, so more
+of the file now sits within 3 dB of the (now lower) maximum. The music did not
+get denser. Engagement and longest-event are the numbers that reflect genuinely
+more limiting, and LRA — which barely moved, on a 15.8 LU track — is the one
+that says the dynamics survived.
+
+**Operational consequence: the sparsity screen stops being meaningful on
+archive input.** It exists to catch persistently-loud material (the Truck
+case) and it cannot do that when its reference has been pre-flattened; every
+track will read artificially dense. Both A/B renders tripped it and needed
+`--transient-cap-force` that the from-source renders did not.
+
+### 4-gating — how the campaign is gated
+
+Rene's instruction (2026-08-17): render everything at −14 from the archive and
+do not let the gates block. Adopted, with one qualification.
+
+- **No blocking gates.** A gate overridden on all 680 tracks is not a gate; it
+  is a habit of ignoring warnings. The sparsity screen in particular is
+  measuring the wrong thing on this input (above).
+- **But keep measuring.** Engagement, longest event and cap depth are computed
+  during planning at no extra cost. Log them per track, render everything,
+  then review the distribution across all 680 and **listen to the five worst
+  outliers** before shipping. Rene has heard ~42 of 680; Cafe Java was the
+  hardest show by *shave depth*, which is not the same as hardest by limiting
+  behaviour. This is a spot-check on output, not a gate.
+- **The −1.00 dBTP assertion is NOT in scope for "ignore the gates."** It
+  deletes the output and aborts the run, and it is what stops clipped audio
+  reaching the site. It stays, unconditionally.
+
+### 4-open — still to settle
+
 - **Naming and provenance.** Variants need their own R2 key convention and
   their own entries in `data/processing/<slug>.json` / `track-spec.json`, so
-  `version-map` and `/archive-data/` stay honest about what is what. This
-  must not blur the archival provenance record.
+  `version-map` and `/archive-data/` stay honest. Provenance must record that
+  the loud variant is **derived from the −20 archive**, not from source.
+  This must not blur the archival provenance record.
+- **Throughput.** There is no local copy of the archive and only ~17 GB free
+  against a 25 GB archive, so the campaign must run **show by show**:
+  download that show's FLACs, render, upload MP3s, delete. Measured R2
+  download was ~26–60 KB/s single-stream and ~250 KB/s with
+  `--multi-thread-streams 8`; at the latter the full archive is ~28 hours of
+  transfer alone. Benchmark parallel settings before committing to a schedule.
 
 Mechanically the render reuses `batch_process.py` and the existing publish
 verification (R2-MD5-vs-sidecar, the −1 dBTP assertion). It is compute time
