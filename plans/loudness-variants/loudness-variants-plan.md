@@ -255,12 +255,27 @@ the gate is wrong, not the policy.
 ### 4a-result — BUILT and ACCEPTED 2026-08-16
 
 Implemented as **`--transient-cap-over-applause`** (opt-in, on both `plan` and
-`process`; also folded into `recipe_signature()` so a resume cannot reuse
-audio built the other way).
+`process`; also folded into `recipe_signature()` so a resume cannot reuse audio
+built the other way — emitted into the hash **only when the flag is on**, so
+signatures for the existing archive stay byte-identical to what v8 wrote).
 
-**Measured on the two Cafe Java applause tracks at −14:**
+**Deviation from the spec above, deliberate: the treatments are either/or, not
+stacked.** §4a said "tame the applause, *then* treat the music's transients."
+The build offers the track to `try_transient_cap()` **first**, and on success
+the cap plan *replaces* the applause plan outright; the applause branch only
+commits if the cap declines. Two reasons. The cap's own limiter is a true-peak
+limiter over the whole file, so a clap that out-peaks the music is caught by it
+anyway — a preceding applause stage would be shaving something already handled,
+twice. And stacking would mean the cap sizing its gain against an
+already-modified signal, breaking the render-state/true-peak assertion chain
+that proves what was rendered. Measured outcome is what §4a asked for either
+way (the four tracks reach target), so the goal is met; the mechanism differs
+from the sketch and this is the record of that.
 
-| | Engagement | Longest event | Reaches |
+**Measured on the two Cafe Java applause tracks at −14** (both **with
+`--transient-cap-force`** — see below):
+
+| | Engagement | Longest event | Reaches (forced) |
 |---|---|---|---|
 | Truck | **8.7 %** | **0.15 s** | −14.4 LUFS |
 | Anna May | 4.2 % | 0.55 s | −14.4 LUFS |
@@ -270,8 +285,38 @@ Both land inside the envelope Rene had already listened to and passed on the
 same tape — Truck's longest engagement (0.15 s) is shorter than the 0.2 s
 *auto* threshold, and its 8.7 % is below the 10.4 % he accepted elsewhere on
 the show. **Rene accepted Truck at −14 on that basis without a further
-listening test** (2026-08-16). The gate still declines both without an
-explicit `--transient-cap-force`, so nothing is waved through silently.
+listening test** (2026-08-16).
+
+**The flag grants eligibility, not passage — this matters for the campaign.**
+With `--transient-cap-over-applause` alone, all four applause tracks tested
+**decline**, and they decline twice over, at two different gates in sequence:
+
+1. **The 6 dB attenuation ceiling, first.** Reaching −14 needs 9.5 dB of
+   capping on Truck and 11.8 dB on Anna May, both past `TCAP_MAX_GR = 6.0`.
+   This is the gate that actually fires on a bare `--transient-cap-over-applause`
+   run — so a campaign that forgets the `--transient-cap-max-gr` overrides
+   never even reaches the engagement question.
+2. **Engagement, once an override lifts that ceiling.** With
+   `--transient-cap-max-gr 8:12,16:13` the tracks measure 9.3 % / 0.15 s and
+   4.7 % / 0.55 s against `TCAP_REJECT_ENGAGE_PCT = 2.0`.
+
+| Track | Engaged | Longest event |
+|---|---|---|
+| Truck (Cafe Java 08) | 8.7–9.3 % | 0.15 s |
+| Anna May (Cafe Java 16) | 4.2–4.7 % | 0.55 s |
+| Plastic Lemons (07-19 #09) | 3.9 % | 0.40 s |
+| Kilkelly Ireland (07-19 #23) | 3.2 % | 0.45 s |
+
+The engagement figure **moves with the max-gr allowance** — a larger allowance
+trims less off the gain, so more of the track crosses the threshold. That is
+why the ranges above are ranges: quote the number from the run's own log, not
+from this table.
+
+So the campaign must pass **`--transient-cap-max-gr` and `--transient-cap-force`
+per track** on top of the flag — the same treatment the other 20 Cafe Java
+tracks needed at −14. Nothing is waved through silently: reaching the loud
+target on an applause track takes three explicit opt-ins and rests on Rene's
+listening test, not on the gate.
 
 **Two corrections to §4a's original reasoning, both found by measuring:**
 
