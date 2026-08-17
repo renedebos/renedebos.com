@@ -252,7 +252,47 @@ decline it on its real 12.3 % density — but that must be **verified, not
 assumed**, before this ships. If the corrected gate does not decline Truck,
 the gate is wrong, not the policy.
 
-Ship it with a listening check on two or three of the 42 affected tracks.
+### 4a-result — BUILT and ACCEPTED 2026-08-16
+
+Implemented as **`--transient-cap-over-applause`** (opt-in, on both `plan` and
+`process`; also folded into `recipe_signature()` so a resume cannot reuse
+audio built the other way).
+
+**Measured on the two Cafe Java applause tracks at −14:**
+
+| | Engagement | Longest event | Reaches |
+|---|---|---|---|
+| Truck | **8.7 %** | **0.15 s** | −14.4 LUFS |
+| Anna May | 4.2 % | 0.55 s | −14.4 LUFS |
+| *(approved on this show, §3b)* | *5.8 % median, 10.4 % max* | *up to 0.70 s* | |
+
+Both land inside the envelope Rene had already listened to and passed on the
+same tape — Truck's longest engagement (0.15 s) is shorter than the 0.2 s
+*auto* threshold, and its 8.7 % is below the 10.4 % he accepted elsewhere on
+the show. **Rene accepted Truck at −14 on that basis without a further
+listening test** (2026-08-16). The gate still declines both without an
+explicit `--transient-cap-force`, so nothing is waved through silently.
+
+**Two corrections to §4a's original reasoning, both found by measuring:**
+
+1. **Applause does not top Truck's file.** Its music peak is −0.0 dB and it
+   has *no applause regions at all* — its drums hit full scale in the source,
+   which is why it cannot get loud. So the documented "1.6 % source vs 12.3 %
+   published" gap is not the applause distorting the screen; it is that the
+   12.3 % was measured on an already-limited copy where everything sits nearer
+   the peak. The `density_ref` correction is real for tracks like Anna May
+   (music peak −11 dB, applause 11 dB above) and a no-op for Truck.
+2. **Left automatic, the change rewrites the archive.** At the ordinary −20
+   target it moved Truck from applause-limiter −23.65 to sparse-transient-cap
+   −20.0, and Anna May from −22.26 to −20.3. That is published audio changing
+   on the protected track with no listening evidence. Hence the opt-in flag —
+   verified both ways: without it the −20 render is unchanged, and
+   non-applause tracks are byte-identical with the flag on or off.
+
+**Scope of the Truck decision, stated precisely:** Truck is capped **only in
+the opt-in loud variant**. The −20 archive still renders it at −23.65 through
+the applause path, untouched. `CLAUDE.md`'s ban on capping repeatedly-loud
+material stands for the archive; the exception is the loud variant alone.
 
 ## 4. Step 2 — the render campaign (only after step 1 passes)
 
