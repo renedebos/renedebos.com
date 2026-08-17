@@ -33,16 +33,61 @@ its space on every re-draft.
 locally (1999-05-10 ×1, 1999-06-21 ×2, 1999-07-19 ×4). Archive-wide unknown —
 that is what step 1 answers.
 
+### 1b. The second, distinct defect: orphaned duplicates in `Processed/`
+
+Found 2026-08-16 while cleaning up the 1999-05-10 case, and **not the same
+problem as a filename mismatch** — worth stating separately because the first
+diagnosis of it was wrong.
+
+`Processed/` on that show contained **both** names, four files for one track:
+
+| File | Written | MD5 (FLAC) |
+|---|---|---|
+| `17 Hear Me.flac` / `.mp3` | 21:42 | `74e2851692d9ba4c…` |
+| `17 I Need a Lover.flac` / `.mp3` | **22:05** | `74e2851692d9ba4c…` |
+
+Bit-for-bit identical, and both match what R2 serves. The show published
+correctly as "Hear Me" at 21:42; a re-run 23 minutes later picked up a fresh
+export whose filename had drifted back to the old title and wrote a **second
+copy** under it. The Drive backup only overwrites and adds — it never deletes
+— so both survived.
+
+**The trap: the stale file is the *newer* one.** Sorting `Processed/` by date
+to decide what to keep gives exactly the wrong answer. The only reliable
+discriminator is the MD5 against the R2 key named in `recordings.json`.
+
+So the audit needs to detect **two different things**:
+
+1. a `Tracks/` filename that disagrees with the published title (the input
+   bug — a wrong name here regenerates a wrong title), and
+2. `Processed/` files whose names do not correspond to any published R2 key
+   for that show (pure duplicates — delete, never rename).
+
+`drive_backup_matches()` cannot catch case 2: it runs `rclone check`, which
+verifies that everything expected is *present*, not that nothing extra is.
+`CLAUDE.md` already tells Rene to look for these by eye after a reprocess;
+this is that check, automated.
+
 ## 2. Recommended order
 
 ### Step 1 — audit mode (read-only, do this first)
 
-Scan every show: compare Drive `Tracks/` filenames against the published
-titles in `recordings.json`, report the drift. Read-only, cheap, and it sizes
-the problem before any code is written. It may show this is a 7-track
-annoyance not worth automating, or a 60-track one that clearly is.
+Scan every show and report **both** defects from §1 and §1b:
 
-Should also report Drive `Processed/` orphans (see step 3).
+- **`Tracks/` drift** — filename versus the published title in
+  `recordings.json`, run through the same sanitization the filenames use, so
+  `The Kiss / Da Da Da` correctly matches `The Kiss - Da Da Da`.
+- **`Processed/` orphans** — any FLAC/MP3 whose name matches no published R2
+  key for that show. Report the MD5 alongside: a duplicate that matches the
+  R2 hash under a different name is safe to delete, while an orphan whose
+  hash matches *nothing* is a genuine unknown and needs a human look.
+
+Read-only, cheap, and it sizes both problems before any code is written. It
+may show this is a 7-track annoyance not worth automating, or a 60-track one
+that clearly is. Deleting the orphans it finds is a one-line `rclone delete`
+per file and needs no new tooling — `rclone delete` against `r2:` has been
+agent-executable since 2026-08-11, but these live on `gdrive:`, which still
+needs Rene's confirmation each time.
 
 ### Step 2 — stop `draft_tracks.py` clobbering corrected titles
 
@@ -95,7 +140,16 @@ that is the orphan cleanup the runbook currently asks Rene to do by eye.
   permission rule. Worth deciding deliberately: given the 2026-08-11 incident
   where a rerun of `prepare` hard-deleted hand-edited work, keeping Drive
   mutations manual is a defensible choice.
-- **The known backlog**, pending step 1: 19 Broadway 1999-05-10 track 17
-  (`I Need a Lover` → `Hear Me`, in both `Tracks/` and `Processed/`), plus
-  2 on 1999-06-21 and 4 on 1999-07-19, identified by byte-size match during
-  the cleanup verification.
+- **The known backlog**, pending step 1: 2 mismatches on 1999-06-21 and 4 on
+  1999-07-19, identified by byte-size match during the 2026-08-16 cleanup
+  verification. Both sets are `Tracks/` drift (§1), not duplicates.
+
+- **19 Broadway 1999-05-10 track 17 — RESOLVED 2026-08-16.** Rene renamed
+  `Tracks/17 I Need a Lover.flac` → `17 Hear Me.flac` by hand, and deleted the
+  duplicate `17 I Need a Lover.flac`/`.mp3` from `Processed/` after MD5
+  confirmed they were bit-identical to the `Hear Me` pair and to R2. Note the
+  earlier diagnosis in this session was **wrong**: `Processed/` was described
+  as "carrying the stale name", implying the correct name was absent. It was
+  not — both names were present, so the defect was a duplicate (§1b), not a
+  mismatch. That is what prompted §1b, and it is why the audit must
+  distinguish the two: one is fixed by renaming, the other only by deleting.
