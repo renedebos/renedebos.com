@@ -10,12 +10,6 @@
 
 import assert from 'node:assert/strict';
 import { PlaybackController } from './player-controller.js';
-// Task 0.2's channel separation is a cross-module invariant: the name lives in
-// miniplayer-state.js (which is DOM-free and constructs no channel), but only a
-// real PlaybackController can demonstrate why it has to be separate.
-import {
-  OWNERSHIP_CHANNEL_NAME, TAB_PROBE_MESSAGE, TAB_PROBE_REPLY_MESSAGE,
-} from './miniplayer-state.js';
 
 // Node >=21 defines a getter-only `navigator` global (the Navigator API) —
 // plain `globalThis.navigator = {...}` throws against it ("which has only a
@@ -1202,55 +1196,12 @@ test('subscribing after destroy retains nothing, and still returns an unsubscrib
   off(); offOwn(); // must not throw
 });
 
-// ── Stage 3a-canary Task 0.2: the ownership handshake needs its OWN channel.
-// These use a REAL BroadcastChannel (Node ships one) against a real
-// controller — the hazard is not something a fake can demonstrate. ─────────
-
-test('HAZARD: a probe object on hannan-playback really does pause live playback — this is why the channel must be separate', async () => {
-  const audio = new FakeAudio();
-  const c = new PlaybackController({ audio, mediaSession: false });
-  const ch = new BroadcastChannel('hannan-playback');
-  try {
-    c.setQueue([item('a')], { startIndex: 0, autoplay: true });
-    await tick();
-    assert.equal(c.state, 'playing', 'premise: playback is genuinely running');
-
-    // Exactly the message shape the handshake sends. Every playback engine
-    // compares with `e.data !== <own id string>`, and an object is never equal
-    // to a string, so this reads as an external claim.
-    ch.postMessage({ type: TAB_PROBE_MESSAGE, tabId: 't1', nonce: 'n1' });
-    await tick();
-
-    assert.equal(c.state, 'paused',
-      'if this ever stops being true the separation below is no longer load-bearing — reassess rather than deleting it');
-  } finally { ch.close(); c.destroy(); }
-});
-
-test('probe/reply traffic on the ownership channel pauses nothing', async () => {
-  const audio = new FakeAudio();
-  const c = new PlaybackController({ audio, mediaSession: false });
-  const ch = new BroadcastChannel(OWNERSHIP_CHANNEL_NAME);
-  let claims = 0;
-  try {
-    c.onAnyExternalClaim(() => { claims++; });
-    c.setQueue([item('a')], { startIndex: 0, autoplay: true });
-    await tick();
-    assert.equal(c.state, 'playing');
-
-    ch.postMessage({ type: TAB_PROBE_MESSAGE, tabId: 't1', nonce: 'n1' });
-    ch.postMessage({ type: TAB_PROBE_REPLY_MESSAGE, tabId: 't1', nonce: 'n2' });
-    await tick();
-
-    assert.equal(c.state, 'playing', 'a whole handshake must be inaudible to playback');
-    assert.equal(claims, 0, 'and must not register as an ownership event either');
-  } finally { ch.close(); c.destroy(); }
-});
-
-test('the ownership channel name is not the playback channel name', async () => {
-  assert.notEqual(OWNERSHIP_CHANNEL_NAME, 'hannan-playback',
-    'the entire point of Task 0.2 — a shared name reintroduces the hazard above');
-  assert.ok(OWNERSHIP_CHANNEL_NAME, 'and it must actually be a usable name');
-});
+// Stage 3a-canary Task 0.2's three ownership-channel tests were removed when
+// Phase 3 was parked -- they imported miniplayer-state.js's channel-name and
+// probe-message constants, which now live only on the `miniplayer-parked`
+// branch. They asserted that the mini-player's ownership handshake used a
+// channel separate from 'hannan-playback'; with no handshake there is no
+// second channel to keep separate. Restore them alongside the module.
 
 // ── runner ─────────────────────────────────────────────────────────────
 let failed = 0;

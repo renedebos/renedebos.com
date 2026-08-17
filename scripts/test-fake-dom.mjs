@@ -251,9 +251,11 @@ export class FakeWindow {
   dispatch(type, evt = {}) { dispatchListeners(this._listeners, type, evt); }
 }
 
-// The mini-player republishes --miniplayer-height from a ResizeObserver. Node
-// has none, and there is no layout here to drive one anyway, so tests set the
-// bar's _rect and call resize() to stand in for the browser firing it.
+// Node has no ResizeObserver, and there is no layout here to drive one anyway,
+// so a test sets an element's _rect and calls resize() to stand in for the
+// browser firing it. Kept after Phase 3 was parked (its only caller was the
+// mini-player's height publishing) because it is generic harness, not
+// mini-player-specific -- any future view that observes its own box needs it.
 export const resizeObservers = [];
 export class FakeResizeObserver {
   constructor(cb) { this.cb = cb; this.targets = []; this.disconnected = false; resizeObservers.push(this); }
@@ -392,21 +394,9 @@ export async function loadPlaylistViews() {
   return import(playlistViewsUrl);
 }
 
-// miniplayer-views.js imports player-controller.js and nothing else — that is
-// a load-bearing property of the module (a WaveSurfer asset problem must not
-// reach the pages the mini-player ships on), so the rewrite below is
-// deliberately the ONLY specifier substitution: if the file ever grows a
-// second /assets/ import, it fails to resolve here rather than passing
-// silently. test-miniplayer-views.mjs asserts the same thing on the source
-// text directly.
-let miniplayerViewsUrl = null;
-export async function loadMiniplayerViews() {
-  if (!miniplayerViewsUrl) {
-    miniplayerViewsUrl = dataUrl(read('miniplayer-views.js')
-      .replace("from '/assets/player-controller.js';", `from '${controllerUrl}';`));
-  }
-  return import(miniplayerViewsUrl);
-}
+// loadMiniplayerViews() was removed when Phase 3 was parked -- it read
+// miniplayer-views.js, which now exists only on the `miniplayer-parked`
+// branch. Restore it alongside the module.
 
 // Same "importing it IS running the bootstrap" shape as loadPlayerBoot().
 // Also shrinks the catalog-fetch-local timeout (implementation review

@@ -1,5 +1,24 @@
 # Player consolidation: Feature Proposal
 
+> **Status as of 2026-08-16 — mostly done, and deliberately stopping here.**
+>
+> Four of the five playback surfaces run the shared `PlaybackController`:
+> show pages (Phase 1), `/playlist/` (Phase 2), song pages and the `/songs/`
+> matrix (Phase 3 Stage 3a-foundation). The `/player/` popup is the last
+> independent engine.
+>
+> - **Phase 3 (sticky mini-player) is ⛔ PARKED** — see its section in §6 for
+>   the full reasoning. Code is on the `miniplayer-parked` branch.
+> - **Phase 4 (loudness) has MOVED OUT** of this initiative and out of the
+>   browser: `plans/loudness-variants/loudness-variants-plan.md`.
+> - **The `/player/` popup migration is the only work left here**, and it is
+>   optional cleanup — it blocks nothing. Its payoff is removing the last
+>   duplicated shuffle implementation and the last independent engine.
+>
+> Everything below this banner is the original plan, kept as the design and
+> review record. Read it as history plus one optional remaining task, not as
+> a queue.
+
 Status: **in progress.** Rollout is incremental, one surface at a time —
 see §6. Phase 1 (show pages) Steps 1–4 are built: `PlaybackController`, the
 view layer, the `data-item` markup every show page carries, and
@@ -1860,13 +1879,68 @@ keyboard-shortcut UI and drag-to-reorder UI (mechanisms exist or get
 verified, no new UI ships — this stays a migration, not a feature phase);
 loudness (unchanged).
 
-### Phase 3 — sticky in-page mini-player (Stage 3a-foundation shipped and
-verified in production 2026-08-15; design finalized after this section's
-original "`/player/` popup" approach was rejected)
+### Phase 3 — sticky in-page mini-player — ⛔ PARKED 2026-08-16
 
-**Status.** Stage 3a-foundation is complete, merged (PR #15, plus PR #16
-for a CI-only test failure), and verified live. Stage 3a-canary is next;
-see the stage shape below. This section carries the *design* and the
+**Do not resume this phase without a fresh decision from Rene.** Everything
+below is preserved as the design record of a feature that was deliberately
+stopped, not as a queue of work.
+
+**Where the code went.** Branch **`miniplayer-parked`**, commit `6bdecc6`:
+`miniplayer-state.js`, `miniplayer-views.js`, their two test suites, and
+Task 3's mini-player CSS for both stylesheets (finished and fully verified,
+never committed to `player-consolidation`). Commit `c4dd43c` on
+`player-consolidation` removed the modules from the shipping branch. No page
+ever referenced them, so nothing visitors see changed; it also stopped
+deploying 112 KB of unreachable JavaScript.
+
+**Why it was parked.** The phase existed to make a client-side loudness
+feature buildable once instead of once per engine. Two findings dissolved
+that rationale:
+
+1. **The engine count was already down to two, not four.** Show pages
+   (Phase 1), `/playlist/` (Phase 2), song pages and the `/songs/` matrix
+   (3a-foundation) all run the shared `PlaybackController`. Only the
+   `/player/` popup remains independent. "Build loudness four times" was
+   never the actual alternative.
+2. **Loudness is moving out of the browser entirely.** It will ship as
+   pre-rendered louder variants of the audio files, produced by the existing
+   transient-cap (v8) engine — which is already blind-A/B-validated against
+   Rene's ears, already computes per-track headroom, and already enforces a
+   hard −1 dBTP abort. That reduces the player-side change to selecting a
+   different URL and re-seeking, at which point engine count stops mattering.
+   See `plans/loudness-variants/loudness-variants-plan.md`.
+
+With its rationale gone, the mini-player was the most complex thing in the
+repo serving a goal nobody held. The 1,456-line `miniplayer-state.js` needed
+1,018 lines of comments to stay safe to touch, and its ownership subsystem
+took twelve review rounds to close — a Spotify-class capability on an
+archive of 680 tracks.
+
+**What survives, and stays.** Song pages on the shared controller; three
+real bug fixes on live pages from Task 2's reviews; Task 1's `--player-*`
+token aliases; and `onAnyExternalClaim()` plus the ownership-event seam in
+`player-controller.js` (no subscribers, deliberately kept — inert, tested,
+and not worth editing live code to remove).
+
+**The two open review findings need no action.** The reduced-motion spinner
+defect existed only because Task 3 introduced the first `@keyframes` into
+`home.css`, and Task 3 is not on this branch. The 3px seek tap target was
+half mini-player and half a pre-existing site-wide condition; the live half
+is now tracked in `HANDOFF.md` on its own, so it does not get discarded
+along with this phase.
+
+**If this is ever un-parked**, start from `miniplayer-parked` rather than
+rebuilding: it carries the full verification record (312/312 assertions in
+real Chromium across both stylesheets × four theme states × two widths,
+327/327 unit tests, `browser_check.mjs` 179/179).
+
+---
+
+**Historical status, as of parking.** Stage 3a-foundation was complete,
+merged (PR #15, plus PR #16 for a CI-only test failure), and verified live.
+Stage 3a-canary was in progress: Tasks 1–2 merged (PR #17), Task 3 finished
+but uncommitted, Tasks 4–6 never started. Task 6 would have been the first
+visible mini-player. This section carries the *design* and the
 *residual gaps*; the round-by-round review narrative that used to live
 here has been moved to `player-consolidation-codex.md`, which is where
 every finding, its verification evidence, and its disposition already
@@ -2799,10 +2873,17 @@ Implementation record (what actually shipped, test counts, verification):
 `player-consolidation-codex.md`'s "Phase 3 Stage 3a-foundation fenced-lease
 redesign implementation" section.
 
-### Phase 4 — loudness control (not started, not scoped)
+### Phase 4 — loudness control — MOVED OUT 2026-08-16
 
-See §2's Loudness section for everything already known, including the
-mp3TruePeak headroom data. Genuinely unscoped until deliberately picked up.
+No longer part of this initiative, and no longer a browser feature. Loudness
+ships as pre-rendered variant files produced by the offline transient-cap
+engine; the player's whole share of the work is selecting a different URL.
+Its plan lives at `plans/loudness-variants/loudness-variants-plan.md`.
+
+§2's Loudness section is still worth reading for the mp3TruePeak headroom
+data — it is what ruled out a flat client-side gain boost and pushed the
+feature offline in the first place. Treat the rest of that section (Web
+Audio graph, AudioContext lifecycle, per-mode gain) as a rejected design.
 
 ### Cross-phase, not yet assigned to a specific phase
 

@@ -8,8 +8,10 @@
 // 3a-foundation, via song-boot.js) all run this now. /player/'s popup is
 // still the one holdout engine — the queue/shuffle/repeat/reorder surface
 // was built general enough to be its foundation too, but that migration
-// hasn't happened yet (tracked as a later Phase 3 stage in
-// plans/dynamic-hugging-rossum.md, alongside the sticky mini-player itself).
+// hasn't happened yet. It is now the only consolidation work left, and it is
+// optional cleanup rather than a prerequisite for anything: see
+// plans/player-consolidation/player-consolidation-plan.md's Phase 3 section,
+// where the sticky mini-player it used to be bundled with was parked.
 
 // ── playback coordination (same page + other tabs/windows) ─────────────────
 // A claim announces "I'm playing now": broadcast to every other tab/window
@@ -132,7 +134,8 @@ export class PlaybackController {
   // onAnyExternalClaim: a SECOND, unconditional callback invoked on every
   // external claim regardless of this controller's current state — added for
   // Phase 3 Stage 3a-foundation's durable cross-tab ownership bookkeeping
-  // (see miniplayer-state.js), which needs to learn about a claim even while
+  // (the parked mini-player; see the `miniplayer-parked` branch), which
+  // needed to learn about a claim even while
   // this controller was already paused (onExternalClaim's gating below is
   // correct and unchanged for ITS purpose — e.g. not showing a false "paused
   // elsewhere" message on an already-paused tab — but that same gating means
@@ -377,8 +380,9 @@ export class PlaybackController {
     return fresh.length;
   }
 
-  // Hydrates the controller from a persisted session envelope (Phase 3
-  // Stage 3a-foundation's miniplayer-state.js codec) — deliberately separate
+  // Hydrates the controller from a persisted session envelope (Phase 3 Stage
+  // 3a-foundation's codec, parked with the mini-player on the
+  // `miniplayer-parked` branch; no live caller today) — deliberately separate
   // from setQueue(), which every live call site also uses today, so
   // overloading its contract risks a footgun elsewhere (setQueue()'s
   // autoplay:false branch is a "cue, don't play" operation for a queue the
@@ -421,8 +425,8 @@ export class PlaybackController {
   // Shuffle-restoration is an honest, documented limitation, not hidden: a
   // restored queue is already in whatever order it was saved in (already
   // shuffled, if shuffleOn was true when saved), but the ORIGINAL pre-shuffle
-  // order was never persisted (miniplayer-state.js's codec doesn't carry it —
-  // see its own comment), so _unshuffledQueue starts null here. Toggling
+  // order was never persisted (the parked codec doesn't carry it), so
+  // _unshuffledQueue starts null here. Toggling
   // shuffle off after a restore therefore can't reorder back to the literal
   // pre-shuffle order — toggleShuffle() already degrades gracefully for
   // exactly this case (flips the flag, leaves the queue order as-is, rather
@@ -742,8 +746,8 @@ export class PlaybackController {
   // constructor option's name: it fires on EVERY external claim regardless of
   // this controller's state, unlike the conditional onExternalClaim callback
   // (which only fires when a claim actually interrupted playback here, and so
-  // can never reach a merely-restored, never-played tab). miniplayer-state.js's
-  // caller contracts are written in terms of this name.
+  // can never reach a merely-restored, never-played tab). The parked
+  // mini-player's caller contracts are written in terms of this name.
   onAnyExternalClaim(fn) {
     if (typeof fn !== 'function' || this._destroyed) return () => {};
     this._anyExternalClaimSubs.add(fn);

@@ -60,12 +60,10 @@ def main():
     # 3a-foundation) -- reuses player-views.js's CompactPlayerView, so no
     # separate song-views.js exists.
     write("assets/song-boot.js", open(os.path.join(here, "song-boot.js")).read())
-    write("assets/miniplayer-state.js", open(os.path.join(here, "miniplayer-state.js")).read())
-    # Sticky mini-player view layer (Phase 3 Stage 3a-canary). Like
-    # playlist-views.js it is separate from player-views.js so it never pulls
-    # WaveSurfer onto the many pages the bar ships on; no page references it
-    # yet -- the boot module that does arrives with the container markup.
-    write("assets/miniplayer-views.js", open(os.path.join(here, "miniplayer-views.js")).read())
+    # Phase 3's sticky mini-player (miniplayer-state.js / miniplayer-views.js)
+    # was parked before it ever shipped -- see the plan's Phase 3 section. The
+    # modules are preserved on the `miniplayer-parked` branch, not here, since
+    # no page ever referenced them and building them only deployed dead bytes.
     write("assets/songs.js", open(os.path.join(here, "songs.js")).read())
     write("assets/track-select.js", open(os.path.join(here, "track-select.js")).read())
     write("assets/archive-data.js", open(os.path.join(here, "archive-data.js")).read())
