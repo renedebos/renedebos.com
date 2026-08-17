@@ -1,8 +1,25 @@
 # Loudness variants: Feature Proposal
 
-Status: **not started — the first step is a listening test, not code.**
+Status: **pilot passed on 2026-08-16. One variant, at −14 LUFS.**
 Created 2026-08-16, when the client-side loudness phase of
 `plans/player-consolidation/` was moved out of the browser.
+
+> **Decisions taken 2026-08-16, after the first pilot.**
+>
+> 1. **One variant, not two.** Rene A/B'd −20 / −17 / −14 on
+>    `jerry-19-broadway-1999-07-19`, loudness-matched, and heard no problem
+>    with −14. Since −14 passes, −17 has no reason to exist: it would halve
+>    nothing but add storage, render time, and a third choice in the UI. The
+>    modes are **Archive (−20)** and **Loud (−14)**.
+> 2. **The applause-limiter's precedence gets fixed** (§4a below) so the 42
+>    applause-limited tracks in the archive can reach the loud target too.
+> 3. **One more listening check before the campaign** —
+>    `mad-cafe-java-1999-09-09`, the archive's hardest show (§3b).
+>
+> The loudness-matched A/B is the load-bearing detail in decision 1: it
+> strips out the "louder always sounds better" bias, so a pass there is a
+> statement about processing damage, not about preferring loud. Any future
+> re-test must be matched the same way.
 
 ## 1. Objective
 
@@ -64,9 +81,67 @@ mid-track rather than an instantaneous gain change.
 wanted:** pre-rendered files mean **discrete named modes**, not a continuous
 slider. The mockup review had already landed on `Archive / Louder / Loudest`
 for exactly the honesty reason — naming modes rather than promising output
-loudness values the engine cannot guarantee.
+loudness values the engine cannot guarantee. With one variant it collapses
+further, to **Archive / Loud**.
 
-## 3. Step 1 — the listening test (do this before anything else)
+## 3. Step 1 — the listening test — DONE 2026-08-16, PASSED
+
+Rendered `jerry-19-broadway-1999-07-19` (26-song solo Jerry set) from its
+canonical hand-edited sources at −20, −17 and −14, and A/B'd all three at
+matched playback position via a local three-way page. Files live in
+`~/work/loudness-pilot/jerry-19-broadway-1999-07-19/{m20,m17,m14}/`; the
+page and its measurement cache are beside them.
+
+**Verdict: −14 sounds fine, loudness-matched. Ship one variant at −14.**
+
+Measured cost, against the locally-rendered −20 control (22 forced tracks;
+the four applause-limited ones are unforceable and act as controls):
+
+| | −17 | −14 |
+|---|---|---|
+| Mean LRA change | −0.15 LU | −0.55 LU |
+| Worst single track | −0.5 LU | −1.1 LU (Nicolai) |
+| Tracks losing > 1 LU | 0 | 1 |
+| Tracks within ±0.3 LU | 18 of 22 | 5 of 22 |
+| Longest continuous cap engagement | 0.80 s | 1.00 s |
+| Cap engagement | 1.1–2.1 % | 2.2–5.7 % |
+
+Getting a *uniform* −14 required overriding the engine on every track:
+`--transient-cap-force` on all 22 forceable tracks, plus
+`--transient-cap-max-gr` on ten of them (6.45–8.75 dB against the 6 dB
+policy ceiling). Provenance records each override honestly via
+`policy_max_gr_db`. Those ten land at −14.4 to −15.3 rather than −14.0,
+because gain is trimmed to honour the raised ceiling.
+
+**Two measurement lessons worth keeping:**
+- **Always compare against a locally-rendered control, never against
+  `track-spec.json`'s stored `lra`.** A first pass used the stored value and
+  manufactured two phantom findings — a 1.6 LU loss on Truck and an LRA
+  *increase* on Why Don't We Get Drunk — both of which vanished against a
+  proper control. The stored number comes from a different render at a
+  different time; it is not a baseline.
+- **LRA under-reports this kind of damage.** It is a percentile spread over
+  3-second windows, so a 1-second continuous gain reduction is only three
+  times shorter than the measurement window and barely moves the number.
+  Engagement duration from the render log is the more sensitive signal.
+
+### 3b. Step 1b — the hard-show check (in progress)
+
+The pilot show turned out to sit at the archive median (6.0 dB of shave
+needed for −14, against an archive median of 6.1), so the verdict covers
+the typical case properly. It does not cover the tail:
+
+- **77 of 680 tracks (11 %) need deeper shaving than the pilot's deepest
+  track** (8.75 dB); the archive maximum is 14.2 dB.
+- `mad-cafe-java-1999-09-09` needs a *median* of 8.3 dB and a maximum of
+  13.1 — its typical track is harder than the pilot's worst.
+  `jerry-19-broadway-2001-01-15` is comparable (median 8.2, max 13.6).
+
+So Cafe Java is being rendered at −14 and listened to before any campaign.
+If it fails, the fallback is a shave ceiling (e.g. 10 dB) with tracks past
+it landing honestly short, rather than abandoning the variant.
+
+## 3c. The original step-1 instructions (kept for re-runs)
 
 **Nothing else in this plan should be built until this is done.** No amount
 of document review can answer whether −17 LUFS sounds right on a
@@ -94,6 +169,51 @@ safety barrier, but the ear is the acceptance test.
 - Too many tracks land short of target, or the cap is audible → the honest
   answer may be that this archive does not want a louder variant, and the
   feature stops here having cost one afternoon.
+
+## 4a. Engine change — let applause tracks reach the loud target
+
+**Approved in principle by Rene, 2026-08-16. Not yet built.**
+
+**The problem.** 42 of 680 tracks (6 %) are `applause-limiter` tracks, and
+they cannot reach the loud target at all. On the pilot show four of them
+landed at −17.5 to −21.9 while everything around them sat at −14 — a 5–8 dB
+dip mid-set. With two variants a −17 mode partly hid this; with one variant
+it is the most audible defect in the feature, and it directly contradicts
+the reason for wanting a uniform target.
+
+**Why they stop short — worked example, Plastic Lemons.** Source is −23.6
+LUFS with applause at 2:40–2:45 louder than the music. The engine pulls that
+window down 3.6 dB, which makes a musical peak at −5.6 dB the new ceiling,
+then applies 4.4 dB of linear gain to put that peak at `APPLAUSE_LIMIT_DB`
+(−1.2). −23.6 + 4.4 = −19.2, exactly where it landed. **The applause is
+already being tamed; the music's own peaks are what block the rest.**
+
+**The change.** In `plan_track()`, the applause branch commits and returns —
+`try_transient_cap()` is never offered the track. Let both run: tame the
+applause, then treat the music's transients exactly as every other track's
+are treated (which is what Rene just approved by ear).
+
+**The trap, which the code already documents.** The sparsity gate reads the
+music's near-peak density against the file's overall peak. When applause
+tops the file that yardstick is set by the clapping, so the music's density
+reads far too low — the render log's own caveat cites Truck at **1.6 %
+source vs 12.3 % published**, an ~8× understatement. Plastic Lemons
+currently reports 0.1 %, which would sail through the gate on a number known
+to be wrong. So the change must **re-measure density on the applause-tamed
+signal** and gate on that, not merely reorder the branches.
+
+**The specific hazard this creates, and it must be handled explicitly:**
+`Truck` on `mad-cafe-java-1999-09-09` is an applause-limiter track — and it
+is also the canonical counterexample in `CLAUDE.md`, the dominant-snare
+material the ban on sustained limiting exists to protect, with *no listening
+evidence* behind it. Today the applause branch shields it by accident. The
+moment that shield is removed, the archive's single most explicitly
+protected track becomes eligible for capping. The re-measured gate should
+decline it on its real 12.3 % density — but that must be **verified, not
+assumed**, before this ships. If the corrected gate does not decline Truck,
+the gate is wrong, not the policy.
+
+Ship it with a listening check on two or three of the 42 affected tracks.
 
 ## 4. Step 2 — the render campaign (only after step 1 passes)
 
