@@ -64,6 +64,19 @@ function initCustomPlayers(root) {
   root.querySelectorAll('.custom-player').forEach(player => {
     if (player._audio) return;
     const src = player.dataset.src;
+    // Loudness variant. `data-src` is always the -20 archive URL; the row's
+    // data-item (where it has one) carries the -14 render. This is the LEGACY
+    // fallback engine — it only runs when the shared PlaybackController never
+    // mounted — but the page still says in words which version is playing, so
+    // it has to honour the same preference. Read through the window bridge
+    // (variant-pref.js) rather than re-implementing it; absent bridge, or a
+    // row with no variant, means the archive, which is the safe direction.
+    let loudSrc = null;
+    try { loudSrc = (JSON.parse(player.dataset.item || '{}') || {}).loudUrl || null; } catch (_) { /* not a playable row */ }
+    const resolveSrc = () => {
+      const v = window.HannanVariant;
+      return (loudSrc && v && v.get() === 'loud') ? loudSrc : src;
+    };
     const audio = new Audio();
     audio.preload = 'none';
 
@@ -84,7 +97,28 @@ function initCustomPlayers(root) {
     }, player);
 
     function load() {
-      if (!loaded) { audio.src = src; loaded = true; }
+      if (!loaded) { audio.src = resolveSrc(); loaded = true; }
+    }
+
+    // Re-point at the other render of the same performance, keeping position
+    // and play state (same contract as PlaybackController._onVariantChanged()).
+    // Untouched rows stay unloaded and simply pick the new variant up the
+    // first time they're played.
+    if (loudSrc) {
+      window.addEventListener('hannanvariantchange', () => {
+        if (!loaded) return;
+        const want = resolveSrc();
+        if (want === audio.src) return;
+        const at = audio.currentTime || 0;
+        const wasPlaying = !audio.paused;
+        audio.src = want;
+        const restore = () => {
+          try { if (at > 0) audio.currentTime = at; } catch (_) { /* unseekable */ }
+          if (wasPlaying) { const pr = audio.play(); if (pr && pr.catch) pr.catch(() => {}); }
+        };
+        if (audio.readyState >= 1) restore();
+        else audio.addEventListener('loadedmetadata', restore, { once: true });
+      });
     }
 
     function setFill(pct) {

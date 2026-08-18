@@ -429,23 +429,140 @@ do not let the gates block. Adopted, with one qualification.
   deletes the output and aborts the run, and it is what stops clipped audio
   reaching the site. It stays, unconditionally.
 
-### 4-open — still to settle
+### 4-open — SETTLED 2026-08-17 (engineering calls, measured)
 
-- **Naming and provenance.** Variants need their own R2 key convention and
-  their own entries in `data/processing/<slug>.json` / `track-spec.json`, so
-  `version-map` and `/archive-data/` stay honest. Provenance must record that
-  the loud variant is **derived from the −20 archive**, not from source.
-  This must not blur the archival provenance record.
-- **Throughput.** There is no local copy of the archive and only ~17 GB free
-  against a 25 GB archive, so the campaign must run **show by show**:
-  download that show's FLACs, render, upload MP3s, delete. Measured R2
-  download was ~26–60 KB/s single-stream and ~250 KB/s with
-  `--multi-thread-streams 8`; at the latter the full archive is ~28 hours of
-  transfer alone. Benchmark parallel settings before committing to a schedule.
+Both items are now decided, and the throughput item is decided against what
+this section previously assumed. Every number below was measured on the
+Chromebook on 2026-08-17, not estimated.
 
-Mechanically the render reuses `batch_process.py` and the existing publish
-verification (R2-MD5-vs-sidecar, the −1 dBTP assertion). It is compute time
-plus review, not new engineering.
+**Throughput: no longer a constraint. R2 is ~36 MB/s, not ~250 KB/s.**
+Re-benchmarked with `--transfers 4 --multi-thread-streams 8
+--multi-thread-cutoff 4M`: 39 MB single file in 2.4 s, 174 MB in 6.0 s, and
+the full `mad-cafe-java-1999-09-09` show (923 MB, 22 FLACs) in **25.8 s**.
+That is ~140x the figure recorded earlier and puts the whole 25 GB archive at
+roughly **12 minutes** of transfer. The earlier ~26-60 KB/s measurement is
+not reproducible and should not be planned against.
+
+Consequences, all of which retire previously-planned work:
+
+- **No work laptop needed.** The campaign runs here.
+- **No download/render pipelining.** It was designed to hide transfer latency
+  behind render time. Transfer is now ~1% of the job; pipelining optimises the
+  wrong axis and costs peak disk for nothing.
+- **Disk is not a constraint either.** Largest single show is 1.14 GB of FLAC,
+  median 0.84 GB. Show-by-show staging peaks near 2 GB against 26 GB free.
+  Staging the *entire* archive at once would need ~31 GB and is still the
+  wrong shape, but not because of transfer cost.
+
+**The real constraint is CPU, and it is large.** Measured on the same show:
+`plan` takes 4m00s for 22 tracks and a forced `process` takes 4m03s for 3
+tracks -- about **81 s per track**, essentially serial (user time 4m24s
+against 4m03s wall). Extrapolated over 680 tracks that is **~15 hours** of
+single-threaded render. The available lever is the 8 idle cores: parallelise
+across tracks (or across shows) rather than pipelining downloads. That is the
+one piece of runner engineering worth doing, and it is worth roughly 4-6x.
+
+**The intermediate FLAC cannot simply be skipped.** §4 asked whether the
+engine could be told not to write it since the variant ships as MP3 only. It
+cannot without restructuring: `encode_mp3_with_qa()` encodes the MP3 *from*
+`out_audio`, and the loudness measurement, the LRA comparison and the -1 dBTP
+assertion all run against `out_audio`. The FLAC is load-bearing for the QA
+chain, not churn. Since disk is no longer scarce, leave it alone and delete it
+after upload.
+
+**R2 key convention: a parallel top-level prefix, `MP3-14/`.**
+`MP3-14/<Work Folder Name>/NN Title.mp3`, with the filename byte-identical to
+its `MP3/` counterpart. Rationale:
+
+- It matches the bucket's existing one-prefix-per-format layout (`FLAC/`,
+  `MP3/`, `WAV_Files/`, `Soundcloud/`), so the variant is listable,
+  countable, checkable and deletable as a single `rclone` prefix.
+- The variant key is a one-token swap from the archive key
+  (`file.replace("MP3/", "MP3-14/", 1)`), so nothing has to store a second
+  path per track unless we choose to.
+- It keeps the loudness figure out of the filename, where it would leak into
+  ID3 titles and download filenames.
+
+**No Worker change is required.** `handleStream()` in `worker/index.js` takes
+an arbitrary R2 key and refuses only `.wav`/`.flac`, so a variant MP3 streams
+as-is. The variant campaign touches no deployed Worker code.
+
+**Provenance: a separate sidecar tree, never the archive's.**
+Variant provenance goes to `data/processing/variants/loud-14/<slug>.json`,
+same schema. This is not a preference -- it is a hazard fix.
+`audio_process.py process --slug X` writes and *merges into*
+`data/processing/<slug>.json`, so running the variant render with `--slug`
+would overwrite the archive's own -20 provenance with -14 numbers, in place,
+silently. The engine needs a small contained change (`--provenance-out PATH`,
+or a `--variant NAME` that derives it) before any variant render is allowed
+to pass `--slug` at all. Until that exists, run variant renders **without**
+`--slug` -- verified safe: the 3-track pilot left `git status` clean.
+
+**Derivation is provable for free, and that is the point.** The engine already
+records `src_md5` per track (the decoded audio md5 of its input), and the
+archive sidecar's `md5` is the same quantity for the published FLAC. Verified
+on `mad-cafe-java-1999-09-09` track 2: the R2 FLAC decodes to
+`6cdaa4395d26245242378f364309d8d5`, exactly the sidecar's `md5`. So the
+invariant **`variant.src_md5 == archive.md5`** is a checkable proof that a
+variant file was built from the published archive bytes and not from a
+re-staged source. Assert it in the runner. This is what makes
+"variant-vs-archive disagreement is structurally impossible" an enforced
+property rather than a claim.
+
+**`version-map` stays honest by construction** -- it reads
+`data/processing/*.json` and must not be pointed at the variants tree.
+`/archive-data/` gains variant columns sourced from the variant sidecars and
+labelled as derived; `track-spec.json` grows a per-track `variants` block
+rather than overloading the existing top-level fields.
+
+### 4-measured — what a forced -14 render actually does (2026-08-17)
+
+Two findings from running the campaign's own flags against real archive input.
+Both change how step 2 should be reviewed.
+
+**With the campaign flags alone, nothing is capped.** `plan --target -14
+--transient-cap --transient-cap-over-applause` on all 22 Cafe Java tracks
+returns **0 tcap / 21 linear-reduced / 1 applause-limiter**. Every track
+declines, at one of two gates: 16 on engagement (5.1%-11.5%, against the 2%
+review band) and 5 on the 6 dB attenuation ceiling (6.2-9.5 dB needed). The
+resulting "loud variant" would land at -19.5 to -22.4 LUFS -- i.e. not a loud
+variant at all. Reaching -14 requires `--transient-cap-force` on essentially
+every track **plus** `--transient-cap-max-gr` overrides on the deep ones, per
+show. This confirms §4-gating's "no blocking gates" instruction is not a
+formality; it is the entire mechanism, and the runner must generate those
+per-track flag lists automatically from a planning pass.
+
+**Rank the listening outliers by LRA delta, not by engagement.** The forced
+3-track render produced:
+
+| track | archive LRA | -14 LRA | delta | achieved |
+|---|---|---|---|---|
+| 02 Smoke in Heaven | 9.4 | 8.8 | **-0.6** | -14.42 |
+| 08 Truck | 14.5 | 12.9 | **-1.6** | -15.28 |
+| 22 The Kiss / Da Da Da | 16.7 | 15.5 | **-1.2** | -14.73 |
+
+The engine flagged all three itself: *"transient cap engaged beyond isolated
+transients -- this track may not belong in the mode; review."* These moves are
+larger than the <=0.3 LU that sanctioned the mode at -20 (`CLAUDE.md`,
+2026-08-08). They are not necessarily audible -- Rene heard no difference
+across 20 Cafe Java tracks at -14 on 2026-08-16 -- but they are the honest
+outlier signal, and engagement % is not, because engagement is measured
+against a pre-flattened yardstick on archive input (§4-ab). **Rene should be
+asked whether a -1.6 LU shift on Truck is acceptable before the campaign
+renders 680 tracks**, since that is the number the -20 sanction was written
+against.
+
+Two smaller notes for the runner: `process` exits 2 when any track warns, and
+at -14 essentially every track warns, so a runner must not treat exit 2 as
+failure. And `--transient-cap-max-gr` parses `track:dB`; passing `track=dB`
+dies with a bare `ValueError` traceback rather than a usage error.
+
+Mechanically the render reuses `audio_process.py` and the existing publish
+verification (R2-MD5-vs-sidecar, the -1 dBTP assertion). Note it does **not**
+reuse `batch_process.py` as previously assumed: that tool is Drive-sourced
+(`DRIVE_BASE = "gdrive:DAT Tapes/Work Folder"`) and validates against
+`recordings.json` track lists, neither of which fits an R2-FLAC-sourced
+variant render. The runner is new, small, and mostly orchestration.
 
 ## 5. Step 3 — the player change (small, deliberately last)
 
@@ -462,6 +579,42 @@ plus review, not new engineering.
 - **Engine count is not a blocker.** Four of five surfaces already share
   `PlaybackController`; the `/player/` popup would need the same few lines.
   This is the whole reason the mini-player phase could be parked.
+
+### 5-result — BUILT and VERIFIED 2026-08-18
+
+Shipped as **two** values, not three: `Archive` (-20) and `Loud` (-14), with
+**Loud as the default** (Rene, 2026-08-18 — see `CLAUDE.md`). The
+`Archive / Louder / Loudest` sketch above is superseded; only one variant was
+rendered, so a third button would have had nothing behind it.
+
+The preference lives in one module (`scripts/variant-pref.js`,
+`localStorage['hannanVariant']`, validated against the enum, cross-tab
+`storage` sync). Every engine subscribes to it rather than owning a copy:
+
+| surface | engine | how it reads the preference |
+|---|---|---|
+| show pages | PlaybackController | `srcForItem()` in `player-controller.js` |
+| song pages, `/songs/` | PlaybackController (song-boot) | same |
+| `/playlist/` | PlaybackController (playlist-boot) | `itemFromCatalogRow()` adds `loudUrl` |
+| `/player/` popup | `continuous-player.js` (classic) | `window.HannanVariant` bridge + `hannanvariantchange` event |
+| legacy fallback | `player.js` (classic) | same bridge; `data-src` stays the archive URL |
+
+The two classic scripts cannot `import`, so `variant-pref.js` publishes a
+`window.HannanVariant` bridge **and** dispatches a DOM `hannanvariantchange`
+event — a classic script parsed before a deferred module can subscribe to an
+event but cannot rely on the global existing yet. Neither re-implements the
+enum or the storage handling.
+
+A track with no variant keeps `loudUrl: null` and falls back to the archive,
+so a partial rollout degrades instead of 404-ing. Whole-show recording cards
+have no -14 render at all and always play the archive; the toggle and its note
+sit inside the track-list section for that reason.
+
+Verified in headless Chromium (CDP), all five surfaces: Loud streams by
+default, the control flips `aria-pressed` and the note text, the choice
+survives a reload, and switching mid-track re-points the element while keeping
+the playback position. No console errors on `/`, `/songs/`, a song page,
+`/playlist/`, `/player/`, a show page, `/search/`, `/archive-data/`.
 
 ## 6. Rejected / out of scope
 

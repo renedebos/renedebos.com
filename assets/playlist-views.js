@@ -54,6 +54,12 @@ export function itemFromCatalogRow(row) {
     // (playlist.js:81-84) — a diverging cache-buster would silently double
     // R2 egress and defeat the `ver` cache key.
     streamUrl: origin + '/stream?file=' + encodeURIComponent(row.file) + (row.ver ? '&v=' + row.ver : ''),
+    // The -14 loud render, built the same way from the catalog's own `loud`
+    // key — null when that track has no variant, which is what makes
+    // srcForItem() fall back to the archive instead of guessing a key.
+    loudUrl: row.loud
+      ? origin + '/stream?file=' + encodeURIComponent(row.loud) + (row.loudVer ? '&v=' + row.loudVer : '')
+      : null,
     title: row.title,
     artist: ARTIST_NAMES[row.artist] || row.artist,
     venue: row.venue,

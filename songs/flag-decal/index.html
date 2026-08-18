@@ -59,6 +59,20 @@
       </div>
     </div>
     <p class="track-hint">Every performance streams in full. &ldquo;Open on show page&rdquo; jumps to the song within its full set.</p>
+    <div class="variant-pick" data-variant-pick>
+      <span class="variant-label" id="variant-label">Playback</span>
+      <div class="variant-btns" role="group" aria-labelledby="variant-label">
+        <button type="button" class="variant-btn" data-variant="archive" aria-pressed="false">Archive</button>
+        <button type="button" class="variant-btn" data-variant="loud" aria-pressed="true">Loud</button>
+      </div>
+      <p class="variant-note" data-variant-note>
+        <strong>You are hearing the Loud version</strong> &mdash; an extra render at
+        &minus;14&nbsp;LUFS, about as loud as a streaming service, so it isn’t too quiet
+        on phone speakers or in a car. Switch to <strong>Archive</strong> for the
+        &minus;20&nbsp;LUFS masters exactly as they were mastered. Downloads are always
+        the Archive version. <a href="/process/">How these were made</a>.
+      </p>
+    </div>
     <div class="song-occs">
 <div class="song-occ">
         <div class="song-occ-head">
@@ -67,7 +81,7 @@
           <a class="song-occ-open" href="/shows/sean-19-broadway-unknown/#track-8">open on show page &rarr;</a>
           <button type="button" class="track-add" data-id="sean-19-broadway-unknown-08" aria-pressed="false" aria-label="Add to playlist selection"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg></button>
         </div>
-        <div class="custom-player" data-src="https://wav-download.renedebos.workers.dev/stream?file=MP3/SeanHannan%20-%2019%20Broadway%20unknown%20date/08%20Flag%20Decal.mp3&amp;v=e1cdfc844d99" data-item="{&quot;id&quot;: &quot;sean-19-broadway-unknown-08&quot;, &quot;kind&quot;: &quot;track&quot;, &quot;streamUrl&quot;: &quot;https://wav-download.renedebos.workers.dev/stream?file=MP3/SeanHannan%20-%2019%20Broadway%20unknown%20date/08%20Flag%20Decal.mp3&amp;v=e1cdfc844d99&quot;, &quot;title&quot;: &quot;Flag Decal&quot;, &quot;artist&quot;: &quot;Sean Hannan&quot;, &quot;venue&quot;: &quot;19 Broadway&quot;, &quot;date&quot;: &quot;Unknown date&quot;, &quot;dateDisplay&quot;: &quot;Unknown date&quot;, &quot;durationSec&quot;: 213, &quot;durationLabel&quot;: &quot;3:33&quot;, &quot;peaksKey&quot;: null, &quot;pageUrl&quot;: &quot;/shows/sean-19-broadway-unknown/#track-8&quot;, &quot;playLabel&quot;: &quot;Flag Decal, Sean Hannan, Unknown date&quot;, &quot;downloads&quot;: {&quot;lossless&quot;: {&quot;key&quot;: &quot;FLAC/SeanHannan - 19 Broadway unknown date/08 Flag Decal.flac&quot;, &quot;format&quot;: &quot;flac&quot;, &quot;sizeMb&quot;: 40, &quot;title&quot;: &quot;08 Flag Decal.flac&quot;}}, &quot;dropouts&quot;: false}">
+        <div class="custom-player" data-src="https://wav-download.renedebos.workers.dev/stream?file=MP3/SeanHannan%20-%2019%20Broadway%20unknown%20date/08%20Flag%20Decal.mp3&amp;v=e1cdfc844d99" data-item="{&quot;id&quot;: &quot;sean-19-broadway-unknown-08&quot;, &quot;kind&quot;: &quot;track&quot;, &quot;streamUrl&quot;: &quot;https://wav-download.renedebos.workers.dev/stream?file=MP3/SeanHannan%20-%2019%20Broadway%20unknown%20date/08%20Flag%20Decal.mp3&amp;v=e1cdfc844d99&quot;, &quot;loudUrl&quot;: &quot;https://wav-download.renedebos.workers.dev/stream?file=MP3-14/SeanHannan%20-%2019%20Broadway%20unknown%20date/08%20Flag%20Decal.mp3&amp;v=d03021ab28cd&quot;, &quot;title&quot;: &quot;Flag Decal&quot;, &quot;artist&quot;: &quot;Sean Hannan&quot;, &quot;venue&quot;: &quot;19 Broadway&quot;, &quot;date&quot;: &quot;Unknown date&quot;, &quot;dateDisplay&quot;: &quot;Unknown date&quot;, &quot;durationSec&quot;: 213, &quot;durationLabel&quot;: &quot;3:33&quot;, &quot;peaksKey&quot;: null, &quot;pageUrl&quot;: &quot;/shows/sean-19-broadway-unknown/#track-8&quot;, &quot;playLabel&quot;: &quot;Flag Decal, Sean Hannan, Unknown date&quot;, &quot;downloads&quot;: {&quot;lossless&quot;: {&quot;key&quot;: &quot;FLAC/SeanHannan - 19 Broadway unknown date/08 Flag Decal.flac&quot;, &quot;format&quot;: &quot;flac&quot;, &quot;sizeMb&quot;: 40, &quot;title&quot;: &quot;08 Flag Decal.flac&quot;}}, &quot;dropouts&quot;: false}">
           <button class="play-btn" aria-label="Play Flag Decal, Sean Hannan, Unknown date" data-play-label="Flag Decal, Sean Hannan, Unknown date"><svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg></button>
           <div class="progress-wrap">
             <input type="range" class="progress-range" min="0" max="1000" value="0" step="1" aria-label="Seek Flag Decal, Sean Hannan, Unknown date" aria-valuetext="0:00 of 3:33">
@@ -94,5 +108,6 @@
 <script src="/assets/player.js"></script>
 <script src="/assets/track-select.js"></script>
 <script type="module" src="/assets/song-boot.js" onerror="window.__resolvePlaybackHost&amp;&amp;window.__resolvePlaybackHost({mode:'legacy'})"></script>
+<script type="module" src="/assets/variant-ui.js"></script>
 </body>
 </html>

@@ -41,7 +41,8 @@ def track_add_button(track_id):
 def playable_item_attr(*, item_id, kind, stream, title, artist=None, venue=None,
                        date=None, date_display=None, duration_label=None,
                        peaks_key=None, page_url=None, play_label=None,
-                       lossless_file=None, lossless_size_mb=None, dropouts=False):
+                       lossless_file=None, lossless_size_mb=None, dropouts=False,
+                       loud_stream=None):
     """Build the `data-item="..."` attribute the shared player reads.
 
     One normalized playable item per playable thing, serialized into the markup
@@ -74,6 +75,11 @@ def playable_item_attr(*, item_id, kind, stream, title, artist=None, venue=None,
         "id": item_id,
         "kind": kind,
         "streamUrl": stream,
+        # The -14 loud variant's URL, or None when this track has no variant
+        # rendered. Emitted by the BUILD rather than derived in JS on purpose:
+        # the build knows which variants actually exist, so a partial rollout
+        # degrades to Archive for that track instead of 404-ing the player.
+        "loudUrl": loud_stream or None,
         "title": title,
         "artist": artist or "",
         "venue": venue or None,
@@ -818,6 +824,11 @@ def _song_occ_html(o, song_title):
         lossless_file=o.get("flac"),
         lossless_size_mb=o.get("flac_size_mb"),
         dropouts=False,
+        # -14 render, only where one exists for that track. `data-src` on the
+        # row below stays the ARCHIVE url on purpose: it is what the legacy
+        # fallback engine reads, so a page whose module never mounts degrades
+        # to the master rather than to a key that might not be there.
+        loud_stream=(stream_url(o["loud"], o.get("loud_ver")) if o.get("loud") else None),
     )
     p = player(o["file"], duration=o.get("duration"), version=o["ver"], label=label, item_attr=item_attr)
     add_btn = track_add_button(track_id)
@@ -943,4 +954,36 @@ def song_jsonld(s):
     })
 
 
-__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'PLAYBACK_READY_ARM', 'PLAYBACK_READY_SNIPPETS', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', 'STATUS_BLURB', '_pre_edit_class', '_pre_edit_label', '_show_label', '_song_occ_html', '_src_tag', 'contact_block', 'content', 'dl_button', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'playable_item_attr', 'playback_ready_onerror', 'player', 'recording_card', 'recording_item_id', 'show_jsonld', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'track_add_button', 'updates_list']
+__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'PLAYBACK_READY_ARM', 'PLAYBACK_READY_SNIPPETS', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', 'STATUS_BLURB', '_pre_edit_class', '_pre_edit_label', '_show_label', '_song_occ_html', '_src_tag', 'contact_block', 'content', 'dl_button', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'playable_item_attr', 'playback_ready_onerror', 'player', 'recording_card', 'recording_item_id', 'show_jsonld', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'track_add_button', 'updates_list', 'variant_toggle']
+
+
+def variant_toggle(any_loud=True):
+    """The Archive/Loud playback control plus its plain-language note.
+
+    Rene's decision 2026-08-18: **Loud is the default**, because -20 LUFS is too
+    quiet in a car or on phone speakers. That makes the note mandatory, not
+    decorative — a visitor who does nothing is hearing the -14 render, and the
+    page has to say so in words rather than leaving them to infer it from a
+    highlighted button. The archive stays the master and the download.
+
+    Real <button>s with aria-pressed (not styled spans), so the current value is
+    in the accessible name and state — the mockup review called this out
+    specifically. Rendered only when the page actually has variants to offer.
+    """
+    if not any_loud:
+        return ""
+    return '''
+    <div class="variant-pick" data-variant-pick>
+      <span class="variant-label" id="variant-label">Playback</span>
+      <div class="variant-btns" role="group" aria-labelledby="variant-label">
+        <button type="button" class="variant-btn" data-variant="archive" aria-pressed="false">Archive</button>
+        <button type="button" class="variant-btn" data-variant="loud" aria-pressed="true">Loud</button>
+      </div>
+      <p class="variant-note" data-variant-note>
+        <strong>You are hearing the Loud version</strong> &mdash; an extra render at
+        &minus;14&nbsp;LUFS, about as loud as a streaming service, so it isn\u2019t too quiet
+        on phone speakers or in a car. Switch to <strong>Archive</strong> for the
+        &minus;20&nbsp;LUFS masters exactly as they were mastered. Downloads are always
+        the Archive version. <a href="/process/">How these were made</a>.
+      </p>
+    </div>'''

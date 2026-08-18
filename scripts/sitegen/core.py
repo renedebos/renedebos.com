@@ -100,6 +100,38 @@ def load_processing(slug):
     path = os.path.join(ROOT, "data", "processing", f"{slug}.json")
     return json.load(open(path)) if os.path.exists(path) else None
 
+VARIANTS = {"loud": {"dir": "loud-14", "prefix": "MP3-14", "lufs": -14}}
+
+def load_variant(slug, name="loud"):
+    """Per-show provenance for a loudness variant (data/processing/variants/
+    <dir>/<slug>.json). Deliberately a SEPARATE tree from load_processing():
+    the variant is an additional render, and its numbers must never be mistaken
+    for — or merged into — the -20 archive's own provenance. See CLAUDE.md,
+    "The -14 loud variant"."""
+    v = VARIANTS[name]
+    path = os.path.join(ROOT, "data", "processing", "variants", v["dir"], f"{slug}.json")
+    return json.load(open(path)) if os.path.exists(path) else None
+
+
+def variant_key(archive_file, name="loud"):
+    """Map an archive MP3 key to its variant key. One-token prefix swap, which
+    is the whole reason the variant uses a parallel top-level prefix."""
+    return archive_file.replace("MP3/", VARIANTS[name]["prefix"] + "/", 1)
+
+
+def has_variant(name="loud"):
+    """Whether this checkout actually has a rendered loudness variant.
+
+    Pages whose rows are built client-side (/playlist/, /player/, the Songs
+    index) cannot ask "does this track have a variant?" at build time the way a
+    show page can, so they gate the toggle on this instead. Without it, a
+    checkout with no variants rendered would show a control that silently does
+    nothing."""
+    v = VARIANTS[name]
+    vdir = os.path.join(ROOT, "data", "processing", "variants", v["dir"])
+    return os.path.isdir(vdir) and any(f.endswith(".json") for f in os.listdir(vdir))
+
+
 def artist_name(aid):
     return next((a["name"] for a in M["artists"] if a["id"] == aid), aid)
 
@@ -133,6 +165,40 @@ def stamp_added_dates():
             f.write("\n")
         print(f"Stamped/backfilled added_ts on: {', '.join(changed)}")
     return changed
+
+def check_variant_derivation():
+    """Prove, at build time, that every loudness-variant track was rendered
+    from the PUBLISHED -20 archive bytes and not from a re-staged source.
+
+    The variant's `src_md5` is the decoded-audio md5 of whatever the render
+    read; the archive sidecar's `md5` is the same quantity for the published
+    FLAC. If they diverge, the variant and the archive are different edits of
+    the same song and the site would be shipping two versions that disagree —
+    exactly the failure re-staging caused on 2026-08-11. Cheap to check, and
+    it is the property the whole from-the-archive decision rests on."""
+    errors = []
+    for name, v in VARIANTS.items():
+        vdir = os.path.join(ROOT, "data", "processing", "variants", v["dir"])
+        if not os.path.isdir(vdir):
+            continue
+        for fn in sorted(os.listdir(vdir)):
+            if not fn.endswith(".json"):
+                continue
+            slug = fn[:-5]
+            arc = load_processing(slug) or {}
+            atr = arc.get("tracks", {})
+            for num, vt in json.load(open(os.path.join(vdir, fn))).get("tracks", {}).items():
+                want, got = atr.get(num, {}).get("md5"), vt.get("src_md5")
+                if not got:
+                    errors.append(f"{slug} track {num}: variant '{name}' records no src_md5")
+                elif not want:
+                    errors.append(f"{slug} track {num}: no archive md5 to check variant '{name}' against")
+                elif want != got:
+                    errors.append(
+                        f"{slug} track {num}: variant '{name}' src_md5 {got[:8]} != "
+                        f"archive md5 {want[:8]} — NOT derived from the published archive")
+    return errors
+
 
 def validate():
     """Fail fast on the recordings.json footguns that otherwise produce broken
@@ -344,12 +410,20 @@ def collect_songs():
     for s in tl:
         proc = load_processing(s["slug"])
         ptracks = proc.get("tracks", {}) if proc else {}
+        # Loud-variant provenance, per show. Carried on the occurrence so BOTH
+        # renderers of a song row -- _song_occ_html() server-side and songs.js's
+        # occRowHtml() client-side, which share this same data via
+        # assets/song-occurrences.json -- can offer the variant without either
+        # one deriving a key the render campaign may not actually have produced.
+        var = load_variant(s["slug"])
+        vtracks = var.get("tracks", {}) if var else {}
         for t in s["tracks"]:
             key = song_norm(SONG_MANUAL_MERGE.get(t["title"], t["title"]))
             g = groups.setdefault(key, {"variants": {}, "occ": []})
             g["variants"][t["title"]] = g["variants"].get(t["title"], 0) + 1
             ver = (ptracks.get(str(t["num"]), {}).get("md5") or "")[:12] or None
             proc_ver = ptracks.get(str(t["num"]), {}).get("ver")
+            vt = vtracks.get(str(t["num"]))
             g["occ"].append({
                 "artist": s["artist"], "artist_name": artist_name(s["artist"]),
                 "venue": s.get("venue_short") or s.get("venue") or "—",
@@ -359,6 +433,8 @@ def collect_songs():
                 "flac": t.get("flac"), "flac_size_mb": t.get("flac_size_mb"),
                 "source": s.get("source"),
                 "size_mb": t.get("size_mb"), "proc_ver": proc_ver,
+                "loud": variant_key(t["file"]) if vt else None,
+                "loud_ver": ((vt.get("mp3_md5") or "")[:12] or None) if vt else None,
             })
     songs, used = [], set()
     for key, g in groups.items():
@@ -393,4 +469,4 @@ def write(path, content):
         f.write(content)
 
 
-__all__ = ['write', 'ARTIST_SHORT', 'DURATION_RE', 'LEGACY_KEY_NAMING', 'M', 'PUBLIC_SHOWS', 'ROOT', 'SONG_CANONICAL_OVERRIDE', 'SONG_MANUAL_MERGE', 'SOURCE_LABEL', 'TAG_VOCAB', 'WORKER', '_ARTIST_ORDER', '_duration_sec', 'added_sort_key', 'artist_name', 'check_orphan_song_dirs', 'check_rarity_drift', 'collect_songs', 'date_with_subtitle', 'esc', 'iso_duration', 'load_processing', 'sanitize_filename', 'show_city', 'show_title', 'show_url', 'show_zip_entries', 'show_zip_folder', 'singles_for_show', 'song_norm', 'song_slug', 'sort_key', 'stamp_added_dates', 'stream_url', 'track_total', 'validate']
+__all__ = ['write', 'ARTIST_SHORT', 'DURATION_RE', 'LEGACY_KEY_NAMING', 'M', 'PUBLIC_SHOWS', 'ROOT', 'SONG_CANONICAL_OVERRIDE', 'SONG_MANUAL_MERGE', 'SOURCE_LABEL', 'TAG_VOCAB', 'WORKER', '_ARTIST_ORDER', '_duration_sec', 'added_sort_key', 'artist_name', 'check_orphan_song_dirs', 'check_rarity_drift', 'check_variant_derivation', 'collect_songs', 'has_variant', 'date_with_subtitle', 'esc', 'iso_duration', 'load_processing', 'load_variant', 'variant_key', 'VARIANTS', 'sanitize_filename', 'show_city', 'show_title', 'show_url', 'show_zip_entries', 'show_zip_folder', 'singles_for_show', 'song_norm', 'song_slug', 'sort_key', 'stamp_added_dates', 'stream_url', 'track_total', 'validate']

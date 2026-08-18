@@ -75,6 +75,20 @@
       <button id="pl-player" class="pl-generate pl-share" type="button" hidden>Open continuous player</button></p>
     </div>
     <div id="pl-saved"></div>
+    <div class="variant-pick" data-variant-pick>
+      <span class="variant-label" id="variant-label">Playback</span>
+      <div class="variant-btns" role="group" aria-labelledby="variant-label">
+        <button type="button" class="variant-btn" data-variant="archive" aria-pressed="false">Archive</button>
+        <button type="button" class="variant-btn" data-variant="loud" aria-pressed="true">Loud</button>
+      </div>
+      <p class="variant-note" data-variant-note>
+        <strong>You are hearing the Loud version</strong> &mdash; an extra render at
+        &minus;14&nbsp;LUFS, about as loud as a streaming service, so it isn’t too quiet
+        on phone speakers or in a car. Switch to <strong>Archive</strong> for the
+        &minus;20&nbsp;LUFS masters exactly as they were mastered. Downloads are always
+        the Archive version. <a href="/process/">How these were made</a>.
+      </p>
+    </div>
     <div id="pl-now" class="pl-now" hidden></div>
     <div id="pl-queue" class="pl-queue"></div>
   </section>
@@ -94,5 +108,6 @@
 <script src="/assets/player.js"></script>
 <script src="/assets/track-select.js"></script>
 <script type="module" src="/assets/playlist-boot.js" onerror="window.__resolvePlaybackHost&amp;&amp;window.__resolvePlaybackHost({mode:'none'})"></script>
+<script type="module" src="/assets/variant-ui.js"></script>
 </body>
 </html>

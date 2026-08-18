@@ -300,7 +300,8 @@ def build_playlist():
         # otherwise-broken page instead.
         extra_scripts=('\n<script src="/assets/track-select.js"></script>'
                        f'\n<script type="module" src="/assets/playlist-boot.js" '
-                       f'onerror="{playback_ready_onerror("none")}"></script>'),
+                       f'onerror="{playback_ready_onerror("none")}"></script>'
+                       + (VARIANT_UI_SCRIPT if has_variant() else "")),
         pre_scripts=worker_origin,
         playback_ready="deferred",
         main=f'''
@@ -330,7 +331,7 @@ def build_playlist():
       <button id="pl-download" class="pl-generate pl-share" type="button" hidden>Download ZIP</button>
       <button id="pl-player" class="pl-generate pl-share" type="button" hidden>Open continuous player</button></p>
     </div>
-    <div id="pl-saved"></div>
+    <div id="pl-saved"></div>{variant_toggle(has_variant())}
     <div id="pl-now" class="pl-now" hidden></div>
     <div id="pl-queue" class="pl-queue"></div>
   </section>''',
@@ -605,6 +606,8 @@ main tbody tr:nth-child(even) td {{ background: color-mix(in srgb, var(--chip) 5
 </html>
 '''
 
+VARIANT_UI_SCRIPT = '\n<script type="module" src="/assets/variant-ui.js"></script>'
+
 def build_player():
     """/player/ — a dedicated popup window for continuous playback (see
     scripts/continuous-player.js and player.js's sendToPlayer()). Deliberately
@@ -612,8 +615,14 @@ def build_player():
     visitor opens once and leaves alone, not a normal nav destination — same
     reasoning as /manual/. Unlike /manual/'s own bespoke design system, this
     reuses the main site's stylesheet/fonts and its existing .pl-now/.pl-btn/
-    .pl-row player styling so it still feels like part of the archive."""
-    return PLAYER_SHELL
+    .pl-row player styling so it still feels like part of the archive.
+
+    The variant control is templated in here rather than baked into
+    PLAYER_SHELL so a checkout with no rendered variant doesn't ship a dead
+    toggle -- same has_variant() gate the other client-rendered pages use."""
+    return (PLAYER_SHELL
+            .replace("<!--VARIANT_PICK-->", variant_toggle(has_variant()))
+            .replace("<!--VARIANT_SCRIPT-->", VARIANT_UI_SCRIPT if has_variant() else ""))
 
 PLAYER_SHELL = '''<!DOCTYPE html>
 <html lang="en">
@@ -643,10 +652,11 @@ PLAYER_SHELL = '''<!DOCTYPE html>
     <h1>&#9834; Player</h1>
     <a href="/playlist/">Build a playlist &rarr;</a>
   </div>
+  <!--VARIANT_PICK-->
   <div id="cp-now" class="pl-now"></div>
   <p id="cp-status" class="search-status"></p>
   <div id="cp-queue"></div>
-  <script src="/assets/continuous-player.js"></script>
+  <script src="/assets/continuous-player.js"></script><!--VARIANT_SCRIPT-->
 </body>
 </html>
 '''
@@ -772,6 +782,11 @@ def build_show(show):
     # per-track audio fingerprints used as stream cache-busters.
     proc = load_processing(show["slug"]) if show.get("tracks") else None
     proc_tracks = proc.get("tracks", {}) if proc else {}
+    var = load_variant(show["slug"])
+    var_tracks = var.get("tracks", {}) if var else {}
+    # Read again at script-emission time, so it must exist on every path — a
+    # track-less show never enters the branch that used to define it.
+    any_loud = bool(var_tracks)
 
     if show.get("tracks"):
         has_flac = any(t.get("flac") for t in show["tracks"])
@@ -795,6 +810,11 @@ def build_show(show):
             # caches hard yet a re-normalized upload goes live instantly.
             ver = (proc_tracks.get(str(t["num"]), {}).get("md5") or "")[:12] or None
             stream = stream_url(t["file"], ver)
+            # Loud variant, only when this track actually has one rendered.
+            vt = var_tracks.get(str(t["num"]))
+            loud_stream = (stream_url(variant_key(t["file"]),
+                                      (vt.get("mp3_md5") or "")[:12] or None)
+                           if vt else None)
             sizes = []
             if t.get("flac_size_mb"):
                 sizes.append(f'FLAC {t["flac_size_mb"]} MB')
@@ -855,6 +875,7 @@ def build_show(show):
                 lossless_file=t.get("flac"),
                 lossless_size_mb=t.get("flac_size_mb"),
                 dropouts=t.get("dropouts"),
+                loud_stream=loud_stream,
             )
             if has_waves:
                 # waveform replaces the progress bar; the download (if any) keeps the
@@ -891,7 +912,7 @@ def build_show(show):
         {zip_html}
       </div>
     </div>
-    <p class="track-hint">{hint}</p>
+    <p class="track-hint">{hint}</p>{variant_toggle(any_loud)}
     <div class="track-list" data-autoplay-next>
 {chr(10).join(rows)}
     </div>
@@ -963,6 +984,11 @@ def build_show(show):
     # player.js has already registered its DOMContentLoaded fallback by the
     # time it claims the page. player.js stays on the page on purpose — it's
     # the runtime fallback if this module never mounts, not dead weight.
+    # The variant control is independent of which engine the page runs: it only
+    # writes the shared preference, and whatever engine is mounted reads it.
+    if any_loud:
+        extra_scripts += '\n<script type="module" src="/assets/variant-ui.js"></script>'
+
     pre_scripts = ""
     if show["slug"] in CONTROLLER_ENGINE_SLUGS:
         pre_scripts = "<script>window.PLAYER_ENGINE = 'controller';</script>\n"
@@ -1090,7 +1116,7 @@ def build_songs_index():
     <div class="seg" data-role="sort"><button data-sort="plays" class="active">Most&nbsp;played</button><button data-sort="az">A&ndash;Z</button></div>
     <div class="seg" data-role="artist"><button data-artist="all" class="active">All</button><button data-artist="jerry">Jerry</button><button data-artist="mad">Mad</button><button data-artist="sean">Sean</button></div>
   </div>
-  <div class="song-legend" aria-hidden="true">{legend}</div>
+  <div class="song-legend" aria-hidden="true">{legend}</div>{variant_toggle(has_variant())}
   <p class="songs-empty" id="songs-empty" hidden>No songs match &mdash; try a different search.</p>
   <div class="song-list" id="song-list">
 {chr(10).join(items)}
@@ -1118,7 +1144,8 @@ def build_songs_index():
         # a <details> opens for the first time.
         extra_scripts=('\n<script src="/assets/track-select.js"></script>'
                        f'{SONG_BOOT_SCRIPT}'
-                       '\n<script src="/assets/songs.js"></script>'),
+                       '\n<script src="/assets/songs.js"></script>'
+                       + (VARIANT_UI_SCRIPT if has_variant() else "")),
         pre_scripts=SONG_ENGINE_FLAG,
         playback_ready="deferred")
 
@@ -1132,6 +1159,7 @@ def build_song_page(s):
             parts.append(f'''
   <section class="about"><p class="song-variants">Also listed as: {alt}</p></section>''')
     occs = "\n".join(_song_occ_html(o, s["canonical"]) for o in s["occ"])
+    any_loud = any(o.get("loud") for o in s["occ"])
     zip_html = song_zip_button_html(s)
     parts.append(f'''
   <section id="tracks">
@@ -1142,7 +1170,7 @@ def build_song_page(s):
         {zip_html}
       </div>
     </div>
-    <p class="track-hint">Every performance streams in full. &ldquo;Open on show page&rdquo; jumps to the song within its full set.</p>
+    <p class="track-hint">Every performance streams in full. &ldquo;Open on show page&rdquo; jumps to the song within its full set.</p>{variant_toggle(any_loud)}
     <div class="song-occs">
 {occs}
     </div>
@@ -1156,7 +1184,8 @@ def build_song_page(s):
         # Every occurrence row is server-rendered here (unlike /songs/'s lazy
         # per-<details> insertion), so song-boot.js mounts the whole page's
         # queue synchronously at parse time, same shape as a show page.
-        extra_scripts=f'\n<script src="/assets/track-select.js"></script>{SONG_BOOT_SCRIPT}',
+        extra_scripts=(f'\n<script src="/assets/track-select.js"></script>{SONG_BOOT_SCRIPT}'
+                       + (VARIANT_UI_SCRIPT if any_loud else "")),
         pre_scripts=SONG_ENGINE_FLAG,
         playback_ready="deferred")
 

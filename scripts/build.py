@@ -30,6 +30,14 @@ def main():
     validate()
     check_orphan_song_dirs()
     check_rarity_drift()
+    # Hard failure, not a warning: a variant that is not provably derived from
+    # the published archive means the site would serve two disagreeing edits.
+    verr = check_variant_derivation()
+    if verr:
+        print("VARIANT DERIVATION FAILED", file=sys.stderr)
+        for e in verr[:20]:
+            print("  " + e, file=sys.stderr)
+        sys.exit(1)
     if "--check" in sys.argv[1:]:
         n_shows = len(M["shows"])
         n_tracks = sum(len(s["tracks"] or []) for s in M["shows"])
@@ -42,6 +50,8 @@ def main():
     # Shared PlaybackController — see plans/player-consolidation/. Loaded only
     # by the show pages in pages.CONTROLLER_ENGINE_SLUGS so far (Phase 1
     # Step 4); every other page still runs the legacy player.js.
+    write("assets/variant-ui.js", open(os.path.join(here, "variant-ui.js")).read())
+    write("assets/variant-pref.js", open(os.path.join(here, "variant-pref.js")).read())
     write("assets/player-controller.js", open(os.path.join(here, "player-controller.js")).read())
     write("assets/player-views.js", open(os.path.join(here, "player-views.js")).read())
     write("assets/player-boot.js", open(os.path.join(here, "player-boot.js")).read())
