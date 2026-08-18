@@ -1,148 +1,166 @@
 # Session Handoff — Hannan Recordings (renedebos.com)
-**Date:** 2026-08-17 · **Branch:** `player-consolidation`
+**Date:** 2026-08-18 · **Branch:** `player-consolidation`
 (worktree `/home/renedebos/renedebos.com-player-consolidation`)
 
 ## ⛔ READ THIS FIRST
+
+**The loudness-variant campaign is DONE and live.** All 680 tracks are
+rendered at −14 LUFS in R2 under `MP3-14/`, the player toggle ships on every
+surface, and **Loud is the DEFAULT playback variant** (Rene, 2026-08-18).
+Merged as PR #20, deployed, and spot-checked on renedebos.com itself. The −20
+archive is unchanged and remains the master and the download.
+
+**PR #21 is OPEN and unmerged** —
+<https://github.com/renedebos/renedebos.com/pull/21>. It adds the scope line
+above each show's technical-data table and the Loud columns on
+`/archive-data/`. Nothing in it is live until it merges; deploy fires only on
+push to `main`.
 
 **The player consolidation is finished as a project.** Phase 3 (the sticky
 mini-player) is PARKED — do not resume it, and do not run `/apply-review`
 against its findings. Its modules are deleted from this branch and preserved
 on branch `miniplayer-parked` (commit `6bdecc6`).
 
-**The active work is the loudness variants** —
-`plans/loudness-variants/loudness-variants-plan.md`. Read §4-decisions,
-§4-ab and §4-gating there before doing anything; every decision is settled
-except two (§4-open).
+**Note the branch name is misleading.** `player-consolidation` now holds
+loudness and variant work. Consider branching fresh for whatever comes next.
 
-**Everything is merged, deployed and verified live.** `origin/main` is at
-`6a13dea` (PR #18). This branch is **one doc commit ahead** (`a243125`,
-unpushed) — the loudness decision record. Working tree clean.
+## ✅ Done this session (2026-08-18)
 
-**Note the branch name is now misleading.** `player-consolidation` currently
-holds loudness work. Consider branching fresh for the render campaign.
+### The −14 loud variant shipped, end to end
+680/680 tracks rendered from the **published −20 archive FLACs** (never
+re-staged from Drive — re-staging is what destroyed hand-edited fades on
+2026-08-11) and uploaded to `MP3-14/`, filename byte-identical to each
+`MP3/` counterpart so the variant key is a one-token swap. No Worker change
+was needed.
 
-## ✅ Done this session (2026-08-17)
+**The derivation is enforced, not assumed.** Every variant track records
+`src_md5`; the archive sidecar's `md5` is the same quantity for the published
+FLAC; `check_variant_derivation()` in `sitegen/core.py` **fails the build** if
+any pair disagrees. `audio_process.py` gained `--provenance-out` so a variant
+render can never merge −14 numbers into the archive's own sidecar.
 
-### The applause-precedence engine change shipped
-`--transient-cap-over-applause` (workflow v8, `scripts/audio_process.py`) lets
-the transient cap take a track the applause-limiter would otherwise keep, so
-the archive's 42 applause-limited tracks aren't stranded a median 6.7 dB below
-a loud target. **Opt-in only** — left automatic it rewrites the −20 *archive*
-(Truck −23.65 → −20.0), which is why the flag exists at all.
+### The toggle covers every player surface
+One preference module, `scripts/variant-pref.js` (`localStorage`
+`hannanVariant`, enum-validated, cross-tab sync). Show pages, song pages,
+`/songs/`, `/playlist/` read it through `PlaybackController`; the `/player/`
+popup and the legacy `player.js` fallback read it through the
+`window.HannanVariant` bridge plus a `hannanvariantchange` DOM event, because
+classic scripts cannot `import` and cannot rely on a deferred module having
+run yet.
 
-Six post-review fixes were applied before merging (`3092acd`), the most
-important being a **wrong claim in `CLAUDE.md`**: it said the flag "lets the
-cap take" Truck. It does not — the flag grants *eligibility*, and the track
-then declines on its own, first on the 6 dB attenuation ceiling and then, once
-`--transient-cap-max-gr` lifts that, on engagement. Reaching −14 needs the
-override **and** `--transient-cap-force` per track. Corrected in both
-`CLAUDE.md` and the plan.
+**`data-src` in the markup stays the ARCHIVE url everywhere**; the variant
+rides in `data-item`'s `loudUrl`. A page whose module fails to mount degrades
+to the master, never to a key that might not exist. Whole-show recording
+cards have no −14 render and always play the archive.
 
-Also fixed: `recipe_signature()` was emitting the new key unconditionally,
-which would have rehashed every track rendered since v7 and re-armed every
-accepted listen-block. It is now emitted only when the flag is on, and the
-flag-off hash was verified byte-identical to the pre-change payload.
+Verified in headless Chromium on all five surfaces: Loud by default, the
+control flips `aria-pressed` and the note, the choice survives a reload, a
+mid-track switch holds position, and the legacy engine (forced by blocking
+`song-boot.js`) behaves identically.
 
-### Internal docs are no longer served publicly
-`CLAUDE.md` and `HANDOFF.md` were returning **200 on renedebos.com**. The
-`.assetsignore` fix was committed earlier but never deployed; PR #18 shipped
-it. Verified after deploy: `/CLAUDE.md`, `/HANDOFF.md`, `/plans/…`,
-`/assets/miniplayer-*.js` all 404, while `/`, `/search/`, `/archive-data/`,
-show pages, `player.js`, `home-shows.json` and `tracks.json` all 200.
+### Disclosure shipped with it
+`/process/` explains the variant and states the cost (median 0.5 LU of LRA,
+worst 3.10 LU). Every page with a player says which version is playing. PR #21
+extends that to the measurements themselves — see above.
 
-### The loudness source question was settled by listening
-**Decision: render the −14 variant from the published −20 archive FLACs, not
-from the original hand-edited source.** Rene's call; the one real objection
-was tested and cleared.
+### Three stale R2 keys deleted
+`01 State Trooper.{mp3,flac}` under `MP3/`, `MP3-14/` and `FLAC/` for
+`JerryHannan - 19 Broadway 2001-01-15 SBD`, left from the rename to
+"Highway Patrolman" (which this branch also corrected in `recordings.json`).
+Confirmed unreferenced first; only the prose update notes mention the old
+name.
 
-The objection was double-limiting: for the 257 tracks whose published file
-already went through a limiter, deriving the variant means a second pass over
-peaks the first pass had flattened into plateaus. Tested blind and
-loudness-matched on the two heaviest cap cases of the hardest show
-(`mad-cafe-java-1999-09-09` tracks 21 Rocky Road, 13.2 dB, and 22 The Kiss /
-Da Da Da, 10.7 dB — the one with the hand-drawn fade). The from-source side
-was **byte-identical to the approved pilot render** (md5 `ece83ce0`,
-`fa07d2ad`), so the comparison was against the genuine article.
+### The 1999-10-25 noise reduction was audited and is intact
+Rene asked whether that show still carries the Audacity NR. **It does**, on
+all 26 tracks, proven rather than inferred — see the recipe below.
 
-**Rene heard no difference on either track, fade included.**
+## 🔍 Reusable audit: "does this show still carry its hand edits?"
 
-| | 21 src → arch | 22 src → arch |
+Worth repeating for any show. Cost: minutes, mostly download.
+
+1. **Which source was staged** — `~/work/<slug>/publish.json` records
+   `source_sub` (`Tracks Noise Reduction` vs `Tracks`).
+2. **Was it really that folder** — `rclone hashsum md5` on both Drive folders
+   (no download needed) vs `md5sum` of the local staged files. For
+   1999-10-25: **26/26** identical to `Tracks Noise Reduction/`, **0/26** to
+   `Tracks (pre-NR archive)/`.
+3. **Is the live audio what provenance says** — pull each published FLAC from
+   R2, `ffmpeg -f md5` the decoded audio, compare to the sidecar `md5`.
+   **26/26 MATCH**.
+4. **Does the live audio derive from that source** — re-render locally from
+   the staged file with the sidecar's recorded `chain` (same ffmpeg build) and
+   compare decoded md5. **24/26 bit-exact**; the two exceptions are the
+   applause-limiter defect below, not a source problem.
+5. **Acoustic confirmation** — quietest-window RMS on the live file
+   (**−99.3 dB**) vs the pre-NR source (**−51.4 dB**); above 8 kHz, −123.0 vs
+   −69.9 dB. Above 8 kHz *during music* the two are within 0.2 dB, which is
+   what NR at 6 dB / sensitivity 5 should look like: it acts in the gaps, not
+   on the performance.
+
+Two traps this run hit, both worth knowing:
+- **`astats` prints at `-v info`.** Running it under `-v error` silently
+  yields no numbers — which reads exactly like "the measurement was zero".
+- **Match staged filenames, not published ones.** Tracks 18 and 19 "failed"
+  reproduction only because Audacity exported them as `18 Angel of
+  Montgomery` and `19 Peacful Easy Feeling`, both corrected at publish. Both
+  are bit-exact against their original filenames.
+
+## 🐞 Open defect: applause-limiter provenance is not reproducible
+
+**Found 2026-08-18, not yet filed or fixed.** `audio_process.py:1760-1764`:
+when a publish **resumes** over an existing applause-limiter render it does
+not know what gain produced those bytes, so it infers one —
+`actual_gain = round(output_integrated - input_integrated, 2)` — and writes
+that into the provenance `chain`. For a limiter track that subtraction is
+systematically wrong, because the limiter already pulled the applause
+transients down, so output loudness is not input + gain.
+
+Measured on 1999-10-25 track 14: chain records `volume=2.65dB`, the render
+actually applied **≈2.67 dB** (live file 0.0198 dB louder than the re-render;
+the difference is spread across the whole track rather than concentrated in
+the 1:40–1:45 applause window, which is what identifies it as a global gain
+difference and not a limiter difference). Track 20 the same. Audibly nothing;
+but the recorded chain is not a recipe that reproduces the bytes.
+
+**The fix already exists for the other mode.** Transient-cap writes a
+`.v8state.json` beside each output holding the gain/limit that actually
+produced it, and refuses to resume without it — *"provenance must never
+describe a chain it merely guesses"* (`audio_process.py:1728`). Do the same
+for applause renders instead of inferring. **Do not** go after rounding; that
+was an early wrong guess in this session.
+
+## 🧹 R2 orphan inventory (measured 2026-08-18, mostly NOT cleaned)
+
+Compared every key under `MP3/`, `MP3-14/`, `FLAC/` against `recordings.json`.
+2423 keys, 316 unreferenced:
+
+| category | count | what it is |
 |---|---|---|
-| Cap engagement | 5.8 % → 7.1 % | 7.2 % → 8.2 % |
-| Longest event | 0.55 s → 0.65 s | 0.30 s → 0.35 s |
-| Near-peak density | 0.3 % → 2.8 % | 0.2 % → 2.6 % |
-| LRA (MP3) | 11.5 → 11.4 LU | 15.8 → 15.6 LU |
+| directory placeholder keys | 100 | empty `…/` markers, harmless |
+| files under superseded folder names | 210 | old spellings (`New George's` vs `New Georges`), non-`SBD` variants, an older `- NN Title.mp3` naming generation |
+| **files inside a LIVE show folder** | **6** | the ones that matter |
 
-The deciding argument was **correctness, not cost**: re-staging 30 shows from
-Drive is precisely the operation that destroyed hand-edited fades on
-2026-08-11 and caused the "Hear Me" → "I Need a Lover" drift. Deriving from
-the archive makes variant-vs-archive disagreement structurally impossible.
+The six are three tracks as MP3 + FLAC: `18 Angel of Montgomery`
+(1999-02-01), `15 Still I Love Him` (1999-06-21), `22 Leprechaun`
+(1999-07-19). Same class as the State Trooper keys already deleted, but each
+is a **different rename** and none has been cross-referenced yet. Nothing
+deleted beyond the three approved. `rclone delete` against `r2:` is
+agent-executable; `gdrive:` still needs Rene.
 
 ## 🎯 Next session — start here
 
-**1. Get the download-throughput number.** This is the only thing blocking the
-campaign design, and it is one command on Rene's **work laptop**:
-
-```
-rclone copy "r2:hannan-audio/FLAC/MadHannans - Cafe Java 1999-09-09/" ./test/ \
-  --s3-no-check-bucket --include "01 *" --progress
-```
-
-R2 from the Chromebook measured **~26–60 KB/s single-stream, ~250 KB/s with
-`--multi-thread-streams 8`**. At 250 KB/s the full 25 GB archive is ~28 hours
-of transfer. If the laptop clears ~2 MB/s the whole campaign is an afternoon.
-A 4-hour job and a 28-hour job want different runners — don't write the runner
-before knowing which.
-
-**Local disk and CPU are NOT the bottleneck** (measured: 587 MB/s write,
-2.9 GB/s read, 8 cores). Only the network path to R2 is slow. An earlier
-claim in this session that local copying was slow was wrong.
-
-**2. If the laptop is faster, run the whole pipeline there**, not just the
-staging. Download → render → upload → delete, with nothing crossing to the
-Chromebook but the final metadata update. The pipeline is portable: `rclone`
-(with `r2:` configured), `ffmpeg`, `python3`, `scripts/audio_process.py`.
-
-**3. Pull from R2, not Drive.** Drive's `Processed/` folders hold the same
-FLACs but accumulate orphaned duplicates under stale filenames, and the
-*newer* file is sometimes the wrong one (the §1b finding in
-`plans/title-filename-consistency/`). R2 is keyed by exactly what
-`recordings.json` says. Only consider Drive if it benchmarks much faster, and
-then MD5 every file against R2 first.
-
-**4. Settle the two §4-open items** — the R2 key convention and how the
-variant is recorded in provenance so `/archive-data/` and `version-map` stay
-honest. Provenance must record that the variant is **derived from the −20
-archive**, not from source. This is an engineering call, not a Rene decision.
-
-**5. Design the runner as show-by-show and pipelined.** Only ~17 GB free
-against a 25 GB archive, so it must stage per show. Pipelining (download show
-N+1 while rendering show N) costs ~2–4 GB peak and roughly halves wall time
-versus strict sequential. Also check whether the engine can be told to skip
-writing the intermediate FLAC — the variant ships as MP3 only, so that FLAC is
-pure churn.
-
-### Campaign parameters already settled (plan §4-decisions)
-- **−14 LUFS, one variant.** No −17.
-- **All 680 tracks.** Every track gains ≥3 dB, 643 gain ≥6 dB — there is no
-  subset where "Louder" would be inaudible.
-- **MP3 only** (~5.6 GB; FLAC too would be ~30.7 GB). Downloads stay archival
-  at −20. Also matches the finding that 24-bit FLAC stutters in Chrome on the
-  Chromebook and reads as dropouts.
-- **From the published −20 archive FLACs.**
-- **Gating (Rene's instruction, plan §4-gating): no blocking gates**, because
-  a gate overridden on all 680 tracks isn't a gate. **But keep measuring** —
-  log engagement/longest-event per track, render everything, then listen to
-  the **five worst outliers** before shipping. Rene has heard ~42 of 680.
-- **The −1.00 dBTP abort is exempt from "ignore the gates" and stays.** It is
-  what stops clipped audio reaching the site.
-
-### Then, after the render campaign
-- The player toggle (plan §5) — small; four of five surfaces already share
-  `PlaybackController`.
-- **`/process/` needs a caveat sentence** (plan §7). Its "linear gain only…
-  the dynamics of the room stay intact" claim contradicts shipped
-  transient-capped audio. Do not let the public page contradict provenance.
+1. **Merge PR #21**, watch the Action, then spot-check on renedebos.com (green
+   Action alone is not proof). Both CI gates pass locally.
+2. **Fix the applause-limiter provenance defect** above — small, contained,
+   and the pattern to copy is already in the same file.
+3. **Decide the six live-folder orphans** — cross-reference each title first;
+   the 210 superseded-folder files are a separate, lower-stakes sweep.
+4. **Optional:** migrate the `/player/` popup onto `PlaybackController`. It is
+   now the last independent engine and the last consumer of the
+   `window.HannanVariant` bridge; killing it removes both.
+5. **Optional:** `python3 scripts/build_archive_zip.py` to refresh the
+   complete-archive snapshot — it does not include the variant (downloads stay
+   −20), so this is only needed if the curated FLACs changed.
 
 ## ⚠️ Two measurement traps in this work
 
@@ -171,10 +189,16 @@ rm -rf ~/work/_dbltest ~/work/_bench ~/work/_applause_test \
 applause-precedence change — worth keeping if you expect to touch that code.
 `~/work/loudness-pilot` is the big one (~4.8 GB).
 
+**Keep `~/work/jerry-19-broadway-1999-10-25/` (1.2 GB) for now.** Its staged
+`tracks/` are the NR exports the audit above was run against; deleting them
+means re-downloading from Drive to repeat it. Drive still holds the originals,
+so it is safe to delete once you are done with that show.
+
 Also: **`main` is checked out in a separate worktree** at
-`/home/renedebos/renedebos.com` and is stale at `643869e`, ~75 commits behind.
-Nothing diverged, so `git -C /home/renedebos/renedebos.com pull` fixes it.
-Do that before working there or you will branch off a very old base.
+`/home/renedebos/renedebos.com`, currently at `79a9232` (PR #19) — 4 commits
+behind `origin/main`. Nothing diverged, so
+`git -C /home/renedebos/renedebos.com pull` fixes it. Do that before working
+there or you will branch off an old base.
 
 ## Player consolidation — final state (closed)
 
@@ -285,7 +309,9 @@ These came out of the player work but are general.
 instructions.
 
 **Plans:**
-- `plans/loudness-variants/loudness-variants-plan.md` — the active work.
+- `plans/loudness-variants/loudness-variants-plan.md` — **campaign complete**;
+  §5-result records what actually shipped and supersedes §5's three-way
+  `Archive / Louder / Loudest` sketch (only one variant was rendered).
 - `plans/title-filename-consistency/` — not started. Drive filenames that
   disagree with published titles, plus the orphaned-duplicate defect in
   `Processed/`. Step 2 (stop `draft_tracks.py` clobbering corrected titles) is
@@ -293,7 +319,9 @@ instructions.
 - `plans/player-consolidation/` — closed; `-codex.md` logs every review round.
 
 **Tests:** `node scripts/test-*.mjs` — 6 suites plus `test-fake-dom.mjs`
-(a helper). **160/160 passing** as of this handoff:
+(a helper). **160/160 passing**, re-run 2026-08-18 after the variant work
+touched `player-controller.js`, `player.js`, `playlist-views.js` and
+`songs.js`:
 
 | suite | tests |
 |---|---|
@@ -314,9 +342,22 @@ curated tracks, no orphan song pages).
 **Real-browser verification:** `scripts/browser_check.mjs` — needs
 `playwright-chromium`, a **global** install here, so run it as
 `NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs`. `--prod` points
-at `https://renedebos.com`. **A full `--prod` sweep has NOT been run against
-the PR #18 deploy** — post-deploy checking was done by hand (URL spot-checks
-listed above). That is the one loose end.
+at `https://renedebos.com`. **A full `--prod` sweep still has NOT been run** —
+not against PR #18, #20 or #21. Post-deploy checking has been hand-run URL
+spot-checks each time. That remains the standing loose end.
+
+Note the MCP Playwright tools are configured for channel `chrome` and fail
+here (`/opt/google/chrome/chrome` missing). The bundled chromium at
+`~/.cache/ms-playwright/chromium-1234/chrome-linux64/chrome` works, driven
+either headless with `--dump-dom` or over CDP (`--remote-debugging-port`)
+from `node --experimental-websocket` — Node 20 has no global `WebSocket`
+without that flag. That is how this session's browser verification was done.
+
+**Variant tooling:** `scripts/render_variant.py` (`--list` / `--jobs N` /
+`--upload`), `scripts/variant_outliers.py`, `scripts/variant_listen.py`. Rank
+listening candidates by **LRA delta, not engagement** — on archive input the
+engagement screens measure against a yardstick the first limiter pass already
+lowered.
 
 **Audio tooling:**
 - `scripts/ab_compare.py <slug> <track> [--raw PATH]` — A/B live vs freshly
