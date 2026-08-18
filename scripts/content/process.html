@@ -91,6 +91,28 @@
         is capped and the track simply lands a little quieter and honest. Either way, dynamics are never squashed
         to hit the target louder &mdash; a track landing a few dB quieter than its neighbors
         is preferred over flattening a fade or a clap-driven track pumping the room noise.</p>
+      <p><strong>What the player streams by default.</strong> Everything above describes
+        the archive itself, which is &minus;20&nbsp;LUFS and always will be &mdash; it is
+        what you download, and it is the master. But &minus;20&nbsp;LUFS is deliberately
+        quiet, and on phone speakers or in a car it is too quiet, so <strong>the player
+        defaults to a second, louder render</strong> of every track at
+        <strong>&minus;14&nbsp;LUFS</strong>, roughly where streaming services normalize.
+        Every page with a player says which version you are hearing and lets you switch to
+        <strong>Archive</strong> in one click. The loud version is streaming-only and
+        MP3-only; downloads are always the archival &minus;20 master.</p>
+      <p>It is made <em>from the published archive files</em>, not from a separate edit, so
+        it carries exactly the same fades, repairs and noise reduction &mdash; each variant
+        track records the fingerprint of the archive file it came from, and the site refuses
+        to build if any of them disagree. Reaching &minus;14 needs the millisecond-scale
+        limiter described above to work considerably harder than it does on the archive, and
+        we are candid that this costs some dynamic range: measured across all 680 tracks the
+        loud version gives up a median of 0.5&nbsp;LU and at worst 3.1&nbsp;LU of it. That
+        was checked by ear before shipping &mdash; blind, level-matched, on the eight
+        most-affected tracks in the archive, with controls in both directions to confirm the
+        test could detect a difference at all &mdash; and it was not audible to us. We are
+        still telling you it is there, because it is: if you want the recordings exactly as
+        they were mastered, switch to Archive. The loud version is a convenience, not an
+        improvement on the master.</p>
       <p>The output is a FLAC master and a 320&nbsp;kbps MP3 per track, each with an audio
         MD5 fingerprint, full <strong>embedded metadata</strong> (title, artist, show,
         track number, year) so downloads display properly in any player, and a

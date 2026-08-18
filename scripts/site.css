@@ -1825,3 +1825,60 @@ a.artist-chip:hover { filter: brightness(1.08); }
   font-size: 0.85em; background: var(--accent-light);
   padding: 0.05em 0.35em; border-radius: 4px;
 }
+
+/* ── Playback variant (Archive / Loud) ──────────────────────────────────
+   Loud is the DEFAULT (2026-08-18), so the note is load-bearing, not
+   decoration: a visitor who touches nothing is hearing the -14 render and
+   the page must say so. Sits above the track list, one per page — the track
+   row already carries seven controls and this is not a per-track setting. */
+.variant-pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin: 0 0 18px;
+}
+.variant-label {
+  font-family: var(--font-mono, "Space Mono", monospace);
+  font-size: .72rem;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  opacity: .7;
+}
+.variant-btns { display: flex; gap: 0; }
+.variant-btn {
+  font-family: var(--font-mono, "Space Mono", monospace);
+  font-size: .78rem;
+  letter-spacing: .04em;
+  padding: 9px 16px;
+  min-height: 44px;                 /* touch target, not just the visual box */
+  border: 1px solid var(--rule, #d8cfc0);
+  background: transparent;
+  color: var(--ink, #2b2620);
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+.variant-btn + .variant-btn { border-left: none; }
+.variant-btn:first-child { border-radius: 4px 0 0 4px; }
+.variant-btn:last-child  { border-radius: 0 4px 4px 0; }
+.variant-btn:hover { background: rgba(0, 0, 0, .04); }
+.variant-btn[aria-pressed="true"] {
+  background: var(--accent, #8a6a3b);
+  border-color: var(--accent, #8a6a3b);
+  color: var(--paper, #faf6ee);
+  font-weight: 700;
+}
+.variant-btn:focus-visible { outline: 2px solid var(--accent, #8a6a3b); outline-offset: 2px; }
+.variant-note {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: .86rem;
+  line-height: 1.5;
+  opacity: .82;
+}
+.variant-note strong { font-weight: 700; }
+@media (max-width: 560px) {
+  .variant-pick { gap: 8px 10px; }
+  .variant-btn { flex: 1 1 0; }
+  .variant-btns { flex: 1 1 100%; }
+}

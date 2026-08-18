@@ -1604,7 +1604,8 @@ def cmd_process(args):
     # whatever WORKFLOW_VERSION this run happens to be.
     prev_tracks = {}
     if args.slug:
-        prev_path = os.path.join(ROOT, "data", "processing", f"{args.slug}.json")
+        prev_path = (getattr(args, "provenance_out", None)
+                     or os.path.join(ROOT, "data", "processing", f"{args.slug}.json"))
         if os.path.exists(prev_path):
             try:
                 prev_tracks = json.load(open(prev_path)).get("tracks", {})
@@ -2051,7 +2052,8 @@ def cmd_process(args):
         info0 = probe(os.path.join(infolder, files[0]))
         cont = "FLAC" if files[0].lower().endswith(".flac") else "WAV"
         whole = lambda x: int(x) if float(x) == int(x) else x
-        dest = os.path.join(ROOT, "data", "processing", f"{args.slug}.json")
+        dest = (getattr(args, "provenance_out", None)
+                or os.path.join(ROOT, "data", "processing", f"{args.slug}.json"))
         # MERGE: keep any tracks not touched this run (possibly from an older
         # workflow version) and overlay the ones we just processed. This is what
         # lets one show hold a mix of versions — e.g. 29 tracks on v1 and a single
@@ -2441,6 +2443,12 @@ def main():
                         "this run (e.g. 'noise reduction (Audacity, whole show)'); "
                         "recorded show-level in provenance and shown on the site")
     p.add_argument("--slug", help="write provenance sidecar for this show slug")
+    p.add_argument("--provenance-out", dest="provenance_out", default=None,
+                    help="write the provenance sidecar to this path instead of "
+                         "data/processing/<slug>.json. Required for loudness-variant "
+                         "renders: the default path MERGES into the archive's own "
+                         "sidecar, so a variant render would silently overwrite the "
+                         "-20 archive's provenance with the variant's numbers.")
     p.add_argument("--transient-cap-over-applause",
                    dest="transient_cap_over_applause",
                    action="store_true", help=TCAP_OVER_APPLAUSE_HELP)

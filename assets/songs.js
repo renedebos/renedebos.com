@@ -43,13 +43,17 @@
   // rendered occurrence row — see that function's docstring for the field
   // list. Consumed by itemFromRowElement()/normalizeItem() in song-boot.js,
   // exactly like a show page's rows.
-  function occItemJson(o, songTitle, trackId, anchor, stream) {
+  function occItemJson(o, songTitle, trackId, anchor, stream, loudStream) {
     var lossless = o.flac ? { key: o.flac, format: "flac", sizeMb: o.flac_size_mb || null,
       title: o.flac.split("/").pop() } : null;
     return JSON.stringify({
       id: trackId,
       kind: "track",
       streamUrl: stream,
+      // The -14 loud render, or null when this track has none — same shape and
+      // same rule as the server-rendered row in _song_occ_html(): keep the two
+      // builders in sync (see occRowHtml()'s comment).
+      loudUrl: loudStream || null,
       title: songTitle,
       artist: o.artist_name || "",
       venue: o.venue || null,
@@ -69,6 +73,9 @@
     var label = songTitle + ", " + o.artist_name + ", " + o.date;
     var anchor = o.url + "#track-" + o.num;
     var stream = WORKER + "/stream?file=" + encodeURIComponent(o.file) + (o.ver ? "&v=" + o.ver : "");
+    var loudStream = o.loud
+      ? WORKER + "/stream?file=" + encodeURIComponent(o.loud) + (o.loud_ver ? "&v=" + o.loud_ver : "")
+      : null;
     var dur = o.duration ? '<span class="time-label">' + escOcc(o.duration) + "</span>" : "";
     var trackId = o.slug + "-" + (o.num < 10 ? "0" + o.num : o.num);
     var sizes = [];
@@ -83,7 +90,7 @@
       ["Size", sizes.join(" · ") || "—"],
       ["Process version", o.proc_ver ? "v" + o.proc_ver : "Not yet processed"],
     ]);
-    var itemJson = occItemJson(o, songTitle, trackId, anchor, stream);
+    var itemJson = occItemJson(o, songTitle, trackId, anchor, stream, loudStream);
     return '<div class="song-occ">'
       + '<div class="song-occ-head">'
       + '<a class="artist-chip artist-' + o.artist + '" href="' + escOcc(anchor) + '">' + escOcc(o.artist_name) + "</a>"

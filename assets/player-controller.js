@@ -78,6 +78,8 @@ const MAX_QUEUE_ITEMS = 1000;
 // data came from (a row's data-item JSON today; a catalog row once
 // /playlist//player/ migrate) — see plans/player-consolidation/ for the
 // full field-by-field rationale.
+import { srcForItem, onVariantChange } from './variant-pref.js';
+
 export function normalizeItem(raw) {
   if (!raw || typeof raw !== 'object') throw new TypeError('playable item must be an object');
   const id = String(raw.id || '');
@@ -97,6 +99,9 @@ export function normalizeItem(raw) {
     id,
     kind: raw.kind === 'recording' ? 'recording' : 'track',
     streamUrl,
+    // Optional -14 render. Absent/blank means this track has no variant, and
+    // srcForItem() falls back to streamUrl — a partial rollout must never 404.
+    loudUrl: raw.loudUrl ? String(raw.loudUrl) : null,
     title: raw.title ? String(raw.title) : 'Untitled',
     artist: raw.artist ? String(raw.artist) : '',
     venue: raw.venue || null,
@@ -173,6 +178,12 @@ export class PlaybackController {
     this._unshuffledQueue = null;
     this._views = new Set();
     this._destroyed = false;
+    // Swapping the loudness variant mid-track re-points the media element at a
+    // different render of the SAME performance, so the only correct behaviour
+    // is to keep the listener's position and playing/paused state. The audible
+    // hitch of the reload is the accepted cost of pre-rendered variants over a
+    // browser gain node (plans/loudness-variants §2).
+    this._unwatchVariant = onVariantChange(() => this._onVariantChanged());
     this._mediaSessionEnabled = mediaSession && typeof navigator !== 'undefined' && 'mediaSession' in navigator;
     // Structured result of the most recent failed play attempt — see
     // _handleError()/snapshot(). play() itself always resolves (never
@@ -454,8 +465,8 @@ export class PlaybackController {
     }
     this._idx = idx;
     const item = this._queue[idx];
-    this._currentSrc = item.streamUrl;
-    this.audio.src = item.streamUrl;
+    this._currentSrc = srcForItem(item);
+    this.audio.src = this._currentSrc;
     // Cued, not playing — matches setQueue()'s own "idle" convention for a
     // queue that has a valid currentItem but nothing actually playing yet
     // (see setQueue()'s non-autoplay branch above). Restoring visual state
@@ -512,7 +523,7 @@ export class PlaybackController {
       // Cued but paused: point the element at the item that slid in, without
       // starting it.
       ++this._gen;
-      this._currentSrc = this._queue[this._idx].streamUrl;
+      this._currentSrc = srcForItem(this._queue[this._idx]);
       this.audio.src = this._currentSrc;
       this._setState('paused');
       this._updateMediaMetadata();
@@ -710,9 +721,38 @@ export class PlaybackController {
   // supposedly-destroyed controller alive and could still call back into it —
   // Media Session handlers in particular are global to the document, so a
   // stale one would hijack the lock-screen controls of whatever replaced it.
+  // Re-point at the other render of the current item, preserving position and
+  // play state. A no-op when nothing is loaded, or when the resolved URL is
+  // unchanged (e.g. this track has no variant, so both settings mean the same
+  // file) — reassigning src there would restart playback for no reason.
+  _onVariantChanged() {
+    if (this._destroyed) return;
+    const item = this.currentItem;
+    if (!item) return;
+    const want = srcForItem(item);
+    if (want === this._currentSrc) return;
+    const at = this.audio.currentTime || 0;
+    const wasPlaying = !this.audio.paused;
+    this._currentSrc = want;
+    this.audio.src = want;
+    if (this.audio.load) this.audio.load();
+    // currentTime is only settable once the new source has metadata; setting it
+    // before then is silently dropped and the listener is thrown back to 0:00.
+    const restore = () => {
+      try { if (at > 0) this.audio.currentTime = at; } catch (_) { /* unseekable */ }
+      if (wasPlaying) { const p = this.audio.play(); if (p && p.catch) p.catch(() => {}); }
+    };
+    if (this.audio.readyState >= 1) restore();
+    else this.audio.addEventListener('loadedmetadata', restore, { once: true });
+    this._notify();
+  }
+
   destroy() {
     if (this._destroyed) return;
     ++this._gen;                       // invalidate any in-flight play() promise
+    // Dropped before anything else: a destroyed controller must not keep
+    // reacting to variant changes, same reasoning as _views below.
+    if (this._unwatchVariant) { this._unwatchVariant(); this._unwatchVariant = null; }
     this._unclaim();
     this._views.forEach(v => v.onDetach());
     this._views.clear();
@@ -814,10 +854,11 @@ export class PlaybackController {
     // holding an error won't recover on play() alone, and the src it failed on
     // is the same string we'd otherwise skip reassigning.
     if (retrying) this._currentSrc = null;
-    const reloading = this._currentSrc !== item.streamUrl;
+    const wantSrc = srcForItem(item);
+    const reloading = this._currentSrc !== wantSrc;
     if (reloading) {
-      this._currentSrc = item.streamUrl;
-      this.audio.src = item.streamUrl;
+      this._currentSrc = wantSrc;
+      this.audio.src = wantSrc;
       if (retrying && this.audio.load) this.audio.load();
     }
     this._updateMediaMetadata();

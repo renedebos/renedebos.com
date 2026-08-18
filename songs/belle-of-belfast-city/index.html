@@ -59,6 +59,20 @@
       </div>
     </div>
     <p class="track-hint">Every performance streams in full. &ldquo;Open on show page&rdquo; jumps to the song within its full set.</p>
+    <div class="variant-pick" data-variant-pick>
+      <span class="variant-label" id="variant-label">Playback</span>
+      <div class="variant-btns" role="group" aria-labelledby="variant-label">
+        <button type="button" class="variant-btn" data-variant="archive" aria-pressed="false">Archive</button>
+        <button type="button" class="variant-btn" data-variant="loud" aria-pressed="true">Loud</button>
+      </div>
+      <p class="variant-note" data-variant-note>
+        <strong>You are hearing the Loud version</strong> &mdash; an extra render at
+        &minus;14&nbsp;LUFS, about as loud as a streaming service, so it isn’t too quiet
+        on phone speakers or in a car. Switch to <strong>Archive</strong> for the
+        &minus;20&nbsp;LUFS masters exactly as they were mastered. Downloads are always
+        the Archive version. <a href="/process/">How these were made</a>.
+      </p>
+    </div>
     <div class="song-occs">
 <div class="song-occ">
         <div class="song-occ-head">
@@ -67,7 +81,7 @@
           <a class="song-occ-open" href="/shows/mad-sweetwater-2001-01-06/#track-19">open on show page &rarr;</a>
           <button type="button" class="track-add" data-id="mad-sweetwater-2001-01-06-19" aria-pressed="false" aria-label="Add to playlist selection"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg></button>
         </div>
-        <div class="custom-player" data-src="https://wav-download.renedebos.workers.dev/stream?file=MP3/MadHannans%20-%20Sweetwater%202001-01-06/19%20the%20Belle%20of%20Belfast%20City.mp3&amp;v=39bd4931cd97" data-item="{&quot;id&quot;: &quot;mad-sweetwater-2001-01-06-19&quot;, &quot;kind&quot;: &quot;track&quot;, &quot;streamUrl&quot;: &quot;https://wav-download.renedebos.workers.dev/stream?file=MP3/MadHannans%20-%20Sweetwater%202001-01-06/19%20the%20Belle%20of%20Belfast%20City.mp3&amp;v=39bd4931cd97&quot;, &quot;title&quot;: &quot;the Belle of Belfast City&quot;, &quot;artist&quot;: &quot;Mad Hannans&quot;, &quot;venue&quot;: &quot;Sweetwater&quot;, &quot;date&quot;: &quot;2001-01-06&quot;, &quot;dateDisplay&quot;: &quot;2001-01-06&quot;, &quot;durationSec&quot;: 214, &quot;durationLabel&quot;: &quot;3:34&quot;, &quot;peaksKey&quot;: null, &quot;pageUrl&quot;: &quot;/shows/mad-sweetwater-2001-01-06/#track-19&quot;, &quot;playLabel&quot;: &quot;the Belle of Belfast City, Mad Hannans, 2001-01-06&quot;, &quot;downloads&quot;: {&quot;lossless&quot;: {&quot;key&quot;: &quot;FLAC/MadHannans - Sweetwater 2001-01-06/19 the Belle of Belfast City.flac&quot;, &quot;format&quot;: &quot;flac&quot;, &quot;sizeMb&quot;: 40, &quot;title&quot;: &quot;19 the Belle of Belfast City.flac&quot;}}, &quot;dropouts&quot;: false}">
+        <div class="custom-player" data-src="https://wav-download.renedebos.workers.dev/stream?file=MP3/MadHannans%20-%20Sweetwater%202001-01-06/19%20the%20Belle%20of%20Belfast%20City.mp3&amp;v=39bd4931cd97" data-item="{&quot;id&quot;: &quot;mad-sweetwater-2001-01-06-19&quot;, &quot;kind&quot;: &quot;track&quot;, &quot;streamUrl&quot;: &quot;https://wav-download.renedebos.workers.dev/stream?file=MP3/MadHannans%20-%20Sweetwater%202001-01-06/19%20the%20Belle%20of%20Belfast%20City.mp3&amp;v=39bd4931cd97&quot;, &quot;loudUrl&quot;: &quot;https://wav-download.renedebos.workers.dev/stream?file=MP3-14/MadHannans%20-%20Sweetwater%202001-01-06/19%20the%20Belle%20of%20Belfast%20City.mp3&amp;v=4496683c4ea5&quot;, &quot;title&quot;: &quot;the Belle of Belfast City&quot;, &quot;artist&quot;: &quot;Mad Hannans&quot;, &quot;venue&quot;: &quot;Sweetwater&quot;, &quot;date&quot;: &quot;2001-01-06&quot;, &quot;dateDisplay&quot;: &quot;2001-01-06&quot;, &quot;durationSec&quot;: 214, &quot;durationLabel&quot;: &quot;3:34&quot;, &quot;peaksKey&quot;: null, &quot;pageUrl&quot;: &quot;/shows/mad-sweetwater-2001-01-06/#track-19&quot;, &quot;playLabel&quot;: &quot;the Belle of Belfast City, Mad Hannans, 2001-01-06&quot;, &quot;downloads&quot;: {&quot;lossless&quot;: {&quot;key&quot;: &quot;FLAC/MadHannans - Sweetwater 2001-01-06/19 the Belle of Belfast City.flac&quot;, &quot;format&quot;: &quot;flac&quot;, &quot;sizeMb&quot;: 40, &quot;title&quot;: &quot;19 the Belle of Belfast City.flac&quot;}}, &quot;dropouts&quot;: false}">
           <button class="play-btn" aria-label="Play the Belle of Belfast City, Mad Hannans, 2001-01-06" data-play-label="the Belle of Belfast City, Mad Hannans, 2001-01-06"><svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg></button>
           <div class="progress-wrap">
             <input type="range" class="progress-range" min="0" max="1000" value="0" step="1" aria-label="Seek the Belle of Belfast City, Mad Hannans, 2001-01-06" aria-valuetext="0:00 of 3:34">
@@ -94,5 +108,6 @@
 <script src="/assets/player.js"></script>
 <script src="/assets/track-select.js"></script>
 <script type="module" src="/assets/song-boot.js" onerror="window.__resolvePlaybackHost&amp;&amp;window.__resolvePlaybackHost({mode:'legacy'})"></script>
+<script type="module" src="/assets/variant-ui.js"></script>
 </body>
 </html>
