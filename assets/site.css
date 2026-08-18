@@ -1007,6 +1007,35 @@ tr:has(+ .ad-detail-row) .treat-toggle { transform: rotate(-135deg); }
   color: var(--muted);
   word-break: break-all;
 }
+/* One expandable row can now hold two renders (archive master and the -14
+   variant), so each numeric block gets a heading — without one the two sets
+   of near-identical figures are indistinguishable. */
+.ad-detail-head {
+  margin: 0.6rem 0 0.35rem;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.ad-detail-head:first-child { margin-top: 0; }
+/* Loud-variant columns: tinted as a group so it stays obvious at a glance
+   which figures describe the streaming variant rather than the master. */
+.tech-table td.loud-col, .tech-table th.loud-col {
+  background: color-mix(in srgb, var(--accent-light) 55%, transparent);
+}
+/* A loudness-range loss past 1 LU. The mode was sanctioned at <= 0.3 LU, so
+   anything at this size is worth a reader finding without sorting first. */
+.loud-delta-flag { color: var(--highlight); font-weight: 700; }
+
+/* Scope line above the technical table: the figures below describe the -20
+   archive, which is not what the player streams by default. */
+.tech-scope {
+  font-style: normal;
+  border-left: 3px solid var(--accent);
+  padding-left: 0.7rem;
+  margin-bottom: 0.9rem;
+}
 
 /* processing status badge (in the technical-data summary) */
 .proc-status {

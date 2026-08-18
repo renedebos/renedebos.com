@@ -600,12 +600,47 @@ def _render_summary(pt):
                 f"{loudnorm_render} track(s) ffmpeg loudnorm (older workflow)")
     return ""
 
-def tech_data_section(show, proc):
+def _variant_scope_note(var):
+    """The scope line for the technical table: every figure in it describes the
+    -20 archive, which since 2026-08-18 is NOT what the player streams by
+    default. The table was written when there was only one render, so an
+    unqualified "Target: -20 LUFS" now reads as a claim about what the visitor
+    is hearing. One sentence fixes that, plus the variant's own headline
+    numbers so the cost is stated where the measurements are, not only on
+    /process/.
+
+    Deliberately measured-not-asserted: the LRA spread is computed from this
+    show's own variant sidecar rather than quoting the archive-wide median."""
+    if not var:
+        return ""
+    vt = var.get("tracks", {})
+    if not vt:
+        return ""
+    capped = sum(1 for d in vt.values() if d.get("mode") == "sparse-transient-cap")
+    target = abs(var.get("target_lufs", -14))
+    bits = [f'Loud variant: &minus;{target}&nbsp;LUFS, MP3 only, '
+            f'derived from these same archive files']
+    if capped:
+        bits.append(f'{capped} of {len(vt)} '
+                    f'{"tracks" if capped != 1 else "track"} transient-capped')
+    return (f'<p class="tech-head tech-scope"><strong>These figures describe the '
+            f'archive master</strong> &mdash; the &minus;20&nbsp;LUFS files you download. '
+            f'The player streams the louder version by default; switch to '
+            f'<strong>Archive</strong> above to hear what is measured here. '
+            f'{" &middot; ".join(bits)} &middot; '
+            f'<a href="/archive-data/">per-track variant data</a>.</p>')
+
+
+def tech_data_section(show, proc, var=None):
     """Render a collapsible "Technical data" table for a processed show: every
     track's duration + sizes (from recordings.json) merged with its input/achieved
     loudness, true peak, LRA, and gain applied (from the processing provenance,
     where measured). The per-track audio MD5 is carried in the sidecar for
-    integrity/drift checks but is not displayed."""
+    integrity/drift checks but is not displayed.
+
+    `var` is the show's loudness-variant sidecar, used only for the scope note
+    above the table -- its numbers are never mixed into the table's own columns,
+    which describe the archive and nothing else."""
     pt = proc.get("tracks", {})
     tcap_n = sum(1 for d in pt.values() if d.get("mode") == "sparse-transient-cap")
     limiter_n = sum(1 for d in pt.values() if d.get("mode") == "applause-limiter")
@@ -685,7 +720,7 @@ def tech_data_section(show, proc):
   <section>
     <details class="tech-details" id="technical-data">
       <summary>Technical data &mdash; loudness, peaks &amp; sizes{badge}</summary>
-      <p class="tech-head">{head}</p>
+      <p class="tech-head">{head}</p>{_variant_scope_note(var)}
       <div class="tech-scroll">
       <table class="tech-table">
         <thead><tr><th>#</th><th>Song</th><th>Time</th><th>MP3</th><th>FLAC</th>

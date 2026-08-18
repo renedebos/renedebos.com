@@ -683,7 +683,7 @@ def build_archive_data():
         extra_scripts='\n<script src="/assets/archive-data.js"></script>',
         main='''
   <section class="archive-data">
-    <p class="pl-intro">Every track in the archive with the spec data collected for it — loudness, true peak, LRA, workflow version, treatment, tags, and damage flags. Filter or search, click a column to sort, click a song to jump to its show page.</p>
+    <p class="pl-intro">Every track in the archive with the spec data collected for it — loudness, true peak, LRA, workflow version, treatment, tags, and damage flags. The tinted <strong>Loud</strong> columns describe the separate −14 LUFS streaming variant, including what it cost in loudness range (ΔLRA); everything else describes the −20 archive master. Click a treatment cell for the full limiter breakdown of either render. Filter or search, click a column to sort, click a song to jump to its show page.</p>
     <input id="ad-q" class="search-input" type="search" autocomplete="off" placeholder="Search song, show, venue, songwriter…">
     <div class="pl-panel">
       <div class="pl-panel-head"><span class="pl-filter-label">Filters</span><button type="button" id="ad-clear" class="pl-clear" hidden>Clear filters</button></div>
@@ -921,7 +921,7 @@ def build_show(show):
     # Technical-data table for shows that have been through the audio_processing
     # workflow (renders all tracks; loudness columns filled where measured).
     if proc:
-        parts.append(tech_data_section(show, proc))
+        parts.append(tech_data_section(show, proc, var))
 
     cards = []
     for r in canon:

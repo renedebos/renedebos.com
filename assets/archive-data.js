@@ -82,6 +82,38 @@
       get: function (t) { return t.mp3TruePeak; }, render: function (t) { return fmt1(t.mp3TruePeak); } },
     { key: "lra", label: "LRA", numeric: true, cls: "tnum",
       get: function (t) { return t.lra; }, render: function (t) { return fmt1(t.lra); } },
+    // ── the -14 loud variant ────────────────────────────────────────────
+    // Its own columns, never merged into the archive's: these describe a
+    // different render (see CLAUDE.md, "The -14 loud variant"). Placed right
+    // after the archive's LRA because ΔLRA is the number that says what the
+    // extra loudness cost, and it only means anything next to the LRA it moved.
+    { key: "loudLufs", label: "Loud LUFS", numeric: true, cls: "tnum loud-col",
+      get: function (t) { return t.loud ? t.loud.lufs : null; },
+      render: function (t) { return fmt1(t.loud ? t.loud.lufs : null); } },
+    { key: "loudLraDelta", label: "Loud ΔLRA", numeric: true, cls: "tnum loud-col",
+      get: function (t) { return t.loud ? t.loud.lraDelta : null; },
+      render: function (t) {
+        if (!t.loud || t.loud.lraDelta == null) return "—";
+        // Negative = dynamic range lost. Flagged past 1 LU: the mode was
+        // sanctioned at ≤0.3 LU and the campaign's worst case is 3.10, so a
+        // reader should be able to find the outliers without sorting.
+        var d = t.loud.lraDelta;
+        var cls = d <= -1 ? ' class="loud-delta-flag"' : "";
+        return "<span" + cls + ' title="Loudness range vs the archive master">'
+          + fmtSigned(d) + "</span>";
+      } },
+    { key: "loudTreatment", label: "Loud Treat", numeric: false, cls: "ttreat loud-col",
+      get: function (t) { return t.loud ? (t.loud.treatment || "") : ""; },
+      render: function (t) {
+        if (!t.loud || !t.loud.treatment) return "—";
+        var label = TREAT_LABEL[t.loud.treatment] || t.loud.treatment;
+        if (t.loud.tcap) {
+          return '<span class="treat treat-' + esc(t.loud.treatment) + ' treat-expandable" '
+            + 'data-id="' + esc(t.id) + '" title="Click for the full cap breakdown">'
+            + esc(label) + '<span class="treat-toggle" aria-hidden="true"></span></span>';
+        }
+        return '<span class="treat treat-' + esc(t.loud.treatment) + '">' + esc(label) + "</span>";
+      } },
     { key: "plr", label: "PLR", numeric: true, cls: "tnum",
       get: function (t) { return t.plr; }, render: function (t) { return fmt1(t.plr); } },
     { key: "maxM", label: "Max M", numeric: true, cls: "tnum",
@@ -136,8 +168,7 @@
   // expandable row rather than a hover-only tooltip (see the Treatment
   // column's render) — same disclosure idiom as the show page's own
   // technical-data table, just per-row instead of per-show.
-  function renderDetailRow(t) {
-    var cap = t.tcap;
+  function capBlock(cap, heading, extra) {
     var fields = TCAP_FIELD_LABELS.map(function (f) {
       var v = cap[f[0]];
       if (v == null) return "";
@@ -147,10 +178,30 @@
     var override = cap.override
       ? '<p class="ad-detail-override">' + esc(cap.override_note || "Ceiling raised for this track.") + "</p>"
       : "";
-    var chain = t.chain ? '<p class="ad-detail-chain">' + esc(t.chain) + "</p>" : "";
+    return (heading ? '<p class="ad-detail-head">' + esc(heading) + "</p>" : "")
+      + '<div class="ad-detail-grid">' + fields + "</div>" + override + (extra || "");
+  }
+
+  function renderDetailRow(t) {
+    var blocks = "";
+    if (t.tcap) {
+      blocks += capBlock(t.tcap, t.loud && t.loud.tcap ? "Archive master (−20 LUFS)" : "",
+        t.chain ? '<p class="ad-detail-chain">' + esc(t.chain) + "</p>" : "");
+    }
+    if (t.loud && t.loud.tcap) {
+      // The derivation proof belongs here, next to the numbers it qualifies:
+      // loudSrcMd5 is the decoded md5 of what the variant render READ, and it
+      // equals the archive master's own md5. The build refuses to run if they
+      // ever disagree — this line is that guarantee made visible.
+      var proof = t.loud.loudSrcMd5
+        ? '<p class="ad-detail-chain">Rendered from the published archive master'
+          + ' · source audio md5 ' + esc(String(t.loud.loudSrcMd5).slice(0, 12)) + "</p>"
+        : "";
+      blocks += capBlock(t.loud.tcap, "Loud variant (−14 LUFS, streaming only)", proof);
+    }
+    if (!blocks) return "";
     return '<tr class="ad-detail-row" data-detail-for="' + esc(t.id) + '"><td colspan="' + COLUMNS.length + '">'
-      + '<div class="ad-detail-grid">' + fields + "</div>" + override + chain
-      + "</td></tr>";
+      + blocks + "</td></tr>";
   }
 
   function uniq(key) {
@@ -251,7 +302,7 @@
       var row = "<tr>" + COLUMNS.map(function (c) {
         return '<td class="' + (c.cls || "") + '">' + c.render(t) + "</td>";
       }).join("") + "</tr>";
-      if (t.tcap && expandedIds[t.id]) row += renderDetailRow(t);
+      if ((t.tcap || (t.loud && t.loud.tcap)) && expandedIds[t.id]) row += renderDetailRow(t);
       return row;
     }).join("");
     statusEl.textContent = rows.length + " of " + CATALOG.length + " tracks match";
