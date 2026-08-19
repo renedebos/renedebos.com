@@ -11,7 +11,9 @@ completed. May name a different plan file as the first word.
 ## Steps
 
 1. **Run the review and wait for it to finish.** Default plan file is
-   `plans/player-consolidation/player-consolidation-plan.md`:
+   `plans/page-cleanup/page-cleanup-plan.md` — the current project. Point it
+   at a different plan when reviewing older work; a review run against the
+   wrong plan reads as confident and is wholly unusable:
 
    ```
    bash scripts/codex_review.sh <plan-file> "<focus>"

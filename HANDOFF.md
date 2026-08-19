@@ -1,5 +1,5 @@
 # Session Handoff — Hannan Recordings (renedebos.com)
-**Date:** 2026-08-19 · **Branch:** `main` (no feature branch open)
+**Date:** 2026-08-19 (second pass) · **Branch:** `main` (no feature branch open)
 
 ## ⛔ READ THIS FIRST
 
@@ -7,16 +7,16 @@
 and verified on renedebos.com itself — not just by a green Action. There is no
 in-flight work and no open PR.
 
-**The next project is page-layout and copy cleanup.** Rene's own framing:
-tidy page layout, move text blocks around, and maintain the standing text.
-Concrete examples he gave — the "Audio processing · done" pill, its
-"All tracks brought to the archive's loudness target…" blurb, and the
-"Every song streams in full · lossless FLAC downloads are password protected"
-line. See **"Next project"** below; it is scoped but NOT started.
+**The page-layout and copy cleanup project is STARTED, and round 1 is live.**
+`plans/page-cleanup/` exists on `main`: a plan with a decision register and a
+mechanically-derived inventory. All three items Rene named are gone from the
+live site, along with several the inventory turned up. **Every row of the
+register is decided** — see "Page cleanup" below for what shipped and what a
+round 2 would be.
 
 **The repo is clean, and that is new.** As of today: one branch (`main`) plus
 the deliberate `miniplayer-parked` archive, one deploy path, no stranded
-plans. Four PRs merged and one closed today were mostly getting there. Don't
+plans. Five PRs merged and one closed today were mostly getting there. Don't
 undo it by starting the next project on an old branch.
 
 **Phase 3 (the sticky mini-player) is PARKED** — do not resume it, and do not
@@ -24,6 +24,12 @@ run `/apply-review` against its findings. Everything is on branch
 `miniplayer-parked` (`6bdecc6`). Never merge it; never delete it.
 
 ## ✅ Done this session (2026-08-19)
+
+### Page cleanup round 1 — plan, inventory, and the cut
+`plans/page-cleanup/` created and PR #29 merged and verified live. Full detail
+under "Page cleanup" below. The short version: the three items Rene named are
+gone, plus a four-times-per-page redundancy the inventory found that nobody had
+listed, and both policy-disclosure blocks survived as explicit KEEPs.
 
 ### The mobile seek rail got a real pointer target
 Seeking on a phone meant landing a fingertip in a **3px-high box**. The element
@@ -154,69 +160,66 @@ wouldn't have triggered it either.
 still 500s. Inert — superseded by a later successful deploy of the same
 content, and it only carried a `.gitignore` change. It expires on its own.
 
-## 🎯 Next project — page layout & copy cleanup (scoped, NOT started)
+## 🎯 Page cleanup — round 1 shipped, register fully decided
 
-Rene's ask: tidy the layout, move text blocks, maintain standing copy.
+`plans/page-cleanup/` — a plan (principles, decision register, verbatim
+appendix) and an inventory. **PR #29, merged and verified on renedebos.com
+itself**, not just by a green Action.
 
-**Suggested structure** (agreed in discussion, not yet created):
+**The inventory is the reason this was finite.** Every standing text block with
+its generator `file:line` and how many pages it actually reaches, counted from
+`recordings.json` + the processing sidecars + the built trees. Regenerate the
+counts before acting on a row — they are a snapshot.
 
-```
-plans/page-cleanup/
-    page-cleanup-plan.md      ← principles + decision register
-    page-cleanup-inventory.md ← generated once, mechanically
-```
+It sharpened the handoff's own numbers: the "done" pill reads `done` on **30 of
+30** generated show pages, not 30 of 31 — the 31st show is hidden and track-less,
+so it generates no page at all. `STATUS_BLURB`'s three other values reached zero
+pages.
 
-Avoid naming it `layout` — half the work is copy, and that name will quietly
-narrow the scope.
+**It also found what nobody had listed: the password fact was stated FOUR times
+on every show page.** Track hint, Full Recording hint, `.wav-note`, and the
+download button's hover. Now once in body copy plus the hover.
 
-**This is not a phased project.** `player-consolidation` had phases because
-each step depended on the last. Here you have N independent decisions, each
-cheap to make and cheap to revert. What it needs instead:
+### What shipped
 
-1. **An inventory** — every standing text block and badge per page type, with
-   generator `file:line` and how many pages it reaches. Built with grep, not by
-   hand. This is what makes the project finite rather than "and there are more
-   of these."
-2. **A decision register** — one row per item: keep / remove / move / reword,
-   plus one line of *why*. In six months the question is never "what did we
-   remove", it is "why".
-3. **A verbatim appendix of removed copy**, so restoring something needs no git
-   archaeology.
+- Show pages: the "Audio processing · `done`" pill and blurb cut (`STATUS_BLURB`
+  deleted); password redundancy 4 → 1; `status_line()` now emits **only** the
+  hand-work pills and returns `""` for the 22 shows with none.
+- Sitewide (174 pages): the eyebrow above every `<h1>` cut — **the `eyebrow`
+  parameter and all ten call sites went too**, not just the markup — and the
+  footer's "Part of The Hannan Tapes archive" cut in both shells. `tagline` is
+  now optional; passing `""` omits the element.
+- Song pages (136): header is just the song title.
+- `/contact/` sub, `/playlist/` help (3 paragraphs → 2), and `/process/`'s
+  hand-bumped "Last updated", which was genuinely stale.
+- Three orphaned CSS rules removed with their markup.
 
-**Principles already falling out of Rene's examples:** remove text that is
-constant across all pages, and remove text that answers a question the visitor
-did not ask.
+### ⚠️ The two things that must NOT be swept up in a round 2
 
-**Measured facts for the three examples he named:**
+**The variant disclosure note and the "These figures describe the archive
+master" scope line are policy commitments, not clutter.** While Loud is the
+default, `CLAUDE.md` requires every page with a player to say in plain words
+which version is playing, and `/process/` to explain the cost. **Both read
+exactly like the boilerplate that was cut**, which is why they are explicit
+KEEPs in the plan §3 with their reasons. Verified live after the deploy: the
+note on the show and song pages, the scope line on all 30 show pages.
 
-| item | generator | reach |
-|---|---|---|
-| "Audio processing · **done**" pill | `fragments.py:552` `STATUS_BLURB` + `status_line()` | **30 of 31 shows say `done`** |
-| "All tracks brought to the archive's loudness target…" | same `STATUS_BLURB` map | same |
-| "Every song streams in full · lossless FLAC downloads are password protected" | `pages.py:904` | **30 show pages** |
+### A round 2, if there is one
 
-The pill is the strongest case: a badge reading the same on 30 of 31 pages is
-decoration that looks like data.
+- **The noise-reduced pill renders twice** on the 8 shows carrying it —
+  page-level and on the technical-data summary. Predates this work; more visible
+  now the label row is gone.
+- `/contact/`'s `.contact-section` still has `padding-top: 2rem`, which existed
+  to sit under the sub that was cut. Slightly loose on desktop, fine on mobile.
+- Layout/placement rather than copy, plus the editorial items in inventory §8
+  (per-show descriptions, `/history/`, the homepage cards).
 
-### ⚠️ The one thing that must NOT be swept up
+### Practical notes, still true
 
-**The variant disclosure text is a policy commitment, not clutter.** While Loud
-is the default, `CLAUDE.md` requires every page with a player to say in plain
-words which version is playing, and `/process/` to explain the cost. Same for
-the "These figures describe the archive master" scope line above the
-technical-data table (shipped in PR #21). **Both read exactly like the
-boilerplate being cut.** Put them in the register as explicit KEEPs, with the
-reason, so a later pass doesn't rediscover them as clutter.
-
-### Practical notes for that work
-- Every change is a template edit in `scripts/sitegen/fragments.py` (1024
-  lines) or `pages.py` (1211 lines), then `make build`. **There is no per-page
-  HTML to edit.**
-- Batch implementation into one or two commits, not one per string — each is a
-  rebuild.
-- There is a **`content-editor` agent** set up for exactly this kind of
-  wording/metadata work.
-- Start on a fresh branch off `main`.
+- Every change is a template edit in `scripts/sitegen/fragments.py` or
+  `pages.py`, then `make build`. **There is no per-page HTML to edit.**
+- Batch into one or two commits, not one per string — each is a rebuild.
+- There is a **`content-editor` agent** for this kind of wording work.
 
 ## 🔭 Other open items (none blocking)
 
@@ -230,23 +233,20 @@ reason, so a later pass doesn't rediscover them as clutter.
    than resolved**: it waited on player-consolidation's URL-grammar decision,
    which was never made (Phase 3 parked). Whoever builds the timestamp piece
    owns that decision; the two in-scope pieces were never blocked.
-4. **Retire `player-consolidation`** — 0 ahead, every commit on `main`, tree
-   clean. Must be run from *outside* its own worktree:
-   ```
-   cd /home/renedebos/renedebos.com
-   git worktree remove /home/renedebos/renedebos.com-player-consolidation
-   git branch -d player-consolidation
-   git push origin --delete player-consolidation
-   ```
+4. ~~Retire `player-consolidation`~~ — **done.** Branch, remote and worktree
+   are all gone; `git worktree list` is back to `main` plus whatever feature
+   worktree is open.
 5. **`origin/claude/hannan-chromebook-droplet-sync-jq0hfb`** — 2 ahead, 42
    behind. Nobody has opened it.
 6. **Optional:** migrate the `/player/` popup onto `PlaybackController` — the
    last independent engine and the last consumer of the `window.HannanVariant`
    bridge. **Optional:** `scripts/build_archive_zip.py`, only if curated FLACs
    changed (they haven't).
-7. **`/review-step` defaults to the player-consolidation plan.** Update
-   `.claude/commands/review-step.md` once a new plan file exists, or the review
-   confidently reports on the wrong document.
+7. ~~`/review-step` defaults to the player-consolidation plan~~ — **done.**
+   `.claude/commands/review-step.md` now defaults to
+   `plans/page-cleanup/page-cleanup-plan.md`. Repoint it whenever the current
+   project changes: a review run against the wrong plan reads as confident and
+   is wholly unusable.
 
 ## 🔍 Reusable audit: "does this show still carry its hand edits?"
 
@@ -324,6 +324,19 @@ These came out of the player work but are general.
 
 Added 2026-08-19:
 
+- **Inventory before deciding, and count the generated output — not the data.**
+  The handoff said "30 of 31 shows say `done`"; the live figure is 30 of 30,
+  because the 31st is hidden and generates no page. And the strongest finding of
+  the whole cleanup — one fact stated four times per show page — was on nobody's
+  list. A register built only from remembered examples would have missed it.
+- **Removing markup means removing its parameter too.** Cutting the eyebrow
+  `<p>` while leaving `eyebrow=` at ten call sites would have left a dead
+  argument that reads as load-bearing to the next person. Same for the CSS: a
+  rule whose only selector is gone is a landmine, not a leftover.
+- **Copy that reads like boilerplate is not always boilerplate.** The variant
+  disclosure note is indistinguishable in tone from the lines being cut, and is
+  a documented commitment. Write the KEEPs down *with their reason* in the same
+  document as the cuts, or a later pass rediscovers them as clutter.
 - **A shorthand CSS property resets its longhands, and inline beats
   stylesheet.** `style.background = ...` silently wipes a `background-size`
   set in CSS. When a rule depends on a longhand, every JS painter must assign
@@ -459,8 +472,9 @@ instructions.
   than resolved (see "Other open items").
 - `plans/home-page/` — **closed**, shipped 2026-08-13. Its §8 records the
   stray second deploy mechanism, now disconnected.
-- `plans/page-cleanup/` — **does not exist yet**; the structure proposed for
-  the next project. See "Next project" above.
+- `plans/page-cleanup/` — **round 1 shipped** (PR #29). Register fully decided;
+  removed copy recorded verbatim in its Appendix A, CSS included, so restoring
+  anything needs no git archaeology. See "Page cleanup" above.
 - `plans/title-filename-consistency/` — not started. Drive filenames that
   disagree with published titles, plus the orphaned-duplicate defect in
   `Processed/`. Step 2 (stop `draft_tracks.py` clobbering corrected titles) is
