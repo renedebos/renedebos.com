@@ -44,6 +44,20 @@ const MAX_TRACKS = 500;
 // still blocked, which is the attack that matters on a static site.
 const WAV_WORKER = "https://wav-download.renedebos.workers.dev";
 const CONTACT_WORKER = "https://contact-form.renedebos.workers.dev";
+// Cloudflare Web Analytics. The beacon is injected by Cloudflare at the edge,
+// not by anything in this repo, so before 2026-08-19 it was silently blocked
+// by script-src on every page and the analytics collected nothing.
+//
+// HOST, not the documented `.../beacon.min.js` path: the real URL carries a
+// version suffix (.../beacon.min.js/v4513226c...), and a CSP source path only
+// prefix-matches when it ends in "/" -- otherwise it must match exactly. The
+// documented path source would therefore never match what is actually
+// requested.
+//
+// No connect-src entry is needed: under AUTOMATIC injection the beacon posts
+// to same-origin /cdn-cgi/rum, already covered by 'self'. Manual embedding
+// would need cloudflareinsights.com added there -- we do not embed manually.
+const CF_ANALYTICS = "https://static.cloudflareinsights.com";
 const SECURITY_HEADERS = {
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
   "X-Content-Type-Options": "nosniff",
@@ -51,7 +65,7 @@ const SECURITY_HEADERS = {
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
   "Content-Security-Policy":
-    "default-src 'self'; script-src 'self' 'unsafe-inline'; " +
+    `default-src 'self'; script-src 'self' 'unsafe-inline' ${CF_ANALYTICS}; ` +
     "style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
     `connect-src 'self' ${WAV_WORKER} ${CONTACT_WORKER}; media-src 'self' ${WAV_WORKER}; ` +
     "object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'",
