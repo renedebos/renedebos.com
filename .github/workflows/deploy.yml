@@ -4,6 +4,13 @@ on:
   push:
     branches: [main]
 
+  # Manual re-run. Added 2026-08-19 after a deploy run wedged in "queued" and
+  # could not be recovered: cancel and force-cancel both returned HTTP 500, and
+  # `gh run rerun` refused with "this workflow is already running". With a
+  # push-only trigger there was no way to deploy again without inventing a
+  # commit, so a stuck runner meant main could not be redeployed at all.
+  workflow_dispatch:
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
