@@ -105,29 +105,28 @@ Two traps this run hit, both worth knowing:
   Montgomery` and `19 Peacful Easy Feeling`, both corrected at publish. Both
   are bit-exact against their original filenames.
 
-## 🐞 Open defect: applause-limiter provenance is not reproducible
+## 🐞 Applause-limiter provenance — code FIXED, stored records NOT
 
-**Found 2026-08-18, not yet filed or fixed.** `audio_process.py:1760-1764`:
-when a publish **resumes** over an existing applause-limiter render it does
-not know what gain produced those bytes, so it infers one —
-`actual_gain = round(output_integrated - input_integrated, 2)` — and writes
-that into the provenance `chain`. For a limiter track that subtraction is
-systematically wrong, because the limiter already pulled the applause
-transients down, so output loudness is not input + gain.
+**The code half is shipped** (`1035c7e`, 2026-08-18). A publish that *resumed*
+over an existing applause-limiter render used to infer the applied gain as
+`round(out_I - in_I, 2)` and write that into the provenance `chain` — which a
+limiter makes systematically wrong, since it has already pulled the applause
+transients down, so output loudness is not input + gain. `audio_process.py`
+now persists the real gain/limit in a `.v8state.json` beside the output (the
+file the transient cap already used, now carrying a `"mode"` key) and refuses
+to resume without it. Verified on the track the defect was measured against:
+fresh render applies `2.67 dB`, the old formula computes exactly the published
+`2.65`, and resume now reproduces the chain byte for byte. **Do not** go after
+rounding; that was an early wrong guess.
 
-Measured on 1999-10-25 track 14: chain records `volume=2.65dB`, the render
-actually applied **≈2.67 dB** (live file 0.0198 dB louder than the re-render;
-the difference is spread across the whole track rather than concentrated in
-the 1:40–1:45 applause window, which is what identifies it as a global gain
-difference and not a limiter difference). Track 20 the same. Audibly nothing;
-but the recorded chain is not a recipe that reproduces the bytes.
-
-**The fix already exists for the other mode.** Transient-cap writes a
-`.v8state.json` beside each output holding the gain/limit that actually
-produced it, and refuses to resume without it — *"provenance must never
-describe a chain it merely guesses"* (`audio_process.py:1728`). Do the same
-for applause renders instead of inferring. **Do not** go after rounding; that
-was an early wrong guess in this session.
+**The data half is open and written up:**
+`plans/applause-provenance-repair/`. Every applause chain written by a resume
+*before* that commit is still an estimate in `data/processing/*.json` and on
+`/archive-data/`. 42 tracks across 16 shows are in that mode — **that is the
+upper bound, not the count of bad records**, since a clean first render
+recorded its true gain. Sizing it is ~20 min (step 1 in the plan) and is most
+of the value; the full repair is ~1.5–2 h. Error measured so far: 0.02 dB, no
+audio affected. Read §4 of the plan before deciding to do it at all.
 
 ## 🧹 R2 orphan inventory (measured 2026-08-18, mostly NOT cleaned)
 
@@ -149,12 +148,22 @@ agent-executable; `gdrive:` still needs Rene.
 
 ## 🎯 Next session — start here
 
-1. **Merge PR #21**, watch the Action, then spot-check on renedebos.com (green
-   Action alone is not proof). Both CI gates pass locally.
-2. **Fix the applause-limiter provenance defect** above — small, contained,
-   and the pattern to copy is already in the same file.
-3. **Decide the six live-folder orphans** — cross-reference each title first;
-   the 210 superseded-folder files are a separate, lower-stakes sweep.
+1. ~~Merge PR #21~~ — **done.** Merged (`51b8603`), Action green, and the scope
+   line plus the `/archive-data/` Loud columns spot-checked on renedebos.com
+   itself.
+2. ~~Fix the applause-limiter provenance defect~~ — **code done** (`1035c7e`).
+   The stored-records repair is written up in
+   `plans/applause-provenance-repair/`; its cheap 20-minute scoping pass is
+   the next move there, and nothing depends on it.
+3. ~~Decide the six live-folder orphans~~ — **done.** All six deleted from R2
+   after cross-referencing, plus the four matching stale files in Drive
+   `Processed/`. Two traps found: `Angel of Montgomery` is a *live* filename in
+   `SeanHannan - 19 Broadway unknown date`, so match on the full key and never
+   the filename; and on 1999-06-21 the clean-looking `15 Still I Love Him` was
+   the stale July render while the LIVE key is `15 Still I Love Him␣␣` with two
+   trailing spaces — don't "promote" the tidier name, it is older audio. The
+   trailing-space rename is a separate optional tidy-up. The 210
+   superseded-folder files and 100 directory placeholders are untouched.
 4. **Optional:** migrate the `/player/` popup onto `PlaybackController`. It is
    now the last independent engine and the last consumer of the
    `window.HannanVariant` bridge; killing it removes both.
@@ -312,6 +321,9 @@ instructions.
 - `plans/loudness-variants/loudness-variants-plan.md` — **campaign complete**;
   §5-result records what actually shipped and supersedes §5's three-way
   `Archive / Louder / Loudest` sketch (only one variant was rendered).
+- `plans/applause-provenance-repair/` — not started, written 2026-08-18. The
+  stored-provenance half of the applause defect above; step 1 is a 20-minute
+  scoping pass that decides whether the rest is worth doing.
 - `plans/title-filename-consistency/` — not started. Drive filenames that
   disagree with published titles, plus the orphaned-duplicate defect in
   `Processed/`. Step 2 (stop `draft_tracks.py` clobbering corrected titles) is
