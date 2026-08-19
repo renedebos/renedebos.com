@@ -237,7 +237,17 @@ WORKFLOW_VERSIONS = {
                 "regions recorded in provenance. The `plan` command dry-runs the "
                 "sizing decision without writing audio or running the true-peak "
                 "safety loop, so a hot limiter track's actual output can land a bit "
-                "quieter than plan predicted.",
+                "quieter than plan predicted. The accepted render's gain/limit are "
+                "persisted in a .v8state.json beside the output (the same file the "
+                "transient cap uses, tagged with its mode; the name is historical) "
+                "and a resume that cannot load it re-renders. Before that, a resumed "
+                "applause render INFERRED its gain as out_I - in_I, which a limiter "
+                "makes systematically wrong — the limiter has already pulled the "
+                "transients down, so output loudness is not input + gain, and the "
+                "recorded chain did not reproduce the bytes (measured on "
+                "jerry-19-broadway-1999-10-25 trk 14: chain said volume=2.65dB, the "
+                "render had applied ~2.67 dB). Audibly nothing; but provenance must "
+                "be a recipe, not an estimate.",
         "loudnorm": "linear modes as v4; applause-limiter mode uses no loudnorm: "
                     "volume=<gain>dB,alimiter=limit=<-1.2 dB>:attack=5:release=100:"
                     "level=false:latency=1",
@@ -348,8 +358,10 @@ WORKFLOW_VERSIONS = {
                 "over-ceiling render (deliberately stronger than the applause loop's "
                 "warn-and-keep: this mode touches music transients, so compliance is "
                 "non-negotiable). The accepted render's gain/limit are persisted in a "
-                ".v8state.json beside the output; a resume that cannot load it (or "
-                "whose file fails the strict ceiling) re-renders instead of guessing "
+                ".v8state.json beside the output, tagged with the mode that wrote it "
+                "(v5 applause renders now use the same file); a resume that cannot "
+                "load it, or loads one written by the other mode, or whose file fails "
+                "the strict ceiling, re-renders instead of guessing "
                 "— provenance never describes a chain it cannot prove. A track whose "
                 "engagement stats fire a 'listen before shipping' flag HARD-BLOCKS "
                 "the run until Rene either accepts it after listening "
@@ -1723,27 +1735,46 @@ def cmd_process(args):
                           f"{existing_md5[:8]}) — cannot trust this resume-skip; "
                           "reprocessing", flush=True)
                     resumable = False
-        if resumable and tcap:
-            # A resumed tcap render is only trusted when it can PROVE its
+        if resumable and (tcap or limiter):
+            # A resumed limiter render — applause-limiter (v5) or
+            # transient-cap (v8) — is only trusted when it can PROVE its
             # chain: the .v8state.json written beside the accepted render
             # holds the gain/limit that actually produced the bytes (retries
             # may have moved both, and neither leaves a reliable loudness
             # fingerprint). Missing state, or an output over the strict
             # ceiling (interrupted mid-retry), means re-render — provenance
             # must never describe a chain it merely guesses.
+            #
+            # The gain CANNOT be recovered by measuring the output. Once a
+            # limiter has pulled transients down, output loudness is no longer
+            # input + gain, so `out_I - in_I` understates the gain actually
+            # applied by however much the limiter took off. That subtraction is
+            # what this code used to do for applause tracks, and it wrote a
+            # `chain` that does not reproduce the bytes it describes.
             state_path = out_audio + ".v8state.json"
             try:
                 st = json.load(open(state_path))
+                # State files written before the applause mode persisted any
+                # are transient-cap by construction; every newer one names its
+                # mode, so a leftover from a run in the OTHER mode cannot be
+                # misread as proof of this one.
+                if st.get("mode", "sparse-transient-cap") != plan["mode"]:
+                    raise ValueError("render-state file describes a different mode")
                 plan["gain_db"], plan["limit_db"] = st["gain_db"], st["limit_db"]
-                tcap_finalize(plan)
+                (tcap_finalize if tcap else limiter_finalize)(plan)
                 used_target = plan["target"]
             except (OSError, ValueError, KeyError):
-                print(f"  {f}: no render-state file for the existing output — "
-                      "cannot prove what produced it; reprocessing", flush=True)
+                print(f"  {f}: no usable render-state file for the existing "
+                      "output — cannot prove what produced it; reprocessing",
+                      flush=True)
                 resumable = False
             if resumable:
                 j2 = measure(out_audio, plan["target"])
-                if float(j2["input_tp"]) > TP_CEILING:
+                # Only the transient cap promises the strict ceiling. The
+                # applause loop deliberately warns-and-keeps when it runs out
+                # of retries, so re-checking its output here would strand
+                # those tracks in a permanent re-render loop.
+                if tcap and float(j2["input_tp"]) > TP_CEILING:
                     print(f"  {f}: existing output measures "
                           f"{float(j2['input_tp']):+.2f} dBTP (> {TP_CEILING} strict "
                           "ceiling; interrupted mid-retry?) — ignoring it and "
@@ -1751,25 +1782,15 @@ def cmd_process(args):
                     resumable = False
 
         if resumable:
-            # still record provenance from the existing output. For a limiter
-            # track this is a re-run after a prior interruption (e.g. a killed
-            # job) — plan_track's fresh guess doesn't know the true-peak safety
-            # loop backed the gain off last time, so it would describe a gain
-            # that doesn't match what's actually in the file. Reconcile against
-            # the real render before trusting any of plan's descriptive fields.
-            if limiter:
-                j2 = measure(out_audio, plan["target"])
-                actual_gain = round(float(j2["input_i"]) - in_I_chk, 2)
-                if actual_gain != plan["gain_db"]:
-                    plan["gain_db"] = actual_gain
-                    limiter_finalize(plan)
-                used_target = plan["target"]
-            elif tcap:
-                # j2 measured, and plan's gain/limit were restored from the
+            # still record provenance from the existing output.
+            if tcap or limiter:
+                # j2 is measured, and plan's gain/limit were restored from the
                 # render-state file above — the chain recorded below describes
-                # the actual bytes, not a fresh guess.
+                # the actual bytes, not a fresh guess and not an inference.
                 pass
             else:
+                # A plain linear render applies one unconditional `volume`, so
+                # plan already describes the bytes exactly.
                 j2 = measure(out_audio, used_target)
             note = {"linear-reduced": f" [target {used_target:+.1f} LUFS, linear-preserving]",
                     "applause-limiter": f" [target {used_target:+.1f} LUFS, applause-limited]",
@@ -1843,6 +1864,16 @@ def cmd_process(args):
                     plan["limit_db"] = round(plan["limit_db"] - delta, 2)
                     plan["gain_db"] = round(plan["gain_db"] - delta, 2)
                     limiter_finalize(plan)
+                if r.returncode == 0:
+                    # Persist what actually rendered, so a resumed run can prove
+                    # the chain instead of inferring it from output loudness —
+                    # which a limiter makes impossible. Both breaks that keep a
+                    # render (the clean one and the out-of-retries one) leave
+                    # plan describing exactly these bytes.
+                    json.dump({"mode": "applause-limiter",
+                               "gain_db": plan["gain_db"],
+                               "limit_db": plan["limit_db"]},
+                              open(out_audio + ".v8state.json", "w"))
                 used_target = plan["target"]
             elif tcap:
                 # Same measure-and-correct pattern as the applause loop, with two
@@ -1869,7 +1900,8 @@ def cmd_process(args):
                         # persist what actually rendered, so a resumed run can
                         # prove the chain instead of guessing it (and so
                         # provenance never describes bytes it didn't make)
-                        json.dump({"gain_db": plan["gain_db"],
+                        json.dump({"mode": "sparse-transient-cap",
+                                   "gain_db": plan["gain_db"],
                                    "limit_db": plan["limit_db"]},
                                   open(out_audio + ".v8state.json", "w"))
                         break
