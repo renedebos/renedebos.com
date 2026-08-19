@@ -290,7 +290,7 @@ PLAYBACK_READY_SNIPPETS = {
     "deferred": f"<script>{PLAYBACK_READY_ARM}</script>\n",
 }
 
-def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main, extra_scripts="",
+def page_shell(*, title, description, url, heading, tagline, nav, main, extra_scripts="",
                extra_head="", pre_scripts="", playback_ready="none"):
     """`pre_scripts` is injected immediately BEFORE player.js.
 
@@ -304,9 +304,18 @@ def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main,
     the page's very first script — see that dict's comment for the contract.
     Default "none" (resolved immediately) keeps every page that doesn't pass
     "deferred" byte-identical apart from this one addition.
+
+    No `eyebrow`: the site name used to print above every <h1> on all 174
+    shared-shell pages, where the header mark, the footer and the <title>
+    already carry it (page-cleanup rows C1/C2 — see
+    plans/page-cleanup/page-cleanup-plan.md). `tagline` is now optional for
+    the same reason: a song page's said the same thing as the line below its
+    own heading, so passing "" omits the element rather than emitting an
+    empty <p>.
     """
     if playback_ready not in PLAYBACK_READY_SNIPPETS:
         raise ValueError(f"page_shell: unknown playback_ready={playback_ready!r}")
+    tagline_html = f'\n    <p class="site-tagline">{tagline}</p>' if tagline else ""
     return f'''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -345,9 +354,7 @@ def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main,
 
 <div class="page-title">
   <div class="wrap">
-    <p class="site-eyebrow">{eyebrow}</p>
-    <h1>{heading}</h1>
-    <p class="site-tagline">{tagline}</p>
+    <h1>{heading}</h1>{tagline_html}
   </div>
 </div>
 
@@ -356,7 +363,6 @@ def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main,
 </main>
 
 <footer>
-  Part of <a href="/">The Hannan Tapes</a> archive
   <span class="footer-links">
     <a href="/history/">The Story So Far</a> &middot;
     <a href="/process/">The Process</a> &middot;
@@ -549,36 +555,35 @@ def highlight_badge(show):
     return (f' <span class="h-badge" title="A particularly good performance">'
             f'{HIGHLIGHT_STAR_SVG}</span>')
 
-STATUS_BLURB = {
-    "done": "All tracks brought to the archive's loudness target through the audio workflow.",
-    "partial": "Some tracks brought to the archive's loudness target; the rest are pending.",
-    "redo": "Previously processed outside the current workflow — queued to be re-processed to standard.",
-    "needs-processing": "Not yet processed.",
-}
-
 def status_line(show):
-    """A standalone audio-processing status badge shown on every show page,
-    independent of the technical-data table (which only exists for processed
-    shows). Reads `processing_status` written into recordings.json by
-    `audio_process.py status --write`."""
-    st = show.get("processing_status")
-    if not st:
-        return ""
-    blurb = STATUS_BLURB.get(st, "")
-    # noise-reduced pill next to the status badge, same source of truth as
-    # the tech-table badge and the archive-row pill (sidecar pre_edits)
+    """The show page's hand-work pills: "noise-reduced" / "pre-edited", plus
+    the corrective-EQ badge. Same source of truth as the tech-table badge and
+    the archive-row pill (the sidecar's `pre_edits`).
+
+    This used to lead with an "Audio processing · <status>" badge and a
+    one-sentence blurb, both read from `processing_status`. Both were cut in
+    the page-cleanup pass (rows A1/A2): every generated show page said `done`,
+    so the badge was decoration that looked like data, and the blurb repeated
+    what the technical-data table's head and /process/ already say properly.
+    The status badge still renders on the tech-table summary, where it sits
+    beside the numbers it describes.
+
+    The pills that remain genuinely vary — 8 of 30 shows carry one — which is
+    why they stay page-level rather than folding into the collapsed table.
+    Returns "" for the 22 shows with neither, so no empty line is emitted.
+    """
     proc = load_processing(show["slug"])
-    nr = ""
-    if proc and proc.get("pre_edits"):
+    if not proc:
+        return ""
+    pills = ""
+    if proc.get("pre_edits"):
         label = _pre_edit_label(proc["pre_edits"])
-        nr = (f'<span class="proc-status pre-edit {_pre_edit_class(label)}" '
-              f'title="{esc(proc["pre_edits"])}">{label}</span>')
-    if proc:
-        nr += _eq_badge(proc)
-    return (f'''
-  <p class="proc-status-line">Audio processing'''
-            f'<span class="proc-status status-{esc(st)}">{esc(st)}</span>{nr}'
-            f'<span class="proc-status-blurb">{esc(blurb)}</span></p>''')
+        pills = (f'<span class="proc-status pre-edit {_pre_edit_class(label)}" '
+                 f'title="{esc(proc["pre_edits"])}">{label}</span>')
+    pills += _eq_badge(proc)
+    if not pills:
+        return ""
+    return f'\n  <p class="proc-status-line">{pills}</p>'
 
 def _render_summary(pt):
     """Derive, from each track's own recorded filter chain (never from a single
@@ -784,7 +789,6 @@ def updates_list():
 def contact_block():
     return '''
   <section class="contact-section">
-    <p class="contact-sub">Questions or comments about the recordings? Send a message below.</p>
     <form class="contact-form" id="contactForm">
       <div class="form-group">
         <label for="name">Name</label>
@@ -989,7 +993,7 @@ def song_jsonld(s):
     })
 
 
-__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'PLAYBACK_READY_ARM', 'PLAYBACK_READY_SNIPPETS', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', 'STATUS_BLURB', '_pre_edit_class', '_pre_edit_label', '_show_label', '_song_occ_html', '_src_tag', 'contact_block', 'content', 'dl_button', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'playable_item_attr', 'playback_ready_onerror', 'player', 'recording_card', 'recording_item_id', 'show_jsonld', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'track_add_button', 'updates_list', 'variant_toggle']
+__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'PLAYBACK_READY_ARM', 'PLAYBACK_READY_SNIPPETS', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', '_pre_edit_class', '_pre_edit_label', '_show_label', '_song_occ_html', '_src_tag', 'contact_block', 'content', 'dl_button', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'playable_item_attr', 'playback_ready_onerror', 'player', 'recording_card', 'recording_item_id', 'show_jsonld', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'track_add_button', 'updates_list', 'variant_toggle']
 
 
 def variant_toggle(any_loud=True):

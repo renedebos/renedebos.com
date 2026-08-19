@@ -53,73 +53,82 @@ page that has a player**, for as long as Loud is the default.
 
 ## 4. Decision register
 
-One row per item. `Rec` is my recommendation; `Decided` is Rene's call and is
-what governs. Nothing is implemented until a row is decided.
+One row per item. `Rec` was my recommendation; **`Decided` is Rene's call and is
+what governs** — where they differ, `Decided` won and the reason is recorded.
 
 Legend — **KEEP** · **CUT** · **MOVE** (elsewhere on the page / behind a
 `<details>` / to another page) · **REWORD**.
 
+**Round 1 decided 2026-08-19, implemented the same day.** Rows marked ✅ are
+live in the generator; ⬜ are open.
+
 ### 4.1 The three Rene named
 
-| # | item | reach | Rec | Why | Decided |
+| # | item | reach | Rec | Decided | Why |
 |---|---|---|---|---|---|
-| A1 | "Audio processing · `done`" pill (§2.2) | 30/30 | **CUT** | Identical on every generated show page. A status badge whose value never varies is not status. The tech table already carries a `done` badge on its own summary for anyone who opens it. | |
-| A2 | "All tracks brought to the archive's loudness target through the audio workflow." (§2.3) | 30/30 | **CUT** | Same element as A1, and the fact is stated properly on `/process/` and in the tech table's head. | |
-| A3 | "Every song streams in full · lossless FLAC downloads are password protected" (§2.12) | 30/30 | **REWORD → "Every song streams in full."** | The streaming half is worth saying once above the track list. The password half is stated three more times on the same page (A4, A5, and the download button's own hover) — see 4.2. | |
+| A1 | "Audio processing · `done`" pill (§2.2) | 30/30 | CUT | ✅ **CUT** | Identical on every generated show page. A status badge whose value never varies is not status. The `done` badge still renders on the technical-data summary, beside the numbers it describes. |
+| A2 | "All tracks brought to the archive's loudness target through the audio workflow." (§2.3) | 30/30 | CUT | ✅ **CUT** | Same element as A1; the fact is stated properly in the tech table's head and on `/process/`. |
+| A3 | "Every song streams in full · lossless FLAC downloads are password protected" (§2.12) | 30/30 | REWORD to the streaming half | ✅ **CUT entirely** | Rene went further than the recommendation: the play buttons and durations already say the songs are playable, so the whole line goes. |
 
-If A1+A2 both go, `status_line()` becomes dead and `STATUS_BLURB` (§2.4) can go
-with it. That is a code removal, recorded here so it is not rediscovered later.
+`STATUS_BLURB` was deleted with A1/A2. `status_line()` survives but now renders
+**only** the hand-work pills (see D3).
 
 ### 4.2 Password-protection redundancy (measured, 4× per show page)
 
-| # | item | reach | Rec | Why | Decided |
+| # | item | reach | Rec | Decided | Why |
 |---|---|---|---|---|---|
-| B1 | "Full shows stream as 320 kbps MP3 — the lossless original download is password protected." (§2.19) | 30 | **REWORD → "Full shows stream as 320 kbps MP3."** | The bitrate is genuinely useful here; the password half is B2's job. | |
-| B2 | "Full-show downloads are password protected. Streaming may take a moment to start for large files." (§2.21) | 30 | **KEEP** | Page-level, sits at the bottom where it belongs, and carries the one fact nothing else says (large-file start latency). Make this the single visible statement. | |
-| B3 | Download-button hover "Download lossless FLAC (password protected)" (§2.26) | 30 | **KEEP** | Hover/accessible name, not body copy. Point-of-action is exactly where this belongs. | |
+| B1 | "Full shows stream as 320 kbps MP3 — the lossless original download is password protected." (§2.19) | 30 | REWORD | ✅ **REWORD → "Full shows stream as 320 kbps MP3."** | The bitrate is genuinely useful here; the password half is B2's job. |
+| B2 | "Full-show downloads are password protected. Streaming may take a moment to start for large files." (§2.21) | 30 | KEEP | ✅ **KEEP** | Page-level, at the foot where it belongs, and carries the one fact nothing else says (large-file start latency). This is now the page's single body-copy statement. |
+| B3 | Download-button hover "Download FLAC (password protected)" (§2.26) | 30 | KEEP | ✅ **KEEP** | Hover/accessible name, not body copy. Point-of-action is where this belongs. |
 
-Net: password protection stated **once** in body copy per page, plus at the
+Net: password protection stated **once** in body copy per show page, plus at the
 point of click. Down from four.
 
 ### 4.3 Global chrome
 
-| # | item | reach | Rec | Why | Decided |
+| # | item | reach | Rec | Decided | Why |
 |---|---|---|---|---|---|
-| C1 | Eyebrow "The Hannan Tapes" above every `<h1>` (§1.4) | 174 | **CUT** (keep "· Song" as a song-page eyebrow, or fold into the tagline) | The site name is already in the header, the footer, the `<title>` and the browser tab. Four times per page. | |
-| C2 | Footer "Part of **The Hannan Tapes** archive" (§1.6) | 174 | **REWORD** | Tells a visitor the page they are on is part of the site they are on. The footer *links* are useful; the sentence is not. | |
-| C3 | Header mark reads "Shows" but links home (§1.2) | 174 | **discuss** | Either the wording or the destination is wrong. Low stakes, but it is the first thing on every page. | |
+| C1 | Eyebrow "The Hannan Tapes" above every `<h1>` (§1.4) | 174 | CUT | ✅ **CUT**, song pages' "· Song" with it | The site name was already in the header mark, the footer, the `<title>` and the tab. The `eyebrow` parameter was removed from `page_shell()` and all 10 call sites, not just left unused. |
+| C2 | Footer "Part of **The Hannan Tapes** archive" (§1.6) | 174 | REWORD | ✅ **CUT the sentence, keep the links** | Told a visitor the page they are on is part of the site they are on. Applied to the homepage's own footer too, which had the same sentence. |
+| C3 | Header mark reads "Shows" but links home (§1.2) | 174 | discuss | ✅ **KEEP as "Shows"** | Accurate since `/archive/` folded into the homepage on 2026-07-19 — the homepage *is* the show listing. |
 
 ### 4.4 Show pages, remainder
 
-| # | item | reach | Rec | Why | Decided |
+| # | item | reach | Rec | Decided | Why |
 |---|---|---|---|---|---|
-| D1 | "About This Show" heading (§2.8) | 29 | **CUT heading, keep prose** | The paragraph is plainly about the show; the heading is a label on the obvious. | |
-| D2 | Tech head bits — source, pre-edits, filters, workflow version, render summary (§2.15) | 30 | **KEEP** | Already behind a collapsed `<details>`. This is exactly where processing detail should live. | |
-| D3 | "noise-reduced" / "pre-edited" pill beside the status pill (§2.5) | 7 / 1 | **MOVE** into the tech-table summary only | It *does* vary (8 of 30), so it is real information — but if A1 removes the line it sits on, it needs a home. It already appears on the tech summary. | |
-| D4 | "corrective-eq" badge (§2.6) | 0 | **KEEP as code** | Zero reach today, but a real future state with a real trigger. No page cost. | |
-| D5 | "Highlight show" (§2.7) | 2 | **KEEP** | Rare by design — that is what makes it worth reading. | |
-| D6 | "Alternate transfers (N) — other digitizations of the same tape" (§2.20) | 17 | **KEEP** | Explains a genuinely non-obvious term, inside a collapsed summary. | |
+| D1 | "About This Show" heading (§2.8) | 29 | CUT heading | ✅ **KEEP** | It is a landmark for screen readers and anchors the section visually. Overruled the recommendation. |
+| D2 | Tech head bits (§2.15) | 30 | KEEP | ✅ **KEEP** | Already behind a collapsed `<details>` — exactly where processing detail belongs. |
+| D3 | "noise-reduced" / "pre-edited" pill (§2.5) | 7 / 1 | MOVE to tech summary | ✅ **KEEP page-level, on its own line** | It genuinely varies (8 of 30), which is what makes it worth reading. `status_line()` now emits just the pills, and returns "" for the 22 shows with none, so no empty line is left behind. |
+| D4 | "corrective-eq" badge (§2.6) | 0 | KEEP as code | ✅ **KEEP** | Zero reach today, but a real future state with a real trigger. No page cost. |
+| D5 | "Highlight show" (§2.7) | 2 | KEEP | ✅ **KEEP** | Rare by design — that is what makes it worth reading. |
+| D6 | "Alternate transfers (N) — other digitizations of the same tape" (§2.20) | 17 | KEEP | ✅ **KEEP** | Explains a genuinely non-obvious term, inside a collapsed summary. |
 
 ### 4.5 Song pages
 
-| # | item | reach | Rec | Why | Decided |
+| # | item | reach | Rec | Decided | Why |
 |---|---|---|---|---|---|
-| E1 | "Every performance streams in full. "Open on show page" jumps to the song within its full set." (§3.6) | 136 | **REWORD → first sentence only** | The second sentence captions a link whose own text says what it does, on every row below it. | |
-| E2 | tagline "Played N times across the archive" (§3.1) vs "Played N time(s) · `artists`" (§3.3) | 136 | **CUT the tagline** | Same fact twice, ~200px apart. The second carries the artists too. | |
+| E1 | "Every performance streams in full. "Open on show page" jumps to the song within its full set." (§3.6) | 136 | first sentence only | ✅ **CUT entirely** | Consistent with A3 — the show-page equivalent went, so this one does too. |
+| E2 | tagline "Played N times across the archive" (§3.1) vs "Played N time(s) · `artists`" (§3.3) | 136 | CUT the tagline | ✅ **CUT the tagline** | Same fact twice, ~200px apart; the surviving line carries the artists too. With C1 the song-page header is now just the song title. |
 
 ### 4.6 Other pages
 
-| # | item | reach | Rec | Why | Decided |
+| # | item | reach | Rec | Decided | Why |
 |---|---|---|---|---|---|
-| F1 | `/contact/` tagline vs "Questions or comments about the recordings? Send a message below." (§5.6) | 1 | **CUT the sub** | Verbatim duplicate of the tagline plus an instruction the form makes obvious. | |
-| F2 | `/playlist/` "How to build a playlist" — 3 paragraphs (§5.2) | 1 | **REWORD, shorter** | Genuinely useful (the cross-page selection bar is not discoverable), but long for a first read. | |
-| F3 | `/archive-data/` 5-sentence intro (§5.7) | 1 | **KEEP** | Rene-facing tool page; the density is the point. | |
-| F4 | `_curated_playlists_html()` (§5.3) | 0 | **KEEP as code** | Renders nothing while no playlists are defined; a real feature awaiting data. | |
-| F5 | `/process/` "Last updated 2026-08-08" (§5.9) | 1 | **check** | Hand-bumped. If the variant rollout changed `process.html`'s substance, this is stale. | |
+| F1 | `/contact/` sub "Questions or comments about the recordings? Send a message below." (§5.6) | 1 | CUT the sub | ✅ **CUT the sub** | Verbatim duplicate of the tagline plus an instruction the form makes obvious. |
+| F2 | `/playlist/` "How to build a playlist" — 3 paragraphs (§5.2) | 1 | tighten to 2 | ✅ **Tightened to 2** | The cross-page selection bar genuinely is not discoverable, so the facts stay; the third paragraph folded into the second as a clause. |
+| F3 | `/archive-data/` 5-sentence intro (§5.7) | 1 | KEEP | ✅ **KEEP** | Rene-facing tool page; the density is the point. |
+| F4 | `_curated_playlists_html()` (§5.3) | 0 | KEEP as code | ✅ **KEEP** | Renders nothing while no playlists are defined; a real feature awaiting data. |
+| F5 | `/process/` "Last updated 2026-08-08" (§5.9) | 1 | check | ✅ **Bumped to 2026-08-18** | It was stale: `content/process.html` had substantive changes on 2026-08-09 (`227ea3b`) and 2026-08-18 (`e84646d`, the loud-variant rollout) after the stamp was last set. |
+
+### 4.7 Still open
+
+⬜ Nothing from the inventory is undecided. Later rounds — layout/placement
+rather than copy, and the editorial items in inventory §8 — get their own rows
+here.
 
 ## 5. How to work it
 
-1. Rene fills in `Decided` — or says "your call" per row.
+1. Rene decides the rows (round 1: done 2026-08-19).
 2. Implement in **one or two commits**, not one per string: each is a rebuild.
 3. `python3 scripts/build.py` then `--check`; eyeball one show page, one song
    page and the homepage locally before pushing.
@@ -145,8 +154,110 @@ or the review will confidently report on the wrong document.
 ## Appendix A — removed copy, verbatim
 
 Every string this project removes is recorded here in full, so restoring one
-needs no git archaeology. Empty until the first change lands.
+needs no git archaeology. HTML entities are as they appeared in the source.
 
-| date | item | verbatim text | generator it came from |
-|---|---|---|---|
-| — | — | — | — |
+### Round 1 — 2026-08-19
+
+**A1/A2 — the show-page audio-processing line** (`fragments.py`, `status_line()`
+plus the whole `STATUS_BLURB` map). The element wrapped all of this:
+
+```html
+  <p class="proc-status-line">Audio processing<span class="proc-status status-{st}">{st}</span>{pills}<span class="proc-status-blurb">{blurb}</span></p>
+```
+
+```python
+STATUS_BLURB = {
+    "done": "All tracks brought to the archive's loudness target through the audio workflow.",
+    "partial": "Some tracks brought to the archive's loudness target; the rest are pending.",
+    "redo": "Previously processed outside the current workflow — queued to be re-processed to standard.",
+    "needs-processing": "Not yet processed.",
+}
+```
+
+Only `done` ever reached a page. The CSS rule `.proc-status-blurb` went with it;
+`.proc-status.status-*` colours stayed (the badge still renders on the
+technical-data summary).
+
+**A3 — the show-page track hint** (`pages.py`), both branches:
+
+> Every song streams in full &middot; lossless FLAC downloads are password protected
+
+> Every song streams in full
+
+The second branch (no-FLAC shows) never reached a page.
+
+**B1 — the Full Recording hint** (`pages.py`), before → after:
+
+> Full shows stream as 320&nbsp;kbps MP3 &mdash; the lossless original download is password protected.
+
+> Full shows stream as 320&nbsp;kbps MP3.
+
+**C1 — the eyebrow** (`fragments.py`, `page_shell()`), and the ten values passed
+to it (`"The Hannan Tapes"` ×9, `"The Hannan Tapes &middot; Song"` on song
+pages):
+
+```html
+    <p class="site-eyebrow">{eyebrow}</p>
+```
+
+CSS rule removed with it:
+
+```css
+.site-eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1.2rem;
+  font-weight: 400;
+}
+```
+
+**C2 — the footer sentence**, in both shells. `fragments.py`:
+
+```html
+  Part of <a href="/">The Hannan Tapes</a> archive
+```
+
+`pages.py` (`HOME_SHELL`):
+
+```html
+    <span>Part of <a href="/">The Hannan Tapes</a> archive</span>
+```
+
+**E1 — the song-page hint** (`pages.py`):
+
+> Every performance streams in full. &ldquo;Open on show page&rdquo; jumps to the song within its full set.
+
+**E2 — the song-page tagline** (`pages.py`):
+
+> Played {N} time{s} across the archive
+
+**F1 — the /contact/ sub** (`fragments.py`, `contact_block()`):
+
+```html
+    <p class="contact-sub">Questions or comments about the recordings? Send a message below.</p>
+```
+
+CSS rule removed with it:
+
+```css
+.contact-sub {
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 300;
+  margin-bottom: 2rem;
+}
+```
+
+**F2 — the /playlist/ help, third paragraph** (`pages.py`), removed as a
+standalone paragraph and folded into the second as a clause:
+
+> Your selection is saved as you go, so it survives a reload or a closed tab, and stays in sync if the site is open in more than one tab.
+
+The first two paragraphs were also tightened. Previous text:
+
+> Right here, the fastest way: pick filters below — artist, venue, source, tags — then either hit <strong>Generate playlist</strong> for an instant random set, or use the + button on individual results to hand-pick songs first.
+
+> You can also build a selection while browsing the rest of the site: on any song's own page, click + next to a performance to add it. A bar at the bottom of the screen keeps a running count and stays there as you move between pages — browse to other songs from the <a href="/songs/">Songs</a> index or search, add more, and go back and forth as many times as you like. When you're ready, click <strong>Build playlist &rarr;</strong> in that bar to bring your picks here.
