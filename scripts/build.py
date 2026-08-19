@@ -25,11 +25,22 @@ from sitegen.fragments import *  # noqa: F401,F403
 from sitegen.pages import *      # noqa: F401,F403
 from sitegen.pages import CONTROLLER_ENGINE_EXCLUDED_SLUGS  # not in __all__ (internal to the escape hatch)
 from sitegen.feeds import *      # noqa: F401,F403
+from sitegen._csp_check import check_csp_in_sync  # not in __all__ (a repo check, not page data)
 
 def main():
     validate()
     check_orphan_song_dirs()
     check_rarity_drift()
+    # Hard failure: site_worker.js and _headers both declare a CSP, and only
+    # the Worker's takes effect. A stale _headers means two files stating
+    # different security policies for the same site, with the dead one looking
+    # authoritative to whoever reads it next.
+    cerr = check_csp_in_sync()
+    if cerr:
+        print("CSP OUT OF SYNC", file=sys.stderr)
+        for e in cerr:
+            print("  " + e, file=sys.stderr)
+        sys.exit(1)
     # Hard failure, not a warning: a variant that is not provably derived from
     # the published archive means the site would serve two disagreeing edits.
     verr = check_variant_derivation()
