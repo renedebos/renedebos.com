@@ -4,3 +4,15 @@ __pycache__/
 .claude/settings.local.json
 data/*.backup*.json
 data/*.draft.json
+
+# Cloudflare/local secrets. `.dev.vars` is what `wrangler dev` reads for the
+# site and wav-download Workers; `.env` is the general equivalent. Both hold
+# live API tokens, so they are ignored by wildcard and the *.example templates
+# are re-included explicitly — a narrower rule would miss `.dev.vars.staging`
+# and similar. Salvaged from PR #1 (the auto-generated Cloudflare Workers
+# config PR, otherwise closed as superseded); this half was the only part of it
+# worth keeping.
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
