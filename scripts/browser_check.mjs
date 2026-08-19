@@ -915,6 +915,132 @@ const JS_CONTENT_TYPE_RE = /^(text|application)\/javascript/i;
 // default asset-server policy applies: "public, max-age=0, must-revalidate".
 const EXPECTED_JS_CACHE_CONTROL_RE = /^public,\s*max-age=0,\s*must-revalidate$/i;
 
+// ── loudness variant (CLAUDE.md, "The -14 loud variant") ────────────────────
+// Added 2026-08-19, after the first full --prod sweep passed 184/185 while
+// covering NONE of this: the sweep predates the rollout, so the newest and
+// most user-facing change on the site -- Loud as the sticky default across
+// every player surface -- was verified only by hand, once, and by nothing
+// repeatable.
+//
+// The load-bearing assertion here is #2. `data-src` in the markup must stay
+// the ARCHIVE url on every row, with the variant riding in `data-item`'s
+// loudUrl, so a page whose module fails to mount degrades to the master
+// rather than to a key that may not exist. That invariant is invisible to
+// every other check in this file and would break silently.
+async function checkVariantPreference(context) {
+  const showUrl = (ALL_SHOWS.find((s) => s.slug === HEAVY_CHECK_SLUGS[0]) || ALL_SHOWS[0]).url;
+  const page = await context.newPage();
+  await page.goto(BASE + showUrl, { waitUntil: 'load' });
+  await page.waitForFunction(() => window.PLAYER_ENGINE_MOUNTED === true, null, { timeout: 15000 });
+
+  // 1. A fresh profile defaults to loud WITHOUT writing anything: the default
+  //    is a coercion of the absent value, not a stored preference. If it ever
+  //    starts persisting on load, a later change of default silently would
+  //    not reach anyone who had merely visited.
+  const initial = await page.evaluate(() => ({
+    variant: window.HannanVariant ? window.HannanVariant.get() : null,
+    stored: localStorage.getItem('hannanVariant'),
+    loud: document.querySelector('.variant-btn[data-variant="loud"]')?.getAttribute('aria-pressed'),
+    archive: document.querySelector('.variant-btn[data-variant="archive"]')?.getAttribute('aria-pressed'),
+  }));
+  record('variant: fresh profile defaults to loud, with nothing persisted',
+    initial.variant === 'loud' && initial.stored === null,
+    JSON.stringify(initial));
+  record('variant: the toggle reflects the active variant on load',
+    initial.loud === 'true' && initial.archive === 'false',
+    `loud=${initial.loud} archive=${initial.archive}`);
+
+  // 2. THE INVARIANT. Markup carries the archive url; loud rides in data-item.
+  const markup = await page.evaluate(() => {
+    const rows = Array.from(document.querySelectorAll('[data-src]'));
+    const items = Array.from(document.querySelectorAll('.track-list [data-item]'));
+    const parse = (el) => { try { return JSON.parse(el.getAttribute('data-item')); } catch (_) { return null; } };
+    return {
+      rows: rows.length,
+      loudInMarkup: rows.filter((r) => (r.getAttribute('data-src') || '').includes('MP3-14/')).length,
+      tracks: items.length,
+      withLoudUrl: items.map(parse).filter((i) => i && i.loudUrl && i.loudUrl.includes('MP3-14/')).length,
+      cards: document.querySelectorAll('.recording-item[data-item]').length,
+      cardsWithLoudUrl: Array.from(document.querySelectorAll('.recording-item[data-item]'))
+        .map(parse).filter((i) => i && i.loudUrl).length,
+    };
+  });
+  record('variant: data-src stays the ARCHIVE url on every row (degrades to the master)',
+    markup.rows > 0 && markup.loudInMarkup === 0,
+    `rows=${markup.rows} carrying MP3-14=${markup.loudInMarkup}`);
+  record('variant: every track row carries a loudUrl in data-item',
+    markup.tracks > 0 && markup.withLoudUrl === markup.tracks,
+    `tracks=${markup.tracks} withLoudUrl=${markup.withLoudUrl}`);
+  // Whole-show recordings have no -14 render at all and must never claim one.
+  record('variant: whole-show recording cards carry no loudUrl (no -14 render exists)',
+    markup.cardsWithLoudUrl === 0,
+    `cards=${markup.cards} withLoudUrl=${markup.cardsWithLoudUrl}`);
+
+  // 3. What actually goes over the wire under the default.
+  const playAndReadSrc = async () => {
+    await page.locator('.track-list [data-item]').first().locator('.play-btn').click();
+    try {
+      await page.waitForFunction(() => {
+        const c = window.PLAYER_BOOT && window.PLAYER_BOOT.controller;
+        return !!c && c.audioElement.currentTime > 0.3 && !c.audioElement.paused;
+      }, null, { timeout: 15000 });
+    } catch (_) { /* reported by the record() that follows */ }
+    return page.evaluate(() => {
+      const c = window.PLAYER_BOOT.controller;
+      return { src: c.audioElement.currentSrc, t: c.audioElement.currentTime, paused: c.audioElement.paused };
+    });
+  };
+  const loudPlay = await playAndReadSrc();
+  record('variant: default playback actually streams the -14 loud render',
+    loudPlay.src.includes('MP3-14/') && loudPlay.t > 0.3 && !loudPlay.paused,
+    `t=${loudPlay.t.toFixed(2)} src=${decodeURIComponent(loudPlay.src).slice(-60)}`);
+  await page.evaluate(() => window.PLAYER_BOOT.controller.stop());
+
+  // 4. Switching to Archive updates both buttons and persists.
+  await page.locator('.variant-btn[data-variant="archive"]').click();
+  await page.waitForTimeout(300);
+  const afterToggle = await page.evaluate(() => ({
+    variant: window.HannanVariant.get(),
+    stored: localStorage.getItem('hannanVariant'),
+    loud: document.querySelector('.variant-btn[data-variant="loud"]')?.getAttribute('aria-pressed'),
+    archive: document.querySelector('.variant-btn[data-variant="archive"]')?.getAttribute('aria-pressed'),
+  }));
+  record('variant: choosing Archive flips both buttons and persists the choice',
+    afterToggle.variant === 'archive' && afterToggle.stored === 'archive'
+      && afterToggle.archive === 'true' && afterToggle.loud === 'false',
+    JSON.stringify(afterToggle));
+
+  // 5. And that choice is what streams.
+  const archivePlay = await playAndReadSrc();
+  record('variant: after choosing Archive, playback streams the -20 master',
+    archivePlay.src.includes('MP3/') && !archivePlay.src.includes('MP3-14/')
+      && archivePlay.t > 0.3 && !archivePlay.paused,
+    `t=${archivePlay.t.toFixed(2)} src=${decodeURIComponent(archivePlay.src).slice(-60)}`);
+  await page.evaluate(() => window.PLAYER_BOOT.controller.stop());
+
+  // 6. Sticky across a reload -- the whole point of storing it.
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForFunction(() => window.PLAYER_ENGINE_MOUNTED === true, null, { timeout: 15000 });
+  const afterReload = await page.evaluate(() => ({
+    variant: window.HannanVariant.get(),
+    archive: document.querySelector('.variant-btn[data-variant="archive"]')?.getAttribute('aria-pressed'),
+  }));
+  record('variant: the choice survives a reload',
+    afterReload.variant === 'archive' && afterReload.archive === 'true',
+    JSON.stringify(afterReload));
+
+  // 7. A corrupt stored value must fall back to the default, never reach a
+  //    URL lookup -- stored state is untrusted input (variant-pref.js).
+  await page.evaluate(() => localStorage.setItem('hannanVariant', 'loudest'));
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForFunction(() => window.PLAYER_ENGINE_MOUNTED === true, null, { timeout: 15000 });
+  const coerced = await page.evaluate(() => window.HannanVariant.get());
+  record('variant: an unrecognised stored value falls back to the default',
+    coerced === 'loud', `got=${coerced}`);
+
+  await page.close();
+}
+
 async function checkAssetHeaders(context) {
   for (const path of PROD_ASSET_PATHS) {
     const res = await context.request.get(BASE + path);
@@ -1021,8 +1147,22 @@ async function checkNonAllowlistedPagesUnaffected(context) {
       return !!b && !b.disabled;
     }, null, { timeout: 15000 }); // catalog fetch has to land before a preset can build a queue
     await page.locator('.pl-preset[data-preset="mixed45"]').click(); // real user gesture
-    await page.waitForTimeout(2500);
-    const timeText = (await page.locator('#pl-now .pl-time-current').textContent().catch(() => null) || '').trim();
+    // POLL for the display to advance rather than sleeping a fixed 2.5 s and
+    // reading once. Startup latency against production is ~0.8-1.3 s, so a
+    // 2.5 s sleep passed with barely a second of margin and produced exactly
+    // one spurious FAIL (time=0:00) on the first full --prod sweep, on a
+    // context loaded late in the run -- the site was fine, reproduced 4/4
+    // clean immediately after. A fixed sleep asserts "fast enough", which is
+    // not the property under test; "does it play at all" is.
+    let timeText = '';
+    try {
+      await page.waitForFunction(() => {
+        const el = document.querySelector('#pl-now .pl-time-current');
+        const t = (el && el.textContent || '').trim();
+        return t !== '' && t !== '0:00';
+      }, null, { timeout: 15000 });
+    } catch (_) { /* leave timeText empty -- the record() below reports it */ }
+    timeText = (await page.locator('#pl-now .pl-time-current').textContent().catch(() => null) || '').trim();
     record('/playlist/ real legacy playback works (preset click -> real <audio> advances)',
       timeText !== '' && timeText !== '0:00', `time=${timeText}`);
     await page.close();
@@ -1129,6 +1269,15 @@ try {
     const songCtx = await browser.newContext();
     await checkSongPage(songCtx);
     await songCtx.close();
+  }
+
+  // Loudness variant. Needs its OWN context: check #1 asserts a FRESH profile
+  // defaults to loud with nothing persisted, which any earlier context that
+  // touched the toggle would invalidate.
+  {
+    const variantCtx = await browser.newContext();
+    await checkVariantPreference(variantCtx);
+    await variantCtx.close();
   }
 
   if (isRemote) {
