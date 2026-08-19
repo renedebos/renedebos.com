@@ -1,9 +1,24 @@
 # Home page: Header Icon Plan
 
-Status: planning — not yet built.
+Status: **shipped and closed** (2026-08-13, commit `2f9e688`, *Replace header
+musical-note mark with a Shows label, sitewide*). On `main` and live on
+renedebos.com. This file is the record of what was decided and why; it is not
+open work. Do not reuse this folder for a new project — start a fresh
+`plans/<name>/<name>-plan.md`.
 
-Working branch: `home-page`  
-Working folder: `/home/renedebos/renedebos.com-home-page`
+Built on branch `home-page` in worktree `/home/renedebos/renedebos.com-home-page`.
+The icon commit reached `main` via PR #2 on 2026-08-13, but the branch kept
+three later commits that never did — §7's completed checklist, §8 below, and
+rule 8 in `home-page-codex.md`. Those were merged to `main` on 2026-08-19,
+**deliberately excluding that branch's `HANDOFF.md`**, which by then was six
+days stale and would have reverted the current one. A branch being "already
+shipped" is not the same as a branch having nothing left on it.
+
+**The one open thread it deliberately left behind:** the icon could not teach a
+first-time visitor that the home page *is* the browsable archive, and §1 says so
+plainly — a word carries that, not a mark. The "Shows" label is a supporting
+signal, not the whole fix. An on-page-copy fix was named as the more direct
+follow-up and was never done.
 
 Codex notes and repository review: see `home-page-codex.md` in this folder.
 
@@ -257,7 +272,21 @@ For this project:
       `/contact/`, desktop and mobile widths, light and dark — all read
       cleanly. Hover/focus-visible rules were left untouched (only the
       resting-state geometry/color changed), so not separately screenshotted.
-- [ ] Commit the change on `home-page`.
-- [ ] Push the branch and open a pull request into `main`.
-- [ ] Merge only after reviewing the pull request.
+- [x] Commit the change on `home-page` (`2f9e688`).
+- [x] Push the branch and open a pull request into `main` — [PR #2](https://github.com/renedebos/renedebos.com/pull/2).
+- [x] Merge only after reviewing the pull request — merged `2026-08-13T20:38:35Z`
+      (`a455f9d`), deploy succeeded, verified live on renedebos.com and
+      `/contact/`.
+
+## 8. Unrelated finding: stray Cloudflare Workers Builds integration
+
+While reviewing this PR, a second, undocumented deploy mechanism surfaced:
+Cloudflare's native "Workers Builds" Git integration on `renedebos-site`,
+separate from this repo's `deploy.yml` GitHub Actions workflow (the only one
+`wrangler.jsonc` documents). It builds with `npx wrangler versions upload`
+(preview only, doesn't route production traffic) and had failed on this PR
+with an invalid/rolled build token — unrelated to this project's code. Fixed
+by regenerating the build token in the Cloudflare dashboard (Settings →
+Builds → API token); a manual retry then succeeded and produced working
+preview URLs. Not otherwise pursued further as part of this project.
 
