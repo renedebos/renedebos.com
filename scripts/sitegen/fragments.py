@@ -112,15 +112,73 @@ def recording_item_id(show_slug, file):
     """
     return f"recording:{show_slug}:{file}"
 
-def dl_button(file, *, title="Download"):
+def dl_button(file, *, title="Download", loud_file=None):
     # Icon-only (no text label): with only the password-protected lossless
     # download left, the format doesn't need spelling out in the button —
     # it's in the hover title, and the password modal makes the gating clear
     # on first click. `title` doubles as the accessible name.
+    #
+    # `loud_file` is the -14 variant's R2 key, when one exists for this track.
+    # It rides as a data attribute rather than a second button because the
+    # CHOICE belongs in the password modal (player.js reads it there) — one
+    # control for every download surface, and the last moment before the
+    # bytes move, so it cannot drift out of sync with what was clicked.
+    # Absent on whole-show recordings, which have no -14 render at all; the
+    # modal hides its version control when the attribute is missing rather
+    # than offering a dead option.
     url = stream_url(file)
     name = file.split("/")[-1]
+    loud = ""
+    if loud_file:
+        loud = (f' data-loud-file="{esc(loud_file)}" '
+                f'data-loud-name="{esc(loud_file.split("/")[-1])}"')
     return (f'<a class="download-btn" href="{esc(url)}" aria-label="{esc(title)}" '
-            f'download="{esc(name)}" title="{esc(title)}">{DL_SVG}</a>')
+            f'download="{esc(name)}" title="{esc(title)}"{loud}>{DL_SVG}</a>')
+
+def _loud_zip(manifest, tracks, slug, info_text):
+    """The -14 counterpart of a ZIP manifest, or None.
+
+    All-or-nothing: every file in the archive ZIP must have a rendered variant,
+    or the loud option is withheld entirely. A ZIP that silently mixed loud and
+    archive files would be indistinguishable from a correct one once unpacked,
+    and no filename in it would say which track was which.
+
+    Everything user-visible is renamed — the ZIP, the folder inside it, and the
+    info file — so an unpacked loud ZIP cannot be mistaken for the master. The
+    per-file names swap .flac for .mp3 for the same reason.
+    """
+    var = load_variant(slug)
+    vt = (var or {}).get("tracks") or {}
+    if not vt:
+        return None
+    by_flac = {t["flac"]: t for t in tracks if t.get("flac")}
+    files = []
+    for f in manifest["files"]:
+        t = by_flac.get(f["key"])
+        if not t or str(t["num"]) not in vt or not t.get("file"):
+            return None
+        files.append({"key": variant_key(t["file"]),
+                      "name": f["name"].replace(f'{manifest["zipName"][:-4]}/',
+                                                f'{manifest["zipName"][:-4]} (loud -14 LUFS)/', 1)
+                                       .rsplit(".", 1)[0] + ".mp3"})
+    folder = manifest["zipName"][:-4] + " (loud -14 LUFS)"
+    return {
+        "zipName": folder + ".zip",
+        "files": files,
+        "infoName": f"{folder}/show-info.txt",
+        "infoText": info_text + LOUD_ZIP_NOTE,
+    }
+
+# Appended to a loud ZIP's info file. The download is the one place a visitor
+# ends up holding audio with no page around it to say what it is, so the file
+# has to carry its own provenance.
+LOUD_ZIP_NOTE = (
+    "\n-- This is the LOUD version --\n"
+    "320 kbps MP3, normalized to -14 LUFS for comfortable listening on phone\n"
+    "speakers and in a car. It is NOT the archive master: the masters are\n"
+    "lossless FLAC at -20 LUFS, downloadable from the same button.\n"
+    "https://renedebos.com/process/\n")
+
 
 def show_zip_button_html(show):
     """Manifest + 'Download all tracks (.zip)' button for a show page. The ZIP
@@ -145,6 +203,15 @@ def show_zip_button_html(show):
         "infoName": f"{folder}/show-info.txt",
         "infoText": info,
     }
+    # Parallel -14 file list, when every track in the ZIP has a variant
+    # rendered. All-or-nothing on purpose: a ZIP that silently mixed loud and
+    # archive files would be indistinguishable from a correct one afterwards,
+    # and nothing in the filename would say which track was which. The folder
+    # and info file are renamed so an unpacked loud ZIP can never be mistaken
+    # for the master.
+    loud = _loud_zip(manifest, show.get("tracks") or [], show["slug"], info)
+    if loud:
+        manifest["loud"] = loud
     title = f"Download all {n} tracks (.zip) · {total_mb} MB"
     return (f'<script>window.ZIP_MANIFEST = {json.dumps(manifest, ensure_ascii=False)};</script>'
             f'<button type="button" class="zip-download-btn" title="{esc(title)}">{ZIP_SVG} Download ZIP</button>')
@@ -921,6 +988,23 @@ def song_zip_button_html(s):
         "infoName": f"{folder}/collection-info.txt",
         "infoText": info,
     }
+    # -14 counterpart, offered only when every performance in the ZIP has one
+    # rendered — same all-or-nothing rule as the show ZIP, for the same reason
+    # (a silently mixed archive is indistinguishable from a correct one once
+    # unpacked). Built from the occurrence list rather than _loud_zip(), whose
+    # filenames are keyed on a single show's track numbers.
+    if all(o.get("loud") for o in zip_occ):
+        lfolder = f"{folder} (loud -14 LUFS)"
+        manifest["loud"] = {
+            "zipName": f"{lfolder}.zip",
+            "files": [{"key": o["loud"],
+                       "name": f'{lfolder}/{sanitize_filename(o["date"])} - '
+                               f'{sanitize_filename(o["artist_name"])} - '
+                               f'{sanitize_filename(o["venue"])} - {o["num"]:02d}.mp3'}
+                      for o in zip_occ],
+            "infoName": f"{lfolder}/collection-info.txt",
+            "infoText": info + LOUD_ZIP_NOTE,
+        }
     title = f"Download all {n} performance{plural} (.zip) · {total_mb} MB"
     return (f'<script>window.ZIP_MANIFEST = {json.dumps(manifest, ensure_ascii=False)};</script>'
             f'<button type="button" class="zip-download-btn" title="{esc(title)}">{ZIP_SVG} Download ZIP</button>')
@@ -1022,7 +1106,8 @@ def variant_toggle(any_loud=True):
         <strong>You are hearing the Loud version</strong> &mdash; an extra render at
         &minus;14&nbsp;LUFS, about as loud as a streaming service, so it isn\u2019t too quiet
         on phone speakers or in a car. Switch to <strong>Archive</strong> for the
-        &minus;20&nbsp;LUFS masters exactly as they were mastered. Downloads are always
-        the Archive version. <a href="/process/">How these were made</a>.
+        &minus;20&nbsp;LUFS masters exactly as they were mastered. Downloads default to
+        the Archive master &mdash; lossless FLAC &mdash; and the download box offers this
+        louder MP3 as an alternative. <a href="/process/">How these were made</a>.
       </p>
     </div>'''

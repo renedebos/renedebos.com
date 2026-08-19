@@ -205,7 +205,8 @@ with an A/B switch.
 `--transient-cap-over-applause` belongs to the loud-variant campaign **only**.
 Ordinary publishes never pass it. Left automatic it would move `Truck` from
 -23.65 to -20.0 and `Anna May` to -20.3 **in the archive itself**. The archive
-remains -20 LUFS, linear-first, and is still the default and the download.
+remains -20 LUFS, linear-first, and is still the default and the download
+default.
 
 Two measured corrections to older wording: applause does **not** top Truck's
 file (music peak -0.0 dB, no applause regions — its drums hit full scale in
@@ -232,8 +233,19 @@ is deliberate, because -20 LUFS is too quiet on phone speakers and in a car,
 and most visitors never touch a toggle. **The trade is disclosure:** every page
 with a player states in plain words which version is playing, and `/process/`
 explains the cost. Do not remove that note while Loud remains the default, and
-do not quietly flip the default back. The variant is streaming-only and
-MP3-only; downloads are always -20. Policy and evidence: **Loudness policy**
+do not quietly flip the default back. The variant is MP3-only.
+
+**Amended 2026-08-19: the -14 variant is downloadable too**, on Rene's
+request. It is **never the default** — the password modal's version chooser
+opens on Archive every time, deliberately not remembering the last choice,
+because the two are different *formats* (lossless FLAC vs 320 kbps MP3), not
+just different levels, and a sticky preference would quietly hand out lossy
+files for the rest of a session. The chooser hides itself where no -14 render
+exists (whole-show recordings), and a ZIP offers the loud option only when
+**every** file in it has a variant — a silently mixed archive is
+indistinguishable from a correct one once unpacked. A loud ZIP renames its
+own folder and info file and appends a provenance note, so an unpacked copy
+can never be mistaken for the master. Policy and evidence: **Loudness policy**
 above.
 
 **Rolled out on every player surface (2026-08-18).** One preference module
