@@ -632,8 +632,8 @@ def status_line(show):
     the page-cleanup pass (rows A1/A2): every generated show page said `done`,
     so the badge was decoration that looked like data, and the blurb repeated
     what the technical-data table's head and /process/ already say properly.
-    The status badge still renders on the tech-table summary, where it sits
-    beside the numbers it describes.
+    The status badge outlived that pass on the tech-table summary and was cut
+    there too (2026-08-19) once every track-listed show read `done`.
 
     The pills that remain genuinely vary — 8 of 30 shows carry one — which is
     why they stay page-level rather than folding into the collapsed table.
@@ -737,10 +737,13 @@ def tech_data_section(show, proc, var=None):
         head_bits.append(esc(proc["date"]))
     head_bits.append('<a href="/process/">how these tracks were made</a>')
     head = " &middot; ".join(head_bits)
-    # show-level status badge (from recordings.json, written by `status --write`)
-    status = show.get("processing_status")
-    badge = (f' <span class="proc-status status-{esc(status)}">{esc(status)}</span>'
-             if status else "")
+    # The show-level `processing_status` badge used to lead this summary. It was
+    # cut in the page-cleanup pass: this table only renders for track-listed
+    # shows, and every one of those reads `done`, so the badge was decoration
+    # that looked like data. `processing_status` stays in recordings.json as
+    # publishing state (`needs-processing` gates the runbook); it just isn't
+    # surfaced on the page any more.
+    badge = ""
     # pre-edits badge: manual Audacity work beyond standard fades/clip-fixes stands
     # out even while the table is collapsed; hover shows the recorded detail.
     if proc.get("pre_edits"):
