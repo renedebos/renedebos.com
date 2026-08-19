@@ -166,7 +166,6 @@ HOME_SHELL = '''<!DOCTYPE html>
   </main>
 
   <footer>
-    <span>Part of <a href="/">The Hannan Tapes</a> archive</span>
     <span><a href="/history/">The Story So Far</a> &middot; <a href="/contact/">Contact</a> &middot; <a href="/feed.xml">RSS</a></span>{artist_links}
   </footer>
 
@@ -203,7 +202,6 @@ def build_search():
         title="Search — The Hannan Tapes",
         description="Search the Hannan Tapes archive by song, artist, venue, date, or source.",
         url="https://renedebos.com/search/",
-        eyebrow="The Hannan Tapes",
         heading="Search",
         tagline="Find a song, show, venue, or date",
         nav=site_nav("Search"),
@@ -290,7 +288,6 @@ def build_playlist():
         title="Playlist — The Hannan Tapes",
         description="Build a custom playlist from the Hannan archive — filter by artist, venue, mood, and source, then hit play.",
         url="https://renedebos.com/playlist/",
-        eyebrow="The Hannan Tapes",
         heading="Playlist",
         tagline="Roll your own set list from the archive",
         nav=site_nav("Playlist"),
@@ -309,9 +306,8 @@ def build_playlist():
     <p class="pl-intro">Filter the archive by artist, venue, source, or mood, then build a set — a fixed number of songs, a target length, or endless shuffle. Each playlist uses one randomly chosen performance of a song, so one played a dozen times over the years never repeats within a single set.</p>
     <details class="tech-details pl-help">
       <summary>How to build a playlist</summary>
-      <p>Right here, the fastest way: pick filters below — artist, venue, source, tags — then either hit <strong>Generate playlist</strong> for an instant random set, or use the + button on individual results to hand-pick songs first.</p>
-      <p>You can also build a selection while browsing the rest of the site: on any song's own page, click + next to a performance to add it. A bar at the bottom of the screen keeps a running count and stays there as you move between pages — browse to other songs from the <a href="/songs/">Songs</a> index or search, add more, and go back and forth as many times as you like. When you're ready, click <strong>Build playlist &rarr;</strong> in that bar to bring your picks here.</p>
-      <p class="tech-head">Your selection is saved as you go, so it survives a reload or a closed tab, and stays in sync if the site is open in more than one tab.</p>
+      <p>Pick filters below — artist, venue, source, tags — then hit <strong>Generate playlist</strong> for an instant random set, or use the + button on individual results to hand-pick songs first.</p>
+      <p>You can also add songs while browsing: click + next to any performance on a song's own page or in <a href="/songs/">Songs</a>, and a bar at the bottom of the screen keeps a running count as you move between pages. Click <strong>Build playlist &rarr;</strong> there to bring your picks back here. Your selection is saved as you go, so it survives a reload, a closed tab, or a second window.</p>
     </details>
     <div class="pl-presets">
       <button type="button" class="pl-preset" data-preset="mixed45">45-minute mixed set</button>
@@ -342,7 +338,6 @@ def build_updates():
         title="Updates — The Hannan Tapes",
         description="Recently added to the Hannan Tapes archive.",
         url="https://renedebos.com/updates/",
-        eyebrow="The Hannan Tapes",
         heading="Updates",
         tagline="Recently added to the archive",
         nav=site_nav("Updates"),
@@ -359,7 +354,6 @@ def build_history():
         title="The Story So Far — The Hannan Tapes",
         description="A behind-the-scenes history of how the Hannan Tapes archive came together.",
         url="https://renedebos.com/history/",
-        eyebrow="The Hannan Tapes",
         heading="The Story So Far",
         tagline="A behind-the-scenes history of the archive",
         nav=site_nav(),
@@ -369,7 +363,7 @@ def build_history():
 # Hand-bumped whenever scripts/content/process.html's substance changes
 # (facts, figures, pipeline steps) — not on every build, so it reflects
 # actual content freshness, matching PUBLISHING.md's "Last updated" convention.
-PROCESS_UPDATED = "2026-08-08"
+PROCESS_UPDATED = "2026-08-18"
 
 def build_process():
     """Like /manual/, a standalone document — not the site's visual system.
@@ -675,7 +669,6 @@ def build_archive_data():
         title="Archive Data — The Hannan Tapes",
         description="Every track in the archive with its catalog and audio-processing spec data, filterable and sortable.",
         url="https://renedebos.com/archive-data/",
-        eyebrow="The Hannan Tapes",
         heading="Archive Data",
         tagline="Every track's catalog and processing spec data, in one table",
         nav=site_nav(),
@@ -704,7 +697,6 @@ def build_contact():
         title="Contact — The Hannan Tapes",
         description="Questions or comments about the recordings? Get in touch.",
         url="https://renedebos.com/contact/",
-        eyebrow="The Hannan Tapes",
         heading="Contact",
         tagline="Questions or comments about the recordings",
         nav=site_nav(),
@@ -901,8 +893,13 @@ def build_show(show):
         <input type="range" class="progress-range" min="0" max="1000" value="0" step="1" aria-label="Seek {play_label}" aria-valuetext="0:00 of {esc(t["duration"])}">
         {add_btn}
       </div>''')
-        hint = ("Every song streams in full &middot; lossless FLAC downloads are password protected"
-                if has_flac else "Every song streams in full")
+        # No hint line above the track list. It read "Every song streams in
+        # full · lossless FLAC downloads are password protected" on all 30
+        # show pages, and the password half was the first of FOUR statements
+        # of the same fact on one page (page-cleanup rows A3/B1-B3). What
+        # survives: the .wav-note at the foot of the page, which also carries
+        # the large-file start-latency warning nothing else says, plus each
+        # download button's own hover at the point of click.
         parts.append(f'''
   <section id="tracks">
     <div class="tracks-head">
@@ -912,7 +909,7 @@ def build_show(show):
         {zip_html}
       </div>
     </div>
-    <p class="track-hint">{hint}</p>{variant_toggle(any_loud)}
+{variant_toggle(any_loud)}
     <div class="track-list" data-autoplay-next>
 {chr(10).join(rows)}
     </div>
@@ -932,8 +929,10 @@ def build_show(show):
                                     show=show))
     label = "Full Recording" if len(canon) == 1 else "Full Recording &middot; " + f"{len(canon)} parts"
     streamed = any(r.get("stream") for r in canon)
-    hint = ('\n    <p class="track-hint">Full shows stream as 320&nbsp;kbps MP3 &mdash; '
-            'the lossless original download is password protected.</p>'
+    # The bitrate is worth stating here; the password half moved out — the
+    # .wav-note below is now the page's single body-copy statement of it
+    # (page-cleanup row B1).
+    hint = ('\n    <p class="track-hint">Full shows stream as 320&nbsp;kbps MP3.</p>'
             if streamed else "")
     parts.append(f'''
   <section>
@@ -1012,7 +1011,6 @@ def build_show(show):
         title=f"{show_title(show)} — {show['date'] or 'Unknown date'}",
         description=f"{show_title(show)}, {date_with_subtitle(show)} — {SOURCE_LABEL.get(show['source'], show['source'])}. Stream or download.",
         url=f"https://renedebos.com{show_url(show)}",
-        eyebrow="The Hannan Tapes",
         heading=f"{esc(artist['name'])}<br><em>Live at {esc(show['venue_short'])}</em>",
         tagline=" &middot; ".join(esc(b) for b in tagline_bits),
         nav=site_nav(),
@@ -1132,8 +1130,8 @@ def build_songs_index():
     return page_shell(
         title="Songs — The Hannan Tapes",
         description=f"Every song across the Hannan live archive — {len(songs)} songs cross-referenced against every show and performance.",
-        url="https://renedebos.com/songs/", eyebrow="The Hannan Tapes",
-        heading="Songs", tagline="Every song, and every time it was played",
+        url="https://renedebos.com/songs/", heading="Songs",
+        tagline="Every song, and every time it was played",
         nav=site_nav("Songs"), main=main,
         # Shared player engine (song-boot.js), unconditional on every song page
         # since Stage 3a-foundation -- see SONG_BOOT_SCRIPTS' own comment.
@@ -1161,6 +1159,10 @@ def build_song_page(s):
     occs = "\n".join(_song_occ_html(o, s["canonical"]) for o in s["occ"])
     any_loud = any(o.get("loud") for o in s["occ"])
     zip_html = song_zip_button_html(s)
+    # No hint line: its second sentence captioned the "open on show page →"
+    # link that every occurrence row below already carries in its own text,
+    # and its first mirrored the show page's, cut in the same pass
+    # (page-cleanup row E1).
     parts.append(f'''
   <section id="tracks">
     <div class="tracks-head">
@@ -1170,7 +1172,7 @@ def build_song_page(s):
         {zip_html}
       </div>
     </div>
-    <p class="track-hint">Every performance streams in full. &ldquo;Open on show page&rdquo; jumps to the song within its full set.</p>{variant_toggle(any_loud)}
+{variant_toggle(any_loud)}
     <div class="song-occs">
 {occs}
     </div>
@@ -1178,8 +1180,12 @@ def build_song_page(s):
     return page_shell(
         title=f"{s['canonical']} — The Hannan Tapes",
         description=f"{s['canonical']} — {s['plays']} live performance{plural} by {arts} in the Hannan archive.",
-        url=f"https://renedebos.com/songs/{s['slug']}/", eyebrow="The Hannan Tapes &middot; Song",
-        heading=esc(s["canonical"]), tagline=f"Played {s['plays']} time{plural} across the archive",
+        url=f"https://renedebos.com/songs/{s['slug']}/",
+        heading=esc(s["canonical"]),
+        # No tagline: it said "Played N times across the archive" directly
+        # above a line that says "Played N times · <artists>" and carries the
+        # artists too (page-cleanup row E2).
+        tagline="",
         nav=site_nav("Songs"), main="".join(parts), extra_head=song_jsonld(s),
         # Every occurrence row is server-rendered here (unlike /songs/'s lazy
         # per-<details> insertion), so song-boot.js mounts the whole page's
@@ -1203,7 +1209,7 @@ def build_404():
     return page_shell(
         title="Page not found — The Hannan Tapes",
         description="That page couldn't be found in the Hannan live recordings archive.",
-        url="https://renedebos.com/404", eyebrow="The Hannan Tapes",
+        url="https://renedebos.com/404",
         heading="404", tagline="Page not found",
         nav=site_nav(), main=main)
 
