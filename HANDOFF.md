@@ -1,11 +1,17 @@
 # Session Handoff — Hannan Recordings (renedebos.com)
-**Date:** 2026-08-19 (second pass) · **Branch:** `main` (no feature branch open)
+**Date:** 2026-08-19 (third pass) · **Branch:** `main` (no feature branch open)
 
 ## ⛔ READ THIS FIRST
 
-**The audio / player / loudness arc is closed.** Everything is on `main`, live,
-and verified on renedebos.com itself — not just by a green Action. There is no
-in-flight work and no open PR.
+**Everything is on `main`, live, and verified on renedebos.com itself** — not
+just by a green Action. There is no in-flight work and no open PR. Eight PRs
+merged today (#25-#32).
+
+**The loudness arc reopened once, deliberately.** The -14 variant is now
+DOWNLOADABLE as well as streamable (PR #31, Rene's request). The archive is
+still the master and still the default everywhere. See "The loud download"
+below before touching any download path — the reasoning behind the
+no-sticky-preference rule is not obvious from the code.
 
 **The page-layout and copy cleanup project is STARTED, and round 1 is live.**
 `plans/page-cleanup/` exists on `main`: a plan with a decision register and a
@@ -16,14 +22,45 @@ round 2 would be.
 
 **The repo is clean, and that is new.** As of today: one branch (`main`) plus
 the deliberate `miniplayer-parked` archive, one deploy path, no stranded
-plans. Five PRs merged and one closed today were mostly getting there. Don't
-undo it by starting the next project on an old branch.
+plans. Eight PRs merged and one closed today. Don't undo it by starting the
+next project on an old branch.
 
 **Phase 3 (the sticky mini-player) is PARKED** — do not resume it, and do not
 run `/apply-review` against its findings. Everything is on branch
 `miniplayer-parked` (`6bdecc6`). Never merge it; never delete it.
 
 ## ✅ Done this session (2026-08-19)
+
+### Cloudflare Web Analytics was never actually collecting
+The zone has Web Analytics on and Cloudflare injects `beacon.min.js` at the
+edge, but `script-src` blocked it on **every page** — a CSP violation in the
+console and zero data collected, for however long it had been enabled. Found
+by chasing a single console error on a production spot-check rather than
+shrugging at it.
+
+**Allowed by HOST, not by the documented path.** Cloudflare's docs say to add
+`https://static.cloudflareinsights.com/beacon.min.js`. That would not have
+worked: the real request is `.../beacon.min.js/v4513226c...`, and **a CSP
+source path only prefix-matches when it ends in `/`** — otherwise it must
+match exactly. The documented source would have looked right and kept failing
+silently.
+
+No `connect-src` change was needed and none was added: under *automatic*
+injection the beacon posts to same-origin `/cdn-cgi/rum`, covered by `'self'`.
+Confirmed rather than assumed — see the verification note below.
+
+**`build.py --check` now fails if `site_worker.js` and `_headers` declare
+different CSPs.** Both files define one; only the Worker's takes effect
+(`secure()` calls `headers.set()` on every response, overwriting `_headers`),
+which makes `_headers` easy to forget and a stale copy worse than none. The
+check parses both rather than hardcoding the policy, and was verified by
+**mutation**: reverting `_headers` exits 1, restoring it exits 0.
+
+### The -14 variant became downloadable
+PR #31, Rene's request. An Archive/Loud chooser in the password modal — the
+one funnel every download passes through — so a single control covers track
+buttons, the show ZIP, the song ZIP and the playlist ZIP. **Full reasoning in
+"The loud download" below; read it before touching a download path.**
 
 ### Page cleanup round 1 — plan, inventory, and the cut
 `plans/page-cleanup/` created and PR #29 merged and verified live. Full detail
@@ -160,6 +197,54 @@ wouldn't have triggered it either.
 still 500s. Inert — superseded by a later successful deploy of the same
 content, and it only carried a `.gitignore` change. It expires on its own.
 
+## 🔊 The loud download (new 2026-08-19, PR #31)
+
+The -14 variant is now offered as a **download**, not only as a stream. Read
+this before touching any download path: the constraints below are decisions,
+not implementation details, and none are obvious from the code.
+
+**It is a FORMAT choice, not a volume switch.** Archive is lossless FLAC at
+-20; Loud is 320 kbps MP3 at -14. Everything else follows from that:
+
+- **Archive is preselected on every open and the choice is deliberately NOT
+  remembered.** A sticky preference would quietly hand out lossy files for the
+  rest of a session after one click. Do not "improve" this by persisting it.
+- The option sub-labels say **"lossless"** and **"not lossless"** outright.
+  Do not shorten them to just the loudness figures.
+- A loud ZIP renames its folder and info file and appends a provenance note.
+  A download is the one place someone holds this audio with no page around it
+  to say what it is.
+
+**Where the option is withheld, and why:**
+
+- **All 67 whole-show recordings** — no -14 render exists, so the modal hides
+  its version control rather than offering a dead option.
+- **Any ZIP where not every file has a variant.** All-or-nothing: a silently
+  mixed archive is indistinguishable from a correct one once unpacked, and no
+  filename in it would say which track was which. All 680 curated tracks have
+  both renders today, so every ZIP qualifies — the guard is for when that
+  stops being true.
+
+**No Worker change was needed and none was made.** `/download` is
+key-agnostic and `audioType()` already returns `audio/mpeg` for anything that
+is not `.wav`/`.flac`. Only `/stream` restricts formats, and that is the rule
+refusing lossless. The whole feature is client + template.
+
+**One subtlety worth keeping:** `/auth` signs `${file}:${expires}`, so the
+version choice must resolve **once** and feed both `/auth` and `/download`.
+`resolveTarget()` in `player.js` exists for exactly that; splitting it would
+produce a 401 that looks like a password problem.
+
+The playlist ZIP is built client-side from `assets/tracks.json` (which already
+carries the variant key), and its provenance note is asserted byte-identical
+to the server-built one — an unpacked ZIP should not reveal which code path
+made it.
+
+**Three documents said downloads were archive-only and are now updated:**
+`CLAUDE.md`, the on-page variant note, and `/process/`. The variant note is
+the standing disclosure commitment while Loud is the default playback
+variant — it cannot be left stale.
+
 ## 🎯 Page cleanup — round 1 shipped, register fully decided
 
 `plans/page-cleanup/` — a plan (principles, decision register, verbatim
@@ -203,6 +288,12 @@ which version is playing, and `/process/` to explain the cost. **Both read
 exactly like the boilerplate that was cut**, which is why they are explicit
 KEEPs in the plan §3 with their reasons. Verified live after the deploy: the
 note on the show and song pages, the scope line on all 30 show pages.
+
+**The note's wording changed on 2026-08-19** (PR #31): it used to end
+"Downloads are always the Archive version", which the loud download made
+false. It now says downloads *default* to the Archive master and the download
+box offers the louder MP3. The commitment is unchanged — only the fact it
+states. Any future change to what downloads offer has to come back here.
 
 ### A round 2, if there is one
 
@@ -324,6 +415,27 @@ These came out of the player work but are general.
 
 Added 2026-08-19:
 
+- **A CSP source path only prefix-matches when it ends in `/`.** Otherwise it
+  must match exactly. Cloudflare's own documented source
+  (`.../beacon.min.js`) would never have matched the versioned URL actually
+  requested (`.../beacon.min.js/v4513226c...`). Vendor docs can be wrong about
+  their own vendor.
+- **A header is not proof a third-party script works.** The only real check is
+  driving a browser and watching for both the script `200` *and* its report
+  request succeeding — here `POST /cdn-cgi/rum -> 204`. A correct-looking CSP
+  with a blocked beacon looks identical to a working one from `curl -I`.
+- **Chase the single console error.** One unexplained error on a production
+  spot-check turned out to be analytics that had never collected anything. The
+  temptation to write it off as "some Cloudflare thing" was the whole trap.
+- **Kill your own local servers before running the browser sweep.**
+  `browser_check.mjs` copies the site to `PORT + 1` (8124) for the breakage
+  tests; a stray `python3 -m http.server 8124` left over from taking
+  screenshots serves the real tree instead, so the deliberately-deleted
+  modules load fine and **12 checks fail** in a way that reads exactly like a
+  code regression. Cost a full re-run to diagnose.
+- **Don't claim a test exists before writing it.** A commit message here
+  asserted a CSP-sync check that did not exist. The fix was to write the check
+  (and verify it by mutation), not to soften the message.
 - **Inventory before deciding, and count the generated output — not the data.**
   The handoff said "30 of 31 shows say `done`"; the live figure is 30 of 30,
   because the 31st is hidden and generates no page. And the strongest finding of
@@ -400,6 +512,20 @@ Added 2026-08-19:
   hidden. Use both.
 
 ## Durable facts (don't undo)
+
+- **The download version chooser never remembers the last choice.** It resets
+  to Archive on every open. The two options are different *formats*, so a
+  sticky preference silently hands out lossy files. See "The loud download".
+- **`resolveTarget()` resolves the Archive/Loud choice exactly once**, feeding
+  both `/auth` and `/download`. `/auth` signs `${file}:${expires}`; resolving
+  twice, or resolving after `/auth`, produces a 401 that presents as a wrong
+  password.
+- **A loud ZIP is offered only when EVERY file in it has a variant.** Never
+  relax this to "as many as we have" — a mixed archive cannot be identified as
+  mixed after unpacking.
+- **`site_worker.js`'s CSP is the one that takes effect**, not `_headers` —
+  `secure()` calls `headers.set()` on every response. Both must be updated
+  together; `build.py --check` fails the build if they diverge.
 
 - **`.progress-range` is a 24px pointer target drawing a 3px rail via
   `background-size: 100% 3px`.** Every painter must assign
@@ -500,7 +626,9 @@ with the parked modules. `test-player-controller.mjs` went 60 → 57 in the same
 commit.)
 
 Also clean: `python3 scripts/build.py --check` (integrity OK, 31 shows, 680
-curated tracks, no orphan song pages).
+curated tracks, no orphan song pages). Since 2026-08-19 that command also
+**fails the build if `site_worker.js` and `_headers` declare different
+CSPs** — see `scripts/sitegen/_csp_check.py`.
 
 **Real-browser verification:** `scripts/browser_check.mjs` — needs
 `playwright-chromium`, a **global** install here, so run it as
@@ -512,6 +640,11 @@ is closed. Local run (which adds the breakage tests): **189/189**.
 
 It takes ~7 minutes — run it in the background with an end-marker, not in the
 foreground, or a 2-minute tool timeout will kill it.
+
+**Kill any local static server on 8124 first.** The breakage tests copy the
+site to `PORT + 1` and rename modules away; a stray server on that port serves
+the real tree instead, and 12 checks fail in a way indistinguishable from a
+code regression.
 
 Note the MCP Playwright tools are configured for channel `chrome` and fail
 here (`/opt/google/chrome/chrome` missing). The bundled chromium at
