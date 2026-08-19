@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Continuous playback navigation mockup</title>
+<link rel="stylesheet" href="../../assets/fonts.css">
+<style>
+  :root {
+    --bg: #f5f2ed;
+    --surface: #faf8f5;
+    --player: #fff;
+    --text: #1a1916;
+    --muted: #5c584f;
+    --border: #dedad3;
+    --accent: #2c4a3e;
+    --accent-light: #e8efe8;
+    --highlight: #b8862a;
+    --sans: "Karla", sans-serif;
+    --serif: "Cormorant Garamond", serif;
+    --mono: "Space Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #17150f;
+      --surface: #201d16;
+      --player: #201d16;
+      --text: #ece7dc;
+      --muted: #a49b8b;
+      --border: #363126;
+      --accent: #7fa37a;
+      --accent-light: #232e28;
+      --highlight: #d4a63c;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.55 var(--sans);
+  }
+  button { font: inherit; }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .wrap { width: min(1060px, calc(100% - 32px)); margin: 0 auto; padding: 54px 0 80px; }
+  .eyebrow {
+    margin: 0 0 12px;
+    color: var(--highlight);
+    font: 0.7rem var(--mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  h1 { margin: 0; font: 600 clamp(2.2rem, 6vw, 3.6rem)/1 var(--serif); }
+  .dek { max-width: 720px; margin: 18px 0 0; color: var(--muted); font-size: 1.06rem; }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 34px 0 18px;
+  }
+  .step {
+    min-height: 78px;
+    padding: 13px 14px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--surface);
+    color: var(--muted);
+    text-align: left;
+    cursor: pointer;
+  }
+  .step strong { display: block; margin-bottom: 3px; color: var(--text); font-weight: 600; }
+  .step[aria-selected="true"] { border-color: var(--accent); background: var(--accent-light); }
+  .step-num { margin-right: 6px; color: var(--accent); font: 0.72rem var(--mono); }
+
+  .browser {
+    position: relative;
+    min-height: 590px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg);
+    box-shadow: 0 18px 50px -34px rgba(0,0,0,.55);
+  }
+  .browser-bar {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    height: 42px;
+    padding: 0 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .dots { display: flex; gap: 5px; }
+  .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--border); }
+  .address {
+    flex: 1;
+    overflow: hidden;
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--muted);
+    background: var(--bg);
+    font: 0.68rem var(--mono);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .site-head {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    height: 58px;
+    padding: 0 max(18px, calc((100% - 880px) / 2));
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .mark {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .nav { color: var(--muted); font-size: .78rem; word-spacing: 13px; }
+  .page {
+    width: min(880px, calc(100% - 36px));
+    margin: 0 auto;
+    padding: 34px 0 128px;
+  }
+  .page-label { margin: 0 0 7px; color: var(--highlight); font: 0.66rem var(--mono); text-transform: uppercase; letter-spacing: .1em; }
+  h2 { margin: 0; font: 600 clamp(1.8rem, 4vw, 2.65rem)/1.05 var(--serif); }
+  .subtitle { margin: 8px 0 28px; color: var(--muted); font-size: .87rem; }
+  .section-title { margin: 0 0 9px; font: 600 1rem var(--serif); }
+
+  .track-list { overflow: hidden; border: 1px solid var(--border); border-radius: 7px; background: var(--player); }
+  .track {
+    display: grid;
+    grid-template-columns: 34px 28px minmax(110px, 1fr) minmax(90px, 1.5fr) auto;
+    align-items: center;
+    gap: 10px;
+    min-height: 55px;
+    padding: 8px 13px;
+    border-top: 1px solid var(--border);
+  }
+  .track:first-child { border-top: 0; }
+  .track.active { background: var(--accent-light); box-shadow: inset 3px 0 var(--accent); }
+  .play {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--bg);
+    cursor: pointer;
+  }
+  .play svg { width: 12px; }
+  .num, .time { color: var(--muted); font: .68rem var(--mono); }
+  .title { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: .86rem; }
+  .wave { display: flex; align-items: center; gap: 2px; height: 22px; overflow: hidden; }
+  .wave i { width: 2px; border-radius: 1px; background: var(--border); }
+  .wave i.played { background: var(--accent); }
+  .now-tag { color: var(--accent); font: .62rem var(--mono); text-transform: uppercase; white-space: nowrap; }
+
+  .song-occurrences { display: grid; gap: 9px; }
+  .occurrence {
+    display: grid;
+    grid-template-columns: 34px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    min-height: 62px;
+    padding: 10px 13px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--player);
+  }
+  .occurrence.active { border-color: var(--accent); background: var(--accent-light); box-shadow: inset 3px 0 var(--accent); }
+  .occ-main strong { display: block; font-size: .88rem; font-weight: 600; }
+  .occ-main span { color: var(--muted); font-size: .75rem; }
+
+  .persistent-player {
+    position: absolute;
+    z-index: 3;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: grid;
+    grid-template-columns: 40px minmax(120px, 1fr) minmax(100px, 1.4fr) auto auto;
+    align-items: center;
+    gap: 12px;
+    min-height: 78px;
+    padding: 10px max(16px, calc((100% - 880px) / 2));
+    border-top: 1px solid var(--border);
+    background: color-mix(in srgb, var(--player) 94%, transparent);
+    box-shadow: 0 -10px 30px -24px rgba(0,0,0,.65);
+    backdrop-filter: blur(12px);
+  }
+  .persistent-player[hidden] { display: none; }
+  .player-copy { min-width: 0; }
+  .player-copy strong { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: .88rem; }
+  .player-copy span { display: block; overflow: hidden; color: var(--muted); font: .62rem var(--mono); white-space: nowrap; text-overflow: ellipsis; }
+  .progress { height: 4px; overflow: hidden; border-radius: 99px; background: var(--border); }
+  .progress i { display: block; width: 36%; height: 100%; background: var(--accent); }
+  .loud { padding: 4px 9px; border: 0; border-radius: 99px; color: var(--accent); background: var(--accent-light); font: .65rem var(--mono); }
+  .next { color: var(--muted); font-size: 1rem; }
+
+  .explanation {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 18px;
+  }
+  .note { padding: 15px 16px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); }
+  .note strong { display: block; margin-bottom: 4px; font-family: var(--serif); font-size: 1.05rem; }
+  .note p { margin: 0; color: var(--muted); font-size: .86rem; }
+
+  @media (max-width: 680px) {
+    .wrap { width: min(100% - 20px, 520px); padding-top: 28px; }
+    .steps, .explanation { grid-template-columns: 1fr; }
+    .browser { min-height: 650px; }
+    .site-head { padding-inline: 14px; }
+    .page { width: calc(100% - 24px); padding-top: 25px; }
+    .track { grid-template-columns: 34px 23px minmax(0, 1fr) auto; }
+    .track .wave { grid-column: 3 / -1; width: 100%; }
+    .track .now-tag { grid-column: 4; grid-row: 1; }
+    .persistent-player { grid-template-columns: 38px minmax(0, 1fr) auto auto; gap: 8px; padding-inline: 12px; }
+    .persistent-player .progress { grid-column: 1 / -1; grid-row: 2; }
+    .persistent-player .next { display: none; }
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <p class="eyebrow">Navigation continuity · interaction mockup</p>
+  <h1>The player owns playback.<br>The page only reflects it.</h1>
+  <p class="dek">Choose each state below. The important moment is state 2: the show-page DOM has been replaced by the song page, but the audio controller and bottom player were never removed.</p>
+
+  <div class="steps" role="tablist" aria-label="Playback navigation states">
+    <button class="step" role="tab" aria-selected="true" data-state="show">
+      <strong><span class="step-num">01</span>Play ABC on show 05-23</strong>
+      The row becomes active and the persistent player appears.
+    </button>
+    <button class="step" role="tab" aria-selected="false" data-state="song-playing">
+      <strong><span class="step-num">02</span>Click the ABC song page</strong>
+      ABC keeps playing; its 05-23 performance is matched and highlighted.
+    </button>
+    <button class="step" role="tab" aria-selected="false" data-state="song-empty">
+      <strong><span class="step-num">03</span>Direct visit, nothing playing</strong>
+      No row is selected and there is no persistent player yet.
+    </button>
+  </div>
+
+  <section class="browser" aria-live="polite">
+    <div class="browser-bar">
+      <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="address" id="address">renedebos.com/shows/show-05-23/</span>
+    </div>
+    <div class="site-head">
+      <span class="mark" aria-hidden="true">♪</span>
+      <span class="nav">Songs Playlist Search Updates</span>
+    </div>
+
+    <div class="page" id="page"></div>
+
+    <div class="persistent-player" id="player">
+      <button class="play" aria-label="Pause ABC">
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="3" y="2" width="4" height="12"/><rect x="9" y="2" width="4" height="12"/></svg>
+      </button>
+      <div class="player-copy"><strong>ABC</strong><span>SHOW 05-23 · ACTIVE PERFORMANCE</span></div>
+      <div class="progress" aria-label="ABC playback progress, 1 minute 12 seconds of 3 minutes 20 seconds"><i></i></div>
+      <button class="loud" aria-label="Playback loudness: Archive">Archive</button>
+      <span class="next" aria-hidden="true">‹ &nbsp;›</span>
+    </div>
+  </section>
+
+  <div class="explanation">
+    <div class="note"><strong>What persists?</strong><p>The audio element, current track ID, time, queue, loudness mode, and mini player remain mounted outside the page content that gets replaced.</p></div>
+    <div class="note"><strong>What does the new page do?</strong><p>It asks the controller what is playing. If one of its rows has the same stable track ID, that row displays the active state. It does not start a second player.</p></div>
+  </div>
+</main>
+
+<script>
+  const page = document.querySelector('#page');
+  const player = document.querySelector('#player');
+  const address = document.querySelector('#address');
+  const steps = [...document.querySelectorAll('.step')];
+
+  function wave() {
+    const heights = [7,14,10,19,8,16,21,12,18,9,15,20,7,13,17,11,20,15,8,18,12,6,15,10,19,8,13,17,9,15,20,11,7,16,12,18];
+    return heights.map((height, index) => `<i class="${index < 13 ? 'played' : ''}" style="height:${height}px"></i>`).join('');
+  }
+
+  function showPage() {
+    address.textContent = 'renedebos.com/shows/show-05-23/';
+    player.hidden = false;
+    page.innerHTML = `
+      <p class="page-label">The Hannan Tapes · Show</p>
+      <h2>Live at The Venue</h2>
+      <p class="subtitle">Show 05-23 · Full set recording</p>
+      <p class="section-title">Tracks</p>
+      <div class="track-list">
+        <div class="track"><button class="play" aria-label="Play Opening Song">▶</button><span class="num">01</span><span class="title">Opening Song</span><span class="wave">${wave()}</span><span class="time">4:02</span></div>
+        <div class="track active"><button class="play" aria-label="Pause ABC">Ⅱ</button><span class="num">02</span><span class="title">ABC</span><span class="wave">${wave()}</span><span class="now-tag">Playing</span></div>
+        <div class="track"><button class="play" aria-label="Play Final Song">▶</button><span class="num">03</span><span class="title">Final Song</span><span class="wave">${wave()}</span><span class="time">5:11</span></div>
+      </div>`;
+  }
+
+  function songPage(isPlaying) {
+    address.textContent = 'renedebos.com/songs/abc/';
+    player.hidden = !isPlaying;
+    page.innerHTML = `
+      <p class="page-label">The Hannan Tapes · Song</p>
+      <h2>ABC</h2>
+      <p class="subtitle">Played three times across the archive</p>
+      <p class="section-title">Every performance</p>
+      <div class="song-occurrences">
+        <div class="occurrence ${isPlaying ? 'active' : ''}">
+          <button class="play" aria-label="${isPlaying ? 'Pause' : 'Play'} ABC from show 05-23">${isPlaying ? 'Ⅱ' : '▶'}</button>
+          <div class="occ-main"><strong>Show 05-23</strong><span>The Venue · audience recording · 3:20</span></div>
+          ${isPlaying ? '<span class="now-tag">Playing here</span>' : ''}
+        </div>
+        <div class="occurrence"><button class="play" aria-label="Play ABC from show 07-14">▶</button><div class="occ-main"><strong>Show 07-14</strong><span>19 Broadway · soundboard · 3:36</span></div></div>
+        <div class="occurrence"><button class="play" aria-label="Play ABC from show 11-02">▶</button><div class="occ-main"><strong>Show 11-02</strong><span>Cafe Java · audience recording · 3:12</span></div></div>
+      </div>`;
+  }
+
+  function selectState(state) {
+    steps.forEach(step => step.setAttribute('aria-selected', String(step.dataset.state === state)));
+    if (state === 'show') showPage();
+    if (state === 'song-playing') songPage(true);
+    if (state === 'song-empty') songPage(false);
+  }
+
+  steps.forEach(step => step.addEventListener('click', () => selectState(step.dataset.state)));
+  selectState('show');
+</script>
+</body>
+</html>

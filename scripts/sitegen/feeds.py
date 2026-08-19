@@ -66,7 +66,10 @@ def build_track_catalog():
     for show in sorted([s for s in M["shows"] if s.get("tracks")], key=sort_key):
         proc = load_processing(show["slug"])
         ptracks = proc.get("tracks", {}) if proc else {}
+        var = load_variant(show["slug"])
+        vtracks = var.get("tracks", {}) if var else {}
         for t in show["tracks"]:
+            v = vtracks.get(str(t["num"]))
             rows.append({
                 "id": f'{show["slug"]}-{t["num"]:02d}',
                 "title": t["title"],
@@ -83,6 +86,11 @@ def build_track_catalog():
                 "file": t["file"],
                 "flac": t.get("flac"),
                 "flac_size_mb": t.get("flac_size_mb"),
+                # Loud variant: emitted per track, and ONLY when that track has
+                # variant provenance — the player must never be handed a key
+                # that was not actually rendered.
+                "loud": variant_key(t["file"]) if v else None,
+                "loudVer": (v.get("mp3_md5") or "")[:12] if v else None,
                 "ver": (ptracks.get(str(t["num"]), {}).get("md5") or "")[:12] or None,
                 # workflow version, named distinctly from "ver" above (that's an
                 # unrelated md5-prefix cache-buster) — same field as track-spec.json's procVer.
@@ -133,8 +141,11 @@ def build_track_spec_catalog():
             continue
         proc = load_processing(show["slug"])
         ptracks = proc.get("tracks", {}) if proc else {}
+        var = load_variant(show["slug"])
+        vtracks = var.get("tracks", {}) if var else {}
         for t in show["tracks"]:
             p = ptracks.get(str(t["num"]), {})
+            v = vtracks.get(str(t["num"]), {})
             gain = (round(p["lufs"] - p["in_lufs"], 2)
                     if "lufs" in p and "in_lufs" in p else None)
             rows.append({
@@ -169,6 +180,19 @@ def build_track_spec_catalog():
                 # v8 transient-cap guardrail record (None for other modes):
                 # cap depth + engagement stats for auditing capped tracks
                 "tcap": p.get("transient_cap"),
+                # The -14 loud variant, if rendered. `loudFrom` records that it
+                # is DERIVED FROM the -20 archive rather than from source, and
+                # loudSrcMd5 is the proof: it equals this track's archive `md5`.
+                # Never merge these into the fields above — they describe a
+                # different render. See CLAUDE.md, "The -14 loud variant".
+                "loud": ({
+                    "lufs": v.get("lufs"), "lra": v.get("lra"),
+                    "truePeak": v.get("tp"), "mp3TruePeak": v.get("mp3_tp"),
+                    "treatment": v.get("mode"), "tcap": v.get("transient_cap"),
+                    "lraDelta": (round(v["lra"] - p["lra"], 2)
+                                 if "lra" in v and "lra" in p else None),
+                    "loudFrom": "archive-20", "loudSrcMd5": v.get("src_md5"),
+                } if v else None),
             })
     return rows
 

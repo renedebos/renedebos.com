@@ -13,6 +13,17 @@
   --sans: 'Karla', sans-serif;
   --serif: 'Cormorant Garamond', serif;
   --mono: 'Space Mono', monospace;
+
+  /* Namespaced aliases the shared player component reads (player-views.js),
+     so it never depends on either token system's own variable names — this
+     file's and home.css's differ, and their nearest equivalents aren't
+     identical in dark mode (--accent-light vs --accent-dim). Aliasing via
+     var() rather than literals means these follow the dark-theme overrides
+     below automatically. Mirror these three in home.css if the player ever
+     renders on a home.css-styled page. */
+  --player-accent: var(--accent);
+  --player-track: var(--border);
+  --player-surface: var(--player-bg);
 }
 
 /* Dark theme — follows the OS preference; a [data-theme] override wins if a
@@ -456,6 +467,18 @@ main {
 .track-row:hover .track-title { color: var(--accent); }
 .track-row.playing { background: var(--accent-light); box-shadow: inset 3px 0 0 var(--accent); }
 
+/* A row whose audio failed to load (404/CORS/decode). Before the shared
+   controller there was no 'error' handling at all, so a hard failure just left
+   the row spinning forever; now it says so and the play button offers a retry.
+   Highlight-toned rather than red — a missing file on an archive of 1990s
+   cassette transfers is a mundane event, not an alarm. */
+.player-error { box-shadow: inset 3px 0 0 var(--highlight); }
+.player-error-msg {
+  color: var(--highlight);
+  font: 0.7rem var(--mono);
+  white-space: nowrap;
+}
+
 .track-row .play-btn { width: 30px; height: 30px; }
 .track-row .play-btn svg { width: 12px; height: 12px; }
 
@@ -577,51 +600,10 @@ main {
   .track-row.ws-track .download-btn svg { width: 16px; height: 16px; }
 }
 
-/* ── wavesurfer.js prototype (lab page) ──────────────────────────────────── */
-
-.ws-list {
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  overflow: hidden;
-  background: var(--player-bg);
-}
-
-.ws-row {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  padding: 0.5rem 1.1rem;
-  border-top: 1px solid var(--border);
-  transition: background 0.15s;
-}
-
-.ws-row:first-child { border-top: none; }
-.ws-row.playing { background: var(--accent-light); box-shadow: inset 3px 0 0 var(--accent); }
-
-.ws-row .play-btn { width: 30px; height: 30px; flex-shrink: 0; }
-.ws-row .play-btn svg { width: 12px; height: 12px; }
-
-.ws-row .track-num {
-  min-width: 1.8em;
-  text-align: right;
-  font-size: 12px;
-  color: var(--muted);
-  font-weight: 300;
-  font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
-}
-
-.ws-row .track-title {
-  flex: 0 1 170px;
-  min-width: 0;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.ws-row:hover .track-title { color: var(--accent); }
+/* .ws-wave and .ws-dl below are production classes on real show-page track
+   rows (.track-row.ws-track), rendered by build_show() and driven by both
+   player.js and the shared controller's player-views.js — not lab-only,
+   despite the "ws-" prefix shared with the removed wavesurfer.js lab page. */
 
 .ws-wave {
   flex: 1 1 auto;
@@ -630,38 +612,8 @@ main {
   cursor: pointer;
 }
 
-.ws-row .time-label {
-  font-size: 12px;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
-  min-width: 3em;
-  text-align: right;
-}
-
-.ws-row .download-btn {
-  width: 24px;
-  height: 24px;
-  background: transparent;
-  color: var(--muted);
-}
-.ws-row .download-btn:hover { background: var(--accent-light); color: var(--accent); }
-.ws-row .download-btn svg { width: 12px; height: 12px; }
-
 /* the download link's wrapper is transparent to the flex layout */
 .ws-dl { display: contents; }
-
-@media (max-width: 600px) {
-  .ws-row { flex-wrap: wrap; row-gap: 0.5rem; padding: 0.7rem 1.1rem; }
-  .ws-row .track-title { flex: 1 1 auto; white-space: normal; line-height: 1.35; }
-  .ws-row .time-label { margin-left: auto; }
-  .ws-wave { flex: 1 1 100%; order: 5; }
-  /* larger touch targets for thumbs */
-  .ws-row .play-btn { width: 44px; height: 44px; }
-  .ws-row .play-btn svg { width: 15px; height: 15px; }
-  .ws-row .download-btn { width: 40px; height: 40px; }
-  .ws-row .download-btn svg { width: 16px; height: 16px; }
-}
 
 /* ── recording cards & player ────────────────────────────────────────────── */
 
@@ -801,13 +753,33 @@ main {
    gradient (WebKit/Blink reads the input's own background through a
    transparent ::-webkit-slider-runnable-track); Firefox fills natively via
    ::-moz-range-progress. */
+/* The ELEMENT is a 24px pointer target; the RAIL it draws is still 3px.
+   Before this the input was itself 3px tall, so seeking on a phone meant
+   landing a fingertip inside a 3px-high box — the thumb is the only part
+   big enough to aim at, and it moves. 24px is the usual floor for a touch
+   target (WCAG 2.5.8 asks 24x24 CSS px).
+
+   The rail is painted as a background IMAGE, sized to 100% x 3px and centred
+   in the tall box, rather than as the element's background colour. That is
+   why every _paintRange()/seek painter assigns `style.backgroundImage` and
+   never the `background` SHORTHAND: the shorthand resets background-size,
+   -repeat and -position to their initial values, and an inline style beats a
+   stylesheet longhand, so one shorthand write would silently inflate the
+   rail to fill all 24px. Five painters across four files do this — see
+   player-views.js, playlist-views.js, continuous-player.js and player.js.
+   (`border-radius` is gone with the colour: it rounded the element box,
+   which is now invisible. Rounding 2px off a 3px rail is not worth a
+   second painted layer.) */
 .progress-range {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 3px;
-  border-radius: 2px;
-  background: var(--border);
+  height: 24px;
+  background-color: transparent;
+  background-image: linear-gradient(to right, var(--border) 0%, var(--border) 100%);
+  background-size: 100% 3px;
+  background-repeat: no-repeat;
+  background-position: center;
   cursor: pointer;
   outline-offset: 4px;
 }
@@ -1054,6 +1026,35 @@ tr:has(+ .ad-detail-row) .treat-toggle { transform: rotate(-135deg); }
   font-size: 11px;
   color: var(--muted);
   word-break: break-all;
+}
+/* One expandable row can now hold two renders (archive master and the -14
+   variant), so each numeric block gets a heading — without one the two sets
+   of near-identical figures are indistinguishable. */
+.ad-detail-head {
+  margin: 0.6rem 0 0.35rem;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.ad-detail-head:first-child { margin-top: 0; }
+/* Loud-variant columns: tinted as a group so it stays obvious at a glance
+   which figures describe the streaming variant rather than the master. */
+.tech-table td.loud-col, .tech-table th.loud-col {
+  background: color-mix(in srgb, var(--accent-light) 55%, transparent);
+}
+/* A loudness-range loss past 1 LU. The mode was sanctioned at <= 0.3 LU, so
+   anything at this size is worth a reader finding without sorting first. */
+.loud-delta-flag { color: var(--highlight); font-weight: 700; }
+
+/* Scope line above the technical table: the figures below describe the -20
+   archive, which is not what the player streams by default. */
+.tech-scope {
+  font-style: normal;
+  border-left: 3px solid var(--accent);
+  padding-left: 0.7rem;
+  margin-bottom: 0.9rem;
 }
 
 /* processing status badge (in the technical-data summary) */
@@ -1872,4 +1873,61 @@ a.artist-chip:hover { filter: brightness(1.08); }
 .process-intro code, .flow code, .process-outro code {
   font-size: 0.85em; background: var(--accent-light);
   padding: 0.05em 0.35em; border-radius: 4px;
+}
+
+/* ── Playback variant (Archive / Loud) ──────────────────────────────────
+   Loud is the DEFAULT (2026-08-18), so the note is load-bearing, not
+   decoration: a visitor who touches nothing is hearing the -14 render and
+   the page must say so. Sits above the track list, one per page — the track
+   row already carries seven controls and this is not a per-track setting. */
+.variant-pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin: 0 0 18px;
+}
+.variant-label {
+  font-family: var(--font-mono, "Space Mono", monospace);
+  font-size: .72rem;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  opacity: .7;
+}
+.variant-btns { display: flex; gap: 0; }
+.variant-btn {
+  font-family: var(--font-mono, "Space Mono", monospace);
+  font-size: .78rem;
+  letter-spacing: .04em;
+  padding: 9px 16px;
+  min-height: 44px;                 /* touch target, not just the visual box */
+  border: 1px solid var(--rule, #d8cfc0);
+  background: transparent;
+  color: var(--ink, #2b2620);
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+.variant-btn + .variant-btn { border-left: none; }
+.variant-btn:first-child { border-radius: 4px 0 0 4px; }
+.variant-btn:last-child  { border-radius: 0 4px 4px 0; }
+.variant-btn:hover { background: rgba(0, 0, 0, .04); }
+.variant-btn[aria-pressed="true"] {
+  background: var(--accent, #8a6a3b);
+  border-color: var(--accent, #8a6a3b);
+  color: var(--paper, #faf6ee);
+  font-weight: 700;
+}
+.variant-btn:focus-visible { outline: 2px solid var(--accent, #8a6a3b); outline-offset: 2px; }
+.variant-note {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: .86rem;
+  line-height: 1.5;
+  opacity: .82;
+}
+.variant-note strong { font-weight: 700; }
+@media (max-width: 560px) {
+  .variant-pick { gap: 8px 10px; }
+  .variant-btn { flex: 1 1 0; }
+  .variant-btns { flex: 1 1 100%; }
 }

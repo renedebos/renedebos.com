@@ -26,10 +26,56 @@
 
   var SOURCE_LABEL = { SBD: "Soundboard", AUD: "Audience recording" };
 
+  // "M:SS" -> whole seconds. Mirrors sitegen/core.py's _duration_sec() —
+  // keep the two in sync (this is the JS-rendered counterpart to
+  // fragments.py's _song_occ_html(), which uses the Python original).
+  function durationSec(d) {
+    if (!d) return null;
+    var parts = String(d).split(":");
+    if (parts.length !== 2) return null;
+    var m = parseInt(parts[0], 10), s = parseInt(parts[1], 10);
+    if (!isFinite(m) || !isFinite(s)) return null;
+    return m * 60 + s;
+  }
+
+  // Builds the same data-item schema playable_item_attr() (sitegen/
+  // fragments.py) produces for a show-page track row / song-page server-
+  // rendered occurrence row — see that function's docstring for the field
+  // list. Consumed by itemFromRowElement()/normalizeItem() in song-boot.js,
+  // exactly like a show page's rows.
+  function occItemJson(o, songTitle, trackId, anchor, stream, loudStream) {
+    var lossless = o.flac ? { key: o.flac, format: "flac", sizeMb: o.flac_size_mb || null,
+      title: o.flac.split("/").pop() } : null;
+    return JSON.stringify({
+      id: trackId,
+      kind: "track",
+      streamUrl: stream,
+      // The -14 loud render, or null when this track has none — same shape and
+      // same rule as the server-rendered row in _song_occ_html(): keep the two
+      // builders in sync (see occRowHtml()'s comment).
+      loudUrl: loudStream || null,
+      title: songTitle,
+      artist: o.artist_name || "",
+      venue: o.venue || null,
+      date: o.date || null,
+      dateDisplay: o.date || null,
+      durationSec: durationSec(o.duration),
+      durationLabel: o.duration || null,
+      peaksKey: null,
+      pageUrl: anchor,
+      playLabel: songTitle + ", " + o.artist_name + ", " + o.date,
+      downloads: { lossless: lossless },
+      dropouts: false,
+    });
+  }
+
   function occRowHtml(o, songTitle) {
     var label = songTitle + ", " + o.artist_name + ", " + o.date;
     var anchor = o.url + "#track-" + o.num;
     var stream = WORKER + "/stream?file=" + encodeURIComponent(o.file) + (o.ver ? "&v=" + o.ver : "");
+    var loudStream = o.loud
+      ? WORKER + "/stream?file=" + encodeURIComponent(o.loud) + (o.loud_ver ? "&v=" + o.loud_ver : "")
+      : null;
     var dur = o.duration ? '<span class="time-label">' + escOcc(o.duration) + "</span>" : "";
     var trackId = o.slug + "-" + (o.num < 10 ? "0" + o.num : o.num);
     var sizes = [];
@@ -44,6 +90,7 @@
       ["Size", sizes.join(" · ") || "—"],
       ["Process version", o.proc_ver ? "v" + o.proc_ver : "Not yet processed"],
     ]);
+    var itemJson = occItemJson(o, songTitle, trackId, anchor, stream, loudStream);
     return '<div class="song-occ">'
       + '<div class="song-occ-head">'
       + '<a class="artist-chip artist-' + o.artist + '" href="' + escOcc(anchor) + '">' + escOcc(o.artist_name) + "</a>"
@@ -51,7 +98,7 @@
       + '<a class="song-occ-open" href="' + escOcc(anchor) + '">open on show page &rarr;</a>'
       + trackAddButtonHtml(trackId)
       + "</div>"
-      + '<div class="custom-player" data-src="' + escOcc(stream) + '">'
+      + '<div class="custom-player" data-src="' + escOcc(stream) + '" data-item="' + escOcc(itemJson) + '">'
       + '<button class="play-btn" aria-label="Play ' + escOcc(label) + '" data-play-label="' + escOcc(label) + '">' + playIcon + "</button>"
       + '<div class="progress-wrap">'
       + '<input type="range" class="progress-range" min="0" max="' + RANGE_MAX + '" value="0" step="1" aria-label="Seek ' + escOcc(label) + '" aria-valuetext="0:00' + (o.duration ? ' of ' + escOcc(o.duration) : '') + '">'
@@ -69,7 +116,15 @@
       var entry = data[slug];
       if (!entry) return;
       container.innerHTML = entry.occ.map(function (o) { return occRowHtml(o, entry.title); }).join("\n");
-      initCustomPlayers(container);
+      // song-boot.js is the primary engine (same handshake show pages use —
+      // see its own header comment); initCustomPlayers() is retained
+      // specifically as the fallback for when it never mounted (module
+      // 404/parse failure, or an in-script throw during its own boot).
+      if (window.PLAYER_ENGINE_MOUNTED && window.SONG_BOOT) {
+        window.SONG_BOOT.mountRows(container);
+      } else {
+        initCustomPlayers(container);
+      }
     });
   }
 

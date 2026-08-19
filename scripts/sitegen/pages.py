@@ -88,12 +88,13 @@ def build_home():
         artist_links=artist_links,
         random_tape_script=RANDOM_TAPE_SCRIPT,
         jsonld=home_jsonld(),
+        playback_ready=PLAYBACK_READY_SNIPPETS["none"],
     )
 
 HOME_SHELL = '''<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+{playback_ready}<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Hannan Tapes</title>
 <meta name="description" content="Live recordings archive — Jerry Hannan, Sean Hannan, and Mad Hannans performing at clubs in Marin County in the late 1990s and early 2000s.">
@@ -270,7 +271,21 @@ def _curated_playlists_html():
       </div>
     </div>'''
 
+
+# ── /playlist/ on the shared PlaybackController (Phase 2 of
+# plans/player-consolidation/) ─────────────────────────────────────────────
+# Stage 2c (2026-08-14) deleted the legacy playlist.js engine and its
+# `?engine=` canary/escape-hatch resolver -- playlist-boot.js is now the
+# only engine and mounts unconditionally. See player-consolidation-plan.md's
+# Phase 2 section for the 2a (canary) / 2b (default-on) / 2c (legacy
+# deletion) history.
+
 def build_playlist():
+    # window.WORKER_ORIGIN is emitted for the same reason WS_PEAKS_URL is on
+    # show pages: player.js's `const WORKER = '...'` (player.js:2) is a
+    # lexical binding, not a `window` property, so a module (playlist-boot.js)
+    # can't read it as a bare identifier the way another classic script can.
+    worker_origin = f"<script>window.WORKER_ORIGIN={WORKER!r};</script>\n"
     return page_shell(
         title="Playlist — The Hannan Tapes",
         description="Build a custom playlist from the Hannan archive — filter by artist, venue, mood, and source, then hit play.",
@@ -279,7 +294,16 @@ def build_playlist():
         heading="Playlist",
         tagline="Roll your own set list from the archive",
         nav=site_nav("Playlist"),
-        extra_scripts='\n<script src="/assets/track-select.js"></script>\n<script src="/assets/playlist.js"></script>',
+        # onerror -> 'none', not 'legacy': /playlist/ has no fallback engine to
+        # defer to (see playback_ready_onerror's own callers' comments) --
+        # 'none' lets a future mini-player construct its own controller on an
+        # otherwise-broken page instead.
+        extra_scripts=('\n<script src="/assets/track-select.js"></script>'
+                       f'\n<script type="module" src="/assets/playlist-boot.js" '
+                       f'onerror="{playback_ready_onerror("none")}"></script>'
+                       + (VARIANT_UI_SCRIPT if has_variant() else "")),
+        pre_scripts=worker_origin,
+        playback_ready="deferred",
         main=f'''
   <section class="playlist">
     <p class="pl-intro">Filter the archive by artist, venue, source, or mood, then build a set — a fixed number of songs, a target length, or endless shuffle. Each playlist uses one randomly chosen performance of a song, so one played a dozen times over the years never repeats within a single set.</p>
@@ -307,7 +331,7 @@ def build_playlist():
       <button id="pl-download" class="pl-generate pl-share" type="button" hidden>Download ZIP</button>
       <button id="pl-player" class="pl-generate pl-share" type="button" hidden>Open continuous player</button></p>
     </div>
-    <div id="pl-saved"></div>
+    <div id="pl-saved"></div>{variant_toggle(has_variant())}
     <div id="pl-now" class="pl-now" hidden></div>
     <div id="pl-queue" class="pl-queue"></div>
   </section>''',
@@ -582,6 +606,8 @@ main tbody tr:nth-child(even) td {{ background: color-mix(in srgb, var(--chip) 5
 </html>
 '''
 
+VARIANT_UI_SCRIPT = '\n<script type="module" src="/assets/variant-ui.js"></script>'
+
 def build_player():
     """/player/ — a dedicated popup window for continuous playback (see
     scripts/continuous-player.js and player.js's sendToPlayer()). Deliberately
@@ -589,8 +615,14 @@ def build_player():
     visitor opens once and leaves alone, not a normal nav destination — same
     reasoning as /manual/. Unlike /manual/'s own bespoke design system, this
     reuses the main site's stylesheet/fonts and its existing .pl-now/.pl-btn/
-    .pl-row player styling so it still feels like part of the archive."""
-    return PLAYER_SHELL
+    .pl-row player styling so it still feels like part of the archive.
+
+    The variant control is templated in here rather than baked into
+    PLAYER_SHELL so a checkout with no rendered variant doesn't ship a dead
+    toggle -- same has_variant() gate the other client-rendered pages use."""
+    return (PLAYER_SHELL
+            .replace("<!--VARIANT_PICK-->", variant_toggle(has_variant()))
+            .replace("<!--VARIANT_SCRIPT-->", VARIANT_UI_SCRIPT if has_variant() else ""))
 
 PLAYER_SHELL = '''<!DOCTYPE html>
 <html lang="en">
@@ -620,10 +652,11 @@ PLAYER_SHELL = '''<!DOCTYPE html>
     <h1>&#9834; Player</h1>
     <a href="/playlist/">Build a playlist &rarr;</a>
   </div>
+  <!--VARIANT_PICK-->
   <div id="cp-now" class="pl-now"></div>
   <p id="cp-status" class="search-status"></p>
   <div id="cp-queue"></div>
-  <script src="/assets/continuous-player.js"></script>
+  <script src="/assets/continuous-player.js"></script><!--VARIANT_SCRIPT-->
 </body>
 </html>
 '''
@@ -650,7 +683,7 @@ def build_archive_data():
         extra_scripts='\n<script src="/assets/archive-data.js"></script>',
         main='''
   <section class="archive-data">
-    <p class="pl-intro">Every track in the archive with the spec data collected for it — loudness, true peak, LRA, workflow version, treatment, tags, and damage flags. Filter or search, click a column to sort, click a song to jump to its show page.</p>
+    <p class="pl-intro">Every track in the archive with the spec data collected for it — loudness, true peak, LRA, workflow version, treatment, tags, and damage flags. The tinted <strong>Loud</strong> columns describe the separate −14 LUFS streaming variant, including what it cost in loudness range (ΔLRA); everything else describes the −20 archive master. Click a treatment cell for the full limiter breakdown of either render. Filter or search, click a column to sort, click a song to jump to its show page.</p>
     <input id="ad-q" class="search-input" type="search" autocomplete="off" placeholder="Search song, show, venue, songwriter…">
     <div class="pl-panel">
       <div class="pl-panel-head"><span class="pl-filter-label">Filters</span><button type="button" id="ad-clear" class="pl-clear" hidden>Clear filters</button></div>
@@ -677,6 +710,45 @@ def build_contact():
         nav=site_nav(),
         main=contact_block(),
     )
+
+# ── shared-player rollout allowlist (plans/player-consolidation/, Phase 1
+# Steps 4-5b) ────────────────────────────────────────────────────────────────
+# Show pages listed here run the shared PlaybackController (player-boot.js)
+# instead of the legacy player.js. player.js stays on every page as the
+# runtime fallback either way. (The legacy wavesurfer.js waveform-row engine
+# that used to pair with it was removed in Step 5c — see plan.md.)
+#
+# Step 5b (2026-08-14) widened this from an explicit 3-page allowlist to
+# every public show, computed from PUBLIC_SHOWS -- a newly added show is
+# automatically covered from here on, with no manual sync step. The
+# membership gate below (`if show["slug"] in CONTROLLER_ENGINE_SLUGS:`) is
+# unchanged; only what populates the set changed.
+# CONTROLLER_ENGINE_EXCLUDED_SLUGS is the escape hatch for a targeted
+# rollback of one specific page (a page-specific bug, not an architectural
+# one) without reverting the whole rollout -- see plan.md's Step 5a rollback
+# design for why this shape (edit the set + rebuild + PR), not a runtime flag.
+# PARTIAL since Step 5c: with wavesurfer.js gone, an excluded page's
+# waveform track rows have no engine at all (dead, not degraded) -- only the
+# Full Recording card recovers via player.js. This is the accepted tradeoff
+# documented in plan.md's Step 5c entry, not a bug in this mechanism, but a
+# real incident rollback via this set does NOT fully restore the page.
+#
+# The three pages Step 4/5a's browser-pass verification specifically covered
+# for their differing shapes -- still worth knowing if a markup-shape bug
+# ever surfaces:
+#   jerry-cafe-java-1999-05-27   plain: waveform rows, one Full Recording card
+#   jerry-cafe-java-1999-03-25   two canonical Full Recording parts, so two hero
+#                                cards live on one page at once
+#   mad-sweetwater-2000-10-17    an alternate transfer sharing the canonical
+#                                recording's MP3 stream proxy — the case that
+#                                forced recording ids to key on the lossless
+#                                original — inside a collapsed <details>
+#
+# Not covered, because no *published* show has the shape: a page with no track
+# list at all. jerry-western-saloon-2025-07-03 is the only track-less show and
+# it's currently hidden, so it generates no page.
+CONTROLLER_ENGINE_EXCLUDED_SLUGS = set()
+CONTROLLER_ENGINE_SLUGS = {s["slug"] for s in PUBLIC_SHOWS} - CONTROLLER_ENGINE_EXCLUDED_SLUGS
 
 def build_show(show):
     artist = next(a for a in M["artists"] if a["id"] == show["artist"])
@@ -710,6 +782,11 @@ def build_show(show):
     # per-track audio fingerprints used as stream cache-busters.
     proc = load_processing(show["slug"]) if show.get("tracks") else None
     proc_tracks = proc.get("tracks", {}) if proc else {}
+    var = load_variant(show["slug"])
+    var_tracks = var.get("tracks", {}) if var else {}
+    # Read again at script-emission time, so it must exist on every path — a
+    # track-less show never enters the branch that used to define it.
+    any_loud = bool(var_tracks)
 
     if show.get("tracks"):
         has_flac = any(t.get("flac") for t in show["tracks"])
@@ -733,6 +810,11 @@ def build_show(show):
             # caches hard yet a re-normalized upload goes live instantly.
             ver = (proc_tracks.get(str(t["num"]), {}).get("md5") or "")[:12] or None
             stream = stream_url(t["file"], ver)
+            # Loud variant, only when this track actually has one rendered.
+            vt = var_tracks.get(str(t["num"]))
+            loud_stream = (stream_url(variant_key(t["file"]),
+                                      (vt.get("mp3_md5") or "")[:12] or None)
+                           if vt else None)
             sizes = []
             if t.get("flac_size_mb"):
                 sizes.append(f'FLAC {t["flac_size_mb"]} MB')
@@ -767,14 +849,41 @@ def build_show(show):
                 flac_title = "Download FLAC (password protected)" + (f" · {t['flac_size_mb']} MB" if t.get("flac_size_mb") else "")
                 dl_btns.append(dl_button(t["flac"], title=flac_title))
             # Playlist-selection id: {show-slug}-{tracknum:02d}, matching assets/tracks.json.
-            add_btn = track_add_button(f'{show["slug"]}-{t["num"]:02d}')
+            track_id = f'{show["slug"]}-{t["num"]:02d}'
+            add_btn = track_add_button(track_id)
+            # The shared player reads this; nothing consumes it until the
+            # controller is switched on for a page (see the plan's Step 4).
+            # play_label is rebuilt unescaped here on purpose — playable_item_attr
+            # escapes the whole JSON itself, so passing the esc()'d one would
+            # double-escape it.
+            item_attr = playable_item_attr(
+                item_id=track_id,
+                kind="track",
+                stream=stream,
+                title=t["title"],
+                artist=track_artist,
+                venue=show.get("venue"),
+                date=show.get("date"),
+                date_display=date_with_subtitle(show),
+                duration_label=t["duration"],
+                # Peaks JSON is keyed by track number as a string; a row whose
+                # key is missing from the fetched map just renders without a
+                # waveform, per-row rather than per-show.
+                peaks_key=str(t["num"]) if has_waves else None,
+                page_url=f'{show_url(show)}#track-{t["num"]}',
+                play_label=f'{t["title"]}, {track_artist}, {date_with_subtitle(show)}',
+                lossless_file=t.get("flac"),
+                lossless_size_mb=t.get("flac_size_mb"),
+                dropouts=t.get("dropouts"),
+                loud_stream=loud_stream,
+            )
             if has_waves:
                 # waveform replaces the progress bar; the download (if any) keeps the
-                # .ws-dl wrapper so the mobile grouping styles apply (matches the lab page).
+                # .ws-dl wrapper so the mobile grouping styles apply.
                 dl = ('\n        <div class="ws-dl">' +
                       "".join("\n          " + b for b in dl_btns) +
                       "\n        </div>") if dl_btns else ""
-                rows.append(f'''      <div class="track-row ws-track" id="track-{t["num"]}" data-trackid="{t["num"]}" data-src="{esc(stream)}">
+                rows.append(f'''      <div class="track-row ws-track" id="track-{t["num"]}" data-trackid="{t["num"]}" data-src="{esc(stream)}" {item_attr}>
         <button class="play-btn" aria-label="Play {play_label}" data-play-label="{play_label}">{PLAY_SVG}</button>
         <span class="track-num">{t["num"]:02d}</span>
         {title_html}
@@ -784,7 +893,7 @@ def build_show(show):
       </div>''')
             else:
                 dl = "".join("\n        " + b for b in dl_btns)
-                rows.append(f'''      <div class="track-row custom-player" id="track-{t["num"]}" data-src="{esc(stream)}">
+                rows.append(f'''      <div class="track-row custom-player" id="track-{t["num"]}" data-src="{esc(stream)}" {item_attr}>
         <button class="play-btn" aria-label="Play {play_label}" data-play-label="{play_label}">{PLAY_SVG}</button>
         <span class="track-num">{t["num"]:02d}</span>
         {title_html}
@@ -803,7 +912,7 @@ def build_show(show):
         {zip_html}
       </div>
     </div>
-    <p class="track-hint">{hint}</p>
+    <p class="track-hint">{hint}</p>{variant_toggle(any_loud)}
     <div class="track-list" data-autoplay-next>
 {chr(10).join(rows)}
     </div>
@@ -812,14 +921,15 @@ def build_show(show):
     # Technical-data table for shows that have been through the audio_processing
     # workflow (renders all tracks; loudness columns filled where measured).
     if proc:
-        parts.append(tech_data_section(show, proc))
+        parts.append(tech_data_section(show, proc, var))
 
     cards = []
     for r in canon:
         title = r["label"] or "Complete show"
         meta = [("Source", r["source"]), ("Format", r["format"]), ("Size", r["size"])]
         play_label = f'{title}, {artist["name"]}, {date_with_subtitle(show)}'
-        cards.append(recording_card(title, meta, r["source"], r["file"], r.get("stream"), play_label))
+        cards.append(recording_card(title, meta, r["source"], r["file"], r.get("stream"), play_label,
+                                    show=show))
     label = "Full Recording" if len(canon) == 1 else "Full Recording &middot; " + f"{len(canon)} parts"
     streamed = any(r.get("stream") for r in canon)
     hint = ('\n    <p class="track-hint">Full shows stream as 320&nbsp;kbps MP3 &mdash; '
@@ -838,7 +948,8 @@ def build_show(show):
         for r in alts:
             meta = [("Source", r["source"]), ("Format", r["format"]), ("Size", r["size"])]
             play_label = f'{r["alt_label"]}, {artist["name"]}, {date_with_subtitle(show)}'
-            cards.append(recording_card(r["alt_label"], meta, r["source"], r["file"], r.get("stream"), play_label))
+            cards.append(recording_card(r["alt_label"], meta, r["source"], r["file"], r.get("stream"), play_label,
+                                        show=show))
         parts.append(f'''
   <section>
     <details class="alt-details">
@@ -862,11 +973,32 @@ def build_show(show):
 
     extra_scripts = '\n<script src="/assets/track-select.js"></script>'
     if has_waves:
-        # Emit the peaks to a served, cacheable path (data/ is .assetsignore'd) and
-        # point wavesurfer.js at it, rather than inlining ~58 KB into every page.
+        # Emit the peaks to a served, cacheable path (data/ is .assetsignore'd),
+        # rather than inlining ~58 KB into every page. Fetched by the shared
+        # controller's player-boot.js (attachPeaks()) via WS_PEAKS_URL.
         write(f"assets/peaks/{show['slug']}.json", open(peaks_path).read())
-        extra_scripts += (f'\n<script>window.WS_PEAKS_URL = "/assets/peaks/{show["slug"]}.json";</script>\n'
-                          f'<script type="module" src="/assets/wavesurfer.js"></script>')
+        extra_scripts += f'\n<script>window.WS_PEAKS_URL = "/assets/peaks/{show["slug"]}.json";</script>'
+
+    # Shared player engine, for allowlisted shows only. The flag has to be set
+    # before player.js (hence pre_scripts); player-boot.js goes last so
+    # player.js has already registered its DOMContentLoaded fallback by the
+    # time it claims the page. player.js stays on the page on purpose — it's
+    # the runtime fallback if this module never mounts, not dead weight.
+    # The variant control is independent of which engine the page runs: it only
+    # writes the shared preference, and whatever engine is mounted reads it.
+    if any_loud:
+        extra_scripts += '\n<script type="module" src="/assets/variant-ui.js"></script>'
+
+    pre_scripts = ""
+    if show["slug"] in CONTROLLER_ENGINE_SLUGS:
+        pre_scripts = "<script>window.PLAYER_ENGINE = 'controller';</script>\n"
+        # onerror: a real 'error' event fires only on a genuine module
+        # load/parse failure (404, syntax error) -- see PLAYBACK_READY_SNIPPETS'
+        # comment and plans/dynamic-hugging-rossum.md's "Blocker A continued"
+        # section. An in-script throw during mount is a SEPARATE signal,
+        # handled inside player-boot.js's own auto-run catch block instead.
+        extra_scripts += (f'\n<script type="module" src="/assets/player-boot.js" '
+                          f'onerror="{playback_ready_onerror("legacy")}"></script>')
 
     if proc:
         # Open the collapsed technical-data table when linked to via #technical-data
@@ -887,68 +1019,34 @@ def build_show(show):
         main="".join(parts) + wav_note,
         extra_scripts=extra_scripts,
         extra_head=show_jsonld(show, artist),
+        pre_scripts=pre_scripts,
+        # Deterministic at build time: allowlisted shows defer to
+        # player-boot.js's own resolution; an excluded slug never emits a
+        # boot module at all, so 'legacy' (player.js's synchronous fallback)
+        # is the only outcome that page will ever have.
+        playback_ready="deferred" if show["slug"] in CONTROLLER_ENGINE_SLUGS else "legacy",
     )
 
-WAVESURFER_LAB_SLUG = "sean-19-broadway-unknown"
-
-def build_wavesurfer_lab():
-    """Standalone prototype page rendering one show's tracks with wavesurfer.js
-    waveforms (drawn from pre-computed peaks). Non-destructive: not in nav, the
-    real show page is untouched."""
-    show = next(s for s in M["shows"] if s["slug"] == WAVESURFER_LAB_SLUG)
-    artist = next(a for a in M["artists"] if a["id"] == show["artist"])
-    peaks_json = open(os.path.join(ROOT, "data", "peaks", f"{WAVESURFER_LAB_SLUG}.json")).read()
-
-    rows = []
-    for t in show["tracks"]:
-        stream = stream_url(t["file"])
-        track_artist = t.get("artist") or artist["name"]
-        info = esc(json.dumps([
-            ["Artist", track_artist],
-            ["Song", t["title"]],
-            ["Venue", show["venue"] or "—"],
-            ["Date", show["date"] or "Unknown date"],
-        ], ensure_ascii=False))
-        dl_btns = []
-        if t.get("flac"):
-            flac_title = "Download FLAC (password protected)" + (f" · {t['flac_size_mb']} MB" if t.get("flac_size_mb") else "")
-            dl_btns.append(dl_button(t["flac"], title=flac_title))
-        dl_inner = "".join("\n          " + b for b in dl_btns)
-        dl = f'\n        <div class="ws-dl">{dl_inner}\n        </div>' if dl_btns else ""
-        play_label = esc(f'{t["title"]}, {track_artist}, {date_with_subtitle(show)}')
-        rows.append(f'''      <div class="ws-row" id="track-{t["num"]}" data-trackid="{t["num"]}" data-src="{esc(stream)}">
-        <button class="play-btn" aria-label="Play {play_label}" data-play-label="{play_label}">{PLAY_SVG}</button>
-        <span class="track-num">{t["num"]:02d}</span>
-        <span class="track-title" data-info="{info}">{esc(t["title"])}</span>
-        <div class="ws-wave"></div>
-        <span class="time-label current" data-duration="{esc(t["duration"])}">0:00 / {esc(t["duration"])}</span>{dl}
-      </div>''')
-
-    main = f'''
-  <section class="about">
-    <h2>wavesurfer.js prototype</h2>
-    <p>Experimental waveform player for the track rows. Compare it with the current player on the <a href="{show_url(show)}">live show page</a>. Each waveform is drawn instantly from pre-computed peaks; the audio itself only streams once you press play.</p>
-  </section>
-  <section>
-    <div class="ws-list" data-autoplay-next>
-{chr(10).join(rows)}
-    </div>
-  </section>'''
-
-    extra = (f'\n<script>window.WS_PEAKS = {peaks_json};</script>\n'
-             f'<script type="module" src="/assets/wavesurfer.js"></script>')
-
-    return page_shell(
-        title="Waveform prototype — The Hannan Tapes",
-        description="Experimental wavesurfer.js waveform player prototype.",
-        url="https://renedebos.com/lab/wavesurfer/",
-        eyebrow="Lab &middot; Prototype",
-        heading="Waveform <em>prototype</em>",
-        tagline=esc(show_title(show)),
-        nav=site_nav(),
-        main=main,
-        extra_scripts=extra,
-    )
+# ── song-page migration onto the shared controller (Phase 3 Stage
+# 3a-foundation) ────────────────────────────────────────────────────────────
+# Unconditional on every song page from the start -- unlike show pages'
+# CONTROLLER_ENGINE_SLUGS rollout (which needed a per-page canary/rollback
+# allowlist because every show page's markup shape had to be individually
+# verified against real waveform/hero-card combinations), song occurrence
+# rows are one uniform shape everywhere, so canary/default/removal-to-
+# fallback-only collapse into one step here. Reuses the SAME window.PLAYER_
+# ENGINE/PLAYER_ENGINE_MOUNTED flag pair show pages use: a document is never
+# both a show page and a song page, so there is no ambiguity in sharing the
+# name, and player.js's existing engine-selection gate (its
+# `window.PLAYER_ENGINE === 'controller'` check) needs no changes at all to
+# also cover song pages -- verified directly against player.js's real source
+# in scripts/test-player-boot.mjs's two gate tests.
+SONG_ENGINE_FLAG = "<script>window.PLAYER_ENGINE = 'controller';</script>\n"
+# onerror -> 'legacy': song-boot.js's fallback is initCustomPlayers()
+# (retained, not deleted -- see songs.js/build_songs_index()'s own comment),
+# mirroring player-boot.js's show-page handshake exactly.
+SONG_BOOT_SCRIPT = (f'\n<script type="module" src="/assets/song-boot.js" '
+                    f'onerror="{playback_ready_onerror("legacy")}"></script>')
 
 def build_songs_index():
     songs, cols = collect_songs()
@@ -1018,7 +1116,7 @@ def build_songs_index():
     <div class="seg" data-role="sort"><button data-sort="plays" class="active">Most&nbsp;played</button><button data-sort="az">A&ndash;Z</button></div>
     <div class="seg" data-role="artist"><button data-artist="all" class="active">All</button><button data-artist="jerry">Jerry</button><button data-artist="mad">Mad</button><button data-artist="sean">Sean</button></div>
   </div>
-  <div class="song-legend" aria-hidden="true">{legend}</div>
+  <div class="song-legend" aria-hidden="true">{legend}</div>{variant_toggle(has_variant())}
   <p class="songs-empty" id="songs-empty" hidden>No songs match &mdash; try a different search.</p>
   <div class="song-list" id="song-list">
 {chr(10).join(items)}
@@ -1037,7 +1135,19 @@ def build_songs_index():
         url="https://renedebos.com/songs/", eyebrow="The Hannan Tapes",
         heading="Songs", tagline="Every song, and every time it was played",
         nav=site_nav("Songs"), main=main,
-        extra_scripts='\n<script src="/assets/track-select.js"></script>\n<script src="/assets/songs.js"></script>')
+        # Shared player engine (song-boot.js), unconditional on every song page
+        # since Stage 3a-foundation -- see SONG_BOOT_SCRIPTS' own comment.
+        # songs.js still loads: it owns the list/grid sort/filter/search
+        # controls AND the lazy occurrence-row insertion, and calls into
+        # song-boot.js's window.SONG_BOOT.mountRows() (falling back to the
+        # legacy initCustomPlayers() if song-boot.js never mounted) each time
+        # a <details> opens for the first time.
+        extra_scripts=('\n<script src="/assets/track-select.js"></script>'
+                       f'{SONG_BOOT_SCRIPT}'
+                       '\n<script src="/assets/songs.js"></script>'
+                       + (VARIANT_UI_SCRIPT if has_variant() else "")),
+        pre_scripts=SONG_ENGINE_FLAG,
+        playback_ready="deferred")
 
 def build_song_page(s):
     plural = "s" if s["plays"] != 1 else ""
@@ -1049,6 +1159,7 @@ def build_song_page(s):
             parts.append(f'''
   <section class="about"><p class="song-variants">Also listed as: {alt}</p></section>''')
     occs = "\n".join(_song_occ_html(o, s["canonical"]) for o in s["occ"])
+    any_loud = any(o.get("loud") for o in s["occ"])
     zip_html = song_zip_button_html(s)
     parts.append(f'''
   <section id="tracks">
@@ -1059,7 +1170,7 @@ def build_song_page(s):
         {zip_html}
       </div>
     </div>
-    <p class="track-hint">Every performance streams in full. &ldquo;Open on show page&rdquo; jumps to the song within its full set.</p>
+    <p class="track-hint">Every performance streams in full. &ldquo;Open on show page&rdquo; jumps to the song within its full set.</p>{variant_toggle(any_loud)}
     <div class="song-occs">
 {occs}
     </div>
@@ -1070,7 +1181,13 @@ def build_song_page(s):
         url=f"https://renedebos.com/songs/{s['slug']}/", eyebrow="The Hannan Tapes &middot; Song",
         heading=esc(s["canonical"]), tagline=f"Played {s['plays']} time{plural} across the archive",
         nav=site_nav("Songs"), main="".join(parts), extra_head=song_jsonld(s),
-        extra_scripts='\n<script src="/assets/track-select.js"></script>')
+        # Every occurrence row is server-rendered here (unlike /songs/'s lazy
+        # per-<details> insertion), so song-boot.js mounts the whole page's
+        # queue synchronously at parse time, same shape as a show page.
+        extra_scripts=(f'\n<script src="/assets/track-select.js"></script>{SONG_BOOT_SCRIPT}'
+                       + (VARIANT_UI_SCRIPT if any_loud else "")),
+        pre_scripts=SONG_ENGINE_FLAG,
+        playback_ready="deferred")
 
 def build_404():
     main = '''
@@ -1091,4 +1208,4 @@ def build_404():
         nav=site_nav(), main=main)
 
 
-__all__ = ['WAVESURFER_LAB_SLUG', 'build_404', 'build_archive_data', 'build_contact', 'build_history', 'build_home', 'build_manual', 'build_player', 'build_playlist', 'build_process', 'build_search', 'build_show', 'build_song_page', 'build_songs_index', 'build_updates', 'build_wavesurfer_lab']
+__all__ = ['CONTROLLER_ENGINE_SLUGS', 'SONG_BOOT_SCRIPT', 'SONG_ENGINE_FLAG', 'build_404', 'build_archive_data', 'build_contact', 'build_history', 'build_home', 'build_manual', 'build_player', 'build_playlist', 'build_process', 'build_search', 'build_show', 'build_song_page', 'build_songs_index', 'build_updates']

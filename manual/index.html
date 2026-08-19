@@ -229,14 +229,14 @@ main tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--chip) 55
 <p>Don&#x27;t confuse these with the embedded file tags above — this is a different <code>tags</code> array, the mood/flavor/format labels (<code>ballad</code>, <code>irish</code>, <code>favorite</code>, …) that power the <a href="/playlist/">Playlist</a> filters and site search. Three separate places govern them, each answering a different question:</p>
 <div class="md-scroll"><table><thead><tr><th>Question</th><th>Where</th></tr></thead><tbody>
 <tr><td>What tags are allowed to exist at all?</td><td><code>TAGS.md</code> (the rules) + <code>TAG_VOCAB</code> in <code>scripts/sitegen/core.py</code> (enforced at build — an unlisted tag fails the integrity check)</td></tr>
-<tr><td>Which of those tags show up as filter chips on <code>/playlist/</code>?</td><td><code>TAG_ORDER</code> in <code>scripts/playlist.js</code> — a curated, ordered subset; a tag can be valid and simply not offered as a filter</td></tr>
+<tr><td>Which of those tags show up as filter chips on <code>/playlist/</code>?</td><td><code>TAG_ORDER</code> in <code>scripts/playlist-boot.js</code> — a curated, ordered subset; a tag can be valid and simply not offered as a filter</td></tr>
 <tr><td>Which tags does a given track actually carry?</td><td>the track&#x27;s <code>tags: [...]</code> array in <code>data/recordings.json</code>, editable via <code>make edit</code></td></tr>
 </tbody></table></div>
 <p>The vocabulary currently holds 20 tags across five groups (provenance, mood, flavor, content/format, curated picks — see <code>TAGS.md</code> for the full table and definitions); 15 of those are offered as playlist filters. <code>instrumental</code>, <code>medley</code>, <code>banter</code>, <code>improv</code>, and <code>beatles</code> are valid tags you can apply to a track, but aren&#x27;t in <code>TAG_ORDER</code>, so they stay search-only and don&#x27;t clutter the filter row.</p>
 <p>To add or retire a tag:</p>
 <ol><li data-n="1">Edit <code>TAGS.md</code> first — it&#x27;s the source of truth, and its own rules say new vocabulary needs to land there before anywhere else. Keep the list at roughly 20 tags or fewer.</li>
 <li data-n="2">Update <code>TAG_VOCAB</code> in <code>scripts/sitegen/core.py</code> to match, or the next build&#x27;s integrity check fails on any track already carrying the tag.</li>
-<li data-n="3">Decide whether it belongs in <code>TAG_ORDER</code> (<code>scripts/playlist.js</code>) as a playlist filter, or stays search-only.</li>
+<li data-n="3">Decide whether it belongs in <code>TAG_ORDER</code> (<code>scripts/playlist-boot.js</code>) as a playlist filter, or stays search-only.</li>
 <li data-n="4">Rebuild + push — <code>assets/tracks.json</code> (the playlist&#x27;s data source) and every page that surfaces tags are generated from the catalog.</li></ol>
 <blockquote class="callout note"><p><code>TAG_ORDER</code> filters itself down to tags actually present on at least one track, so a retired tag with no tracks left won&#x27;t render as a dead chip — but the stale name is still confusing to find in the code later. Remove it from <code>TAG_ORDER</code> too when retiring a tag, not just <code>TAGS.md</code>.</p></blockquote>
 <hr>

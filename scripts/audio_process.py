@@ -131,6 +131,18 @@ TCAP_TP_MAX_ATTEMPTS = 5      # same measure-and-correct pattern as the applause
                               # warning — this mode's whole job is touching music transients,
                               # so an over-ceiling render must never survive to be shipped
 
+# Shared by the `plan` and `process` parsers — the two must describe this flag
+# identically, since a plan run is what decides whether to pass it to process.
+TCAP_OVER_APPLAUSE_HELP = (
+    "let the transient cap take a track the applause-limiter would otherwise "
+    "keep (v5 precedence) when applause-limiting alone cannot reach the target "
+    "-- the 42 applause-limited tracks in the archive otherwise land a median "
+    "6.7 dB short of a loud target. Makes those tracks ELIGIBLE only; the "
+    "normal per-track gates still apply, so a dense track can still decline "
+    "and need --transient-cap-force. OPT-IN ONLY: it changes the -20 archive "
+    "render too (Truck moves from -23.65 to -20.0), so it belongs to the "
+    "loudness-variant campaign, never an ordinary publish")
+
 # ── workflow versioning ───────────────────────────────────────────────────────
 # Bump WORKFLOW_VERSION whenever the processing *functionality* changes (a new
 # filter option, a limiter, different target logic, …) and add a registry entry
@@ -225,7 +237,17 @@ WORKFLOW_VERSIONS = {
                 "regions recorded in provenance. The `plan` command dry-runs the "
                 "sizing decision without writing audio or running the true-peak "
                 "safety loop, so a hot limiter track's actual output can land a bit "
-                "quieter than plan predicted.",
+                "quieter than plan predicted. The accepted render's gain/limit are "
+                "persisted in a .v8state.json beside the output (the same file the "
+                "transient cap uses, tagged with its mode; the name is historical) "
+                "and a resume that cannot load it re-renders. Before that, a resumed "
+                "applause render INFERRED its gain as out_I - in_I, which a limiter "
+                "makes systematically wrong — the limiter has already pulled the "
+                "transients down, so output loudness is not input + gain, and the "
+                "recorded chain did not reproduce the bytes (measured on "
+                "jerry-19-broadway-1999-10-25 trk 14: chain said volume=2.65dB, the "
+                "render had applied ~2.67 dB). Audibly nothing; but provenance must "
+                "be a recipe, not an estimate.",
         "loudnorm": "linear modes as v4; applause-limiter mode uses no loudnorm: "
                     "volume=<gain>dB,alimiter=limit=<-1.2 dB>:attack=5:release=100:"
                     "level=false:latency=1",
@@ -336,8 +358,10 @@ WORKFLOW_VERSIONS = {
                 "over-ceiling render (deliberately stronger than the applause loop's "
                 "warn-and-keep: this mode touches music transients, so compliance is "
                 "non-negotiable). The accepted render's gain/limit are persisted in a "
-                ".v8state.json beside the output; a resume that cannot load it (or "
-                "whose file fails the strict ceiling) re-renders instead of guessing "
+                ".v8state.json beside the output, tagged with the mode that wrote it "
+                "(v5 applause renders now use the same file); a resume that cannot "
+                "load it, or loads one written by the other mode, or whose file fails "
+                "the strict ceiling, re-renders instead of guessing "
                 "— provenance never describes a chain it cannot prove. A track whose "
                 "engagement stats fire a 'listen before shipping' flag HARD-BLOCKS "
                 "the run until Rene either accepts it after listening "
@@ -967,7 +991,7 @@ def window_stats(path, pre="", win_s=APPLAUSE_WIN_S):
 
 
 def plan_track(path, target, pre="", transient_cap=False, tcap_partial=False,
-               tcap_force=False, tcap_max_gr=None):
+               tcap_force=False, tcap_max_gr=None, tcap_over_applause=False):
     """Decide how one track gets normalized (workflow v5; v8 adds the opt-in
     transient_cap flag). Returns a dict: mode ('linear' | 'linear-reduced' |
     'applause-limiter' | 'transient-cap'), target (projected output LUFS),
@@ -1076,6 +1100,42 @@ def plan_track(path, target, pre="", transient_cap=False, tcap_partial=False,
         plan["flags"].append(f"applause limiting would only recover "
                              f"{max(benefit, 0):.1f} dB — not worth a limiter")
         return plan
+    # Applause-limiter sizes its gain so the MUSIC peaks land at the ceiling,
+    # which is why it can leave a track well short of a loud target: once the
+    # clap is tamed, the music's own peaks are the wall. Where the cap is
+    # opted into and the applause plan would still land >= 1 dB short, offer
+    # the track to the cap first — it can go further by shaving the music's
+    # transients too, exactly as it does on every non-applause track.
+    #
+    # Before 2026-08-16 this branch committed unconditionally and the cap was
+    # never consulted, which stranded the archive's 42 applause-limited
+    # tracks a median 6.7 dB below the rest of a loud render.
+    #
+    # STRICTLY OPT-IN (--transient-cap-over-applause), and that is not
+    # cosmetic. Left automatic it silently rewrites the ARCHIVE too: measured
+    # on mad-cafe-java-1999-09-09 at the normal −20 target, Truck moved from
+    # applause-limiter @ −23.65 to sparse-transient-cap @ −20.0, and Anna May
+    # from −22.26 to −20.3. Louder and arguably more consistent — but that is
+    # a change to published audio, on the one track CLAUDE.md names as
+    # never-cap material, with no listening test behind it. The loudness
+    # variant campaign passes this flag; ordinary publishes never do, so the
+    # archive keeps rendering exactly as it does today.
+    #
+    # Precedence is otherwise unchanged: when applause-limiting already
+    # reaches the target it still wins, because leaving the music strictly
+    # linear is the less invasive treatment.
+    #
+    # The sparsity screen is handed `music_peak` as its reference (see
+    # try_transient_cap's docstring) — measuring against the clap would let
+    # exactly the repeatedly-loud material the policy protects slip through.
+    applause_target = round(in_I + gain, 2)
+    if (transient_cap and tcap_over_applause
+            and target - applause_target >= TCAP_MIN_BENEFIT):
+        if try_transient_cap(plan, path, target, pre, in_I, in_TP,
+                             partial=tcap_partial, force=tcap_force,
+                             max_gr=tcap_max_gr, density_ref=music_peak,
+                             fallback_desc="the applause-limiter's own target"):
+            return plan
     plan.update(mode="applause-limiter", gain_db=gain, limit_db=APPLAUSE_LIMIT_DB,
                 music_peak_db=music_peak, applause_windows=applause, dur=dur)
     limiter_finalize(plan)
@@ -1093,15 +1153,30 @@ def plan_track(path, target, pre="", transient_cap=False, tcap_partial=False,
             near_pct = 100.0 * sum(1 for p in fpeaks
                                    if p >= top - TCAP_NEAR_PEAK_DB) / len(fpeaks)
             plan["near_peak_pct"] = round(near_pct, 2)
+            why = ("the cap was offered this track first "
+                   "(--transient-cap-over-applause) and declined — see the "
+                   "decline flag above"
+                   if tcap_over_applause else
+                   "applause-limiter takes precedence; the music stays "
+                   "strictly linear")
+            # Only warn about the clap-as-yardstick distortion when applause
+            # actually tops the file. On a track whose own music sets the peak
+            # (Truck: music peak -0.0 dB, no applause regions) the screen is
+            # already measuring against the music and the caveat would be
+            # actively misleading — which is exactly how the "1.6% vs 12.3%"
+            # figure got misattributed to this effect. See §4a-result of
+            # plans/loudness-variants/loudness-variants-plan.md.
+            caveat = ""
+            if top - music_peak >= 1.0:
+                caveat = (f" Caveat: applause tops this file by "
+                          f"{top - music_peak:.1f} dB, so the screen is "
+                          f"referenced to a clap and UNDERSTATES the music's "
+                          f"own density; any stacked-cap question must be "
+                          f"decided by engagement stats at a real threshold, "
+                          f"not this number.")
             plan["flags"].append(
                 f"context: {near_pct:.1f}% of 50 ms frames within 3 dB of this "
-                f"source's overall peak (informational — applause-limiter takes "
-                f"precedence; the music stays strictly linear). Caveat: when "
-                f"applause tops the file, this screen understates the music's "
-                f"own density — measurements against a processed/limited copy "
-                f"read much higher (Truck: 1.6% source vs 12.3% published), so "
-                f"any future stacked-cap question must be decided by engagement "
-                f"stats at a real threshold, not this number")
+                f"source's overall peak (informational — {why}).{caveat}")
     return plan
 
 
@@ -1148,21 +1223,46 @@ def limiter_chain(plan, pre=""):
 # ── sparse-transient cap (workflow v8, opt-in) ───────────────────────────────
 
 def try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=False,
-                      force=False, max_gr=None):
+                      force=False, max_gr=None, density_ref=None,
+                      fallback_desc="its reduced linear target"):
     """Attempt to upgrade a would-be linear-reduced track to the opt-in
     transient-cap mode (workflow v8). Mutates and returns `plan` on success;
     returns None (leaving only flags behind) when any eligibility gate fails,
-    in which case the caller proceeds to the linear-reduced fallback exactly
-    as if the flag were off. Called only when --transient-cap was passed AND
-    the applause classifier has already declined (applause-limiter is less
-    invasive — music strictly linear — so it keeps precedence).
+    in which case the caller proceeds to its own fallback exactly as if the
+    flag were off. Called only when --transient-cap was passed, and normally
+    only after the applause classifier has declined (applause-limiter is less
+    invasive — music strictly linear — so it keeps precedence). The one
+    exception is --transient-cap-over-applause, which offers an
+    applause-limited track to the cap first when the applause plan alone
+    would still land short; there the fallback is applause-limiter, not
+    linear-reduced, which is what `fallback_desc` names in the decline flags.
 
     `max_gr`, when given, is an explicit per-track EXCEPTION to the standard
     TCAP_MAX_GR policy ceiling (--transient-cap-max-gr) — e.g. after a
     loudness-matched listening test showed a deeper cut is inaudible on one
     specific track. Never a way to change the ceiling for the show or the
     archive; recorded in provenance (policy_max_gr_db / override) precisely
-    so an exception is always distinguishable from standard-policy output."""
+    so an exception is always distinguishable from standard-policy output.
+
+    `density_ref`, when given, is the dB level the sparsity screen measures
+    against instead of the track's own overall peak. It exists for one case:
+    a track where APPLAUSE tops the file. There `max(peaks)` is a clap, so
+    almost no musical frame sits within TCAP_NEAR_PEAK_DB of it and near_pct
+    reads far too low. Measured case: Anna May on mad-cafe-java-1999-09-09,
+    whose music peaks at about −11 dB while the applause runs some 11 dB
+    above it — the whole screen would otherwise be referenced to a clap.
+    (Truck, the track this correction was first written for, turns out NOT to
+    be such a case: its music peak is −0.0 dB and the file has no applause
+    regions at all, so `density_ref` is a no-op there and the once-quoted
+    "1.6% vs 12.3%" figure did not come from this effect. See §4a-result of
+    plans/loudness-variants/loudness-variants-plan.md.)
+    Passing the music's own peak restores
+    the number the screen was designed to produce. This makes the gate
+    STRICTER on these tracks, never looser; it is a correction, not a
+    bypass. The engagement gate below needs no such fix — it counts frames
+    that exceed the limit after gain, which is already applause-independent,
+    and is the "engagement stats at a real threshold" the written policy asks
+    this question to be decided on."""
     effective_max_gr = TCAP_MAX_GR if max_gr is None else max_gr
     plan["max_gr"] = effective_max_gr
     overshoot = plan["pred"] - TP_CEILING  # dB of boost linear-only must forgo
@@ -1172,8 +1272,8 @@ def try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=False,
         plan["flags"].append(
             f"transient-cap declined: reaching {target:g} LUFS needs "
             f"{overshoot:.1f} dB of capping, over the {effective_max_gr:g} dB hard "
-            f"cap — the track stays honestly quiet at its reduced linear "
-            f"target (per-track partial capping is available as Rene's "
+            f"cap — the track stays honestly quiet at {fallback_desc} "
+            f"(per-track partial capping is available as Rene's "
             f"explicit opt-in: --transient-cap-partial)")
         return None
     wins = window_stats(path, pre=pre, win_s=TCAP_FRAME_MS / 1000)
@@ -1182,14 +1282,16 @@ def try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=False,
     if not peaks:
         plan["flags"].append("transient-cap declined: frame scan produced no data")
         return None
-    top = max(peaks)
+    top = max(peaks) if density_ref is None else density_ref
+    peak_desc = ("its own peak" if density_ref is None
+                 else "the music's own peak (applause excluded)")
     near_pct = 100.0 * sum(1 for p in peaks if p >= top - TCAP_NEAR_PEAK_DB) / len(peaks)
     if near_pct > TCAP_REJECT_NEAR_PEAK_PCT and not force:
         plan["flags"].append(
             f"transient-cap declined: {near_pct:.1f}% of the track sits within "
-            f"{TCAP_NEAR_PEAK_DB:g} dB of its own peak (> "
+            f"{TCAP_NEAR_PEAK_DB:g} dB of {peak_desc} (> "
             f"{TCAP_REJECT_NEAR_PEAK_PCT:g}% — repeatedly loud, not a sparse "
-            f"transient; Truck-territory content) — reduced linear target instead "
+            f"transient; Truck-territory content) — {fallback_desc} instead "
             f"(Rene can override per track after listening: --transient-cap-force)")
         return None
     # Size the gain against the ATTENUATION cap, not just the target: the
@@ -1215,7 +1317,7 @@ def try_transient_cap(plan, path, target, pre, in_I, in_TP, partial=False,
             f"{engaged_pct:.1f}% of the track (longest event {longest_s:.2f} s{where}) "
             f"— beyond the review band ({TCAP_REJECT_ENGAGE_PCT:g}% / "
             f"{TCAP_REJECT_EVENT_S:g} s); repeated-compression territory, no "
-            f"listening evidence — reduced linear target instead "
+            f"listening evidence — {fallback_desc} instead "
             f"(--transient-cap-force after listening to override)")
         return None
     plan.update(mode="sparse-transient-cap", target=round(in_I + gain, 2),
@@ -1386,7 +1488,8 @@ def _num_map(s):
     return out
 
 
-def recipe_signature(target, filt, tc_on, tc_partial, tc_force, tc_maxgr):
+def recipe_signature(target, filt, tc_on, tc_partial, tc_force, tc_maxgr,
+                     tc_over_applause=False):
     """Hash of everything that fully determines one track's render — apart
     from the source audio itself — so a resume decision can prove "this run
     would compute the identical recipe" instead of just "an output file
@@ -1396,13 +1499,26 @@ def recipe_signature(target, filt, tc_on, tc_partial, tc_force, tc_maxgr):
     reuse stale audio while still writing provenance describing the newly
     requested (but never actually rendered) chain. Workflow version is
     included because a version bump can change what a given mode/target
-    combination actually renders even with identical CLI flags."""
-    payload = json.dumps({
+    combination actually renders even with identical CLI flags.
+
+    New keys must be added CONDITIONALLY, only when the option is actually in
+    use. The signature is compared against ones persisted beside outputs
+    rendered by earlier runs, so a key emitted unconditionally changes the
+    hash of every existing track — turning any resume into a full re-render
+    and re-arming every transient-cap listen-block that was already accepted.
+    `transient_cap_over_applause` is the first such key: off (the ordinary
+    publish path, and the entire existing archive) it stays out of the
+    payload and those signatures are byte-identical to what v8 already
+    wrote."""
+    payload = {
         "workflow_version": WORKFLOW_VERSION, "target": target, "filters": filt,
         "transient_cap": tc_on, "transient_cap_partial": tc_partial,
         "transient_cap_force": tc_force, "transient_cap_max_gr": tc_maxgr,
-    }, sort_keys=True)
-    return hashlib.sha256(payload.encode()).hexdigest()[:16]
+    }
+    if tc_over_applause:
+        payload["transient_cap_over_applause"] = True
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True).encode()).hexdigest()[:16]
 
 
 def cmd_plan(args):
@@ -1428,7 +1544,8 @@ def cmd_plan(args):
                        transient_cap=tcap_on and lead_num(f) not in tcap_excl,
                        tcap_partial=lead_num(f) in tcap_part,
                        tcap_force=lead_num(f) in tcap_frc,
-                       tcap_max_gr=tcap_maxgr.get(lead_num(f)))
+                       tcap_max_gr=tcap_maxgr.get(lead_num(f)),
+                       tcap_over_applause=bool(getattr(args, "transient_cap_over_applause", False)))
         counts[p["mode"]] += 1
         j = p["measure"]
         rows.append((f, float(j["input_i"]), float(j["input_tp"]), p))
@@ -1499,7 +1616,8 @@ def cmd_process(args):
     # whatever WORKFLOW_VERSION this run happens to be.
     prev_tracks = {}
     if args.slug:
-        prev_path = os.path.join(ROOT, "data", "processing", f"{args.slug}.json")
+        prev_path = (getattr(args, "provenance_out", None)
+                     or os.path.join(ROOT, "data", "processing", f"{args.slug}.json"))
         if os.path.exists(prev_path):
             try:
                 prev_tracks = json.load(open(prev_path)).get("tracks", {})
@@ -1535,15 +1653,18 @@ def cmd_process(args):
         tc_partial = num in _num_set(getattr(args, "transient_cap_partial", ""))
         tc_force = num in _num_set(getattr(args, "transient_cap_force", ""))
         tc_maxgr = _num_map(getattr(args, "transient_cap_max_gr", "")).get(num)
-        recipe_sig = recipe_signature(target, filt, tc_on, tc_partial, tc_force, tc_maxgr)
+        recipe_sig = recipe_signature(target, filt, tc_on, tc_partial, tc_force, tc_maxgr,
+                                      bool(getattr(args, "transient_cap_over_applause", False)))
         # Decoded once up front (extra cost paid on every track, resumed or
         # not) so a resume decision can prove "these are the exact bytes the
         # existing output's provenance claims to be built from", not just
         # "mtime looks plausible" — the source-side half of the #2 fix.
         src_md5 = audio_md5(src)
+        tc_over_app = bool(getattr(args, "transient_cap_over_applause", False))
         plan = plan_track(src, target, pre=filt, transient_cap=tc_on,
                           tcap_partial=tc_partial, tcap_force=tc_force,
-                          tcap_max_gr=tc_maxgr)
+                          tcap_max_gr=tc_maxgr,
+                          tcap_over_applause=tc_over_app)
         used_target = plan["target"]
         limiter = plan["mode"] == "applause-limiter"
         tcap = plan["mode"] == "sparse-transient-cap"
@@ -1614,27 +1735,46 @@ def cmd_process(args):
                           f"{existing_md5[:8]}) — cannot trust this resume-skip; "
                           "reprocessing", flush=True)
                     resumable = False
-        if resumable and tcap:
-            # A resumed tcap render is only trusted when it can PROVE its
+        if resumable and (tcap or limiter):
+            # A resumed limiter render — applause-limiter (v5) or
+            # transient-cap (v8) — is only trusted when it can PROVE its
             # chain: the .v8state.json written beside the accepted render
             # holds the gain/limit that actually produced the bytes (retries
             # may have moved both, and neither leaves a reliable loudness
             # fingerprint). Missing state, or an output over the strict
             # ceiling (interrupted mid-retry), means re-render — provenance
             # must never describe a chain it merely guesses.
+            #
+            # The gain CANNOT be recovered by measuring the output. Once a
+            # limiter has pulled transients down, output loudness is no longer
+            # input + gain, so `out_I - in_I` understates the gain actually
+            # applied by however much the limiter took off. That subtraction is
+            # what this code used to do for applause tracks, and it wrote a
+            # `chain` that does not reproduce the bytes it describes.
             state_path = out_audio + ".v8state.json"
             try:
                 st = json.load(open(state_path))
+                # State files written before the applause mode persisted any
+                # are transient-cap by construction; every newer one names its
+                # mode, so a leftover from a run in the OTHER mode cannot be
+                # misread as proof of this one.
+                if st.get("mode", "sparse-transient-cap") != plan["mode"]:
+                    raise ValueError("render-state file describes a different mode")
                 plan["gain_db"], plan["limit_db"] = st["gain_db"], st["limit_db"]
-                tcap_finalize(plan)
+                (tcap_finalize if tcap else limiter_finalize)(plan)
                 used_target = plan["target"]
             except (OSError, ValueError, KeyError):
-                print(f"  {f}: no render-state file for the existing output — "
-                      "cannot prove what produced it; reprocessing", flush=True)
+                print(f"  {f}: no usable render-state file for the existing "
+                      "output — cannot prove what produced it; reprocessing",
+                      flush=True)
                 resumable = False
             if resumable:
                 j2 = measure(out_audio, plan["target"])
-                if float(j2["input_tp"]) > TP_CEILING:
+                # Only the transient cap promises the strict ceiling. The
+                # applause loop deliberately warns-and-keeps when it runs out
+                # of retries, so re-checking its output here would strand
+                # those tracks in a permanent re-render loop.
+                if tcap and float(j2["input_tp"]) > TP_CEILING:
                     print(f"  {f}: existing output measures "
                           f"{float(j2['input_tp']):+.2f} dBTP (> {TP_CEILING} strict "
                           "ceiling; interrupted mid-retry?) — ignoring it and "
@@ -1642,25 +1782,15 @@ def cmd_process(args):
                     resumable = False
 
         if resumable:
-            # still record provenance from the existing output. For a limiter
-            # track this is a re-run after a prior interruption (e.g. a killed
-            # job) — plan_track's fresh guess doesn't know the true-peak safety
-            # loop backed the gain off last time, so it would describe a gain
-            # that doesn't match what's actually in the file. Reconcile against
-            # the real render before trusting any of plan's descriptive fields.
-            if limiter:
-                j2 = measure(out_audio, plan["target"])
-                actual_gain = round(float(j2["input_i"]) - in_I_chk, 2)
-                if actual_gain != plan["gain_db"]:
-                    plan["gain_db"] = actual_gain
-                    limiter_finalize(plan)
-                used_target = plan["target"]
-            elif tcap:
-                # j2 measured, and plan's gain/limit were restored from the
+            # still record provenance from the existing output.
+            if tcap or limiter:
+                # j2 is measured, and plan's gain/limit were restored from the
                 # render-state file above — the chain recorded below describes
-                # the actual bytes, not a fresh guess.
+                # the actual bytes, not a fresh guess and not an inference.
                 pass
             else:
+                # A plain linear render applies one unconditional `volume`, so
+                # plan already describes the bytes exactly.
                 j2 = measure(out_audio, used_target)
             note = {"linear-reduced": f" [target {used_target:+.1f} LUFS, linear-preserving]",
                     "applause-limiter": f" [target {used_target:+.1f} LUFS, applause-limited]",
@@ -1734,6 +1864,16 @@ def cmd_process(args):
                     plan["limit_db"] = round(plan["limit_db"] - delta, 2)
                     plan["gain_db"] = round(plan["gain_db"] - delta, 2)
                     limiter_finalize(plan)
+                if r.returncode == 0:
+                    # Persist what actually rendered, so a resumed run can prove
+                    # the chain instead of inferring it from output loudness —
+                    # which a limiter makes impossible. Both breaks that keep a
+                    # render (the clean one and the out-of-retries one) leave
+                    # plan describing exactly these bytes.
+                    json.dump({"mode": "applause-limiter",
+                               "gain_db": plan["gain_db"],
+                               "limit_db": plan["limit_db"]},
+                              open(out_audio + ".v8state.json", "w"))
                 used_target = plan["target"]
             elif tcap:
                 # Same measure-and-correct pattern as the applause loop, with two
@@ -1760,7 +1900,8 @@ def cmd_process(args):
                         # persist what actually rendered, so a resumed run can
                         # prove the chain instead of guessing it (and so
                         # provenance never describes bytes it didn't make)
-                        json.dump({"gain_db": plan["gain_db"],
+                        json.dump({"mode": "sparse-transient-cap",
+                                   "gain_db": plan["gain_db"],
                                    "limit_db": plan["limit_db"]},
                                   open(out_audio + ".v8state.json", "w"))
                         break
@@ -1943,7 +2084,8 @@ def cmd_process(args):
         info0 = probe(os.path.join(infolder, files[0]))
         cont = "FLAC" if files[0].lower().endswith(".flac") else "WAV"
         whole = lambda x: int(x) if float(x) == int(x) else x
-        dest = os.path.join(ROOT, "data", "processing", f"{args.slug}.json")
+        dest = (getattr(args, "provenance_out", None)
+                or os.path.join(ROOT, "data", "processing", f"{args.slug}.json"))
         # MERGE: keep any tracks not touched this run (possibly from an older
         # workflow version) and overlay the ones we just processed. This is what
         # lets one show hold a mix of versions — e.g. 29 tracks on v1 and a single
@@ -2268,6 +2410,9 @@ def main():
     pl.add_argument("--target", type=float)
     pl.add_argument("--eq", help="literal corrective-EQ chain that process would use "
                                  "(plan measures the post-EQ signal, like process does)")
+    pl.add_argument("--transient-cap-over-applause",
+                    dest="transient_cap_over_applause",
+                    action="store_true", help=TCAP_OVER_APPLAUSE_HELP)
     pl.add_argument("--transient-cap", dest="transient_cap", action="store_true",
                     help="opt in to the v8 sparse-transient cap (see WORKFLOW_VERSIONS[8]); "
                          "plan shows which tracks would qualify and their predicted "
@@ -2330,6 +2475,15 @@ def main():
                         "this run (e.g. 'noise reduction (Audacity, whole show)'); "
                         "recorded show-level in provenance and shown on the site")
     p.add_argument("--slug", help="write provenance sidecar for this show slug")
+    p.add_argument("--provenance-out", dest="provenance_out", default=None,
+                    help="write the provenance sidecar to this path instead of "
+                         "data/processing/<slug>.json. Required for loudness-variant "
+                         "renders: the default path MERGES into the archive's own "
+                         "sidecar, so a variant render would silently overwrite the "
+                         "-20 archive's provenance with the variant's numbers.")
+    p.add_argument("--transient-cap-over-applause",
+                   dest="transient_cap_over_applause",
+                   action="store_true", help=TCAP_OVER_APPLAUSE_HELP)
     p.add_argument("--transient-cap", dest="transient_cap", action="store_true",
                     help="opt in to the v8 sparse-transient cap for tracks whose own "
                          "sparse musical transients set the ceiling (never default; "

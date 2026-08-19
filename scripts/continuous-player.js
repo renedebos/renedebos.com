@@ -85,9 +85,41 @@
     return m + ":" + (sec < 10 ? "0" : "") + sec;
   }
 
-  function streamUrl(t) {
-    return WORKER + "/stream?file=" + encodeURIComponent(t.file) + (t.ver ? "&v=" + t.ver : "");
+  // Loudness variant. This file is a classic script and cannot import
+  // variant-pref.js, so it reads the module's window bridge instead of
+  // re-implementing the enum/localStorage handling — and null-checks it,
+  // because a module is deferred and may not have run yet at this point
+  // (that case simply streams the archive, which is the correct fallback).
+  function wantsLoud() {
+    var v = window.HannanVariant;
+    return !!(v && v.get() === "loud");
   }
+
+  function streamUrl(t) {
+    var key = (wantsLoud() && t.loud) ? t.loud : t.file;
+    var ver = (wantsLoud() && t.loud) ? t.loudVer : t.ver;
+    return WORKER + "/stream?file=" + encodeURIComponent(key) + (ver ? "&v=" + ver : "");
+  }
+
+  // Switching variant re-points at a different render of the SAME performance,
+  // so keep the listener's position and play state — same contract as
+  // PlaybackController._onVariantChanged(). The DOM event (rather than the
+  // bridge's onChange) is what a classic script can subscribe to before the
+  // module has loaded.
+  window.addEventListener("hannanvariantchange", function () {
+    if (idx < 0 || !queue[idx]) return;
+    var want = streamUrl(queue[idx]);
+    if (want === audio.src) return;
+    var at = audio.currentTime || 0;
+    var wasPlaying = !audio.paused;
+    audio.src = want;
+    var restore = function () {
+      try { if (at > 0) audio.currentTime = at; } catch (e) { /* unseekable */ }
+      if (wasPlaying) attemptPlay();
+    };
+    if (audio.readyState >= 1) restore();
+    else audio.addEventListener("loadedmetadata", restore, { once: true });
+  });
 
   function trackMeta(t) {
     return [ARTIST_NAMES[t.artist] || t.artist, t.venue, t.showDate || "unknown date"]
@@ -154,7 +186,9 @@
     var pct = audio.duration ? audio.currentTime / audio.duration * 100 : 0;
     if (range && !seeking) {
       range.value = Math.round(pct * RANGE_MAX / 100);
-      range.style.background = "linear-gradient(to right, var(--accent) " + pct + "%, var(--border) " + pct + "%)";
+      // backgroundImage, not the `background` shorthand — see .progress-range
+      // in site.css: the shorthand would inflate the 3px rail to 24px.
+      range.style.backgroundImage = "linear-gradient(to right, var(--accent) " + pct + "%, var(--border) " + pct + "%)";
       range.setAttribute("aria-valuetext", formatTime(audio.currentTime) + " of " + formatTime(queue[idx].durationSec));
     }
     if (cur) cur.textContent = formatTime(audio.currentTime);
@@ -300,7 +334,9 @@
     var range = e.target.closest(".progress-range");
     if (!range || !audio.duration) return;
     var pct = (range.value / RANGE_MAX) * 100;
-    range.style.background = "linear-gradient(to right, var(--accent) " + pct + "%, var(--border) " + pct + "%)";
+    // backgroundImage, not the `background` shorthand — see .progress-range
+      // in site.css: the shorthand would inflate the 3px rail to 24px.
+      range.style.backgroundImage = "linear-gradient(to right, var(--accent) " + pct + "%, var(--border) " + pct + "%)";
     audio.currentTime = (pct / 100) * audio.duration;
   });
 

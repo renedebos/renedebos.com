@@ -38,6 +38,80 @@ def track_add_button(track_id):
     return (f'<button type="button" class="track-add" data-id="{esc(track_id)}" '
             f'aria-pressed="false" aria-label="Add to playlist selection">{PLUS_SVG}</button>')
 
+def playable_item_attr(*, item_id, kind, stream, title, artist=None, venue=None,
+                       date=None, date_display=None, duration_label=None,
+                       peaks_key=None, page_url=None, play_label=None,
+                       lossless_file=None, lossless_size_mb=None, dropouts=False,
+                       loud_stream=None):
+    """Build the `data-item="..."` attribute the shared player reads.
+
+    One normalized playable item per playable thing, serialized into the markup
+    at build time so a show page with 30 tracks still costs zero network round
+    trips to know what it can play (same convention as data-info tooltips and
+    window.ZIP_MANIFEST). Consumed by itemFromRowElement() in
+    scripts/player-views.js and validated by normalizeItem() in
+    scripts/player-controller.js — keep the field names in sync with the schema
+    documented in plans/player-consolidation/player-consolidation-plan.md.
+
+    Returns the whole attribute (already HTML-escaped) rather than raw JSON, so
+    no caller can forget to escape it. Pass RAW values: json.dumps handles JSON
+    escaping and esc() handles HTML escaping, so pre-escaped input would be
+    double-escaped and show up mangled in the player UI.
+    """
+    # The lossless original is reachable ONLY through the worker's /auth +
+    # /download pair, so what a consumer needs is the R2 key, not a URL:
+    # /stream deliberately 403s every .wav/.flac (worker/index.js), so
+    # publishing a stream URL here would be publishing an address guaranteed to
+    # fail. (The legacy download button's href looks like a stream URL but is
+    # never fetched — player.js intercepts the click and reads the key out of
+    # it.) Named `lossless`, not `flac`, because 64 of these are WAV.
+    lossless = None
+    if lossless_file:
+        lossless = {"key": lossless_file,
+                    "format": lossless_file.rsplit(".", 1)[-1].lower(),
+                    "sizeMb": lossless_size_mb,
+                    "title": lossless_file.split("/")[-1]}
+    item = {
+        "id": item_id,
+        "kind": kind,
+        "streamUrl": stream,
+        # The -14 loud variant's URL, or None when this track has no variant
+        # rendered. Emitted by the BUILD rather than derived in JS on purpose:
+        # the build knows which variants actually exist, so a partial rollout
+        # degrades to Archive for that track instead of 404-ing the player.
+        "loudUrl": loud_stream or None,
+        "title": title,
+        "artist": artist or "",
+        "venue": venue or None,
+        "date": date or None,
+        "dateDisplay": date_display or None,
+        # Same helper feeds.py uses for tracks.json's durationSec, so the two
+        # producers of this schema field can't drift apart.
+        "durationSec": _duration_sec(duration_label) if duration_label else None,
+        "durationLabel": duration_label or None,
+        "peaksKey": peaks_key,
+        "pageUrl": page_url or "",
+        "playLabel": play_label or title,
+        "downloads": {"lossless": lossless},
+        "dropouts": bool(dropouts),
+    }
+    return f'data-item="{esc(json.dumps(item, ensure_ascii=False))}"'
+
+def recording_item_id(show_slug, file):
+    """Stable, unique id for a whole-show recording or alternate transfer.
+
+    Needs to be unique *per card*: a player view decides whether it is the
+    active one by comparing ids, so two cards sharing one would both render as
+    playing at once.
+
+    Keyed on the lossless original's R2 key, NOT the stream key: several shows
+    offer two transfers of the same tape (e.g. mad-sweetwater-2000-10-17 has a
+    WAV and a FLAC) that share a single MP3 stream proxy, so stream keys are
+    not unique per card. The lossless key is the recording's real identity, and
+    is stable across rebuilds.
+    """
+    return f"recording:{show_slug}:{file}"
+
 def dl_button(file, *, title="Download"):
     # Icon-only (no text label): with only the password-protected lossless
     # download left, the format doesn't need spelling out in the button —
@@ -75,7 +149,7 @@ def show_zip_button_html(show):
     return (f'<script>window.ZIP_MANIFEST = {json.dumps(manifest, ensure_ascii=False)};</script>'
             f'<button type="button" class="zip-download-btn" title="{esc(title)}">{ZIP_SVG} Download ZIP</button>')
 
-def player(file, duration=None, download_file=None, version=None, label=None):
+def player(file, duration=None, download_file=None, version=None, label=None, item_attr=""):
     """A custom-player row: play button, progress bar, and (optionally) a
     password-protected download button.
 
@@ -86,6 +160,15 @@ def player(file, duration=None, download_file=None, version=None, label=None):
     goes live immediately. `label` (song/artist/date) becomes the play
     button's accessible name — otherwise a screen reader hears "Play" on
     every single instance with no way to tell them apart.
+
+    `item_attr` is an already-built `data-item="..."` attribute (see
+    playable_item_attr()) to place on the SAME element as `data-src` — the
+    shape song-page occurrence rows need so song-boot.js's PlayerView
+    can bind directly to this `.custom-player` div (mirroring how a
+    waveform-less show-page track row carries both `data-src` and `data-item`
+    on `.track-row.custom-player` itself, per build_show()). Default "" keeps
+    recording_card()'s Hero cards — which carry their item on the OUTER
+    `.recording-item`, not this inner player — byte-identical.
     """
     stream = stream_url(file, version)
     end_label = f'<span class="time-label">{esc(duration)}</span>' if duration else ""
@@ -98,7 +181,8 @@ def player(file, duration=None, download_file=None, version=None, label=None):
     play_label = f' {esc(label)}' if label else ""
     play_data = f' data-play-label="{esc(label)}"' if label else ""
     seek_label = f'Seek{play_label}' if label else "Seek"
-    return f'''<div class="custom-player" data-src="{esc(stream)}">
+    item_html = f" {item_attr}" if item_attr else ""
+    return f'''<div class="custom-player" data-src="{esc(stream)}"{item_html}>
           <button class="play-btn" aria-label="Play{play_label}"{play_data}>{PLAY_SVG}</button>
           <div class="progress-wrap">
             <input type="range" class="progress-range" min="0" max="1000" value="0" step="1" aria-label="{seek_label}" aria-valuetext="0:00{f' of {esc(duration)}' if duration else ''}">
@@ -107,15 +191,36 @@ def player(file, duration=None, download_file=None, version=None, label=None):
           {downloads}
         </div>'''
 
-def recording_card(title, meta_pairs, badge, file, stream_file=None, play_label=None):
+def recording_card(title, meta_pairs, badge, file, stream_file=None, play_label=None,
+                   show=None):
     # Stream the lossy proxy (stream_file) when one exists; the lossless `file`
     # is only reachable through the download/password flow.
     grid = "".join(f'<span class="meta-label">{esc(k)}</span><span class="meta-value">{esc(v)}</span>'
                    for k, v in meta_pairs if v)
-    lossless = file.rsplit(".", 1)[-1].lower() in ("wav", "flac")
+    is_lossless = file.rsplit(".", 1)[-1].lower() in ("wav", "flac")
     play = player(stream_file or file,
-                  download_file=file if lossless else None, label=play_label)
-    return f'''      <div class="recording-item">
+                  download_file=file if is_lossless else None, label=play_label)
+    # `show` is optional so the attribute is purely additive: callers that
+    # don't pass it emit exactly the markup they did before. The attribute goes
+    # on .recording-item (not the inner .custom-player) because that card is
+    # what a HeroPlayerView mounts on — which also keeps player() itself, shared
+    # with song pages, untouched this phase.
+    item_attr = ""
+    if show is not None:
+        item_attr = " " + playable_item_attr(
+            item_id=recording_item_id(show["slug"], file),
+            kind="recording",
+            stream=stream_url(stream_file or file),
+            title=title,
+            artist=artist_name(show["artist"]),
+            venue=show.get("venue"),
+            date=show.get("date"),
+            date_display=date_with_subtitle(show),
+            page_url=show_url(show),
+            play_label=play_label or title,
+            lossless_file=file if is_lossless else None,
+        )
+    return f'''      <div class="recording-item"{item_attr}>
         <div class="recording-meta">
           <div>
             <div class="recording-title">{esc(title)}</div>
@@ -126,11 +231,86 @@ def recording_card(title, meta_pairs, badge, file, stream_file=None, play_label=
         {play}
       </div>'''
 
-def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main, extra_scripts="", extra_head=""):
+# ── playback-readiness contract (Phase 3 Stage 3a-foundation) ───────────────
+# One signal every content page exposes for "this page's own playback boot
+# has finished deciding what it's doing" -- a future sticky mini-player (not
+# built yet this stage) needs to tell "adopt this page's controller" from
+# "this page has nothing, restore my own session" from "a non-controller
+# engine is active, stay dormant" apart, without racing a slow-but-healthy
+# boot (a generic wall-clock timeout was tried and rejected across two plan
+# review rounds -- see plans/dynamic-hugging-rossum.md's Round 3 section --
+# because it can fire before a legitimately slower mount finishes and cause a
+# second, competing controller to get constructed).
+#
+# Emitted as the FIRST script in the page, before any module/boot script tag,
+# so window.PLAYBACK_HOST_READY exists before any boot module could possibly
+# look for it. Two shapes:
+#   'none'     -- resolved immediately, synchronously, right after arming the
+#                 promise. For pages known at BUILD TIME to load no boot
+#                 module (search/contact/updates/history/archive-data/404,
+#                 the homepage) -- there is no timing question on these pages
+#                 at all, so page_shell() defaults to this.
+#   'deferred' -- armed but left unresolved; the page's own boot module
+#                 resolves it later, after its real intent (deep-link/
+#                 autoplay decision, hash hydration, mount failure) is known.
+#                 Used by show pages, song pages, and /playlist/ -- see
+#                 player-boot.js/song-boot.js/playlist-boot.js and this
+#                 function's callers in pages.py.
+# Resolves to a tagged union: {mode:'controller', controller, initialIntent}
+# | {mode:'legacy'} | {mode:'none'}, where initialIntent is one of
+# 'autoplay' | 'page-queue' | 'none'. See plans/dynamic-hugging-rossum.md's
+# "Blocker A continued" section for the full per-page-type resolution timing
+# and failure-path reasoning -- nothing consumes this promise yet this stage
+# (the mini-player itself ships in a later stage), so this is pure,
+# unconsumed infrastructure, verified only by its own shape.
+PLAYBACK_READY_ARM = ("window.PLAYBACK_HOST_READY = new Promise(function(resolve){"
+                      "window.__resolvePlaybackHost = resolve;});")
+# module-script onerror handlers (a boot module 404s/fails to parse) share this
+# guarded call so a page whose readiness promise was already settled some other
+# way can't throw resolving it a second time -- resolve() itself is a no-op on
+# an already-settled promise, but window.__resolvePlaybackHost might not exist
+# at all if this snippet's own arming script somehow didn't run.
+def playback_ready_onerror(mode):
+    return f"window.__resolvePlaybackHost&amp;&amp;window.__resolvePlaybackHost({{mode:'{mode}'}})"
+
+PLAYBACK_READY_SNIPPETS = {
+    # Known at build time to load no boot module -- resolved immediately,
+    # synchronously, right after arming. No timing question on these pages.
+    "none": f"<script>{PLAYBACK_READY_ARM}window.__resolvePlaybackHost({{mode:'none'}});</script>\n",
+    # Known at build time to run ONLY the synchronous legacy engine (a show
+    # page whose slug is in CONTROLLER_ENGINE_EXCLUDED_SLUGS, so no boot
+    # module is emitted at all -- player.js's own top-level `else` branch is
+    # the only engine that will ever run here, and it runs synchronously at
+    # parse time). Deterministic at build time the same way "none" is, just a
+    # different known outcome -- not a runtime signal from player.js itself.
+    "legacy": f"<script>{PLAYBACK_READY_ARM}window.__resolvePlaybackHost({{mode:'legacy'}});</script>\n",
+    # Armed but left unresolved -- the page's own boot module (player-boot.js,
+    # song-boot.js, playlist-boot.js) resolves it later, once its real intent
+    # is known. See each module's own resolution-call comments.
+    "deferred": f"<script>{PLAYBACK_READY_ARM}</script>\n",
+}
+
+def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main, extra_scripts="",
+               extra_head="", pre_scripts="", playback_ready="none"):
+    """`pre_scripts` is injected immediately BEFORE player.js.
+
+    Only one thing needs that slot today: the shared-player engine flag
+    (window.PLAYER_ENGINE), which has to exist before player.js runs — player.js
+    decides at parse time whether to register its playback handlers, so a flag
+    set anywhere later could never win. Default "" keeps every other page's
+    output byte-identical.
+
+    `playback_ready` selects which PLAYBACK_READY_SNIPPETS entry to emit as
+    the page's very first script — see that dict's comment for the contract.
+    Default "none" (resolved immediately) keeps every page that doesn't pass
+    "deferred" byte-identical apart from this one addition.
+    """
+    if playback_ready not in PLAYBACK_READY_SNIPPETS:
+        raise ValueError(f"page_shell: unknown playback_ready={playback_ready!r}")
     return f'''<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+{PLAYBACK_READY_SNIPPETS[playback_ready]}<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{esc(title)}</title>
 <meta name="description" content="{esc(description)}">
@@ -185,7 +365,7 @@ def page_shell(*, title, description, url, eyebrow, heading, tagline, nav, main,
   </span>
 </footer>
 
-<script src="/assets/player.js"></script>{extra_scripts}
+{pre_scripts}<script src="/assets/player.js"></script>{extra_scripts}
 </body>
 </html>
 '''
@@ -420,12 +600,47 @@ def _render_summary(pt):
                 f"{loudnorm_render} track(s) ffmpeg loudnorm (older workflow)")
     return ""
 
-def tech_data_section(show, proc):
+def _variant_scope_note(var):
+    """The scope line for the technical table: every figure in it describes the
+    -20 archive, which since 2026-08-18 is NOT what the player streams by
+    default. The table was written when there was only one render, so an
+    unqualified "Target: -20 LUFS" now reads as a claim about what the visitor
+    is hearing. One sentence fixes that, plus the variant's own headline
+    numbers so the cost is stated where the measurements are, not only on
+    /process/.
+
+    Deliberately measured-not-asserted: the LRA spread is computed from this
+    show's own variant sidecar rather than quoting the archive-wide median."""
+    if not var:
+        return ""
+    vt = var.get("tracks", {})
+    if not vt:
+        return ""
+    capped = sum(1 for d in vt.values() if d.get("mode") == "sparse-transient-cap")
+    target = abs(var.get("target_lufs", -14))
+    bits = [f'Loud variant: &minus;{target}&nbsp;LUFS, MP3 only, '
+            f'derived from these same archive files']
+    if capped:
+        bits.append(f'{capped} of {len(vt)} '
+                    f'{"tracks" if capped != 1 else "track"} transient-capped')
+    return (f'<p class="tech-head tech-scope"><strong>These figures describe the '
+            f'archive master</strong> &mdash; the &minus;20&nbsp;LUFS files you download. '
+            f'The player streams the louder version by default; switch to '
+            f'<strong>Archive</strong> above to hear what is measured here. '
+            f'{" &middot; ".join(bits)} &middot; '
+            f'<a href="/archive-data/">per-track variant data</a>.</p>')
+
+
+def tech_data_section(show, proc, var=None):
     """Render a collapsible "Technical data" table for a processed show: every
     track's duration + sizes (from recordings.json) merged with its input/achieved
     loudness, true peak, LRA, and gain applied (from the processing provenance,
     where measured). The per-track audio MD5 is carried in the sidecar for
-    integrity/drift checks but is not displayed."""
+    integrity/drift checks but is not displayed.
+
+    `var` is the show's loudness-variant sidecar, used only for the scope note
+    above the table -- its numbers are never mixed into the table's own columns,
+    which describe the archive and nothing else."""
     pt = proc.get("tracks", {})
     tcap_n = sum(1 for d in pt.values() if d.get("mode") == "sparse-transient-cap")
     limiter_n = sum(1 for d in pt.values() if d.get("mode") == "applause-limiter")
@@ -505,7 +720,7 @@ def tech_data_section(show, proc):
   <section>
     <details class="tech-details" id="technical-data">
       <summary>Technical data &mdash; loudness, peaks &amp; sizes{badge}</summary>
-      <p class="tech-head">{head}</p>
+      <p class="tech-head">{head}</p>{_variant_scope_note(var)}
       <div class="tech-scroll">
       <table class="tech-table">
         <thead><tr><th>#</th><th>Song</th><th>Time</th><th>MP3</th><th>FLAC</th>
@@ -620,9 +835,37 @@ def contact_block():
 
 def _song_occ_html(o, song_title):
     label = f'{song_title}, {o["artist_name"]}, {o["date"]}'
-    p = player(o["file"], duration=o.get("duration"), version=o["ver"], label=label)
     anchor = f'{esc(o["url"])}#track-{o["num"]}'
     track_id = f'{o["slug"]}-{o["num"]:02d}'
+    # song-boot.js reads this the same way player-boot.js reads a show-page
+    # track row's data-item -- see playable_item_attr()'s own docstring for the
+    # schema. peaks_key is omitted (None): occurrence rows stream the MP3
+    # proxy and have no waveform, matching songs.js's occRowHtml() (the
+    # lazily-rendered index-page counterpart to this server-rendered row) --
+    # keep the two builders in sync if this schema changes.
+    item_attr = playable_item_attr(
+        item_id=track_id,
+        kind="track",
+        stream=stream_url(o["file"], o["ver"]),
+        title=song_title,
+        artist=o["artist_name"],
+        venue=o["venue"],
+        date=o["date"],
+        date_display=o["date"],
+        duration_label=o.get("duration"),
+        peaks_key=None,
+        page_url=anchor,
+        play_label=label,
+        lossless_file=o.get("flac"),
+        lossless_size_mb=o.get("flac_size_mb"),
+        dropouts=False,
+        # -14 render, only where one exists for that track. `data-src` on the
+        # row below stays the ARCHIVE url on purpose: it is what the legacy
+        # fallback engine reads, so a page whose module never mounts degrades
+        # to the master rather than to a key that might not be there.
+        loud_stream=(stream_url(o["loud"], o.get("loud_ver")) if o.get("loud") else None),
+    )
+    p = player(o["file"], duration=o.get("duration"), version=o["ver"], label=label, item_attr=item_attr)
     add_btn = track_add_button(track_id)
     sizes = []
     if o.get("flac_size_mb"):
@@ -746,4 +989,36 @@ def song_jsonld(s):
     })
 
 
-__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', 'STATUS_BLURB', '_pre_edit_class', '_pre_edit_label', '_show_label', '_song_occ_html', '_src_tag', 'contact_block', 'content', 'dl_button', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'player', 'recording_card', 'show_jsonld', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'track_add_button', 'updates_list']
+__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'PLAYBACK_READY_ARM', 'PLAYBACK_READY_SNIPPETS', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', 'STATUS_BLURB', '_pre_edit_class', '_pre_edit_label', '_show_label', '_song_occ_html', '_src_tag', 'contact_block', 'content', 'dl_button', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'playable_item_attr', 'playback_ready_onerror', 'player', 'recording_card', 'recording_item_id', 'show_jsonld', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'track_add_button', 'updates_list', 'variant_toggle']
+
+
+def variant_toggle(any_loud=True):
+    """The Archive/Loud playback control plus its plain-language note.
+
+    Rene's decision 2026-08-18: **Loud is the default**, because -20 LUFS is too
+    quiet in a car or on phone speakers. That makes the note mandatory, not
+    decorative — a visitor who does nothing is hearing the -14 render, and the
+    page has to say so in words rather than leaving them to infer it from a
+    highlighted button. The archive stays the master and the download.
+
+    Real <button>s with aria-pressed (not styled spans), so the current value is
+    in the accessible name and state — the mockup review called this out
+    specifically. Rendered only when the page actually has variants to offer.
+    """
+    if not any_loud:
+        return ""
+    return '''
+    <div class="variant-pick" data-variant-pick>
+      <span class="variant-label" id="variant-label">Playback</span>
+      <div class="variant-btns" role="group" aria-labelledby="variant-label">
+        <button type="button" class="variant-btn" data-variant="archive" aria-pressed="false">Archive</button>
+        <button type="button" class="variant-btn" data-variant="loud" aria-pressed="true">Loud</button>
+      </div>
+      <p class="variant-note" data-variant-note>
+        <strong>You are hearing the Loud version</strong> &mdash; an extra render at
+        &minus;14&nbsp;LUFS, about as loud as a streaming service, so it isn\u2019t too quiet
+        on phone speakers or in a car. Switch to <strong>Archive</strong> for the
+        &minus;20&nbsp;LUFS masters exactly as they were mastered. Downloads are always
+        the Archive version. <a href="/process/">How these were made</a>.
+      </p>
+    </div>'''
