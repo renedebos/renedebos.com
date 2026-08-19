@@ -1060,10 +1060,6 @@ tr:has(+ .ad-detail-row) .treat-toggle { transform: rotate(-135deg); }
   vertical-align: middle;
   border: 1px solid currentColor;
 }
-.proc-status.status-done { color: #5cc98a; }
-.proc-status.status-partial { color: #d9b65c; }
-.proc-status.status-redo { color: #e08a4c; }
-.proc-status.status-needs-processing { color: var(--muted); }
 .proc-status.pre-edit { cursor: help; }
 .proc-status.pre-edit-nr { color: #6ea3d8; }
 .proc-status.pre-edit-pe { color: #9d85c9; }
