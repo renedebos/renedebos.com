@@ -1,9 +1,23 @@
 # Home page: Header Icon Plan
 
-Status: planning — not yet built.
+Status: **shipped and closed** (2026-08-13, commit `2f9e688`, *Replace header
+musical-note mark with a Shows label, sitewide*). On `main` and live on
+renedebos.com. This file is the record of what was decided and why; it is not
+open work. Do not reuse this folder for a new project — start a fresh
+`plans/<name>/<name>-plan.md`.
 
-Working branch: `home-page`  
-Working folder: `/home/renedebos/renedebos.com-home-page`
+**Loose ends left in the working tree, still there as of 2026-08-19:** branch
+`home-page` and worktree `/home/renedebos/renedebos.com-home-page` were never
+cleaned up. The icon work itself is on `main`, but the branch still carries 3
+unmerged commits (HANDOFF/workflow notes from that session) and is 98 behind.
+Merge or discard them deliberately — do not assume the branch is redundant just
+because the feature shipped.
+
+**The one open thread it deliberately left behind:** the icon could not teach a
+first-time visitor that the home page *is* the browsable archive, and §1 says so
+plainly — a word carries that, not a mark. The "Shows" label is a supporting
+signal, not the whole fix. An on-page-copy fix was named as the more direct
+follow-up and was never done.
 
 Codex notes and repository review: see `home-page-codex.md` in this folder.
 
