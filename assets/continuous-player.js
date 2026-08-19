@@ -186,7 +186,9 @@
     var pct = audio.duration ? audio.currentTime / audio.duration * 100 : 0;
     if (range && !seeking) {
       range.value = Math.round(pct * RANGE_MAX / 100);
-      range.style.background = "linear-gradient(to right, var(--accent) " + pct + "%, var(--border) " + pct + "%)";
+      // backgroundImage, not the `background` shorthand — see .progress-range
+      // in site.css: the shorthand would inflate the 3px rail to 24px.
+      range.style.backgroundImage = "linear-gradient(to right, var(--accent) " + pct + "%, var(--border) " + pct + "%)";
       range.setAttribute("aria-valuetext", formatTime(audio.currentTime) + " of " + formatTime(queue[idx].durationSec));
     }
     if (cur) cur.textContent = formatTime(audio.currentTime);
@@ -332,7 +334,9 @@
     var range = e.target.closest(".progress-range");
     if (!range || !audio.duration) return;
     var pct = (range.value / RANGE_MAX) * 100;
-    range.style.background = "linear-gradient(to right, var(--accent) " + pct + "%, var(--border) " + pct + "%)";
+    // backgroundImage, not the `background` shorthand — see .progress-range
+      // in site.css: the shorthand would inflate the 3px rail to 24px.
+      range.style.backgroundImage = "linear-gradient(to right, var(--accent) " + pct + "%, var(--border) " + pct + "%)";
     audio.currentTime = (pct / 100) * audio.duration;
   });
 

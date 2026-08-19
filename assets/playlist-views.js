@@ -341,7 +341,9 @@ export class PlaylistNowPlayingView extends QueueView {
 
   _paintRange(pct) {
     if (!this._range) return;
-    this._range.style.background = 'linear-gradient(to right, var(--accent) ' + pct + '%, var(--border) ' + pct + '%)';
+    // backgroundImage, not the `background` shorthand — see .progress-range
+    // in site.css: the shorthand would inflate the 3px rail to 24px.
+    this._range.style.backgroundImage = 'linear-gradient(to right, var(--accent) ' + pct + '%, var(--border) ' + pct + '%)';
   }
 
   // Legacy parity (decision recorded in the plan): pressing Prev at queue

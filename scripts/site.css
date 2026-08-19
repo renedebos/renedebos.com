@@ -753,13 +753,33 @@ main {
    gradient (WebKit/Blink reads the input's own background through a
    transparent ::-webkit-slider-runnable-track); Firefox fills natively via
    ::-moz-range-progress. */
+/* The ELEMENT is a 24px pointer target; the RAIL it draws is still 3px.
+   Before this the input was itself 3px tall, so seeking on a phone meant
+   landing a fingertip inside a 3px-high box — the thumb is the only part
+   big enough to aim at, and it moves. 24px is the usual floor for a touch
+   target (WCAG 2.5.8 asks 24x24 CSS px).
+
+   The rail is painted as a background IMAGE, sized to 100% x 3px and centred
+   in the tall box, rather than as the element's background colour. That is
+   why every _paintRange()/seek painter assigns `style.backgroundImage` and
+   never the `background` SHORTHAND: the shorthand resets background-size,
+   -repeat and -position to their initial values, and an inline style beats a
+   stylesheet longhand, so one shorthand write would silently inflate the
+   rail to fill all 24px. Five painters across four files do this — see
+   player-views.js, playlist-views.js, continuous-player.js and player.js.
+   (`border-radius` is gone with the colour: it rounded the element box,
+   which is now invisible. Rounding 2px off a 3px rail is not worth a
+   second painted layer.) */
 .progress-range {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 3px;
-  border-radius: 2px;
-  background: var(--border);
+  height: 24px;
+  background-color: transparent;
+  background-image: linear-gradient(to right, var(--border) 0%, var(--border) 100%);
+  background-size: 100% 3px;
+  background-repeat: no-repeat;
+  background-position: center;
   cursor: pointer;
   outline-offset: 4px;
 }
