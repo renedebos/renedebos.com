@@ -363,7 +363,7 @@ def build_history():
 # Hand-bumped whenever scripts/content/process.html's substance changes
 # (facts, figures, pipeline steps) — not on every build, so it reflects
 # actual content freshness, matching PUBLISHING.md's "Last updated" convention.
-PROCESS_UPDATED = "2026-08-18"
+PROCESS_UPDATED = "2026-08-19"
 
 def build_process():
     """Like /manual/, a standalone document — not the site's visual system.
@@ -839,7 +839,13 @@ def build_show(show):
             dl_btns = []
             if t.get("flac"):
                 flac_title = "Download FLAC (password protected)" + (f" · {t['flac_size_mb']} MB" if t.get("flac_size_mb") else "")
-                dl_btns.append(dl_button(t["flac"], title=flac_title))
+                # The -14 key rides along when this track has a variant; the
+                # password modal turns it into the Archive/Loud choice. Reuses
+                # `vt` (already resolved above for the stream URL) so the
+                # download and the player can never disagree about whether a
+                # variant exists for this track.
+                dl_btns.append(dl_button(t["flac"], title=flac_title,
+                                         loud_file=variant_key(t["file"]) if vt else None))
             # Playlist-selection id: {show-slug}-{tracknum:02d}, matching assets/tracks.json.
             track_id = f'{show["slug"]}-{t["num"]:02d}'
             add_btn = track_add_button(track_id)

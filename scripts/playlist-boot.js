@@ -285,6 +285,19 @@ export function bootPlaylistPage(doc, win) {
     const mb = Math.round(withFlac.reduce((a, t) => a + (t.flac_size_mb || 0), 0));
     return 'Download ' + withFlac.length + (withFlac.length === 1 ? ' track' : ' tracks') + ' (.zip) · ' + mb + ' MB';
   }
+  // Appended to a loud ZIP's info file. A download is the one place a visitor
+  // ends up holding audio with no page around it to say what it is, so the
+  // file has to carry its own provenance. Kept byte-identical to
+  // LOUD_ZIP_NOTE in sitegen/fragments.py -- the server builds the show/song
+  // ZIPs, this builds the playlist one, and an unpacked ZIP should not reveal
+  // which code path made it.
+  const LOUD_ZIP_NOTE =
+    '\n-- This is the LOUD version --\n'
+    + '320 kbps MP3, normalized to -14 LUFS for comfortable listening on phone\n'
+    + 'speakers and in a car. It is NOT the archive master: the masters are\n'
+    + 'lossless FLAC at -20 LUFS, downloadable from the same button.\n'
+    + 'https://renedebos.com/process/\n';
+
   function buildPlaylistManifest(name, tracks) {
     const withFlac = tracks.filter((t) => t.flac);
     const folder = sanitizeFilename(name);
@@ -292,13 +305,29 @@ export function bootPlaylistPage(doc, win) {
     const files = withFlac.map((t) => ({ key: t.flac, name: folder + '/' + sanitizeFilename(label(t)) + '.flac' }));
     const totalMb = Math.round(withFlac.reduce((a, t) => a + (t.flac_size_mb || 0), 0));
     const lines = withFlac.map(label).join('\n');
-    return {
+    const info = name + '\n' + withFlac.length + ' tracks · ' + totalMb + ' MB\n\n' + lines + '\n\n'
+      + 'Recreate this playlist: ' + win.location.origin + '/playlist/#p=' + withFlac.map((t) => t.id).join(',') + '\n';
+    const manifest = {
       zipName: folder + '.zip',
       files,
       infoName: folder + '/playlist-info.txt',
-      infoText: name + '\n' + withFlac.length + ' tracks · ' + totalMb + ' MB\n\n' + lines + '\n\n'
-        + 'Recreate this playlist: ' + win.location.origin + '/playlist/#p=' + withFlac.map((t) => t.id).join(',') + '\n',
+      infoText: info,
     };
+    // -14 counterpart, offered in the password modal only when EVERY track in
+    // the ZIP has one rendered -- same all-or-nothing rule the server-built
+    // show/song ZIPs use (see _loud_zip() in sitegen/fragments.py): a silently
+    // mixed archive is indistinguishable from a correct one once unpacked.
+    // `loud` is the variant's R2 key, already in assets/tracks.json.
+    if (withFlac.length && withFlac.every((t) => t.loud)) {
+      const lfolder = folder + ' (loud -14 LUFS)';
+      manifest.loud = {
+        zipName: lfolder + '.zip',
+        files: withFlac.map((t) => ({ key: t.loud, name: lfolder + '/' + sanitizeFilename(label(t)) + '.mp3' })),
+        infoName: lfolder + '/playlist-info.txt',
+        infoText: info + LOUD_ZIP_NOTE,
+      };
+    }
+    return manifest;
   }
   function renderSaved() {
     if (!savedEl) return;

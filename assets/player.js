@@ -289,6 +289,15 @@ modal.innerHTML = `
   <div class="pw-modal">
     <h3>Protected Download</h3>
     <p>This recording is password protected. Enter the password to download.</p>
+    <fieldset class="pw-variant" id="pwVariant" hidden>
+      <legend>Version</legend>
+      <label><input type="radio" name="pwVariant" value="archive" checked>
+        <span class="pw-variant-name">Archive</span>
+        <span class="pw-variant-sub">lossless FLAC &middot; &minus;20 LUFS &middot; the master</span></label>
+      <label><input type="radio" name="pwVariant" value="loud">
+        <span class="pw-variant-name">Loud</span>
+        <span class="pw-variant-sub">MP3 320&thinsp;kbps &middot; &minus;14 LUFS &middot; not lossless</span></label>
+    </fieldset>
     <input type="password" id="pwInput" placeholder="Password" autocomplete="off">
     <div class="pw-modal-error" id="pwError"></div>
     <div class="pw-modal-actions">
@@ -339,12 +348,51 @@ let pendingTarget = null;
 // the toast) can still stop the in-flight batch.
 let batchAbort = null;
 
+// Whether this target has a -14 counterpart at all. A whole-show recording
+// never does (no variant is rendered for them), and a ZIP only does when
+// EVERY file in it does -- see _loud_zip() in sitegen/fragments.py for why
+// that is all-or-nothing.
+function targetHasLoud(target) {
+  if (!target) return false;
+  return target.type === 'batch' ? !!(target.manifest && target.manifest.loud)
+                                 : !!target.loudFile;
+}
+
 function openPasswordModal(target) {
   pendingTarget = target;
   document.getElementById('pwInput').value = '';
   document.getElementById('pwError').textContent = '';
+  // Reset to Archive on every open, never carrying the last choice forward:
+  // the two versions are different FORMATS, not just levels, so a sticky
+  // preference would silently hand out lossy files for the rest of a session.
+  // Archive is the master and the default everywhere.
+  const archiveRadio = modal.querySelector('input[name="pwVariant"][value="archive"]');
+  if (archiveRadio) archiveRadio.checked = true;
+  document.getElementById('pwVariant').hidden = !targetHasLoud(target);
   modal.classList.add('open');
   setTimeout(() => document.getElementById('pwInput').focus(), 50);
+}
+
+// Reads the chooser at SUBMIT time, not at open time -- the visitor can change
+// it after typing the password. Returns 'archive' when the control is hidden,
+// which is the only correct answer for a target with no variant.
+function chosenVariant() {
+  const el = document.getElementById('pwVariant');
+  if (!el || el.hidden) return 'archive';
+  const picked = modal.querySelector('input[name="pwVariant"]:checked');
+  return picked && picked.value === 'loud' ? 'loud' : 'archive';
+}
+
+// The (file, filename) or manifest actually being downloaded, after the
+// version choice is applied. Resolving this in ONE place keeps /auth's
+// filename, /download's key and the saved filename from ever disagreeing --
+// /auth is called with the same key that /download is asked for.
+function resolveTarget(target) {
+  if (chosenVariant() !== 'loud') return target;
+  if (target.type === 'batch') {
+    return { type: 'batch', manifest: target.manifest.loud || target.manifest };
+  }
+  return { type: 'single', file: target.loudFile, filename: target.loudName || target.filename };
 }
 
 function closeModal() {
@@ -484,7 +532,9 @@ async function tryBatchDownload(password, manifest) {
 async function tryDownload() {
   const password = document.getElementById('pwInput').value;
   const submitBtn = document.getElementById('pwSubmit');
-  const target = pendingTarget;
+  // Resolve the Archive/Loud choice ONCE, here, and use only the result
+  // below: /auth is called with the same key /download is then asked for.
+  const target = resolveTarget(pendingTarget);
   submitBtn.disabled = true;
   submitBtn.textContent = '…';
 
@@ -549,7 +599,16 @@ document.querySelectorAll('a.download-btn').forEach(btn => {
     e.preventDefault();
     const fileParam = new URL(btn.href).searchParams.get('file');
     const displayName = btn.getAttribute('download') || decodeURIComponent(fileParam.split('/').pop());
-    openPasswordModal({ type: 'single', file: fileParam, filename: displayName });
+    // data-loud-file is emitted by dl_button() (sitegen/fragments.py) only
+    // where a -14 render exists; absent on whole-show recordings, which is
+    // what makes the modal hide its version control there.
+    openPasswordModal({
+      type: 'single',
+      file: fileParam,
+      filename: displayName,
+      loudFile: btn.dataset.loudFile || null,
+      loudName: btn.dataset.loudName || null,
+    });
   });
 });
 
