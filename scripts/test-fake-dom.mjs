@@ -49,8 +49,11 @@ function dispatchListeners(listeners, type, evt) {
   (listeners[type] || []).slice().forEach(({ fn }) => fn(evt));
 }
 
-// Direct property assignment (`style.background = ...`) is what the row/hero
-// views use; the mini-player publishes a custom property on <html> instead,
+// Direct property assignment (`style.backgroundImage = ...`) is what the
+// row/hero views use -- the IMAGE longhand, never the `background` shorthand,
+// which would reset the background-size that keeps the seek rail 3px inside
+// its 24px pointer target (see .progress-range in site.css);
+// the mini-player publishes a custom property on <html> instead,
 // which only the setProperty/removeProperty pair can express. Both work here,
 // and a removed custom property reads back as '' exactly as in a browser.
 export class FakeStyle {

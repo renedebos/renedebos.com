@@ -276,7 +276,11 @@ export class PlayerView {
 
   _paintRange(pct) {
     if (!this.range) return;
-    this.range.style.background =
+    // backgroundImage, never the `background` shorthand — the shorthand
+    // resets background-size/-repeat/-position, and an inline style beats a
+    // stylesheet longhand, so it would inflate the 3px rail to the full 24px
+    // pointer target. See .progress-range in site.css.
+    this.range.style.backgroundImage =
       `linear-gradient(to right, ${ACCENT} ${pct}%, ${TRACK} ${pct}%)`;
   }
 
