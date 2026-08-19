@@ -1,15 +1,33 @@
 # Share: Feature Proposal
 
-Status: proposal — not yet built. Deliberately sequenced after
-player-consolidation ships (or at least after its URL-grammar decision
-lands) — see §4. That's Rene's own instinct; the research below confirms a
-concrete technical reason for it, not just general caution.
+Status: proposal — not yet built. Still valid; the research below was
+re-checked on 2026-08-19 and holds.
+
+**Its stated blocker dissolved rather than resolved — read §4 with this in
+mind.** The plan sequenced itself after player-consolidation's canonical
+URL-grammar decision. That project shipped and closed on 2026-08-18, but the
+grammar decision was never made: "Share timestamp" is still listed as unbuilt
+in `plans/player-consolidation/player-consolidation-plan.md` §3, and Phase 3
+was PARKED (branch `miniplayer-parked`), not delivered. So:
+
+- **The two in-scope pieces of §3 are unblocked, and always were.** §4 says so
+  itself — search-filter URLs and song/search share UI touch none of the
+  `#p=` / `&t=` / `#track-N` / `?autoplay=1` namespace.
+- **The deferred timestamp piece is not "waiting" for anything.** Whoever picks
+  it up owns the URL-grammar decision themselves. Do not read §4 as a reason to
+  hold off; there is no longer an event to hold off *for*.
+
+Re-verified 2026-08-19: `search.js`'s `syncUrl()` still writes only
+`?q=<text>` and discards filter state, so §2's "filters are not persisted to
+the URL" — the actual gap this project exists to close — is unchanged.
 
 Codex notes and repository review: see `share-codex.md` in this folder
 (currently a placeholder — no review has run yet).
 
-Working branch: `share`
-Working folder: `/home/renedebos/renedebos.com-share`
+Originally developed on branch `share` in worktree
+`/home/renedebos/renedebos.com-share`; both retired on 2026-08-19 once this
+document reached `main`, so the proposal lives with every other plan rather
+than on a branch nobody remembers. Start a fresh branch when it gets built.
 
 ## 1. Objective
 
