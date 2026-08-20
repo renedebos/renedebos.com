@@ -255,12 +255,50 @@ export class PlayerView {
   // A hard failure (404/CORS/decode) is otherwise invisible — the legacy
   // engines left the row showing a spinner forever. role="status" announces it
   // once to assistive tech without narrating every timeupdate.
+  // Opt-in diagnostics for a failure that only happens on a real device.
+  //
+  // An iPhone reports that the first track tapped after a browser refresh always
+  // lands here and the second tap always works. It does not reproduce in
+  // Chromium (even with --autoplay-policy=user-gesture-required) or in desktop
+  // WebKit under an iPhone device profile — both play on the first tap — and
+  // one fix inferred from the failing-vs-succeeding difference (an explicit
+  // load() on every source change, PR #46) did not help. The exact rejection is
+  // the missing fact, and there is no way to read it off the phone without
+  // Safari Web Inspector over USB.
+  //
+  // So: append it to the message, but ONLY with ?diag=1 in the URL. Ordinary
+  // visitors are unaffected; the flag is what makes this shippable rather than
+  // debug output left in production.
+  //
+  // Delete this once the cause is known.
+  _errorDiagnostics() {
+    try {
+      if (typeof location === 'undefined') return '';   // fake-DOM tests
+      if (!/[?&]diag=1(&|$)/.test(location.search)) return '';
+      const c = this.controller;
+      const a = c && c.audioElement;
+      const e = c && c._lastPlayError;
+      return ' [' + [
+        e ? e.name : 'no-play-error',
+        e && e.message ? String(e.message).slice(0, 60) : '-',
+        a && a.error ? 'media' + a.error.code : 'no-media-err',
+        a ? 'rs' + a.readyState + '/ns' + a.networkState : 'no-audio',
+        this._ws ? 'ws' : 'no-ws',
+        a && a.currentSrc ? a.currentSrc.slice(-26) : 'no-src',
+      ].join(' · ') + ']';
+    } catch (_) {
+      // A diagnostic must never change what a normal visitor sees, so any
+      // problem here degrades to the plain message rather than reporting itself.
+      return '';
+    }
+  }
+
   _setError(on) {
     if (on && !this._errorEl) {
       const el = document.createElement('span');
       el.className = 'player-error-msg';
       el.setAttribute('role', 'status');
-      el.textContent = 'Playback failed — tap to retry';
+      el.textContent = 'Playback failed — tap to retry' + this._errorDiagnostics();
       this.root.appendChild(el);
       this._errorEl = el;
     } else if (!on && this._errorEl) {
