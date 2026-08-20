@@ -108,6 +108,29 @@
       + "</div>";
   }
 
+  // The Archive/Loud control ships hidden on this page and appears the first
+  // time a song is opened -- see variant_toggle(deferred=True). At load there
+  // is no player here at all (rows are inserted lazily), so showing a note
+  // that says "You are hearing the Loud version" would be describing a state
+  // the page is not in.
+  //
+  // Called from renderSongOccs AFTER the rows land, so it covers the
+  // song-boot.js path and the initCustomPlayers() fallback alike: if the
+  // module engine never mounted, the rows still play and the disclosure still
+  // has to appear.
+  //
+  // Two frames, not one: the element goes from display:none to a collapsed
+  // grid row, and the browser needs to have rendered the collapsed state
+  // before the transition to 1fr has anything to animate from.
+  function revealVariantPick() {
+    var wrap = document.querySelector("[data-variant-reveal]");
+    if (!wrap || !wrap.hidden) return;
+    wrap.hidden = false;
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { wrap.classList.add("is-open"); });
+    });
+  }
+
   function renderSongOccs(details) {
     var container = details.querySelector(".song-occs");
     if (!container || container.childElementCount) return; // already rendered
@@ -116,6 +139,7 @@
       var entry = data[slug];
       if (!entry) return;
       container.innerHTML = entry.occ.map(function (o) { return occRowHtml(o, entry.title); }).join("\n");
+      revealVariantPick();
       // song-boot.js is the primary engine (same handshake show pages use —
       // see its own header comment); initCustomPlayers() is retained
       // specifically as the fallback for when it never mounted (module

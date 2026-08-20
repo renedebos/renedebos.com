@@ -1103,34 +1103,63 @@ def song_jsonld(s):
 __all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'PLAYBACK_READY_ARM', 'PLAYBACK_READY_SNIPPETS', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', '_pre_edit_class', '_pre_edit_label', '_show_label', '_song_occ_html', '_src_tag', 'contact_block', 'content', 'dl_button', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'playable_item_attr', 'playback_ready_onerror', 'player', 'recording_card', 'recording_item_id', 'show_jsonld', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'track_add_button', 'updates_list', 'variant_toggle']
 
 
-def variant_toggle(any_loud=True):
+def variant_toggle(any_loud=True, deferred=False):
     """The Archive/Loud playback control plus its plain-language note.
 
     Rene's decision 2026-08-18: **Loud is the default**, because -20 LUFS is too
     quiet in a car or on phone speakers. That makes the note mandatory, not
     decorative — a visitor who does nothing is hearing the -14 render, and the
     page has to say so in words rather than leaving them to infer it from a
-    highlighted button. The archive stays the master and the download.
+    highlighted button. The archive stays the master and the download default.
 
     Real <button>s with aria-pressed (not styled spans), so the current value is
     in the accessible name and state — the mockup review called this out
     specifically. Rendered only when the page actually has variants to offer.
+
+    BOTH notes are rendered here, one hidden, and variant-ui.js only swaps which
+    is shown. It used to hold its own copy of this prose in a JS string and
+    overwrite the served markup on first paint -- which silently un-did the
+    2026-08-19 download update: the server sent the corrected sentence and the
+    script replaced it with "Downloads are always the Archive version," a claim
+    that had stopped being true. One source of truth removes that whole class
+    of drift; do not reintroduce note text in JS.
+
+    `deferred` hides the control until the page actually has something to play.
+    Used only by /songs/, whose occurrence rows are inserted lazily when a song
+    is opened: at load it has no player at all, so "You are hearing..." would be
+    a present-tense claim about a page state that does not exist yet. Every
+    other surface has its rows at load and shows the control immediately.
     """
     if not any_loud:
         return ""
-    return '''
-    <div class="variant-pick" data-variant-pick>
+    notes = {
+        "loud": ('<strong>You are hearing the Loud version</strong> &mdash; an extra render at '
+                 '&minus;14&nbsp;LUFS, about as loud as a streaming service, so it isn\u2019t too '
+                 'quiet on phone speakers or in a car. Switch to <strong>Archive</strong> for the '
+                 '&minus;20&nbsp;LUFS masters exactly as they were mastered.'),
+        "archive": ('<strong>You are hearing the Archive version</strong> &mdash; the '
+                    '&minus;20&nbsp;LUFS masters exactly as they were mastered. Switch to '
+                    '<strong>Loud</strong> for an extra render at &minus;14&nbsp;LUFS, about as '
+                    'loud as a streaming service.'),
+    }
+    tail = (' Downloads default to the Archive master &mdash; lossless FLAC &mdash; and the '
+            'download box offers this louder MP3 as an alternative. '
+            '<a href="/process/">How these were made</a>.')
+    note_html = "\n".join(
+        f'      <p class="variant-note" data-variant-note data-variant-note-for="{k}"'
+        f'{"" if k == "loud" else " hidden"}>{v}{tail}</p>'
+        for k, v in notes.items())
+    # `hidden` (not a class) so a deferred control is out of the accessibility
+    # tree too, not merely invisible -- nothing should announce a playback
+    # choice on a page with no player yet.
+    wrap_open = '<div class="variant-reveal" data-variant-reveal hidden><div class="variant-reveal-inner">' if deferred else ""
+    wrap_close = '</div></div>' if deferred else ""
+    return f'''
+    {wrap_open}<div class="variant-pick" data-variant-pick>
       <span class="variant-label" id="variant-label">Playback</span>
       <div class="variant-btns" role="group" aria-labelledby="variant-label">
         <button type="button" class="variant-btn" data-variant="archive" aria-pressed="false">Archive</button>
         <button type="button" class="variant-btn" data-variant="loud" aria-pressed="true">Loud</button>
       </div>
-      <p class="variant-note" data-variant-note>
-        <strong>You are hearing the Loud version</strong> &mdash; an extra render at
-        &minus;14&nbsp;LUFS, about as loud as a streaming service, so it isn\u2019t too quiet
-        on phone speakers or in a car. Switch to <strong>Archive</strong> for the
-        &minus;20&nbsp;LUFS masters exactly as they were mastered. Downloads default to
-        the Archive master &mdash; lossless FLAC &mdash; and the download box offers this
-        louder MP3 as an alternative. <a href="/process/">How these were made</a>.
-      </p>
-    </div>'''
+{note_html}
+    </div>{wrap_close}'''
