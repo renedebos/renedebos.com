@@ -1,35 +1,170 @@
 # Session Handoff — Hannan Recordings (renedebos.com)
-**Date:** 2026-08-19 (third pass) · **Branch:** `main` (no feature branch open)
+**Date:** 2026-08-19 (fourth pass) · **Branch:** `autoplay-blocked-cue` (PR #48 open)
 
 ## ⛔ READ THIS FIRST
 
-**Everything is on `main`, live, and verified on renedebos.com itself** — not
-just by a green Action. There is no in-flight work and no open PR. Eight PRs
-merged today (#25-#32).
+**One PR is open and unmerged: #48**, branch `autoplay-blocked-cue`. It fixes a
+real user-facing bug — "Play random tape" showed **"Playback failed"** on every
+iPhone, every time — and it is verified, but it is not live until Rene merges.
+Everything else below is on `main` and deployed.
+
+**Fourteen PRs merged this pass (#34-#47)**, on top of the eight from the third
+pass (#25-#32). The show page is the thing that changed most: it is
+substantially denser, and the track list now shows a waveform only on the track
+you are actually listening to.
+
+**Two wrong fixes shipped before the right one — read "The autoplay bug" below
+before touching playback.** #46 and #47 were both aimed at an iPhone report and
+#46 claimed in its own comments to have fixed it. It did not. The cause was
+somewhere else entirely, and the misleading comments have been corrected in
+#48. The lesson is in "Gotchas".
+
+**Branch sweep pending.** `ios-first-play`, `ios-diag` (both merged) and
+`autoplay-blocked-cue` (after #48 merges) are all sweepable, local and remote.
+`main` in the `/home/renedebos/renedebos.com` worktree is behind.
 
 **The loudness arc reopened once, deliberately.** The -14 variant is now
-DOWNLOADABLE as well as streamable (PR #31, Rene's request). The archive is
+DOWNLOADABLE as well as streamable (PR #31, Rene's request), and as of the
+fourth pass that extends to **full-show downloads** too (PR #39). The archive is
 still the master and still the default everywhere. See "The loud download"
 below before touching any download path — the reasoning behind the
 no-sticky-preference rule is not obvious from the code.
 
-**The page-layout and copy cleanup project is STARTED, and round 1 is live.**
-`plans/page-cleanup/` exists on `main`: a plan with a decision register and a
-mechanically-derived inventory. All three items Rene named are gone from the
-live site, along with several the inventory turned up. **Every row of the
-register is decided** — see "Page cleanup" below for what shipped and what a
-round 2 would be.
+**The page cleanup project has had two rounds.** Round 1 (PR #29) ran from
+`plans/page-cleanup/`'s decision register, and every row of that register is
+decided. **Round 2 did not** — it was driven ad hoc by Rene, item by item,
+across the fourth pass, and is not written back into the register. If you pick
+the register up again, re-derive the inventory counts first; several rows it
+lists are already gone.
 
-**The repo is clean, and that is new.** As of today: one branch (`main`) plus
-the deliberate `miniplayer-parked` archive, one deploy path, no stranded
-plans. Eight PRs merged and one closed today. Don't undo it by starting the
-next project on an old branch.
+**Keep the repo tidy — it was clean at the end of the third pass and is not
+now.** Three sweepable branches and a stale worktree, listed above. One
+branch (`main`) plus the deliberate `miniplayer-parked` archive is the target
+state. Don't start the next project on an old branch.
 
 **Phase 3 (the sticky mini-player) is PARKED** — do not resume it, and do not
 run `/apply-review` against its findings. Everything is on branch
 `miniplayer-parked` (`6bdecc6`). Never merge it; never delete it.
 
-## ✅ Done this session (2026-08-19)
+## ✅ Done this session (2026-08-19, fourth pass)
+
+### 🔴 The autoplay bug — "Play random tape" failed on every iPhone (PR #48, OPEN)
+
+The homepage's **"Play random tape"** navigates to
+`/shows/<slug>/?autoplay=1#track-N`. **User activation does not survive a
+navigation** — the tap happened in the *previous* document, so the `play()` the
+show page makes on arrival has no gesture behind it and the browser rejects it:
+
+    NotAllowedError - play() can only be initiated by a user gesture.
+
+Desktop Chrome and Safari allow it anyway on the strength of their
+media-engagement heuristics. **iOS Safari and Firefox never do.** So on a phone
+that button failed 100% of the time, and the row read "Playback failed — tap to
+retry" with the button relabelled "Retry".
+
+**Nothing was broken.** The track was queued, highlighted, scrolled to and one
+tap from playing. It was only being *dressed* as a failure. It now says
+**"Tap play to start"** in muted type, keeps an ordinary "Play" button and takes
+no failure styling — the same resolution `continuous-player.js` already used for
+a restored queue ("press play to resume").
+
+**The controller deliberately keeps ONE state for both.** The remedy — a `play()`
+from a real gesture — is identical, which is what lets `toggle()` treat them
+alike. The **view** separates them, on the error's `name`, guarded by the item id
+exactly as `_lastPlayError`'s own contract requires. Don't "simplify" that into a
+new controller state without re-reading the six consumers of `state === 'error'`.
+
+**How it survived: `browser_check.mjs` had an assertion that locked in the bug.**
+It correctly detected the block, *logged* `(autoplay was blocked by browser
+policy this run)`, and then asserted that the error UI was correct. A green suite
+over a bug every iPhone visitor hit. That assertion now asserts the cue.
+
+**Reproducing it needs no phone**, which is the part worth keeping:
+
+    chromium --autoplay-policy=user-gesture-required
+    -> https://renedebos.com/shows/<slug>/?autoplay=1#track-3
+
+Reproduced against **live production** on the first attempt.
+
+**Two dead ends shipped first, and both are now corrected in the code:**
+- **#46** added `load()` on every source change and its comments claimed this
+  fixed the iPhone report. **It did not.** The line is kept (both paths now
+  re-select the resource the same documented way) but no longer claims to be a
+  fix. Its test is kept for the contract, not the bug.
+- **#47** added a `?diag=1` diagnostic to read the real rejection off a phone.
+  It did its job — the string above came from it — and #48 **deletes it**.
+
+The first report was *"refresh, then the first track tapped fails"*, which sent
+the search down the wrong path entirely. Rene's later correction — *"it's the
+Play random tape button"* — is what cracked it.
+
+### The show-page track list got substantially denser (#43, #44, #45)
+
+**A waveform now renders only on the active row** (playing *or* paused), not on
+all ~31. Measured on a real page: rows 43px → 37px, the list 1358px → 1172px.
+
+This introduced **`.is-active` as distinct from `.playing`**, and the distinction
+matters: `.playing` is stripped on pause, so keying the waveform to it would
+leave a paused row showing a waveform with nothing saying why. `.is-active` means
+"this row holds the audio position"; `.playing` means "sound is coming out now".
+
+The active row is also visually stronger (accent bar, accent title, filled play
+button) and the waveform **animates in** — as a keyframe animation, not a
+transition, because it crosses `display: none → block`.
+
+Two follow-ups fixed mobile: the active row's wrapped download/add icons were
+left-aligned instead of lining up with the idle rows' right-aligned ones (#44),
+and the active row wrapped its metadata onto a second line (#45).
+
+**Long titles now clamp to two lines.** Worth recording *why*, because the first
+measurement was wrong: an initial "0/31 titles truncated" came from measuring
+`scrollWidth > clientWidth` on a height-clamped element. The real figures were
+**17/31 clipped on one line vs 3/31 on two**, which reversed the recommendation.
+
+### Show pages lost two blocks and gained per-file sizes (#34, #35, #36, #37)
+
+- The **"Audio processing · `done`"** badge is gone from the technical-data
+  summary — every show is `done` except the one hidden show.
+- The **"Full shows stream as 320 kbps MP3."** line is gone.
+- Full-show recording cards now read **`FORMAT WAV (2.13 GB)`** and
+  **`STREAM MP3 320 kbps (453 MB)`** — each size sits with the file it describes,
+  which drops a line *and* removes the "one size, two files" ambiguity. All 69
+  `stream_size` values were collected by HEAD request against the live worker.
+
+**Gotcha:** `recording_card()` runs meta values through `esc()`, so `&nbsp;`
+renders as literal text. Use a real U+00A0.
+
+### Full shows became downloadable in both versions (#39)
+
+The full-show download offered lossless only; it now uses the same Archive/Loud
+chooser as per-track downloads. **Read "The loud download" below first** — the
+no-sticky-preference rule is a deliberate decision, not an oversight.
+
+### `/songs/`'s variant toggle became a deferred reveal (#40)
+
+The premise for removing it — "there is no player on that page" — turned out to
+be **false**: `/songs/` inserts players lazily per `<details>`, and the toggle
+really does flip `MP3-14/` ↔ `MP3/`. Removing it would have broken the
+disclosure commitment. It is now hidden until a song is expanded and rows exist.
+
+**This also fixed a live wrong-fact bug:** `variant-ui.js` was overwriting the
+server-rendered note with *"Downloads are always the Archive version"*, which
+stopped being true on 2026-08-19 when the loud download shipped. The prose now
+lives in one place.
+
+### Accessibility and a reverted "fix" (#41, #42)
+
+Artist dots got accessible names. The add-to-playlist control was resized to
+match its neighbours and Rene **reverted it** — the 19px/18px sizes are
+deliberate (play primary, download secondary, add tertiary) and were never equal
+to the download button. There is now a comment saying so, so it is not "fixed"
+again.
+
+### `/history/` brought up to date (#38)
+
+"The Story So Far" now runs through August 19 (weeks fifteen to eighteen).
+
+## ✅ Done this session (2026-08-19, third pass)
 
 ### Cloudflare Web Analytics was never actually collecting
 The zone has Web Analytics on and Cloudflare injects `beacon.min.js` at the
@@ -295,7 +430,14 @@ false. It now says downloads *default* to the Archive master and the download
 box offers the louder MP3. The commitment is unchanged — only the fact it
 states. Any future change to what downloads offer has to come back here.
 
-### A round 2, if there is one
+### Round 2 happened, mostly on the show page (fourth pass)
+
+Not run from the register — driven ad hoc by Rene, item by item. What went:
+the `done` status badge, the "Full shows stream as 320 kbps MP3." line, the
+standalone Size row on recording cards, and (a layout rather than copy cut) the
+waveform on every non-active track row. Detail in the fourth-pass log above.
+
+**Still open from the original round-2 list:**
 
 - **The noise-reduced pill renders twice** on the 8 shows carrying it —
   page-level and on the technical-data summary. Predates this work; more visible
@@ -413,7 +555,38 @@ controller; three real bug fixes on live pages its reviews turned up; the
 
 These came out of the player work but are general.
 
-Added 2026-08-19:
+Added 2026-08-19 (fourth pass):
+
+- **User activation does not survive a navigation.** A click on page A cannot
+  authorise `play()` on page B. Any "click here and it starts playing over
+  there" flow is a blocked autoplay on iOS Safari and Firefox, always — and
+  works on desktop Chrome/Safari, which is exactly what hides it. If a feature
+  navigates in order to play, design for the block; do not treat it as an edge
+  case.
+- **A blocked autoplay is not an error, and must not be styled as one.** The
+  browser is asking for a gesture, not reporting a fault. Cue the row and say
+  what to do. `NotAllowedError` is the reliable signal.
+- **A test can lock in a bug and still be green.** `browser_check.mjs` detected
+  the blocked autoplay, logged that it had happened, and then asserted the wrong
+  UI was correct. When writing an assertion about a degraded path, ask what the
+  *right* behaviour is — not what the code currently does. This one shipped a
+  100%-reproducible iPhone bug past a passing suite.
+- **Don't ship a fix you cannot reproduce.** #46 was inferred from the only
+  functional difference between a failing and a succeeding attempt. The
+  reasoning was sound and the conclusion was wrong. What actually worked was
+  reproducing it — in this case `--autoplay-policy=user-gesture-required` in
+  Chromium against **live production**, no phone required. Reach for the
+  reproduction before the hypothesis.
+- **Take a bug report's wording literally, then re-ask.** "After I refresh, the
+  first track fails" and "the Play random tape button fails" describe the same
+  symptom and *completely* different code paths. The first reading cost two
+  PRs. When a repro attempt doesn't reproduce, that is information about the
+  description, not just the code.
+- **Measure the thing you actually changed.** A "0/31 titles truncated" figure
+  came from testing `scrollWidth > clientWidth` on an element already clamped by
+  height. The true figures (17/31 vs 3/31) reversed the recommendation.
+
+Added 2026-08-19 (third pass):
 
 - **A CSP source path only prefix-matches when it ends in `/`.** Otherwise it
   must match exactly. Cloudflare's own documented source
@@ -608,22 +781,23 @@ instructions.
 - `plans/player-consolidation/` — closed; `-codex.md` logs every review round.
 
 **Tests:** `node scripts/test-*.mjs` — 6 suites plus `test-fake-dom.mjs`
-(a helper). **160/160 passing**, re-run 2026-08-18 after the variant work
-touched `player-controller.js`, `player.js`, `playlist-views.js` and
-`songs.js`:
+(a helper). **164/164 passing** as of 2026-08-19 (fourth pass):
 
 | suite | tests |
 |---|---|
-| `test-player-controller.mjs` | 57 |
+| `test-player-controller.mjs` | 58 |
 | `test-player-boot.mjs` | 28 |
 | `test-playlist-state.mjs` | 29 |
-| `test-player-views.mjs` | 17 |
+| `test-player-views.mjs` | 20 |
 | `test-playlist-views.mjs` | 16 |
 | `test-song-boot.mjs` | 13 |
 
 (Down from 327 because the two mini-player suites, 164 tests, were deleted
 with the parked modules. `test-player-controller.mjs` went 60 → 57 in the same
-commit.)
+commit, then 57 → 58 with the `load()`-on-source-change contract. The three
+tests added to `test-player-views.mjs` in PR #48 cover the blocked-autoplay
+cue, that a real failure still reads as a failure, and that a stale block from
+one track cannot leak onto another.)
 
 Also clean: `python3 scripts/build.py --check` (integrity OK, 31 shows, 680
 curated tracks, no orphan song pages). Since 2026-08-19 that command also
@@ -636,7 +810,8 @@ CSPs** — see `scripts/sitegen/_csp_check.py`.
 at `https://renedebos.com`. **First full `--prod` sweep ran 2026-08-19:
 195/195**, after adding the variant pass and fixing one flaky timing
 assertion. The long-standing "never actually run against production" loose end
-is closed. Local run (which adds the breakage tests): **189/189**.
+is closed. Local run (which adds the breakage tests): **193/193** as of the
+fourth pass.
 
 It takes ~7 minutes — run it in the background with an end-marker, not in the
 foreground, or a 2-minute tool timeout will kill it.
