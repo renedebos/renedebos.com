@@ -934,15 +934,16 @@ def build_show(show):
         cards.append(recording_card(title, meta, r["source"], r["file"], r.get("stream"), play_label,
                                     show=show))
     label = "Full Recording" if len(canon) == 1 else "Full Recording &middot; " + f"{len(canon)} parts"
-    streamed = any(r.get("stream") for r in canon)
-    # The bitrate is worth stating here; the password half moved out — the
-    # .wav-note below is now the page's single body-copy statement of it
-    # (page-cleanup row B1).
-    hint = ('\n    <p class="track-hint">Full shows stream as 320&nbsp;kbps MP3.</p>'
-            if streamed else "")
+    # A "Full shows stream as 320 kbps MP3." hint used to sit here. Cut
+    # 2026-08-19 on request. Note what went with it: the card's own Format row
+    # states the *download* format (WAV), so the stream's bitrate is no longer
+    # stated anywhere on the show page -- only on /process/. That was the
+    # deliberate trade, not an oversight; don't "restore" it as a bug fix.
+    # (The password half of the original sentence had moved out earlier, in
+    # page-cleanup row B1.)
     parts.append(f'''
   <section>
-    <div class="group-label-bare">{label}</div>{hint}
+    <div class="group-label-bare">{label}</div>
     <div class="recording-list">
 {chr(10).join(cards)}
     </div>

@@ -421,13 +421,6 @@ main {
 
 /* ── compact track list (show pages) ─────────────────────────────────────── */
 
-.track-hint {
-  font-size: 12px;
-  color: var(--muted);
-  font-weight: 300;
-  margin: -0.2rem 0 0.8rem;
-}
-
 .track-list {
   border: 1px solid var(--border);
   border-radius: 10px;
