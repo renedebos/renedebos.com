@@ -926,21 +926,36 @@ def build_show(show):
     if proc:
         parts.append(tech_data_section(show, proc, var))
 
+    # "Format" on these cards is the DOWNLOAD format (WAV/FLAC); what you get
+    # when you press play is a separate, lossy proxy. Stating only one of the
+    # two invites reading the lossless format as what you are hearing, so the
+    # stream gets its own row directly beneath. Verified 2026-08-19 by ffprobe
+    # against three live streams (incl. an alternate and a FLAC-sourced show):
+    # all 320 kbps, matching make_stream_mp3.py's BITRATE.
+    def recording_meta(r):
+        rows = [("Source", r["source"]), ("Format", r["format"])]
+        if r.get("stream"):
+            # literal U+00A0, not "&nbsp;" -- recording_card() runs every meta
+            # value through esc(), which would render the entity as text.
+            rows.append(("Stream", "MP3 320\u00a0kbps"))
+        rows.append(("Size", r["size"]))
+        return rows
+
     cards = []
     for r in canon:
         title = r["label"] or "Complete show"
-        meta = [("Source", r["source"]), ("Format", r["format"]), ("Size", r["size"])]
+        meta = recording_meta(r)
         play_label = f'{title}, {artist["name"]}, {date_with_subtitle(show)}'
         cards.append(recording_card(title, meta, r["source"], r["file"], r.get("stream"), play_label,
                                     show=show))
     label = "Full Recording" if len(canon) == 1 else "Full Recording &middot; " + f"{len(canon)} parts"
-    # A "Full shows stream as 320 kbps MP3." hint used to sit here. Cut
-    # 2026-08-19 on request. Note what went with it: the card's own Format row
-    # states the *download* format (WAV), so the stream's bitrate is no longer
-    # stated anywhere on the show page -- only on /process/. That was the
-    # deliberate trade, not an oversight; don't "restore" it as a bug fix.
-    # (The password half of the original sentence had moved out earlier, in
-    # page-cleanup row B1.)
+    # A standalone "Full shows stream as 320 kbps MP3." hint used to sit here.
+    # Cut 2026-08-19; the fact it carried now rides in each card's own Stream
+    # row (see recording_meta above), which is where it is actually needed --
+    # next to the download format it contrasts with, and per-recording rather
+    # than as one blanket claim over the section. Don't reintroduce the
+    # paragraph. (The password half of the original sentence had moved out
+    # earlier, in page-cleanup row B1.)
     parts.append(f'''
   <section>
     <div class="group-label-bare">{label}</div>
@@ -952,7 +967,7 @@ def build_show(show):
     if alts:
         cards = []
         for r in alts:
-            meta = [("Source", r["source"]), ("Format", r["format"]), ("Size", r["size"])]
+            meta = recording_meta(r)
             play_label = f'{r["alt_label"]}, {artist["name"]}, {date_with_subtitle(show)}'
             cards.append(recording_card(r["alt_label"], meta, r["source"], r["file"], r.get("stream"), play_label,
                                         show=show))
