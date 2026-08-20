@@ -581,6 +581,10 @@ main {
   .track-row.ws-track .play-btn svg { width: 15px; height: 15px; }
   .track-row.ws-track .download-btn { width: 40px; height: 40px; }
   .track-row.ws-track .download-btn svg { width: 16px; height: 16px; }
+  /* the third control in the same row -- left at 24px, it was the one target
+     a thumb still had to aim for while its neighbours grew */
+  .track-row.ws-track .track-add { width: 40px; height: 40px; }
+  .track-row.ws-track .track-add svg { width: 16px; height: 16px; }
 }
 
 /* .ws-wave and .ws-dl below are production classes on real show-page track
@@ -837,9 +841,15 @@ main {
    space, so trailing items sit flush right); .song-occ-head pushes it with
    margin-left: auto; .pl-row-play carries flex: 1, leaving .track-add as the
    fixed-size sibling that lands at the row's right edge. */
-.track-row .track-add { width: 19px; height: 19px; }
-.track-row .track-add svg { width: 9px; height: 9px; }
-.song-occ-head .track-add { width: 18px; height: 18px; margin-left: auto; }
+/* Both of these used to shrink the control below the 24px base -- 19px on a
+   show-page track row, 18px on a song-page occurrence row. They now inherit
+   the base size instead. It sits between a play button and a download button
+   that are 30/24 on desktop and 44/40 on touch, so shrinking only the middle
+   one read as an oversight rather than a hierarchy, and 19px is fiddly to hit
+   with a thumb. (Not a WCAG 2.5.8 failure either way -- measured 23.1px of
+   clearance to the nearest target, comfortably past the spacing exception's
+   12px -- so this is a usability and consistency fix, not a conformance one.) */
+.song-occ-head .track-add { margin-left: auto; }
 
 /* Header row above a tracklist: the existing count/duration caption plus the
    new "Select all" bulk action, side by side. */
