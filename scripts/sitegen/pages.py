@@ -926,19 +926,28 @@ def build_show(show):
     if proc:
         parts.append(tech_data_section(show, proc, var))
 
-    # "Format" on these cards is the DOWNLOAD format (WAV/FLAC); what you get
-    # when you press play is a separate, lossy proxy. Stating only one of the
-    # two invites reading the lossless format as what you are hearing, so the
-    # stream gets its own row directly beneath. Verified 2026-08-19 by ffprobe
-    # against three live streams (incl. an alternate and a FLAC-sourced show):
-    # all 320 kbps, matching make_stream_mp3.py's BITRATE.
+    # Two files exist per recording, and the card has to keep them apart:
+    # "Format" is what you DOWNLOAD (lossless WAV/FLAC), "Stream" is the lossy
+    # proxy you actually hear. Each carries its own size in parentheses --
+    # a single standalone "Size" row was the confusing part, because one number
+    # sat under two files and read as though it described both.
+    #
+    # Bitrate verified 2026-08-19 by ffprobe against three live streams (incl.
+    # an alternate and a FLAC-sourced show): all 320 kbps, matching
+    # make_stream_mp3.py's BITRATE. `stream_size` is stamped into
+    # recordings.json from the Worker's own Content-Length, so it is the byte
+    # count a listener really receives.
     def recording_meta(r):
-        rows = [("Source", r["source"]), ("Format", r["format"])]
+        # literal U+00A0 rather than "&nbsp;" -- recording_card() runs every
+        # meta value through esc(), which would render the entity as text.
+        fmt = f'{r["format"]}\u00a0({r["size"]})' if r.get("size") else r["format"]
+        rows = [("Source", r["source"]), ("Format", fmt)]
         if r.get("stream"):
-            # literal U+00A0, not "&nbsp;" -- recording_card() runs every meta
-            # value through esc(), which would render the entity as text.
-            rows.append(("Stream", "MP3 320\u00a0kbps"))
-        rows.append(("Size", r["size"]))
+            # Size omitted rather than guessed when the sidecar lacks one, so a
+            # missing stamp shows as no number instead of a wrong one.
+            sz = r.get("stream_size")
+            rows.append(("Stream", f'MP3 320\u00a0kbps\u00a0({sz})' if sz
+                                   else "MP3 320\u00a0kbps"))
         return rows
 
     cards = []
