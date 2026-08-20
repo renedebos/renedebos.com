@@ -602,10 +602,27 @@ main {
   /* An idle row is now one line: with no waveform there is nothing to wrap to a
      second, and the two-band layout left a near-empty middle line holding a
      timestamp and one small button. The active row still wraps, for its wave. */
-  .track-row.ws-track:not(.is-active) { flex-wrap: nowrap; row-gap: 0; gap: 0.5rem; }
+  /* column-gap on BOTH states, not just the idle one: the active row kept the
+     wider desktop gap, so its download/add pair sat 5px off from the pair on
+     every row above it -- visible precisely because the fix below lines them up. */
+  .track-row.ws-track { column-gap: 0.5rem; }
+  .track-row.ws-track:not(.is-active) { flex-wrap: nowrap; row-gap: 0; }
   .track-row.ws-track .track-main { flex: 1 1 auto; min-width: 0; }
   /* margin-left:auto here would absorb every free pixel and starve the title. */
   .track-row.ws-track .time-label { margin-left: 0; white-space: nowrap; flex-shrink: 0; }
+  /* A long title pushes the download + add pair onto their own wrapped line,
+     where flexbox leaves them hard against the LEFT edge -- directly under the
+     right-aligned pair on every idle row above and below, which reads as a
+     misalignment rather than a wrap. Nothing on that line pushes them over,
+     because the title (flex:1) absorbed the free space up on the first line.
+     An auto left margin on the first of the pair does it, on whichever line
+     they land on; when they fit beside the timestamp it is a no-op.
+     The :has() arm is for a row with no lossless download to offer -- none
+     exist today (checked: 680 of 680 carry one) but a whole-show-only future
+     entry would otherwise re-introduce exactly this bug for its add button. */
+  .track-row.ws-track.is-active .download-btn,
+  .track-row.ws-track.is-active:not(:has(.download-btn)) .track-add { margin-left: auto; }
+
   /* Two lines rather than an ellipsis. Costs nothing: the row's height is set by
      the play button, and a second line of title still fits inside it -- measured
      14 of 31 titles clipped on one line against 4 on two, at identical height. */
