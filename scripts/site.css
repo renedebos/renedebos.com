@@ -448,7 +448,23 @@ main {
 .track-group-head .group-label-bare { margin: 0; }
 .track-row:hover { background: var(--accent-light); }
 .track-row:hover .track-title { color: var(--accent); }
-.track-row.playing { background: var(--accent-light); box-shadow: inset 3px 0 0 var(--accent); }
+/* The active row. `.is-active` means "this is the current item" (playing OR
+   paused); `.playing` means "producing sound right now". The highlight keys on
+   BOTH: the shared controller sets is-active, while the legacy fallback engine
+   in player.js only knows about .playing — so a fallback page keeps exactly the
+   behaviour it had rather than losing the highlight entirely.
+
+   This has to be emphatic now. Only the active row carries a waveform, so the
+   row has to explain why it looks different from the other twenty-nine; a tint
+   alone left the waveform doing that work. The play button filling solid is the
+   same "filled once engaged" language .track-add[aria-pressed] already uses. */
+.track-row.playing,
+.track-row.is-active { background: var(--accent-light); box-shadow: inset 3px 0 0 var(--accent); }
+.track-row.is-active .track-title { color: var(--accent); font-weight: 600; }
+.track-row.is-active .time-label { color: var(--accent); }
+.track-row.is-active .play-btn {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+}
 
 /* A row whose audio failed to load (404/CORS/decode). Before the shared
    controller there was no 'error' handling at all, so a hard failure just left
@@ -577,11 +593,26 @@ main {
   .track-row.ws-track .time-label { margin-left: auto; }
   .track-row.ws-track .ws-wave { flex: 1 1 100%; order: 5; }
   /* larger touch targets for thumbs */
-  .track-row.ws-track .play-btn { width: 44px; height: 44px; }
-  .track-row.ws-track .play-btn svg { width: 15px; height: 15px; }
-  .track-row.ws-track .download-btn { width: 40px; height: 40px; }
-  .track-row.ws-track .download-btn svg { width: 16px; height: 16px; }
+  .track-row.ws-track .play-btn { width: 36px; height: 36px; }
+  .track-row.ws-track .play-btn svg { width: 13px; height: 13px; }
+  .track-row.ws-track .download-btn { width: 32px; height: 32px; }
+  .track-row.ws-track .download-btn svg { width: 14px; height: 14px; }
   /* .track-add deliberately does NOT grow here -- see its rule above. */
+
+  /* An idle row is now one line: with no waveform there is nothing to wrap to a
+     second, and the two-band layout left a near-empty middle line holding a
+     timestamp and one small button. The active row still wraps, for its wave. */
+  .track-row.ws-track:not(.is-active) { flex-wrap: nowrap; row-gap: 0; gap: 0.5rem; }
+  .track-row.ws-track .track-main { flex: 1 1 auto; min-width: 0; }
+  /* margin-left:auto here would absorb every free pixel and starve the title. */
+  .track-row.ws-track .time-label { margin-left: 0; white-space: nowrap; flex-shrink: 0; }
+  /* Two lines rather than an ellipsis. Costs nothing: the row's height is set by
+     the play button, and a second line of title still fits inside it -- measured
+     14 of 31 titles clipped on one line against 4 on two, at identical height. */
+  .track-row .track-title {
+    white-space: normal; line-height: 1.25;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
 }
 
 /* .ws-wave and .ws-dl below are production classes on real show-page track
@@ -594,6 +625,37 @@ main {
   min-width: 80px;
   height: 38px;
   cursor: pointer;
+}
+
+/* Waveforms belong to the track you are actually listening to. Thirty of them
+   stacked down a show page cost ~38px of height each while rendering at 1.31:1
+   against the paper -- near invisible until the playhead sweeps past, so the
+   browse-by-shape value they nominally offered was mostly not being delivered.
+   Hidden on idle rows, the list loses a third of its height and the page draws
+   one canvas instead of thirty.
+
+   `display: none` rather than height:0 -- a zero-height flex item still forces
+   its own line on mobile, where .ws-wave is flex-basis 100%. */
+.track-row.ws-track:not(.is-active) .ws-wave { display: none; }
+
+/* With the waveform gone, nothing absorbs the free width and the trailing
+   time/download/add collapse leftward into the middle of the row -- every idle
+   row's controls landing at a different x than the active row's. The title
+   takes over as the growing element so the columns stay put. */
+.track-row.ws-track:not(.is-active) .track-main { flex: 1 1 auto; }
+
+/* An animation, not a transition: the element goes display:none -> block, and
+   transitions do not run across that. Keyframes do. */
+@keyframes ws-wave-in {
+  from { height: 0; opacity: 0; }
+  to   { height: 38px; opacity: 1; }
+}
+.track-row.ws-track.is-active .ws-wave {
+  overflow: hidden;
+  animation: ws-wave-in 0.3s cubic-bezier(0.22, 0.8, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .track-row.ws-track.is-active .ws-wave { animation: none; }
 }
 
 /* the download link's wrapper is transparent to the flex layout */

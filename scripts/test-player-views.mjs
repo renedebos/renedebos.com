@@ -516,7 +516,7 @@ test('waveform tap while paused starts playback first, then seeks (iOS gesture r
 // behavior: which of _upgradeWave/_drawInertWave setPeaks() invokes, keyed on
 // whether the row happens to be active when the (asynchronous, in the real
 // bootstrap) peaks arrive.
-test('setPeaks() upgrades an active row and draws an inactive one — not just stores the value', async () => {
+test('setPeaks() upgrades an active row and draws nothing on an inactive one — not just stores the value', async () => {
   const audio = new FakeAudio();
   const c = new PlaybackController({ audio, mediaSession: false });
   try {
@@ -545,10 +545,32 @@ test('setPeaks() upgrades an active row and draws an inactive one — not just s
     assert.equal(upgraded, 1, 'the ACTIVE row must upgrade to a real WaveSurfer, not just store peaks');
     assert.equal(drawn, 0);
 
+    // An inactive row's waveform is display:none now (only the active row shows
+    // one), so drawing its canvas would be work thrown into a hidden box on
+    // every row of a 30-track show. It stores the peaks and draws nothing.
+    // This assertion was inverted on 2026-08-20 when active-only waveforms
+    // shipped; it previously required drawn === 1.
     views[1].setPeaks(peaks);
-    assert.equal(views[1].peaks, peaks);
-    assert.equal(drawn, 1, 'the INACTIVE row must draw its inert canvas, not just store peaks');
+    assert.equal(views[1].peaks, peaks, 'the value is still stored');
+    assert.equal(drawn, 0, 'an INACTIVE row must NOT draw: its waveform is hidden');
     assert.equal(upgraded, 1, 'still just the one upgrade from the active row');
+
+    // The coverage that mattered is not lost, only moved: the row must still
+    // get its waveform when it becomes the active one, using the peaks it
+    // stored while hidden.
+    const before = upgraded;
+    views[1].root.querySelector('.play-btn').dispatch('click');
+    await tick();
+    // `>` rather than an exact count: _render() runs on every state change, so
+    // a row going idle -> loading -> playing legitimately calls _upgradeWave
+    // more than once. What matters is that a row which drew nothing while
+    // hidden gets its waveform on becoming active.
+    assert.ok(upgraded > before, 'the row upgrades once it becomes active, from the peaks it stored');
+    // Deliberately no assertion on `drawn` here: with _upgradeWave stubbed out,
+    // the now-active row legitimately falls back to painting its inert canvas
+    // (that is the real WaveSurfer-unavailable path). The claim under test is
+    // that nothing draws while a row is HIDDEN, which the assertion above the
+    // click already makes.
   } finally { c.destroy(); }
 });
 
