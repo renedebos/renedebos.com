@@ -1089,11 +1089,28 @@ def build_songs_index():
     for s in songs:
         # Fixed slot per artist (Jerry | Mad | Sean order), filled where they played
         # this song and an empty placeholder where they didn't — so the dots line up
-        # into scannable per-artist columns down the list.
+        # into scannable per-artist columns down the list. That fixed position is
+        # what carries the meaning for anyone who can't separate the four hues;
+        # colour is the fast path, not the only one.
+        #
+        # role="img" + aria-label is what makes a filled dot exist for a screen
+        # reader at all: an empty <span> has no text and no role, so it is simply
+        # skipped, and `title` on a non-interactive element is unreliably
+        # announced and never surfaces on touch. Without this, the whole
+        # "which artists played this song" column is sighted-only — a visitor
+        # would have to open each song's page one at a time to recover it.
+        # `title` stays for the mouse tooltip; aria-label wins the accessible name.
+        #
+        # The empty slots are explicitly aria-hidden. They are layout scaffolding
+        # ("this artist did not play this song" is already implied by the filled
+        # dots present), and announcing three blanks per row would bury the one
+        # or two that mean something.
         chips = "".join(
-            (f'<span class="artist-dot artist-{a}" title="{esc(ARTIST_SHORT.get(a, a))}"></span>'
+            (f'<span class="artist-dot artist-{a}" role="img" '
+             f'aria-label="{esc(ARTIST_SHORT.get(a, a))}" '
+             f'title="{esc(ARTIST_SHORT.get(a, a))}"></span>'
              if a in s["artists"]
-             else '<span class="artist-dot empty"></span>')
+             else '<span class="artist-dot empty" aria-hidden="true"></span>')
             for a in present)
         # Occurrence rows (each with its own player) aren't rendered here — with
         # 400+ of them across the index that's a lot of embedded HTML and live
