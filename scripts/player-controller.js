@@ -861,19 +861,20 @@ export class PlaybackController {
       this.audio.src = wantSrc;
       // load() on EVERY source change, not only on a retry.
       //
-      // Assigning src already queues the media element load algorithm, so on
-      // desktop this is close to a no-op and the explicit call was reserved for
+      // Assigning src already queues the media element load algorithm, so this
+      // is close to a no-op; the explicit call was originally reserved for
       // retries (a media element holding an error will not recover on play()
-      // alone). iOS Safari is stricter: the first play() after a page load, on
-      // an element whose src was assigned in the same turn and never explicitly
-      // loaded, can reject — the row lands in 'error' and reads "Playback
-      // failed", and tapping again works.
+      // alone). Kept unconditional so both paths re-select the resource the
+      // same documented way, rather than one relying on the implicit algorithm
+      // and the other not.
       //
-      // That symptom is reported from a real iPhone: after a browser refresh,
-      // the first track tapped always fails and the second tap always works.
-      // The retry path is precisely the one that called load(), which is the
-      // ONLY functional difference between the attempt that fails and the
-      // attempt that succeeds — so the missing load() is the cause.
+      // Historical note, so nobody re-derives it: this was added on the theory
+      // that a missing load() explained an iPhone report of "the first track
+      // always fails, the second works", because the retry path was the only
+      // one calling load(). It did NOT fix that report. The actual cause was
+      // elsewhere and is now known — a blocked autoplay from a deep link, see
+      // player-views.js's _setMessage(). Do not treat this line as a fix for
+      // anything.
       //
       // Safe in the other direction: this sits inside `reloading`, so resuming
       // the SAME source after a pause never reaches it and never restarts the

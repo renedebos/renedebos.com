@@ -478,6 +478,18 @@ main {
   white-space: nowrap;
 }
 
+/* A row waiting on a tap because the browser blocked autoplay (see
+   player-views.js's _setMessage). Deliberately NOT styled like .player-error:
+   nothing failed, so it takes the muted tone of ordinary row metadata and adds
+   no shadow of its own -- .is-active has already given the row its accent bar.
+   The row is highlighted, scrolled to and cued; this line only says why it is
+   waiting. */
+.player-cue-msg {
+  color: var(--muted);
+  font: 0.7rem var(--mono);
+  white-space: nowrap;
+}
+
 .track-row .play-btn { width: 30px; height: 30px; }
 .track-row .play-btn svg { width: 12px; height: 12px; }
 

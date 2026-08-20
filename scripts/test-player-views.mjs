@@ -297,6 +297,97 @@ test('a failed row shows a visible message and offers retry, which reloads the s
   } finally { c.destroy(); }
 });
 
+// ── blocked autoplay is not a failure ──────────────────────────────────────
+// "Play random tape" navigates to /shows/<slug>/?autoplay=1#track-N, and user
+// activation does not survive a navigation — so play() on arrival rejects with
+// NotAllowedError on any browser that enforces the policy (iOS Safari always;
+// desktop only without media-engagement credit, which is why this reached
+// production). It must read as "cued, waiting for a tap", never as a failure.
+class BlockingAudio extends FakeAudio {
+  play() {
+    const err = new Error('play() can only be initiated by a user gesture.');
+    err.name = 'NotAllowedError';
+    return Promise.reject(err);
+  }
+}
+
+test('a blocked autoplay cues the row instead of reporting a failure', async () => {
+  const audio = new BlockingAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    const items = ['t1', 't2'].map(id => item(id));
+    const rows = items.map((it, i) => {
+      const row = trackRow({ num: i + 1 });
+      c.mount(new CompactPlayerView(row, it, { queueItems: items, queueIndex: i }));
+      return row;
+    });
+    // Exactly what player-boot.js's deep-link handler does on arrival.
+    c.setQueue(items, { startIndex: 0, autoplay: true });
+    await tick();
+
+    assert.equal(c.state, 'error', 'the controller still uses one state for both — the view is what separates them');
+    assert.equal(rows[0].classList.contains('player-error'), false,
+      'nothing failed, so the row must not take the failure styling');
+    assert.equal(rows[0].classList.contains('is-active'), true,
+      'the cued track is still the active row — that is what makes it obvious which one is waiting');
+    assert.equal(rows[0].querySelector('.player-error-msg'), null);
+
+    const msg = rows[0].querySelector('.player-cue-msg');
+    assert.ok(msg, 'the row must say why it is silent rather than just sitting there');
+    assert.equal(msg.textContent, 'Tap play to start');
+    assert.equal(msg.getAttribute('role'), 'status');
+    assert.match(rows[0].querySelector('.play-btn').getAttribute('aria-label'), /^Play /,
+      'the button is an ordinary Play, not a Retry — nothing needs retrying');
+
+    assert.equal(rows[1].querySelector('.player-cue-msg'), null, 'only the cued row is marked');
+  } finally { c.destroy(); }
+});
+
+test('a real failure is still reported as a failure, not a cue', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    const it = item('t1');
+    const row = trackRow();
+    c.mount(new CompactPlayerView(row, it, { queueItems: [it], queueIndex: 0 }));
+    row.querySelector('.play-btn').dispatch('click');
+    await tick();
+    // A native MediaError carries no .name, so it can never be mistaken for a
+    // NotAllowedError — the distinguishing check must not swallow it.
+    audio.simulateError();
+    assert.equal(row.classList.contains('player-error'), true);
+    assert.ok(row.querySelector('.player-error-msg'));
+    assert.equal(row.querySelector('.player-cue-msg'), null);
+  } finally { c.destroy(); }
+});
+
+// A block recorded against a DIFFERENT track must not relabel this one — the
+// controller clears _lastPlayError only on the next attempt, so the item-id
+// guard is the only thing keeping a stale block off an unrelated row.
+test('a stale block from another track does not cue the current one', async () => {
+  const audio = new BlockingAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    const items = ['t1', 't2'].map(id => item(id));
+    const rows = items.map((it, i) => {
+      const row = trackRow({ num: i + 1 });
+      c.mount(new CompactPlayerView(row, it, { queueItems: items, queueIndex: i }));
+      return row;
+    });
+    c.setQueue(items, { startIndex: 0, autoplay: true });
+    await tick();
+    assert.ok(rows[0].querySelector('.player-cue-msg'), 'precondition: track 1 is the blocked one');
+
+    // Move to track 2 WITHOUT a fresh play attempt clearing the stored error.
+    c.setQueue(items, { startIndex: 1, autoplay: false });
+    await tick();
+    assert.equal(rows[1].querySelector('.player-cue-msg'), null,
+      'track 2 never attempted playback — it must not inherit track 1 error');
+    assert.equal(rows[0].querySelector('.player-cue-msg'), null,
+      'and the row that lost active status clears its message');
+  } finally { c.destroy(); }
+});
+
 test('inactive rows are not rewritten on every timeupdate tick', async () => {
   const audio = new FakeAudio();
   const c = new PlaybackController({ audio, mediaSession: false });

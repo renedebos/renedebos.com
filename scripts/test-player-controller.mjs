@@ -94,14 +94,18 @@ const tick = () => new Promise(r => setTimeout(r, 0));
 const tests = [];
 function test(name, fn) { tests.push({ name, fn }); }
 
-// ── 0. iOS first-play ────────────────────────────────────────────────────
-// Reported from a real iPhone: after a browser refresh the FIRST track tapped
-// on a show page lands in 'error' ("Playback failed — tap to retry") and the
-// second tap works. The retry path was the only one calling load(), which made
-// it the only functional difference between the failing and succeeding
-// attempts. This locks in load()-on-every-source-change so it cannot quietly
-// revert to retry-only.
-test('every source change explicitly loads, not just a retry (iOS first play)', async () => {
+// ── 0. load() on every source change ─────────────────────────────────────
+// Both paths re-select the resource the same documented way: assigning src and
+// then calling load(), rather than one relying on the implicit media element
+// load algorithm and the other not.
+//
+// This started life as a fix for an iPhone report ("the first track tapped
+// after a refresh always fails, the second works") on the theory that the
+// retry path's load() was the only difference between them. That theory was
+// WRONG — the real cause was a blocked autoplay from a deep link (see
+// player-views.js's _setMessage). The test is kept because the contract it
+// pins down is worth having on its own, not because it guards that bug.
+test('every source change explicitly loads, not just a retry', async () => {
   const audio = new FakeAudio();
   const c = new PlaybackController({ audio, mediaSession: false });
   try {
