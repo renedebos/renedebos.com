@@ -48,7 +48,10 @@ class FakeAudio extends EventTarget {
   // rules is what makes "switch track" and "replay the current track" behave
   // differently, and the difference was a real bug (see the repeat-one test).
   set src(v) { this._src = v; this.error = null; this.paused = true; this.loadCount = (this.loadCount || 0) + 1; }
-  load() { this.error = null; this.paused = true; }
+  // Counted separately from loadCount (which counts src ASSIGNMENTS): the iOS
+  // first-play fix turns on whether load() is called explicitly, and assigning
+  // src alone is exactly the case that was not enough.
+  load() { this.error = null; this.paused = true; this.explicitLoads = (this.explicitLoads || 0) + 1; }
   play() {
     const wasPaused = this.paused;
     this.paused = false;
@@ -90,6 +93,38 @@ const tick = () => new Promise(r => setTimeout(r, 0));
 
 const tests = [];
 function test(name, fn) { tests.push({ name, fn }); }
+
+// ── 0. iOS first-play ────────────────────────────────────────────────────
+// Reported from a real iPhone: after a browser refresh the FIRST track tapped
+// on a show page lands in 'error' ("Playback failed — tap to retry") and the
+// second tap works. The retry path was the only one calling load(), which made
+// it the only functional difference between the failing and succeeding
+// attempts. This locks in load()-on-every-source-change so it cannot quietly
+// revert to retry-only.
+test('every source change explicitly loads, not just a retry (iOS first play)', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    const a = item('t1'), b = item('t2');
+    c.setQueue([a, b], { startIndex: 0, autoplay: true });
+    await tick();
+    assert.equal(audio.explicitLoads, 1, 'the FIRST play of a fresh element must load(), not only assign src');
+
+    c.next();
+    await tick();
+    assert.equal(audio.explicitLoads, 2, 'switching tracks loads the new source too');
+
+    // The other half of the contract: resuming the SAME source must not reload,
+    // which would restart the track from zero instead of continuing it.
+    c.pause();
+    audio.currentTime = 42;
+    const before = audio.explicitLoads;
+    await c.play();
+    await tick();
+    assert.equal(audio.explicitLoads, before, 'resuming an unchanged source must NOT reload');
+    assert.equal(audio.currentTime, 42, 'and must not rewind');
+  } finally { c.destroy(); }
+});
 
 // ── 1. stale/rejected play() promises don't clobber newer state ──────────
 test('stale rejected play() promise is ignored once a newer play() has started', async () => {
