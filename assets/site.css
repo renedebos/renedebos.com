@@ -608,6 +608,21 @@ main {
   .track-row.ws-track { column-gap: 0.5rem; }
   .track-row.ws-track:not(.is-active) { flex-wrap: nowrap; row-gap: 0; }
   .track-row.ws-track .track-main { flex: 1 1 auto; min-width: 0; }
+  /* The ACTIVE row grows its title from a ZERO basis, not from its content
+     width. It is the one row that still wraps (it has a waveform to put on its
+     own line), and with an auto basis the title claimed its full natural width
+     first -- shoving the timestamp and the download/add pair onto a second line
+     even when there was obvious room beside it, and leaving the timestamp
+     orphaned at the left margin, aligned with nothing on the page.
+     From zero, the title grows into whatever is left and shrinks when it must,
+     so the first line lays out identically to every idle row and only .ws-wave
+     (flex-basis 100%) takes a line of its own. Measured on
+     jerry-cafe-java-1999-06-17: 145px -> 105px for a mid-length title, 171px ->
+     105px for the longest, and the timestamp lands on the same x as its
+     neighbours. The cost is that the active row now clamps long titles to two
+     lines -- exactly the same titles, and exactly the same clamp, as every
+     other row in the list. */
+  .track-row.ws-track.is-active .track-main { flex: 1 1 0; }
   /* margin-left:auto here would absorb every free pixel and starve the title. */
   .track-row.ws-track .time-label { margin-left: 0; white-space: nowrap; flex-shrink: 0; }
   /* A long title pushes the download + add pair onto their own wrapped line,
