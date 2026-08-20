@@ -1887,6 +1887,24 @@ a.artist-chip:hover { filter: brightness(1.08); }
    decoration: a visitor who touches nothing is hearing the -14 render and
    the page must say so. Sits above the track list, one per page — the track
    row already carries seven controls and this is not a per-track setting. */
+/* The /songs/ index ships its Archive/Loud control hidden and reveals it the
+   first time a song is opened (songs.js revealVariantPick). Animated with the
+   0fr -> 1fr grid-row technique so the list below slides rather than jumps,
+   and without hard-coding a height the note's wrapped line count would break.
+   `:not([hidden])` matters: a bare `display: grid` here would beat the UA
+   stylesheet's `[hidden] { display: none }` and the control would never be
+   hidden at all. */
+.variant-reveal:not([hidden]) {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.28s ease;
+}
+.variant-reveal.is-open { grid-template-rows: 1fr; }
+.variant-reveal-inner { overflow: hidden; min-height: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .variant-reveal:not([hidden]) { transition: none; }
+}
+
 .variant-pick {
   display: flex;
   flex-wrap: wrap;

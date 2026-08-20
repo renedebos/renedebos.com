@@ -1145,7 +1145,7 @@ def build_songs_index():
     <div class="seg" data-role="sort"><button data-sort="plays" class="active">Most&nbsp;played</button><button data-sort="az">A&ndash;Z</button></div>
     <div class="seg" data-role="artist"><button data-artist="all" class="active">All</button><button data-artist="jerry">Jerry</button><button data-artist="mad">Mad</button><button data-artist="sean">Sean</button></div>
   </div>
-  <div class="song-legend" aria-hidden="true">{legend}</div>{variant_toggle(has_variant())}
+  <div class="song-legend" aria-hidden="true">{legend}</div>{variant_toggle(has_variant(), deferred=True)}
   <p class="songs-empty" id="songs-empty" hidden>No songs match &mdash; try a different search.</p>
   <div class="song-list" id="song-list">
 {chr(10).join(items)}

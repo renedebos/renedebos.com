@@ -9,25 +9,19 @@
 import { getVariant, setVariant, onVariantChange, watchStorage, VARIANTS }
   from './variant-pref.js';
 
-const NOTE = {
-  archive: '<strong>You are hearing the Archive version</strong> &mdash; the '
-    + '&minus;20&nbsp;LUFS masters exactly as they were mastered. Switch to '
-    + '<strong>Loud</strong> for an extra render at &minus;14&nbsp;LUFS, about as loud as a '
-    + 'streaming service. Downloads are always the Archive version. '
-    + '<a href="/process/">How these were made</a>.',
-  loud: '<strong>You are hearing the Loud version</strong> &mdash; an extra render at '
-    + '&minus;14&nbsp;LUFS, about as loud as a streaming service, so it isn’t too quiet '
-    + 'on phone speakers or in a car. Switch to <strong>Archive</strong> for the '
-    + '&minus;20&nbsp;LUFS masters exactly as they were mastered. Downloads are always '
-    + 'the Archive version. <a href="/process/">How these were made</a>.',
-};
-
+// Both notes are SERVED in the markup (variant_toggle() in
+// sitegen/fragments.py) and this only picks which one is shown. This file used
+// to hold its own copy of the prose and overwrite the served markup on first
+// paint -- which silently reverted the 2026-08-19 download update, putting
+// "Downloads are always the Archive version" back on screen after the server
+// had sent the corrected sentence. Keep note text out of this file.
 function paint(root, v) {
   root.querySelectorAll('[data-variant]').forEach((b) => {
     b.setAttribute('aria-pressed', String(b.dataset.variant === v));
   });
-  const note = root.querySelector('[data-variant-note]');
-  if (note && NOTE[v]) note.innerHTML = NOTE[v];
+  root.querySelectorAll('[data-variant-note-for]').forEach((n) => {
+    n.hidden = n.dataset.variantNoteFor !== v;
+  });
 }
 
 export function initVariantUI(doc) {
