@@ -859,7 +859,27 @@ export class PlaybackController {
     if (reloading) {
       this._currentSrc = wantSrc;
       this.audio.src = wantSrc;
-      if (retrying && this.audio.load) this.audio.load();
+      // load() on EVERY source change, not only on a retry.
+      //
+      // Assigning src already queues the media element load algorithm, so on
+      // desktop this is close to a no-op and the explicit call was reserved for
+      // retries (a media element holding an error will not recover on play()
+      // alone). iOS Safari is stricter: the first play() after a page load, on
+      // an element whose src was assigned in the same turn and never explicitly
+      // loaded, can reject — the row lands in 'error' and reads "Playback
+      // failed", and tapping again works.
+      //
+      // That symptom is reported from a real iPhone: after a browser refresh,
+      // the first track tapped always fails and the second tap always works.
+      // The retry path is precisely the one that called load(), which is the
+      // ONLY functional difference between the attempt that fails and the
+      // attempt that succeeds — so the missing load() is the cause.
+      //
+      // Safe in the other direction: this sits inside `reloading`, so resuming
+      // the SAME source after a pause never reaches it and never restarts the
+      // track from zero. And it runs before play(), so it cannot abort a play
+      // already in flight.
+      if (this.audio.load) this.audio.load();
     }
     this._updateMediaMetadata();
     this._notify();
