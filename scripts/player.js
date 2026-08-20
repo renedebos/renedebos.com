@@ -292,11 +292,11 @@ modal.innerHTML = `
     <fieldset class="pw-variant" id="pwVariant" hidden>
       <legend>Version</legend>
       <label><input type="radio" name="pwVariant" value="archive" checked>
-        <span class="pw-variant-name">Archive</span>
-        <span class="pw-variant-sub">lossless FLAC &middot; &minus;20 LUFS &middot; the master</span></label>
-      <label><input type="radio" name="pwVariant" value="loud">
-        <span class="pw-variant-name">Loud</span>
-        <span class="pw-variant-sub">MP3 320&thinsp;kbps &middot; &minus;14 LUFS &middot; not lossless</span></label>
+        <span class="pw-variant-name" id="pwArchiveName">Archive</span>
+        <span class="pw-variant-sub" id="pwArchiveSub"></span></label>
+      <label><input type="radio" name="pwVariant" value="lossy">
+        <span class="pw-variant-name" id="pwLossyName"></span>
+        <span class="pw-variant-sub" id="pwLossySub"></span></label>
     </fieldset>
     <input type="password" id="pwInput" placeholder="Password" autocomplete="off">
     <div class="pw-modal-error" id="pwError"></div>
@@ -348,14 +348,44 @@ let pendingTarget = null;
 // the toast) can still stop the in-flight batch.
 let batchAbort = null;
 
-// Whether this target has a -14 counterpart at all. A whole-show recording
-// never does (no variant is rendered for them), and a ZIP only does when
-// EVERY file in it does -- see _loud_zip() in sitegen/fragments.py for why
-// that is all-or-nothing.
-function targetHasLoud(target) {
+// Whether this target has a lossy counterpart at all. Two different things
+// qualify and they are NOT interchangeable -- see the label table below. A ZIP
+// only qualifies when EVERY file in it does; see _loud_zip() in
+// sitegen/fragments.py for why that is all-or-nothing.
+function targetHasLossy(target) {
   if (!target) return false;
   return target.type === 'batch' ? !!(target.manifest && target.manifest.loud)
-                                 : !!target.loudFile;
+                                 : !!target.lossyFile;
+}
+
+// What the two options are CALLED depends on what the lossy one actually is.
+// Getting this wrong would put a false claim about the audio in front of
+// someone at the moment they download it:
+//
+//   loud -- a curated track's -14 LUFS variant: louder AND lossy, and the
+//           archive side is a -20 LUFS mastered FLAC.
+//   mp3  -- a whole-show recording's 320 kbps stream proxy: lossy but NOT
+//           re-levelled (make_stream_mp3.py applies no gain, only a
+//           lossy-overshoot safety trim), and the archive side is the raw
+//           transfer, which was never normalized to -20 at all.
+//
+// So neither label is reusable across the two. `losslessFormat` fills in
+// WAV vs FLAC, since whole-show transfers are mostly WAV but not all.
+function variantLabels(target) {
+  const kind = target && target.type === 'batch' ? 'loud' : (target && target.lossyKind) || 'loud';
+  if (kind === 'mp3') {
+    const fmt = (target.filename || '').split('.').pop().toUpperCase() || 'WAV';
+    return {
+      archiveSub: 'lossless ' + fmt + ' \u00b7 the original transfer',
+      lossyName: 'MP3',
+      lossySub: '320\u2009kbps \u00b7 not lossless',
+    };
+  }
+  return {
+    archiveSub: 'lossless FLAC \u00b7 \u221220 LUFS \u00b7 the master',
+    lossyName: 'Loud',
+    lossySub: 'MP3 320\u2009kbps \u00b7 \u221214 LUFS \u00b7 not lossless',
+  };
 }
 
 function openPasswordModal(target) {
@@ -368,7 +398,11 @@ function openPasswordModal(target) {
   // Archive is the master and the default everywhere.
   const archiveRadio = modal.querySelector('input[name="pwVariant"][value="archive"]');
   if (archiveRadio) archiveRadio.checked = true;
-  document.getElementById('pwVariant').hidden = !targetHasLoud(target);
+  const labels = variantLabels(target);
+  document.getElementById('pwArchiveSub').textContent = labels.archiveSub;
+  document.getElementById('pwLossyName').textContent = labels.lossyName;
+  document.getElementById('pwLossySub').textContent = labels.lossySub;
+  document.getElementById('pwVariant').hidden = !targetHasLossy(target);
   modal.classList.add('open');
   setTimeout(() => document.getElementById('pwInput').focus(), 50);
 }
@@ -380,7 +414,7 @@ function chosenVariant() {
   const el = document.getElementById('pwVariant');
   if (!el || el.hidden) return 'archive';
   const picked = modal.querySelector('input[name="pwVariant"]:checked');
-  return picked && picked.value === 'loud' ? 'loud' : 'archive';
+  return picked && picked.value === 'lossy' ? 'lossy' : 'archive';
 }
 
 // The (file, filename) or manifest actually being downloaded, after the
@@ -388,11 +422,11 @@ function chosenVariant() {
 // filename, /download's key and the saved filename from ever disagreeing --
 // /auth is called with the same key that /download is asked for.
 function resolveTarget(target) {
-  if (chosenVariant() !== 'loud') return target;
+  if (chosenVariant() !== 'lossy') return target;
   if (target.type === 'batch') {
     return { type: 'batch', manifest: target.manifest.loud || target.manifest };
   }
-  return { type: 'single', file: target.loudFile, filename: target.loudName || target.filename };
+  return { type: 'single', file: target.lossyFile, filename: target.lossyName || target.filename };
 }
 
 function closeModal() {
@@ -532,7 +566,7 @@ async function tryBatchDownload(password, manifest) {
 async function tryDownload() {
   const password = document.getElementById('pwInput').value;
   const submitBtn = document.getElementById('pwSubmit');
-  // Resolve the Archive/Loud choice ONCE, here, and use only the result
+  // Resolve the Archive/lossy choice ONCE, here, and use only the result
   // below: /auth is called with the same key /download is then asked for.
   const target = resolveTarget(pendingTarget);
   submitBtn.disabled = true;
@@ -599,15 +633,18 @@ document.querySelectorAll('a.download-btn').forEach(btn => {
     e.preventDefault();
     const fileParam = new URL(btn.href).searchParams.get('file');
     const displayName = btn.getAttribute('download') || decodeURIComponent(fileParam.split('/').pop());
-    // data-loud-file is emitted by dl_button() (sitegen/fragments.py) only
-    // where a -14 render exists; absent on whole-show recordings, which is
-    // what makes the modal hide its version control there.
+    // data-lossy-* is emitted by dl_button() (sitegen/fragments.py): the -14
+    // render on a curated track, the 320 kbps stream proxy on a whole-show
+    // recording. data-lossy-kind says which, because the modal labels them
+    // differently. Absent on anything with neither, which is what makes the
+    // modal hide its version control there.
     openPasswordModal({
       type: 'single',
       file: fileParam,
       filename: displayName,
-      loudFile: btn.dataset.loudFile || null,
-      loudName: btn.dataset.loudName || null,
+      lossyFile: btn.dataset.lossyFile || null,
+      lossyName: btn.dataset.lossyName || null,
+      lossyKind: btn.dataset.lossyKind || null,
     });
   });
 });

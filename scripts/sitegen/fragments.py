@@ -112,28 +112,37 @@ def recording_item_id(show_slug, file):
     """
     return f"recording:{show_slug}:{file}"
 
-def dl_button(file, *, title="Download", loud_file=None):
+def dl_button(file, *, title="Download", loud_file=None, mp3_file=None):
     # Icon-only (no text label): with only the password-protected lossless
     # download left, the format doesn't need spelling out in the button —
     # it's in the hover title, and the password modal makes the gating clear
     # on first click. `title` doubles as the accessible name.
     #
-    # `loud_file` is the -14 variant's R2 key, when one exists for this track.
-    # It rides as a data attribute rather than a second button because the
-    # CHOICE belongs in the password modal (player.js reads it there) — one
-    # control for every download surface, and the last moment before the
-    # bytes move, so it cannot drift out of sync with what was clicked.
-    # Absent on whole-show recordings, which have no -14 render at all; the
-    # modal hides its version control when the attribute is missing rather
-    # than offering a dead option.
+    # A lossy alternative rides as a data attribute rather than a second
+    # button because the CHOICE belongs in the password modal (player.js reads
+    # it there) — one control for every download surface, and the last moment
+    # before the bytes move, so it cannot drift out of sync with what was
+    # clicked. Two different alternatives exist and they are NOT the same
+    # thing, which is why `kind` travels with the key:
+    #
+    #   loud_file -- a curated track's -14 LUFS variant. Louder AND lossy.
+    #   mp3_file  -- a whole-show recording's 320 kbps stream proxy. Lossy
+    #                but NOT re-levelled: make_stream_mp3.py applies no gain,
+    #                only a lossy-overshoot safety trim. Labelling it "-14"
+    #                or "Loud" would be a false claim about the audio.
+    #
+    # With neither, the modal hides its version control rather than offering
+    # a dead option.
     url = stream_url(file)
     name = file.split("/")[-1]
-    loud = ""
-    if loud_file:
-        loud = (f' data-loud-file="{esc(loud_file)}" '
-                f'data-loud-name="{esc(loud_file.split("/")[-1])}"')
+    lossy = ""
+    key, kind = (loud_file, "loud") if loud_file else (mp3_file, "mp3")
+    if key:
+        lossy = (f' data-lossy-file="{esc(key)}" '
+                 f'data-lossy-name="{esc(key.split("/")[-1])}" '
+                 f'data-lossy-kind="{kind}"')
     return (f'<a class="download-btn" href="{esc(url)}" aria-label="{esc(title)}" '
-            f'download="{esc(name)}" title="{esc(title)}"{loud}>{DL_SVG}</a>')
+            f'download="{esc(name)}" title="{esc(title)}"{lossy}>{DL_SVG}</a>')
 
 def _loud_zip(manifest, tracks, slug, info_text):
     """The -14 counterpart of a ZIP manifest, or None.
@@ -216,7 +225,8 @@ def show_zip_button_html(show):
     return (f'<script>window.ZIP_MANIFEST = {json.dumps(manifest, ensure_ascii=False)};</script>'
             f'<button type="button" class="zip-download-btn" title="{esc(title)}">{ZIP_SVG} Download ZIP</button>')
 
-def player(file, duration=None, download_file=None, version=None, label=None, item_attr=""):
+def player(file, duration=None, download_file=None, version=None, label=None, item_attr="",
+           mp3_file=None):
     """A custom-player row: play button, progress bar, and (optionally) a
     password-protected download button.
 
@@ -241,8 +251,14 @@ def player(file, duration=None, download_file=None, version=None, label=None, it
     end_label = f'<span class="time-label">{esc(duration)}</span>' if duration else ""
     if download_file:
         loss_fmt = download_file.rsplit(".", 1)[-1].upper()
-        downloads = dl_button(download_file,
-                              title=f"Download lossless {loss_fmt} (password protected)")
+        # `mp3_file` is the whole-show stream proxy, offered in the modal as
+        # the lossy alternative. Never passed for curated tracks -- those use
+        # `loud_file` and carry a genuine -14 render.
+        # The hover title names both options where both exist -- saying only
+        # "lossless" would now under-describe what the button opens.
+        title = (f"Download {loss_fmt} or MP3 (password protected)" if mp3_file
+                 else f"Download lossless {loss_fmt} (password protected)")
+        downloads = dl_button(download_file, title=title, mp3_file=mp3_file)
     else:
         downloads = ""
     play_label = f' {esc(label)}' if label else ""
@@ -265,8 +281,12 @@ def recording_card(title, meta_pairs, badge, file, stream_file=None, play_label=
     grid = "".join(f'<span class="meta-label">{esc(k)}</span><span class="meta-value">{esc(v)}</span>'
                    for k, v in meta_pairs if v)
     is_lossless = file.rsplit(".", 1)[-1].lower() in ("wav", "flac")
+    # The MP3 proxy this card already streams doubles as its lossy download
+    # option. Only meaningful alongside a lossless download -- a card with no
+    # gated original has nothing to offer an alternative TO.
     play = player(stream_file or file,
-                  download_file=file if is_lossless else None, label=play_label)
+                  download_file=file if is_lossless else None, label=play_label,
+                  mp3_file=stream_file if (is_lossless and stream_file) else None)
     # `show` is optional so the attribute is purely additive: callers that
     # don't pass it emit exactly the markup they did before. The attribute goes
     # on .recording-item (not the inner .custom-player) because that card is
