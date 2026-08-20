@@ -64,7 +64,8 @@ export class PlayerView {
     this._ws = null;
     this._seeking = false;
     this._wasActive = false;
-    this._errorEl = null;
+    this._msgEl = null;
+    this._msgKind = null;
     this._abort = new AbortController();
   }
 
@@ -211,17 +212,31 @@ export class PlayerView {
     // it would leave one row showing a waveform with nothing saying why.
     this.root.classList.toggle('is-active', active);
     this.root.classList.toggle('playing', active && state === 'playing');
-    this.root.classList.toggle('player-error', active && state === 'error');
+
+    // A blocked autoplay is NOT a failure, and must not be dressed as one --
+    // see _setMessage(). The controller reports both under state 'error'
+    // (deliberately: the remedy, a play() from a real gesture, is identical,
+    // which is why toggle() can treat them alike), so the error's own name is
+    // what separates them. Guarded by the item id exactly as _lastPlayError's
+    // own contract requires -- a stale block from a previous track must not
+    // relabel this one.
+    const blocked = active && state === 'error'
+      && !!snapshot.lastPlayError && snapshot.lastPlayError.name === 'NotAllowedError'
+      && snapshot.lastPlayErrorItemId === (this.item ? this.item.id : null);
+    const failed = active && state === 'error' && !blocked;
+    this.root.classList.toggle('player-error', failed);
 
     if (this.btn) {
       const showLoading = active && state === 'loading';
       const playing = active && (state === 'playing' || state === 'loading');
-      this._setPlayState(playing, showLoading ? LOADING_ICON : (playing ? PAUSE_ICON : PLAY_ICON),
-        active && state === 'error');
+      // `failed`, not `blocked`: on a blocked row the button is an ordinary
+      // Play, because that is precisely what pressing it does. "Retry" would
+      // imply something went wrong.
+      this._setPlayState(playing, showLoading ? LOADING_ICON : (playing ? PAUSE_ICON : PLAY_ICON), failed);
     }
 
     if (active) {
-      this._setError(state === 'error');
+      this._setMessage(failed ? 'error' : (blocked ? 'blocked' : null));
       this._upgradeWave();
       const t = audio ? audio.currentTime : 0;
       const dur = audio && isFinite(audio.duration) ? audio.duration : (this.item.durationSec || 0);
@@ -232,7 +247,7 @@ export class PlayerView {
       // whether this view WAS active rather than whether it has ever rendered:
       // the latter is true for every inactive row after first mount, which
       // would redraw every row's canvas on every timeupdate tick.
-      this._setError(false);
+      this._setMessage(null);
       this._teardownWave();
       this._setProgress(0);
       this._setTime(0);
@@ -252,60 +267,48 @@ export class PlayerView {
     this.btn.setAttribute('aria-label', label ? `${verb} ${label}` : verb);
   }
 
-  // A hard failure (404/CORS/decode) is otherwise invisible — the legacy
-  // engines left the row showing a spinner forever. role="status" announces it
-  // once to assistive tech without narrating every timeupdate.
-  // Opt-in diagnostics for a failure that only happens on a real device.
+  // Two different things land in the controller's 'error' state, and telling a
+  // visitor they are the same thing is a bug in its own right:
   //
-  // An iPhone reports that the first track tapped after a browser refresh always
-  // lands here and the second tap always works. It does not reproduce in
-  // Chromium (even with --autoplay-policy=user-gesture-required) or in desktop
-  // WebKit under an iPhone device profile — both play on the first tap — and
-  // one fix inferred from the failing-vs-succeeding difference (an explicit
-  // load() on every source change, PR #46) did not help. The exact rejection is
-  // the missing fact, and there is no way to read it off the phone without
-  // Safari Web Inspector over USB.
+  //   'error'    a hard failure (404/CORS/decode). Otherwise invisible -- the
+  //              legacy engines left the row spinning forever.
+  //   'blocked'  the browser refused to autoplay without a user gesture. Nothing
+  //              is broken; the track is cued and one tap starts it.
   //
-  // So: append it to the message, but ONLY with ?diag=1 in the URL. Ordinary
-  // visitors are unaffected; the flag is what makes this shippable rather than
-  // debug output left in production.
+  // The blocked case is not hypothetical and not rare. "Play random tape" on the
+  // homepage navigates to /shows/<slug>/?autoplay=1#track-N, and user activation
+  // does NOT survive a navigation -- the click happened in the previous document,
+  // so play() in the new one rejects with NotAllowedError. Desktop Chrome and
+  // Safari usually allow it anyway via their media-engagement heuristics, which
+  // is why this only ever showed up on a phone; iOS Safari and Firefox never do.
+  // Reproduced against production 2026-08-19 in Chromium with
+  // --autoplay-policy=user-gesture-required:
+  //     NotAllowedError - play() can only be initiated by a user gesture.
   //
-  // Delete this once the cause is known.
-  _errorDiagnostics() {
-    try {
-      if (typeof location === 'undefined') return '';   // fake-DOM tests
-      if (!/[?&]diag=1(&|$)/.test(location.search)) return '';
-      const c = this.controller;
-      const a = c && c.audioElement;
-      const e = c && c._lastPlayError;
-      return ' [' + [
-        e ? e.name : 'no-play-error',
-        e && e.message ? String(e.message).slice(0, 60) : '-',
-        a && a.error ? 'media' + a.error.code : 'no-media-err',
-        a ? 'rs' + a.readyState + '/ns' + a.networkState : 'no-audio',
-        this._ws ? 'ws' : 'no-ws',
-        a && a.currentSrc ? a.currentSrc.slice(-26) : 'no-src',
-      ].join(' · ') + ']';
-    } catch (_) {
-      // A diagnostic must never change what a normal visitor sees, so any
-      // problem here degrades to the plain message rather than reporting itself.
-      return '';
+  // The row is already highlighted, scrolled into view and marked active by the
+  // deep-link handler, so all that is missing is saying why it is waiting. Same
+  // resolution continuous-player.js already uses for its restored queue
+  // ("press play to resume") rather than an error.
+  _setMessage(kind) {
+    if (this._msgKind === kind) return;
+    if (this._msgEl) { this._msgEl.remove(); this._msgEl = null; }
+    this._msgKind = kind;
+    if (!kind) return;
+    const el = document.createElement('span');
+    // role="status" announces it once to assistive tech without narrating
+    // every timeupdate.
+    el.setAttribute('role', 'status');
+    if (kind === 'blocked') {
+      el.className = 'player-cue-msg';
+      el.textContent = 'Tap play to start';
+    } else {
+      el.className = 'player-error-msg';
+      el.textContent = 'Playback failed — tap to retry';
     }
+    this.root.appendChild(el);
+    this._msgEl = el;
   }
 
-  _setError(on) {
-    if (on && !this._errorEl) {
-      const el = document.createElement('span');
-      el.className = 'player-error-msg';
-      el.setAttribute('role', 'status');
-      el.textContent = 'Playback failed — tap to retry' + this._errorDiagnostics();
-      this.root.appendChild(el);
-      this._errorEl = el;
-    } else if (!on && this._errorEl) {
-      this._errorEl.remove();
-      this._errorEl = null;
-    }
-  }
 
   _setTime(seconds) {
     if (!this.timeEl) return;

@@ -371,8 +371,15 @@ async function runParityPass(browser, allShows, heavyCheckSlugs) {
 
   // Deep link: queue/highlight correctness is asserted; actual autoplay
   // START is policy-dependent (see header note) and NOT asserted here.
-  // Immediately followed by the real point of interest: does a genuine
-  // user-gesture click recover it via the Retry path?
+  // Immediately followed by the real point of interest: when the browser DOES
+  // block it, is the row presented as cued-and-waiting, and does a genuine
+  // user-gesture click start it?
+  //
+  // This block used to assert the opposite -- a "Retry"-labelled button and an
+  // error message -- and passed, because it correctly observed the block and
+  // then codified the wrong UI for it. That is how the bug reached production:
+  // "Play random tape" sends every visitor down exactly this path, and iOS
+  // Safari blocks it every time, so a phone always saw "Playback failed".
   {
     const page = await ctx.newPage();
     await page.goto(BASE + '/shows/jerry-cafe-java-1999-05-27/?autoplay=1#track-3', { waitUntil: 'load' });
@@ -391,10 +398,17 @@ async function runParityPass(browser, allShows, heavyCheckSlugs) {
         return {
           ariaLabel: row.querySelector('.play-btn').getAttribute('aria-label'),
           hasErrorMsg: !!row.querySelector('.player-error-msg'),
+          hasErrorClass: row.classList.contains('player-error'),
+          isActive: row.classList.contains('is-active'),
+          cue: row.querySelector('.player-cue-msg')
+            ? row.querySelector('.player-cue-msg').textContent : null,
         };
       });
-      record('blocked-autoplay row shows a Retry-labeled button and a visible error message',
-        /^Retry /.test(beforeRetry.ariaLabel) && beforeRetry.hasErrorMsg, JSON.stringify(beforeRetry));
+      record('blocked-autoplay row is cued for a tap, not reported as a failure',
+        /^Play /.test(beforeRetry.ariaLabel)
+        && !beforeRetry.hasErrorMsg && !beforeRetry.hasErrorClass
+        && beforeRetry.isActive && beforeRetry.cue === 'Tap play to start',
+        JSON.stringify(beforeRetry));
 
       await page.locator('#track-3 .play-btn').click(); // a REAL user gesture
       await page.waitForTimeout(2500);
@@ -402,7 +416,7 @@ async function runParityPass(browser, allShows, heavyCheckSlugs) {
         const c = window.PLAYER_BOOT.controller;
         return { state: c.state, t: c.audioElement.currentTime, paused: c.audioElement.paused };
       });
-      record('a real user-gesture click on Retry successfully starts playback',
+      record('a real user-gesture click on the cued row successfully starts playback',
         afterRetry.state === 'playing' && afterRetry.t > 0.3 && !afterRetry.paused, JSON.stringify(afterRetry));
     } else {
       record('autoplay was permitted this run (site had prior engagement) and started directly', true,
