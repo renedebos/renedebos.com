@@ -92,7 +92,11 @@ export class PlayerView {
       // WaveSurfer with dragToSeek. Once a row upgrades, WaveSurfer's own
       // 'interaction' handler takes over and this bails.
       this.waveContainer.addEventListener('click', (e) => this._onInertWaveClick(e), { signal });
-      if (this.peaks) this._drawInertWave();
+      // Only the active row shows a waveform now (see .ws-wave in site.css), so
+      // an idle row's canvas would be drawn straight into a display:none box --
+      // wasted work on every row of a 30-track show, and wrong the moment the
+      // container has no width to measure.
+      if (this.peaks && this._isActive(controller)) this._drawInertWave();
     }
 
     this._render(controller.snapshot());
@@ -115,13 +119,15 @@ export class PlayerView {
     this.peaks = peaks;
     if (!this.waveContainer || !this.controller) return;
     if (this._isActive(this.controller)) this._upgradeWave();
-    else this._drawInertWave();
+    // An inactive row's waveform is hidden, so peaks landing for it draw nothing
+    // now; it gets its canvas when (and if) it becomes the active row.
   }
 
   // Re-draws the inert canvas at the current container width. WaveSurfer
   // handles its own resizing, so an upgraded row is left alone.
   redrawWave() {
     if (this._ws || !this.waveContainer || !this.peaks) return;
+    if (!this._isActive(this.controller)) return;   // hidden: nothing to redraw
     this._drawInertWave();
   }
 
@@ -195,6 +201,15 @@ export class PlayerView {
     const state = active ? snapshot.state : 'idle';
     const audio = this.controller ? this.controller.audioElement : null;
 
+    // Two separate states, because they answer different questions:
+    //   .is-active  -- this row IS the current item, playing OR paused.
+    //   .playing    -- it is actually producing sound right now.
+    // The waveform and the row highlight both hang off is-active. Keying them
+    // to `playing` (as the highlight alone used to be) meant pausing stripped
+    // every visual marker off the row while it still held the audio position --
+    // harmless when all rows looked alike, but under the active-only waveform
+    // it would leave one row showing a waveform with nothing saying why.
+    this.root.classList.toggle('is-active', active);
     this.root.classList.toggle('playing', active && state === 'playing');
     this.root.classList.toggle('player-error', active && state === 'error');
 
@@ -271,7 +286,12 @@ export class PlayerView {
       this._paintRange(pct);
     }
     if (this._ws) return;            // an upgraded waveform paints its own progress
-    if (this.waveContainer && this.peaks) this._drawInertWave(pct / 100);
+    // Only the active row shows a waveform, so only the active row has a canvas
+    // worth painting progress into. This fires on the active -> inactive reset
+    // too, where the row is already hidden and the paint would be thrown away.
+    if (this.waveContainer && this.peaks && this._isActive(this.controller)) {
+      this._drawInertWave(pct / 100);
+    }
   }
 
   _paintRange(pct) {
@@ -398,7 +418,11 @@ export class PlayerView {
       if (this.waveContainer) this.waveContainer.innerHTML = '';
     }
     if (this._canvas) { this._canvas.remove(); this._canvas = null; }
-    if (this.waveContainer && this.peaks) this._drawInertWave();
+    // Teardown used to leave an inert canvas behind so the row still showed a
+    // shape after going inactive. It no longer shows one at all (.ws-wave is
+    // display:none off the active row), so redrawing here would paint into a
+    // hidden box on every track change.
+    if (this.waveContainer && this.peaks && this._isActive(this.controller)) this._drawInertWave();
   }
 }
 
