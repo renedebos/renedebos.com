@@ -263,5 +263,47 @@
       <li><strong>Jerry Hannan solo at 19&nbsp;Broadway, June&nbsp;7, 1999</strong> is the sixth voluntary opt-in &mdash; and the first to reprocess only the tracks that actually needed it, rather than the whole show. Twelve of its twenty-nine songs qualified for the transient cap; the other seventeen were already sitting at their loudness target under the old v5 pass and gained nothing from a fresh render under v8, so they were left untouched entirely &mdash; same audio, same file, same everything, still on their original version. Five capped tracks needed a listen before shipping and all checked out as legitimate music. Two more, &ldquo;Hello in There&rdquo; and &ldquo;Hollywood (alt verse),&rdquo; declined the cap automatically for exceeding the calibrated review band; after listening, both were given an explicit override &mdash; &ldquo;Hello in There&rdquo; now reaches the full target, &ldquo;Hollywood&rdquo; recovers to within a third of a decibel of it, capped out at the 6&nbsp;dB ceiling. One title was corrected: the fresh export read &ldquo;Come On All You Young Maidens&rdquo; for a song the archive (and this show&rsquo;s own description) already knows as &ldquo;A Bunch of Thyme&rdquo; &mdash; that track was already at target from the original pass, so only its filename needed fixing, not its audio.</li>
     </ul>
 
+    <h2>Week fifteen &mdash; a bug that had been flattening the music (August&nbsp;11&ndash;13, 2026)</h2>
+    <p>
+      The whole point of the archive&rsquo;s loudness rule is that a performance gets raised by <em>one constant amount</em> &mdash; a quiet verse and a loud chorus keep the same distance between them, exactly as played. On August&nbsp;11 a long-standing bug surfaced in the older versions of the processing tool: when the gain needed to reach the target would have pushed a peak too high, the tool quietly switched to adjusting the volume moment by moment instead &mdash; the very thing the archive&rsquo;s rules forbid &mdash; and said nothing in its logs. Tracks processed that way had been sitting in the archive sounding subtly flatter than the tape.
+    </p>
+    <ul class="reasons">
+      <li><strong>Nothing was audibly broken, which is why it lasted.</strong> The effect is a squashing of light and shade rather than an obvious fault, and the tool reported success either way. It was caught by checking what the engine actually did against what it claimed to do, not by listening for something wrong.</li>
+      <li><strong>Every show still carrying tracks from the affected versions was re-run</strong>, from the earliest Mad Hannans set at Marin Brewing Co. in April&nbsp;1998 through the Cafe&nbsp;Java and 19&nbsp;Broadway runs of 1999. The current engine cannot fail this way even in principle: it measures with one tool and applies the gain with another that has no moment-by-moment mode to fall back to.</li>
+      <li><strong>A follow-up pass brought the stragglers up.</strong> Between the re-runs and this second pass, nineteen shows were touched over the three days. Re-running them left a tail of tracks sitting a decibel or two below the archive&rsquo;s standard &mdash; safe, but quieter than their neighbours for no musical reason. Each was reviewed individually and, where the loud moments turned out to be sparse instants rather than sustained playing, given the narrow transient cap so it could reach the full target. A handful needed the standard 6&nbsp;dB shaving limit lifted slightly; every one of those is an explicit, recorded decision rather than an automatic one.</li>
+      <li><strong>Where the archive landed:</strong> of its 680 songs, 598 now sit within half a decibel of the &minus;20&nbsp;LUFS standard. The remainder are quieter on purpose &mdash; tapes whose peaks genuinely can&rsquo;t be raised further without shaving the music, which stays the line that isn&rsquo;t crossed.</li>
+    </ul>
+
+    <h2>Week sixteen &mdash; one player behind every play button (August&nbsp;13&ndash;18, 2026)</h2>
+    <p>
+      The site had quietly grown two separate pieces of playback machinery &mdash; one driving the show pages, another the playlists &mdash; which meant every improvement had to be made twice and every bug fixed twice. They are now a single shared engine, and the older one has been deleted rather than left lying around.
+    </p>
+    <ul class="reasons">
+      <li><strong>Show pages, song pages and playlists all run the same player now.</strong> Nothing about it should look different; the point is that it now behaves identically everywhere, and future work only has to be done once.</li>
+      <li><strong>Seeking on a phone actually works.</strong> Dragging to a spot in a song meant landing a fingertip inside a 3&nbsp;pixel-high strip. The target is now 24&nbsp;pixels tall &mdash; the accessibility standard&rsquo;s minimum &mdash; while the thin line you see stays exactly as thin.</li>
+      <li><strong>The site&rsquo;s visitor counter had never been running.</strong> The page&rsquo;s own security policy was blocking the script that collects it, silently, for as long as it had been switched on. Worth recording because the vendor&rsquo;s own documented fix would not have worked either.</li>
+    </ul>
+
+    <h2>Week seventeen &mdash; a louder way to listen (August&nbsp;16&ndash;19, 2026)</h2>
+    <p>
+      The &minus;20&nbsp;LUFS standard the archive is mastered to was chosen for comfortable listening on real speakers with the dynamics left intact. On a phone speaker, or in a car, it is simply too quiet &mdash; and most people never go looking for a volume setting. So every one of the 680 songs was given a <strong>second, louder rendering</strong> at &minus;14&nbsp;LUFS, and that is now what plays by default when you press play.
+    </p>
+    <ul class="reasons">
+      <li><strong>The archive itself is untouched.</strong> The &minus;20 masters are still the real thing, still what the technical data on each show page describes, and still what you get when you download. The louder version is a copy made <em>from</em> those masters, never from the original tapes again, so it cannot drift away from them &mdash; same hand-drawn fades, same noise reduction, same edits.</li>
+      <li><strong>Every page with a player says which version you are hearing</strong>, and a switch on the page moves between them. That disclosure is the condition on which the louder version became the default: it is a real trade, and it would be wrong to make it quietly.</li>
+      <li><strong>It was tested by ear before it shipped, and the test was checked too.</strong> The eight tracks the louder rendering changed most, plus two decoys where both sides were secretly identical, were compared blind at matched volume &mdash; no difference was audible on any of them. Then one of those tracks was deliberately over-compressed to two greater degrees to prove the test could detect the thing it was looking for: both of those <em>were</em> heard. The honest conclusion is a bounded one &mdash; inaudible at the level actually shipped, audible somewhere above it &mdash; which is why the setting isn&rsquo;t being pushed any further.</li>
+      <li><strong>The louder version can be downloaded too</strong>, as of August&nbsp;19. It is never the preselected choice, though, and the site deliberately forgets which one you picked last time: the two are different <em>formats</em>, not just different volumes &mdash; lossless FLAC against a 320&nbsp;kbps MP3 &mdash; and a remembered preference would quietly hand out lossy files for the rest of a visit. A louder download also renames its own folder and carries a note inside, so an unpacked copy can never be mistaken for the master.</li>
+    </ul>
+
+    <h2>Week eighteen &mdash; saying less, and saying it where it matters (August&nbsp;18&ndash;19, 2026)</h2>
+    <p>
+      A pass over the pages themselves, cutting standing text that never changed from show to show. Copy that says the same thing on all thirty pages stops being read; worse, it can crowd out the details that genuinely differ.
+    </p>
+    <ul class="reasons">
+      <li><strong>One fact had been stated four separate times on a single show page</strong> &mdash; that lossless downloads are password protected. It now appears once, plus on the download button itself, where it is actually needed.</li>
+      <li><strong>A status badge reading &ldquo;done&rdquo; was removed</strong> from every show page. It appeared on all of them, which made it decoration wearing the costume of data.</li>
+      <li><strong>The full-show cards now name both files and both sizes</strong> &mdash; the lossless download and the streaming version, each with its own figure. There had been a single size on the card with two different files behind it, which invited reading one number as though it described both.</li>
+    </ul>
+
     <p class="about-note">The work continues &mdash; more shows, better audio, and small fixes are always in progress.</p>
   </section>
