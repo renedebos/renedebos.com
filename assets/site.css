@@ -25,6 +25,17 @@
   --player-track: var(--border);
   --player-surface: var(--player-bg);
 
+  /* Header geometry, as tokens rather than three unrelated literals, because
+     something else has to stick UNDER the sticky header: /playlist/'s
+     now-playing card. It was pinned at top:0 like the header itself and z-index
+     5 against the header's 10, so the top 79px of it slid out of sight and only
+     its bottom strip stayed visible while the queue scrolled. Deriving the
+     offset here means a change to the header's padding or logo size can't
+     silently re-break that card. */
+  --header-pad: 22px;
+  --mark-h: 34px;
+  --header-h: calc(var(--header-pad) * 2 + var(--mark-h) + 1px);
+
   /* Text on an accent fill. Light theme puts near-white on a deep green;
      dark theme has to flip, because the dark accent (#7FA37A) is light
      enough that white on it lands around 2.8:1. Used by the tracks
@@ -113,15 +124,15 @@ header .wrap {
   display: flex;
   align-items: center;
   gap: 1.6rem;
-  padding-top: 22px;
-  padding-bottom: 22px;
+  padding-top: var(--header-pad);
+  padding-bottom: var(--header-pad);
 }
 
 .mark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 34px;
+  height: var(--mark-h);
   padding: 0 16px;
   border-radius: 17px;
   background: var(--accent);
@@ -1844,7 +1855,9 @@ a.artist-chip:hover { filter: brightness(1.08); }
 .pl-generate:hover { opacity: 0.9; }
 .pl-generate:disabled { opacity: 0.45; cursor: default; }
 
-/* Now-playing card sticks while the queue scrolls under it. */
+/* Now-playing card sticks while the queue scrolls under it. The default
+   offset is 0 for the /player/ popup, which has no site header; /playlist/
+   overrides it below to clear one. */
 .pl-now {
   position: sticky; top: 0; z-index: 5;
   display: flex; flex-direction: column; gap: 0.55rem;
@@ -1855,6 +1868,10 @@ a.artist-chip:hover { filter: brightness(1.08); }
    (author rules always win over user-agent ones), so the empty card was
    rendering as an empty bar even while marked hidden. */
 .pl-now[hidden] { display: none; }
+/* On /playlist/ the site header is itself sticky at top:0 with a higher
+   z-index, so an unoffset card parks BEHIND it. /player/ has no header and
+   keeps the 0 above. */
+.playlist .pl-now { top: var(--header-h); }
 .pl-now-info { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.6rem; }
 .pl-now-title {
   font-size: 16px; font-weight: 500; color: var(--text); text-decoration: none;
