@@ -189,6 +189,24 @@ LOUD_ZIP_NOTE = (
     "https://renedebos.com/process/\n")
 
 
+def zip_size_html(total_mb):
+    """The ZIP's total size, on the button rather than only in its hover title.
+
+    A whole show is several hundred MB and the old label said only "Download
+    ZIP"; someone on cellular deserves the number before the tap, not after.
+    It is the archive (FLAC) figure -- the -14 MP3 option the download box
+    offers is smaller -- so it over-states rather than under-states what a
+    loud ZIP costs, which is the direction a warning should be wrong in.
+
+    Emitted inside the label's own text flow rather than as a sibling flex
+    item of the button: as its own item there is no real space before the
+    separator, only the flex gap, and the accessible name came out
+    "Download ZIP\u00b7 572 MB".
+    """
+    if not total_mb:
+        return ""
+    return f' <span class="zip-size">&middot; {total_mb}\u00a0MB</span>'
+
 def show_zip_button_html(show):
     """Manifest + 'Download all tracks (.zip)' button for a show page. The ZIP
     itself is assembled client-side (player.js tryBatchDownload) from the same
@@ -223,7 +241,9 @@ def show_zip_button_html(show):
         manifest["loud"] = loud
     title = f"Download all {n} tracks (.zip) · {total_mb} MB"
     return (f'<script>window.ZIP_MANIFEST = {json.dumps(manifest, ensure_ascii=False)};</script>'
-            f'<button type="button" class="zip-download-btn" title="{esc(title)}">{ZIP_SVG} Download ZIP</button>')
+            f'<button type="button" class="zip-download-btn" title="{esc(title)}">{ZIP_SVG}'
+            f'<span class="zip-label"><span class="zip-long">Download </span>ZIP'
+            f'{zip_size_html(total_mb)}</span></button>')
 
 def player(file, duration=None, download_file=None, version=None, label=None, item_attr="",
            mp3_file=None):
@@ -1030,7 +1050,9 @@ def song_zip_button_html(s):
         }
     title = f"Download all {n} performance{plural} (.zip) · {total_mb} MB"
     return (f'<script>window.ZIP_MANIFEST = {json.dumps(manifest, ensure_ascii=False)};</script>'
-            f'<button type="button" class="zip-download-btn" title="{esc(title)}">{ZIP_SVG} Download ZIP</button>')
+            f'<button type="button" class="zip-download-btn" title="{esc(title)}">{ZIP_SVG}'
+            f'<span class="zip-label"><span class="zip-long">Download </span>ZIP'
+            f'{zip_size_html(total_mb)}</span></button>')
 
 def jsonld(*objs):
     """Wrap schema.org object(s) in a JSON-LD <script> for the page <head>."""
@@ -1100,7 +1122,7 @@ def song_jsonld(s):
     })
 
 
-__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'PLAYBACK_READY_ARM', 'PLAYBACK_READY_SNIPPETS', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', '_pre_edit_class', '_pre_edit_label', '_show_label', '_song_occ_html', '_src_tag', 'contact_block', 'content', 'dl_button', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'playable_item_attr', 'playback_ready_onerror', 'player', 'recording_card', 'recording_item_id', 'show_jsonld', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'track_add_button', 'updates_list', 'variant_toggle']
+__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'PLAYBACK_READY_ARM', 'PLAYBACK_READY_SNIPPETS', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', '_pre_edit_class', '_pre_edit_label', '_show_label', '_song_occ_html', '_src_tag', 'contact_block', 'content', 'dl_button', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'playable_item_attr', 'playback_ready_onerror', 'player', 'recording_card', 'recording_item_id', 'show_jsonld', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'track_add_button', 'updates_list', 'variant_toggle', 'zip_size_html']
 
 
 def variant_toggle(any_loud=True, deferred=False):
@@ -1142,12 +1164,15 @@ def variant_toggle(any_loud=True, deferred=False):
                     '<strong>Loud</strong> for an extra render at &minus;14&nbsp;LUFS, about as '
                     'loud as a streaming service.'),
     }
-    tail = (' Downloads default to the Archive master &mdash; lossless FLAC &mdash; and the '
-            'download box offers this louder MP3 as an alternative. '
-            '<a href="/process/">How these were made</a>.')
+    # No download sentence and no /process/ link here any more (2026-08-20).
+    # The download box's own version chooser states the format choice at the
+    # moment it is made, three screens later than this note was making it; and
+    # /process/ is already reachable from the breadcrumb, the site nav and the
+    # technical-data section's "how these tracks were made". What stays is the
+    # part the Loud default was traded for: which version is playing, in words.
     note_html = "\n".join(
         f'      <p class="variant-note" data-variant-note data-variant-note-for="{k}"'
-        f'{"" if k == "loud" else " hidden"}>{v}{tail}</p>'
+        f'{"" if k == "loud" else " hidden"}>{v}</p>'
         for k, v in notes.items())
     # `hidden` (not a class) so a deferred control is out of the accessibility
     # tree too, not merely invisible -- nothing should announce a playback
@@ -1156,10 +1181,12 @@ def variant_toggle(any_loud=True, deferred=False):
     wrap_close = '</div></div>' if deferred else ""
     return f'''
     {wrap_open}<div class="variant-pick" data-variant-pick>
-      <span class="variant-label" id="variant-label">Playback</span>
-      <div class="variant-btns" role="group" aria-labelledby="variant-label">
-        <button type="button" class="variant-btn" data-variant="archive" aria-pressed="false">Archive</button>
-        <button type="button" class="variant-btn" data-variant="loud" aria-pressed="true">Loud</button>
+      <div class="variant-group">
+        <span class="variant-label" id="variant-label">Playback</span>
+        <div class="variant-btns" role="group" aria-labelledby="variant-label">
+          <button type="button" class="variant-btn" data-variant="archive" aria-pressed="false">Archive</button>
+          <button type="button" class="variant-btn" data-variant="loud" aria-pressed="true">Loud</button>
+        </div>
       </div>
 {note_html}
     </div>{wrap_close}'''

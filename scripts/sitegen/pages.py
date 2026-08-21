@@ -899,6 +899,13 @@ def build_show(show):
         <input type="range" class="progress-range" min="0" max="1000" value="0" step="1" aria-label="Seek {play_label}" aria-valuetext="0:00 of {esc(t["duration"])}">
         {add_btn}
       </div>''')
+        # The count/duration caption and the controls used to share one
+        # space-between row (.tracks-head), with the Archive/Loud control in a
+        # second block underneath -- two toolbars, in two visual languages, and
+        # on a phone only the second one went full width. The caption is a
+        # caption now, and everything that is a *control* shares one row and one
+        # set of styles below it (.tracks-toolbar, site.css).
+        #
         # No hint line above the track list. It read "Every song streams in
         # full · lossless FLAC downloads are password protected" on all 30
         # show pages, and the password half was the first of FOUR statements
@@ -908,14 +915,14 @@ def build_show(show):
         # download button's own hover at the point of click.
         parts.append(f'''
   <section id="tracks">
-    <div class="tracks-head">
-      <div class="group-label-bare">Tracks &middot; {len(show["tracks"])} songs &middot; {track_total(show["tracks"])}</div>
+    <div class="group-label-bare">Tracks &middot; {len(show["tracks"])} songs &middot; {track_total(show["tracks"])}</div>
+    <div class="tracks-toolbar">
+{variant_toggle(any_loud)}
       <div class="tracks-actions">
         <button type="button" class="select-all" data-target=".track-list">Select all</button>
         {zip_html}
       </div>
     </div>
-{variant_toggle(any_loud)}
     <div class="track-list" data-autoplay-next>
 {chr(10).join(rows)}
     </div>
@@ -1213,14 +1220,14 @@ def build_song_page(s):
     # (page-cleanup row E1).
     parts.append(f'''
   <section id="tracks">
-    <div class="tracks-head">
-      <div class="group-label-bare">Played {s['plays']} time{plural} &middot; {esc(arts)}</div>
+    <div class="group-label-bare">Played {s['plays']} time{plural} &middot; {esc(arts)}</div>
+    <div class="tracks-toolbar">
+{variant_toggle(any_loud)}
       <div class="tracks-actions">
         <button type="button" class="select-all" data-target=".song-occs">Select all</button>
         {zip_html}
       </div>
     </div>
-{variant_toggle(any_loud)}
     <div class="song-occs">
 {occs}
     </div>
