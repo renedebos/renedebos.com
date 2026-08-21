@@ -6,7 +6,7 @@
 **Nothing is open.** No PRs, no unmerged branches, no stale worktrees. The
 fourth pass's warnings are all resolved: **#48 merged** (the iPhone autoplay
 cue is live), the branch sweep is done, and `main` = `origin/main` =
-`e695c32`. Local branches are `main` plus the deliberate `miniplayer-parked`
+`2f2c765` (end of 2026-08-21). Local branches are `main` plus the deliberate `miniplayer-parked`
 archive — the target state. (Two stray remote branches predate this pass and
 were left alone: `claude/hannan-chromebook-droplet-sync-jq0hfb`,
 `cloudflare/workers-autoconfig`.)
@@ -912,11 +912,14 @@ instructions.
   the fix that actually matters and is purely local.
 - `plans/player-consolidation/` — closed; `-codex.md` logs every review round.
 
-**Tests:** `node scripts/test-*.mjs` — 6 suites plus `test-fake-dom.mjs`
-(a helper). **164/164 passing** as of 2026-08-19 (fourth pass):
+**Tests:** `node scripts/test-*.mjs` — 8 suites plus `test-fake-dom.mjs`
+(a helper). **329/329 passing** as of 2026-08-21 (fifth pass; the two
+mini-player suites came back with the bar — see "Sticky experiments" above):
 
 | suite | tests |
 |---|---|
+| `test-miniplayer-state.mjs` | 126 |
+| `test-miniplayer-views.mjs` | 39 |
 | `test-player-controller.mjs` | 58 |
 | `test-player-boot.mjs` | 28 |
 | `test-playlist-state.mjs` | 29 |
@@ -924,8 +927,9 @@ instructions.
 | `test-playlist-views.mjs` | 16 |
 | `test-song-boot.mjs` | 13 |
 
-(Down from 327 because the two mini-player suites, 164 tests, were deleted
-with the parked modules. `test-player-controller.mjs` went 60 → 57 in the same
+(History: the fourth pass ran 164 after the two mini-player suites, 164
+tests, were deleted with the parked modules; the fifth pass lifted them back
+UNMODIFIED and 165 → 329. `test-player-controller.mjs` went 60 → 57 in the same
 commit, then 57 → 58 with the `load()`-on-source-change contract. The three
 tests added to `test-player-views.mjs` in PR #48 cover the blocked-autoplay
 cue, that a real failure still reads as a failure, and that a stale block from
