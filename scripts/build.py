@@ -31,6 +31,7 @@ def main():
     validate()
     check_orphan_song_dirs()
     check_rarity_drift()
+    check_source_title_drift()
     # Hard failure: site_worker.js and _headers both declare a CSP, and only
     # the Worker's takes effect. A stale _headers means two files stating
     # different security policies for the same site, with the dead one looking

@@ -46,13 +46,13 @@ Resumable:  rclone pull and the engine both skip existing outputs, so re-running
 """
 import argparse
 import datetime
-import difflib
 import os
 import re
 import subprocess
 import sys
 
 import audio_process as eng   # reuse ARTIST_TARGET, status logic, ROOT, helpers
+import title_match as tm     # shared with sync_source_titles.py + the build-time warning
 import json
 
 ROOT = eng.ROOT
@@ -76,17 +76,14 @@ SHOWS = {
 # Shows known to have been normalized off the books (no sidecar) — pull raw.
 KNOWN_PRENORM = {"sean-19-broadway-2000-02-21", "mad-sweetwater-2001-01-06"}
 
-TITLE_SIM = 0.55          # positional title similarity floor
 PRENORM_SPREAD = 2.0      # input-LUFS stdev below this => suspect pre-normalized
 
-
-def norm_title(s):
-    return re.sub(r"[^a-z0-9]", "", s.lower())
-
-
-def lead(name):
-    m = re.match(r"\s*(\d+)", os.path.basename(name))
-    return int(m.group(1)) if m else None
+# The title/filename comparison lives in title_match so the build-time warning
+# (sitegen.core.check_source_title_drift) and sync_source_titles.py hold to the
+# exact same threshold this gate does.
+TITLE_SIM = tm.TITLE_SIM
+norm_title = tm.norm_title
+lead = tm.lead
 
 
 def load_show(slug):
@@ -126,24 +123,15 @@ def validate(slug, show, files):
     if sorted(nums) != list(range(1, nt + 1)):
         return False, "numbering", f"leading numbers not a clean 1..{nt}: {sorted(nums)}", []
     # positional title check (files by leading number vs tracks by num)
-    by_num_file = {lead(f): f for f in files}
-    by_num_trk = {t["num"]: t for t in tracks}
-    mism = []
-    for n in range(1, nt + 1):
-        ftitle = norm_title(re.sub(r"^\s*\d+\s*", "", re.sub(r"\.flac$", "", by_num_file[n], flags=re.I), flags=re.I))
-        ttitle = norm_title(by_num_trk[n].get("title", ""))
-        if not ttitle:
-            continue
-        sim = difflib.SequenceMatcher(None, ftitle, ttitle).ratio()
-        if sim < TITLE_SIM:
-            mism.append((n, by_num_file[n], by_num_trk[n].get("title"), sim))
+    mism = tm.drift(files, tracks)
     # multiple mismatches => the mapping is shifted, not a rename => HOLD
-    allow = max(1, int(0.15 * nt))
+    allow = tm.hold_allowance(nt)
     if len(mism) > allow:
         first = "; ".join(f"trk {n}: {fn!r} vs {tt!r}" for n, fn, tt, _ in mism[:3])
         return False, "title-mismatch", f"{len(mism)} tracks misaligned ({first} ...)", []
     warns = [f"title differs at track {n}: file {fn!r} vs catalog {tt!r} (sim {s:.2f}) — "
-             f"likely a rename; confirm it's the same song" for n, fn, tt, s in mism]
+             f"likely a catalog rename \u2014 confirm it's the same song, then "
+             f"'make sync-titles APPLY=1' to rename the Drive source" for n, fn, tt, s in mism]
     return True, "ok", f"{nt} tracks, numbering aligned", warns
 
 

@@ -6,7 +6,7 @@ R2_BUCKET  := r2:hannan-audio
 DRIVE_FLAGS :=
 R2_FLAGS    := --s3-no-check-bucket
 
-.PHONY: refresh diff status upload edit build
+.PHONY: refresh diff status upload edit build sync-titles
 
 edit:
 	python3 scripts/edit_metadata.py
@@ -16,6 +16,12 @@ tcap:
 
 build:
 	python3 scripts/build.py
+
+# Reconcile the Drive source split filenames with the catalog titles. Dry run
+# by default; APPLY=1 actually renames on Drive. Deliberately NOT part of
+# `build` — build stays offline and byte-reproducible for CI, and only warns.
+sync-titles:
+	python3 scripts/sync_source_titles.py $(if $(APPLY),--apply,) $(if $(ONLY),--only $(ONLY),)
 
 refresh:
 	rclone ls "$(DRIVE_PATH)" $(DRIVE_FLAGS) | awk -F'/' '{print $$NF}' | sort > drive_names.txt

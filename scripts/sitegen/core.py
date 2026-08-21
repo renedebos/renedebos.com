@@ -365,6 +365,55 @@ def check_rarity_drift():
         for w in sorted(set(warned)):
             print(f"    {w}")
 
+def check_source_title_drift():
+    """Retitling a song here does not rename the split file on Drive, and
+    batch_process.validate() compares the two positionally — enough drift in
+    one show and the next reprocess is HELD as 'title-mismatch'. Warn (never
+    fail, and never touch the network: the build is reproducible in CI, which
+    has no Drive credentials) off data/source_names.json, the listing cache
+    scripts/sync_source_titles.py writes. Missing or partial cache = silence,
+    so this can only ever tell you about drift it has actually seen."""
+    path = os.path.join(ROOT, "data", "source_names.json")
+    if not os.path.exists(path):
+        return
+    try:
+        cached = json.load(open(path)).get("shows") or {}
+    except (ValueError, OSError):
+        print("⚠ data/source_names.json is unreadable — run "
+              "'make sync-titles' to rebuild it", file=sys.stderr)
+        return
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    import title_match as tm
+    rows, held = [], []
+    for s in M["shows"]:
+        entry = cached.get(s["slug"])
+        tracks = s.get("tracks") or []
+        if not entry or not tracks:
+            continue
+        files = entry.get("files") or []
+        if not tm.aligned(files, tracks):
+            continue          # sync_source_titles reports these; not drift
+        d = tm.drift(files, tracks)
+        if not d:
+            continue
+        rows.append((s["slug"], d))
+        if len(d) > tm.hold_allowance(len(tracks)):
+            held.append(s["slug"])
+    if not rows:
+        return
+    n = sum(len(d) for _, d in rows)
+    print(f"⚠ source title drift — {n} catalog title(s) across {len(rows)} show(s) "
+          "no longer match the Drive source filename (warning only):", file=sys.stderr)
+    for slug, d in rows:
+        for num, fn, title, sim in d:
+            print(f"    {slug} #{num:02d}  file {fn!r} vs catalog {title!r} "
+                  f"(sim {sim:.2f})", file=sys.stderr)
+    if held:
+        print(f"    ** {', '.join(held)} would be HELD as 'title-mismatch' by "
+              "batch_process on the next reprocess **", file=sys.stderr)
+    print("    run 'make sync-titles' to review, 'make sync-titles APPLY=1' to "
+          "rename them on Drive", file=sys.stderr)
+
 SONG_MANUAL_MERGE = {
     "ABC - Sesame Street": "ABC",
     "The German Clock Winder": "The German Clockwinder",
@@ -469,4 +518,4 @@ def write(path, content):
         f.write(content)
 
 
-__all__ = ['write', 'ARTIST_SHORT', 'DURATION_RE', 'LEGACY_KEY_NAMING', 'M', 'PUBLIC_SHOWS', 'ROOT', 'SONG_CANONICAL_OVERRIDE', 'SONG_MANUAL_MERGE', 'SOURCE_LABEL', 'TAG_VOCAB', 'WORKER', '_ARTIST_ORDER', '_duration_sec', 'added_sort_key', 'artist_name', 'check_orphan_song_dirs', 'check_rarity_drift', 'check_variant_derivation', 'collect_songs', 'has_variant', 'date_with_subtitle', 'esc', 'iso_duration', 'load_processing', 'load_variant', 'variant_key', 'VARIANTS', 'sanitize_filename', 'show_city', 'show_title', 'show_url', 'show_zip_entries', 'show_zip_folder', 'singles_for_show', 'song_norm', 'song_slug', 'sort_key', 'stamp_added_dates', 'stream_url', 'track_total', 'validate']
+__all__ = ['write', 'ARTIST_SHORT', 'DURATION_RE', 'LEGACY_KEY_NAMING', 'M', 'PUBLIC_SHOWS', 'ROOT', 'SONG_CANONICAL_OVERRIDE', 'SONG_MANUAL_MERGE', 'SOURCE_LABEL', 'TAG_VOCAB', 'WORKER', '_ARTIST_ORDER', '_duration_sec', 'added_sort_key', 'artist_name', 'check_orphan_song_dirs', 'check_rarity_drift', 'check_source_title_drift', 'check_variant_derivation', 'collect_songs', 'has_variant', 'date_with_subtitle', 'esc', 'iso_duration', 'load_processing', 'load_variant', 'variant_key', 'VARIANTS', 'sanitize_filename', 'show_city', 'show_title', 'show_url', 'show_zip_entries', 'show_zip_folder', 'singles_for_show', 'song_norm', 'song_slug', 'sort_key', 'stamp_added_dates', 'stream_url', 'track_total', 'validate']

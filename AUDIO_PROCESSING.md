@@ -56,6 +56,35 @@ Every step downstream — title parsing, `gen_peaks.py`, and especially
 (e.g. `01 State Trooper.flac`). Never rename files in a way that drops or changes
 that number. Processed output keeps the same `NN Title.<ext>` name as its source.
 
+### Keeping the source filenames in step with the catalog
+Retitling a song in `make edit` changes `data/recordings.json` but **not** the
+split file on Drive, and `batch_process.validate()` compares the two
+positionally. Drift past `max(1, 0.15 x track_count)` positions in one show and
+the next reprocess is **HELD** as `title-mismatch` — the gate cannot tell a
+batch of deliberate renames from an off-by-one shift in the mapping.
+
+`make build` warns about this, offline, from `data/source_names.json` — a
+tracked cache of the Drive listings. It never touches the network (the build is
+byte-reproducible in CI, which has no Drive credentials) and never fails on it.
+The renaming is a separate, deliberate step:
+
+```
+make sync-titles                   # dry run: report drift, refresh the cache
+make sync-titles APPLY=1           # rename the Drive sources to match
+make sync-titles ONLY=<slug>       # one show
+python3 scripts/sync_source_titles.py --refresh-only    # cache only, no report
+```
+
+It refuses to rename unless the listing is cleanly aligned (one file per track,
+numbers a clean `1..N`), skips any rename whose target name already exists
+(Drive permits same-name duplicates), and skips a show with a prepared
+`~/work/<slug>/publish.json`, whose manifest and fingerprint are keyed on these
+filenames — pass `--force` only after finishing or discarding that publish.
+
+The comparison itself lives in `scripts/title_match.py`, shared by the gate, the
+sync tool, and the build warning, so the threshold that warns is by construction
+the threshold that holds.
+
 ---
 
 ## Prerequisites
