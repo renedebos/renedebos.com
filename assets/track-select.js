@@ -48,11 +48,9 @@
     bar.hidden = true;
     bar.innerHTML = '<span class="tsb-count"></span>'
       + '<button type="button" class="tsb-clear">Clear</button>'
-      + '<button type="button" class="tsb-player pl-generate pl-share">Add to player</button>'
       + '<button type="button" class="tsb-add pl-generate">Build playlist &rarr;</button>';
     document.body.appendChild(bar);
     bar.querySelector('.tsb-clear').addEventListener('click', clearSelection);
-    bar.querySelector('.tsb-player').addEventListener('click', addToPlayer);
     bar.querySelector('.tsb-add').addEventListener('click', goToPlaylist);
     return bar;
   }
@@ -143,33 +141,6 @@
       location.href = '/playlist/' + hash;
     }
     clearSelection();
-  }
-
-  // Hands the selection to the continuous-player popup (see sendToPlayer()
-  // in player.js, loaded globally on every page this bar appears on) instead
-  // of navigating to /playlist/ — stays on whatever page you're browsing,
-  // and doesn't steal focus from it (opts.focus: false), unlike "Build
-  // playlist" which is a deliberate "take me there" action.
-  function addToPlayer() {
-    selected = loadSelection();  // same race guard as toggle()/goToPlaylist()
-    if (!selected.length) return;
-    var added = sendToPlayer(selected, { focus: false });
-    if (added === null) return;  // popup blocked — the browser surfaces that itself
-    // Clear the selection but keep the bar visible long enough to say what
-    // happened — sendToPlayer dedupes, so "add" can be a no-op and silence
-    // here would look broken. clearSelection() would hide the bar instantly.
-    selected = [];
-    saveSelection();
-    syncAllButtons();
-    var btn = bar.querySelector('.tsb-player');
-    bar.querySelector('.tsb-count').textContent = '';
-    btn.textContent = added
-      ? 'Added ' + added + (added === 1 ? ' song' : ' songs')
-      : 'Already in player';
-    setTimeout(function () {
-      btn.textContent = 'Add to player';
-      renderBar();
-    }, 1600);
   }
 
   document.addEventListener('click', function (e) {

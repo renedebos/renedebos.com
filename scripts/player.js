@@ -28,7 +28,7 @@ const RANGE_MAX = 1000;
 // Show/song-page track players, waveform rows (driven by the shared
 // PlaybackController where mounted, or dormant otherwise — wavesurfer.js,
 // the module that used to drive them here, was removed in Step 5c),
-// /playlist/, and the /player/ popup each own an independent <audio>
+// and /playlist/ each own an independent <audio>
 // element with no shared engine, so playing one doesn't pause the others.
 // A claim announces
 // "I'm playing now": it's broadcast to every other tab/window AND delivered
@@ -790,39 +790,3 @@ function initLegacyDeepLink() {
   window.addEventListener('hashchange', focusHashTrack);
 }
 
-// ── continuous player popup ─────────────────────────────────────────────────
-// Opening a tab/window with a fixed name and an empty URL returns a handle to
-// it WITHOUT navigating it away if it already exists — the standard trick for
-// "find or create" a named popup. Used from /playlist/'s "Open continuous
-// player" button and the track-selection bar's "Add to player" (see
-// track-select.js) so either can hand tracks to an already-running player
-// (by extending its #p=... hash — continuous-player.js treats an append as
-// non-disruptive, see its hashchange handler) without stealing focus from
-// whatever page the visitor is actually on, unless they asked to be taken
-// there (opts.focus).
-//
-// opts.startTime only applies when the popup doesn't exist yet (a fresh
-// hand-off, not a background append) — it seeds a one-time &t=<seconds>
-// alongside the hash so continuous-player.js can resume at the same position
-// instead of restarting; it has no meaning for a merge into a queue that's
-// already playing something else.
-// Returns how many tracks were actually new to the player's queue (the merge
-// dedupes, so "add" can be a no-op) — callers can tell the visitor instead of
-// silently doing nothing. null means the popup was blocked.
-function sendToPlayer(ids, opts) {
-  const w = window.open('', 'hannanPlayer');
-  if (!w) return null; // popup blocked
-  let added;
-  if (w.location.pathname === '/player/') {
-    const existing = (w.location.hash.match(/^#p=([\w.,-]+)/) || [, ''])[1].split(',').filter(Boolean);
-    const fresh = ids.filter((id, i, a) => id && a.indexOf(id) === i && existing.indexOf(id) === -1);
-    if (fresh.length) w.location.hash = '#p=' + existing.concat(fresh).join(',');
-    added = fresh.length;
-  } else {
-    const t = opts && opts.startTime ? '&t=' + opts.startTime.toFixed(1) : '';
-    w.location.href = '/player/#p=' + ids.join(',') + t;
-    added = ids.length;
-  }
-  if (opts && opts.focus) w.focus();
-  return added;
-}

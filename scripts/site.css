@@ -25,6 +25,17 @@
   --player-track: var(--border);
   --player-surface: var(--player-bg);
 
+  /* Header geometry, as tokens rather than three unrelated literals, because
+     something else has to stick UNDER the sticky header: /playlist/'s
+     now-playing card. It was pinned at top:0 like the header itself and z-index
+     5 against the header's 10, so the top 79px of it slid out of sight and only
+     its bottom strip stayed visible while the queue scrolled. Deriving the
+     offset here means a change to the header's padding or logo size can't
+     silently re-break that card. */
+  --header-pad: 22px;
+  --mark-h: 34px;
+  --header-h: calc(var(--header-pad) * 2 + var(--mark-h) + 1px);
+
   /* Text on an accent fill. Light theme puts near-white on a deep green;
      dark theme has to flip, because the dark accent (#7FA37A) is light
      enough that white on it lands around 2.8:1. Used by the tracks
@@ -113,15 +124,15 @@ header .wrap {
   display: flex;
   align-items: center;
   gap: 1.6rem;
-  padding-top: 22px;
-  padding-bottom: 22px;
+  padding-top: var(--header-pad);
+  padding-bottom: var(--header-pad);
 }
 
 .mark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 34px;
+  height: var(--mark-h);
   padding: 0 16px;
   border-radius: 17px;
   background: var(--accent);
@@ -432,7 +443,14 @@ main {
 .track-list {
   border: 1px solid var(--border);
   border-radius: 10px;
-  overflow: hidden;
+  /* `clip`, not `hidden`, purely so the active row below can be sticky:
+     `overflow: hidden` makes this a scroll container, and a sticky child
+     sticks to its nearest scroll container -- this one, which never scrolls,
+     so the row would simply never stick. `overflow: clip` does the same
+     rounded-corner clipping without creating one. Pre-2022 browsers ignore
+     it and fall back to no clipping, which costs the corner rounding on a
+     hovered first/last row and nothing else. */
+  overflow: clip;
   background: var(--player-bg);
 }
 
@@ -468,6 +486,15 @@ main {
    same "filled once engaged" language .track-add[aria-pressed] already uses. */
 .track-row.playing,
 .track-row.is-active { background: var(--accent-light); box-shadow: inset 3px 0 0 var(--accent); }
+/* Keep whatever is playing reachable on a 35-track page. Scroll past it and
+   the row itself pins under the header, so play/pause, the seek bar, the
+   title and the download button stay one click away instead of scrolling
+   off -- the thing /playlist/'s now-playing card does, without a second
+   engine or a second copy of the controls. `is-active` rather than
+   `playing` so hitting pause doesn't drop the row you just paused.
+   Unsticks at the bottom of the list, since .track-list is its containing
+   block. */
+.track-row.is-active { position: sticky; top: var(--header-h); z-index: 4; }
 .track-row.is-active .track-title { color: var(--accent); font-weight: 600; }
 .track-row.is-active .time-label { color: var(--accent); }
 .track-row.is-active .play-btn {
@@ -1031,7 +1058,7 @@ main {
   background: none; border: none; cursor: pointer; text-decoration: underline;
 }
 .tsb-clear:hover { color: var(--accent); }
-.tsb-add, .tsb-player { padding: 0.4rem 1rem; font-size: 12px; white-space: nowrap; }
+.tsb-add { padding: 0.4rem 1rem; font-size: 12px; white-space: nowrap; }
 
 /* ── alternates disclosure ───────────────────────────────────────────────── */
 
@@ -1844,7 +1871,9 @@ a.artist-chip:hover { filter: brightness(1.08); }
 .pl-generate:hover { opacity: 0.9; }
 .pl-generate:disabled { opacity: 0.45; cursor: default; }
 
-/* Now-playing card sticks while the queue scrolls under it. */
+/* Now-playing card sticks while the queue scrolls under it. The default
+   offset is 0 for the /player/ popup, which has no site header; /playlist/
+   overrides it below to clear one. */
 .pl-now {
   position: sticky; top: 0; z-index: 5;
   display: flex; flex-direction: column; gap: 0.55rem;
@@ -1855,6 +1884,10 @@ a.artist-chip:hover { filter: brightness(1.08); }
    (author rules always win over user-agent ones), so the empty card was
    rendering as an empty bar even while marked hidden. */
 .pl-now[hidden] { display: none; }
+/* On /playlist/ the site header is itself sticky at top:0 with a higher
+   z-index, so an unoffset card parks BEHIND it. /player/ has no header and
+   keeps the 0 above. */
+.playlist .pl-now { top: var(--header-h); }
 .pl-now-info { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.6rem; }
 .pl-now-title {
   font-size: 16px; font-weight: 500; color: var(--text); text-decoration: none;

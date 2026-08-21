@@ -299,7 +299,33 @@ representation:
 
 ## Phase 7: Continuous player popup
 
-**Status: DONE.** (Corrected 2026-07-16 — this was previously logged here as
+**Status: RETIRED 2026-08-20.** Removed rather than migrated onto
+`PlaybackController`. What it did — keep audio going while you browse — only
+works with two visible windows, so it was desktop-only by construction: on a
+phone `window.open` yields a tab, the popup replaces what you were browsing,
+and a backgrounded tab's audio is suspended anyway. Both entry points were
+also hard to find (the `/playlist/` button appeared only once a playlist
+existed, as the fifth control in that row; the other was inside the
+selection bar), and it was the last surface on the legacy engine, with no
+test coverage, carrying ~700 lines of duplicated queue/hash/variant logic.
+The proper answer to "listen while browsing" is the sticky mini-player,
+parked on the `miniplayer-parked` branch — keeping a stopgap alive for a
+parked feature was the worst of both.
+
+Removed: `scripts/continuous-player.js`, `build_player()`/`PLAYER_SHELL`
+(`scripts/sitegen/pages.py`), `sendToPlayer()` (`scripts/player.js`), the
+`#pl-player` button and its `playlist-boot.js` wiring, and `addToPlayer()` +
+the "Add to player" button in `track-select.js`. `/player/` now 301s to
+`/playlist/` via `LEGACY_REDIRECTS` in `site_worker.js`; since the hash never
+reaches the server, an old `/player/#p=<ids>` bookmark still lands on exactly
+that queue. In the same pass `/playlist/`'s now-playing card was un-hidden
+from behind the sticky header, and show pages got the same "keep the current
+track reachable" behaviour with no second engine at all: the active track row
+is itself sticky (`.track-row.is-active`, site.css).
+
+The original description follows, as the record of what was built.
+
+**Status was: DONE.** (Corrected 2026-07-16 — this was previously logged here as
 "planned, not started," but direct source inspection found it fully built:
 `/player/` (`build_player()`/`PLAYER_SHELL`, `scripts/sitegen/pages.py`),
 `scripts/continuous-player.js`, and `sendToPlayer()` in `scripts/player.js`

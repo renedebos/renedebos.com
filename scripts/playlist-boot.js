@@ -107,7 +107,6 @@ export function bootPlaylistPage(doc, win) {
   const shareBtn = doc.getElementById('pl-share');
   const saveBtn = doc.getElementById('pl-save');
   const downloadBtn = doc.getElementById('pl-download');
-  const playerBtn = doc.getElementById('pl-player');
   const savedEl = doc.getElementById('pl-saved');
 
   if (!filtersEl || !lengthEl || !statusEl || !goBtn || !nowEl || !queueEl) {
@@ -357,7 +356,6 @@ export function bootPlaylistPage(doc, win) {
       : win.location.pathname);
     if (shareBtn) shareBtn.hidden = !queueItems.length;
     if (saveBtn) saveBtn.hidden = !queueItems.length;
-    if (playerBtn) playerBtn.hidden = !queueItems.length;
     if (downloadBtn) {
       downloadBtn.hidden = !queueItems.length;
       if (queueItems.length) downloadBtn.title = zipLabel(rowsFromItems(queueItems));
@@ -595,18 +593,6 @@ export function bootPlaylistPage(doc, win) {
         if (!rows.length) return;
         const name = 'Playlist - ' + new Date().toISOString().slice(0, 10);
         window.openPasswordModal({ type: 'batch', manifest: buildPlaylistManifest(name, rows) });
-      }, { signal: abort.signal });
-    }
-
-    if (playerBtn) {
-      playerBtn.addEventListener('click', () => {
-        const items = controller.queue;
-        if (!items.length) return;
-        const from = controller.currentIndex === -1 ? 0 : controller.currentIndex;
-        const startTime = controller.currentIndex === -1 ? 0 : controller.audioElement.currentTime;
-        controller.pause();
-        const ids = items.slice(from).concat(items.slice(0, from)).map((t) => t.id);
-        window.sendToPlayer(ids, { focus: true, startTime });
       }, { signal: abort.signal });
     }
 
