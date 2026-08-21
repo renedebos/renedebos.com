@@ -1,54 +1,131 @@
 # Session Handoff — Hannan Recordings (renedebos.com)
-**Date:** 2026-08-19 (fourth pass) · **Branch:** `autoplay-blocked-cue` (PR #48 open)
+**Date:** 2026-08-21 (fifth pass) · **Branch:** `main` — everything merged, deployed, verified live
 
 ## ⛔ READ THIS FIRST
 
-**One PR is open and unmerged: #48**, branch `autoplay-blocked-cue`. It fixes a
-real user-facing bug — "Play random tape" showed **"Playback failed"** on every
-iPhone, every time — and it is verified, but it is not live until Rene merges.
-Everything else below is on `main` and deployed.
+**Nothing is open.** No PRs, no unmerged branches, no stale worktrees. The
+fourth pass's warnings are all resolved: **#48 merged** (the iPhone autoplay
+cue is live), the branch sweep is done, and `main` = `origin/main` =
+`e695c32`. Local branches are `main` plus the deliberate `miniplayer-parked`
+archive — the target state. (Two stray remote branches predate this pass and
+were left alone: `claude/hannan-chromebook-droplet-sync-jq0hfb`,
+`cloudflare/workers-autoconfig`.)
 
-**Fourteen PRs merged this pass (#34-#47)**, on top of the eight from the third
-pass (#25-#32). The show page is the thing that changed most: it is
-substantially denser, and the track list now shows a waveform only on the track
-you are actually listening to.
+**The `/player/` continuous-player popup is GONE** (fifth pass, Rene's call).
+`/player/` 301s to `/playlist/`; since the hash never reaches the server, an
+old `/player/#p=<ids>` bookmark still lands on exactly that queue. Do not
+rebuild a popup — the reasoning is in "The continuous player retired" below.
 
-**Two wrong fixes shipped before the right one — read "The autoplay bug" below
-before touching playback.** #46 and #47 were both aimed at an iPhone report and
-#46 claimed in its own comments to have fixed it. It did not. The cause was
-somewhere else entirely, and the misleading comments have been corrected in
-#48. The lesson is in "Gotchas".
+**Phase 3 is now HALF-unparked, and the halves must not be confused.** The
+mini-player **bar** (view + CSS) shipped from the parked branch as an on-page
+control and is live on every player surface. The **coordinator** — tab
+identity, fenced lease, cross-page session restore, Stage 3a-canary Tasks 4–9
+— stays parked on `miniplayer-parked` (`6bdecc6`). Never merge that branch
+(it is stale against main — lift files from it, don't merge); never delete
+it; don't resume the coordinator or run `/apply-review` on its findings
+without Rene asking. The plan doc is
+`~/.claude/plans/imperative-frolicking-widget.md`.
 
-**Branch sweep pending.** `ios-first-play`, `ios-diag` (both merged) and
-`autoplay-blocked-cue` (after #48 merges) are all sweepable, local and remote.
-`main` in the `/home/renedebos/renedebos.com` worktree is behind.
+**Playback UX settled into one shape this pass. Don't re-litigate it:** the
+bottom bar is the persistent control everywhere; nothing else sticks. The
+show pages' sticky active row and `/playlist/`'s sticky now-playing card were
+both tried and both deliberately removed/unstuck once the bar superseded them
+— the same song pinned twice reads as a bug. `codex-notes.md` (untracked,
+external review doc) still proposes popup/continuous-player ideas; they are
+superseded by this.
 
-**The loudness arc reopened once, deliberately.** The -14 variant is now
-DOWNLOADABLE as well as streamable (PR #31, Rene's request), and as of the
-fourth pass that extends to **full-show downloads** too (PR #39). The archive is
-still the master and still the default everywhere. See "The loud download"
-below before touching any download path — the reasoning behind the
-no-sticky-preference rule is not obvious from the code.
+## ✅ Done this session (2026-08-20/21, fifth pass)
 
-**The page cleanup project has had two rounds.** Round 1 (PR #29) ran from
-`plans/page-cleanup/`'s decision register, and every row of that register is
-decided. **Round 2 did not** — it was driven ad hoc by Rene, item by item,
-across the fourth pass, and is not written back into the register. If you pick
-the register up again, re-derive the inventory counts first; several rows it
-lists are already gone.
+Thirteen commits, all on `main`, each deployed and then verified against
+production (not just a green Action). The pass had two arcs: a metadata/
+cleanup arc, and a playback-UX arc that ended with the mini-player bar as the
+site's one persistent player control.
 
-**Keep the repo tidy — it was clean at the end of the third pass and is not
-now.** Three sweepable branches and a stale worktree, listed above. One
-branch (`main`) plus the deliberate `miniplayer-parked` archive is the target
-state. Don't start the next project on an old branch.
+### Drive source filenames reconciled with the catalog (`0ec0772`…`a82a656`)
 
-**Phase 3 (the sticky mini-player) is PARKED** — do not resume it, and do not
-run `/apply-review` against its findings. Everything is on branch
-`miniplayer-parked` (`6bdecc6`). Never merge it; never delete it.
+New tool pair: `scripts/title_match.py` (the one positional filename↔title
+comparison, shared by its three callers so the build can't warn at a
+different threshold than the sync tool holds) and
+`scripts/sync_source_titles.py` (sweeps every Work Folder's `Tracks/` — NR
+folder wins — against `recordings.json`, `apply=1` renames on Drive).
+15 drifted filenames renamed; `data/source_names.json` is the tracked
+listing cache the offline build warning reads. Two traps now encoded in
+comments there: the 1999-08-23 show's **unlabelled folder is the FIRST tape**
+("Pt1 Distorted" names the reel, not the page order — do not "fix" the
+order), and `sanitize()` maps `/` → ` - ` because a medley title with the
+slash deleted matches nothing in the archive. Also fixed mid-sweep:
+`mad-sweetwater-2000-02-17`'s Drive numbering (two 18s, no 21), verified
+against published R2 keys before renaming.
+
+### Show/song pages: one tracks toolbar (`fad9675`, `2928e75`)
+
+The Archive/Loud control and the Select-all/ZIP pills — previously two
+toolbars in two visual languages — are one row of same-height controls
+(`.tracks-toolbar`, `--ctl-h`, 44px on coarse pointers). The "Downloads
+default to the Archive master" sentence and the "How these were made" link
+are gone (the download modal's own chooser states the format at the moment
+it matters); **the "You are hearing the Loud version" disclosure stays** —
+it is the price of the Loud default and must not be removed. ZIP button now
+carries its size on its face. Separately, 23 show descriptions lost their
+processing-boilerplate paragraph (that story lives at `/process/`).
+
+### /playlist/ page slimmed (`658f1bc`)
+
+The **Songwriter filter facet is gone** (its UI only — `SONGWRITER_MAP` and
+the matching stay, because the "Traditional & Irish" preset is expressible
+ONLY through the songwriter field; the `traditional` tag was retired
+2026-07-19). The **folk/country/blues/rock tag chips are gone** from
+`TAG_ORDER` — 94/680 tracks between them, thin playlists. The tags remain on
+the tracks and in /search/; no data or vocabulary change. **Rene: no "All
+tags" chip** — asked and declined.
+
+### The continuous player retired (`d791332`)
+
+The `/player/` popup + `continuous-player.js` (~700 lines): deleted, not
+migrated. It was desktop-only by construction (a phone gets a tab, not a
+popup, and backgrounded tabs suspend audio), undiscoverable, untested, and
+the last surface on the legacy engine. `/player/` → 301 `/playlist/` in
+`LEGACY_REDIRECTS`; hash survives, so old share links still build their
+queue. `sendToPlayer()`, `#pl-player`, and track-select's "Add to player"
+went with it.
+
+### Sticky experiments, then the real answer (`dac34eb`, `d791332`, `05c33b7`, `a09e93f`, `e695c32`)
+
+The path matters because two shipped steps were then deliberately undone:
+
+1. `/playlist/`'s now-playing card was found sticking BEHIND the sticky site
+   header (top:0 vs the header's z-index 10). Fixed by deriving the offset:
+   `--header-pad`/`--mark-h`/`--header-h` tokens in `site.css` — any future
+   sticky element should use `top: var(--header-h)`, never a literal 79px.
+2. Show pages got a sticky active track row. Shipped, worked, **removed one
+   day later** — superseded by the bar (and its `overflow: clip` enabler on
+   `.track-list` reverted to `hidden`).
+3. **The mini-player bar (Option A)**: `miniplayer-views.js` + its 39-test
+   suite + the `.mini-player` CSS lifted from `miniplayer-parked` onto main —
+   both parked suites passed UNMODIFIED against today's controller despite
+   82 lines of drift. The review's `_paintRange` defect fixed on the way in
+   (backgroundImage, never the `background` shorthand — the shorthand resets
+   background-size and inflates the 3px rail to the 24px tap box). Root div
+   emitted by the page builders; **every boot imports the bar DYNAMICALLY so
+   a broken bar asset costs the bar, never the page**.
+4. **Unified + shuffle** (`e695c32`): /playlist/ (card unstuck, stays as
+   queue header), all 136 song pages, and /songs/ mount the same bar. Shuffle
+   button added (Rene asked; 138px title space measured at 390px), driven by
+   `controller.toggleShuffle()` so the bar's and the card's buttons are two
+   views of one state. Hides with prev/next on singleton queues. The mount
+   policy (close = pause + unmount; the audio's next 'play' remounts) lives
+   ONCE in `attachMiniPlayerBar()`, exported from the view module and called
+   by all three boots — three hand copies is how engines drift.
+
+`miniplayer-state.js` is on main in `scripts/` ONLY (never built to assets):
+the view suite exercises its real codec, and its own 126-test suite now runs
+in CI via the `test-*.mjs` glob — so controller changes that would break the
+parked coordinator's assumptions fail CI even though nothing ships it. That
+is deliberate.
 
 ## ✅ Done this session (2026-08-19, fourth pass)
 
-### 🔴 The autoplay bug — "Play random tape" failed on every iPhone (PR #48, OPEN)
+### 🔴 The autoplay bug — "Play random tape" failed on every iPhone (PR #48; merged in the fifth pass)
 
 The homepage's **"Play random tape"** navigates to
 `/shows/<slug>/?autoplay=1#track-N`. **User activation does not survive a
@@ -471,10 +548,10 @@ waveform on every non-active track row. Detail in the fourth-pass log above.
    worktree is open.
 5. **`origin/claude/hannan-chromebook-droplet-sync-jq0hfb`** — 2 ahead, 42
    behind. Nobody has opened it.
-6. **Optional:** migrate the `/player/` popup onto `PlaybackController` — the
-   last independent engine and the last consumer of the `window.HannanVariant`
-   bridge. **Optional:** `scripts/build_archive_zip.py`, only if curated FLACs
-   changed (they haven't).
+6. ~~Migrate the `/player/` popup onto `PlaybackController`~~ — **resolved by
+   deletion, fifth pass**: the popup is gone entirely (see "The continuous
+   player retired"). **Optional:** `scripts/build_archive_zip.py`, only if
+   curated FLACs changed (they haven't).
 7. ~~`/review-step` defaults to the player-consolidation plan~~ — **done.**
    `.claude/commands/review-step.md` now defaults to
    `plans/page-cleanup/page-cleanup-plan.md`. Repoint it whenever the current
@@ -536,19 +613,25 @@ Most of the old cleanup list is done. Survivors:
 
 `rm -rf` is blocked for the agent — Rene runs these.
 
-## Player consolidation — final state (closed)
+## Player consolidation — final state (closed; amended fifth pass)
 
 - **Phase 1** (all show pages on shared `PlaybackController`) — complete, live.
 - **Phase 2** (`/playlist/` migration, legacy engine deleted) — complete, live.
   `/assets/playlist.js` 404s.
-- **Phase 3** (sticky mini-player) — **PARKED** on `miniplayer-parked`
-  (`6bdecc6`), including Task 3's finished-but-uncommitted CSS. No page ever
-  referenced the modules, so their deletion is invisible to visitors.
-- **Optional remnant:** the `/player/` popup on `PlaybackController`.
+- **Phase 3** (sticky mini-player) — **SPLIT in the fifth pass.** The view
+  layer (`miniplayer-views.js` + CSS) is UNPARKED and live on every player
+  surface as an on-page bar. The coordinator (cross-page persistence, Stage
+  3a-canary Tasks 4–9) stays **PARKED** on `miniplayer-parked` (`6bdecc6`).
+  That branch is now stale against main — lift files, never merge it.
+- **The `/player/` popup remnant is resolved by deletion** (fifth pass): the
+  popup and `continuous-player.js` are gone, `/player/` 301s to `/playlist/`.
+  There is no engine left outside `PlaybackController` except `player.js`'s
+  deliberate runtime fallback. Consolidation is genuinely finished.
 
-**What survives from Phase 3 and is worth keeping:** song pages on the shared
-controller; three real bug fixes on live pages its reviews turned up; the
-`--player-*` token aliases in both stylesheets; and `onAnyExternalClaim()` in
+**What survives from Phase 3 and is live:** the bar itself; song pages on the
+shared controller; three real bug fixes on live pages its reviews turned up;
+the `--player-*` token aliases (now seven, in site.css — home.css's mirror
+still lives only on the parked branch); and `onAnyExternalClaim()` in
 `player-controller.js` (no subscribers, deliberately kept — inert and tested).
 
 ## Gotchas worth carrying forward
@@ -702,10 +785,11 @@ Added 2026-08-19 (third pass):
 
 - **`.progress-range` is a 24px pointer target drawing a 3px rail via
   `background-size: 100% 3px`.** Every painter must assign
-  `style.backgroundImage`, never the `background` shorthand — five sites in
-  `player-views.js`, `playlist-views.js`, `player.js` and
-  `continuous-player.js` (×2). A shorthand write inflates the hairline to a
-  24px bar.
+  `style.backgroundImage`, never the `background` shorthand — four sites now
+  (fifth pass: `continuous-player.js`'s two died with it,
+  `miniplayer-views.js` joined): `player-views.js`, `playlist-views.js`,
+  `player.js`, `miniplayer-views.js`, one each. A shorthand write inflates
+  the hairline to a 24px bar.
 - **The applause/tcap render state file is shared and mode-tagged.** Both
   modes write `.v8state.json` beside the output with a `"mode"` key; a resume
   refuses a file from the other mode. The `v8` name is historical. Files with
