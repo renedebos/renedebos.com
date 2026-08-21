@@ -664,8 +664,8 @@ def highlight_badge(show):
 
 def status_line(show):
     """The show page's hand-work pills: "noise-reduced" / "pre-edited", plus
-    the corrective-EQ badge. Same source of truth as the tech-table badge and
-    the archive-row pill (the sidecar's `pre_edits`).
+    the corrective-EQ badge. Same source of truth as the archive-row pill (the
+    sidecar's `pre_edits`); the tech-table summary no longer repeats them.
 
     This used to lead with an "Audio processing · <status>" badge and a
     one-sentence blurb, both read from `processing_status`. Both were cut in
@@ -777,20 +777,13 @@ def tech_data_section(show, proc, var=None):
         head_bits.append(esc(proc["date"]))
     head_bits.append('<a href="/process/">how these tracks were made</a>')
     head = " &middot; ".join(head_bits)
-    # The show-level `processing_status` badge used to lead this summary. It was
-    # cut in the page-cleanup pass: this table only renders for track-listed
-    # shows, and every one of those reads `done`, so the badge was decoration
-    # that looked like data. `processing_status` stays in recordings.json as
-    # publishing state (`needs-processing` gates the runbook); it just isn't
-    # surfaced on the page any more.
-    badge = ""
-    # pre-edits badge: manual Audacity work beyond standard fades/clip-fixes stands
-    # out even while the table is collapsed; hover shows the recorded detail.
-    if proc.get("pre_edits"):
-        label = _pre_edit_label(proc["pre_edits"])
-        badge += (f' <span class="proc-status pre-edit {_pre_edit_class(label)}" '
-                  f'title="{esc(proc["pre_edits"])}">{label}</span>')
-    badge += _eq_badge(proc)
+    # The summary line carries no badges. The show-level `processing_status`
+    # badge was cut in the page-cleanup pass (every track-listed show read
+    # `done`), and the noise-reduced / pre-edited / corrective-eq pills were cut
+    # here 2026-08-21: `status_line()` already shows the same pills at page
+    # level, from the same sidecar fields, so the 8 NR shows rendered the badge
+    # twice. The expanded head still states the pre-edit detail and the filter
+    # chain in prose, so nothing is lost from the table itself.
     rows = []
     for t in show["tracks"]:
         d = pt.get(str(t["num"]), {})
@@ -834,7 +827,7 @@ def tech_data_section(show, proc, var=None):
     return f'''
   <section>
     <details class="tech-details" id="technical-data">
-      <summary>Technical data &mdash; loudness, peaks &amp; sizes{badge}</summary>
+      <summary>Technical data &mdash; loudness, peaks &amp; sizes</summary>
       <p class="tech-head">{head}</p>{_variant_scope_note(var)}
       <div class="tech-scroll">
       <table class="tech-table">
