@@ -1051,6 +1051,14 @@ def build_songs_index():
     present = [a for a in _ARTIST_ORDER if any(a in s["artists"] for s in songs)]
     legend = "".join(f'<span class="legend-item"><span class="artist-dot artist-{a}"></span>'
                      f'{esc(ARTIST_SHORT.get(a, a))}</span>' for a in present)
+    # The artist switch is generated from the same `present` list as the legend
+    # (short labels; the legend carries the fuller names), so an artist can't
+    # sit in the legend yet be unpickable — which is how "Sean & Jerry" went
+    # missing from a hand-written All/Jerry/Mad/Sean switch until 2026-08-21.
+    seg_label = {"jerry": "Jerry", "mad": "Mad", "sean": "Sean", "seanjerry": "Sean &amp; Jerry"}
+    artist_seg = '<button data-artist="all" class="active">All</button>' + "".join(
+        f'<button data-artist="{a}">{seg_label.get(a, esc(ARTIST_SHORT.get(a, a)))}</button>'
+        for a in present)
 
     items = []
     for s in songs:
@@ -1127,7 +1135,7 @@ def build_songs_index():
     <input type="search" id="song-search" class="song-search" placeholder="Search songs&hellip;" autocomplete="off" aria-label="Search songs">
     <div class="seg" data-role="view"><button data-view="list" class="active">List</button><button data-view="grid">Grid</button></div>
     <div class="seg" data-role="sort"><button data-sort="plays" class="active">Most&nbsp;played</button><button data-sort="az">A&ndash;Z</button></div>
-    <div class="seg" data-role="artist"><button data-artist="all" class="active">All</button><button data-artist="jerry">Jerry</button><button data-artist="mad">Mad</button><button data-artist="sean">Sean</button></div>
+    <div class="seg" data-role="artist">{artist_seg}</div>
   </div>
   <div class="song-legend" aria-hidden="true">{legend}</div>{variant_toggle(has_variant(), deferred=True)}
   <p class="songs-empty" id="songs-empty" hidden>No songs match &mdash; try a different search.</p>

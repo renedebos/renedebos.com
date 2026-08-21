@@ -1,6 +1,15 @@
 // Client-side search for /search/. Loads the build-generated index
 // (/assets/search-index.json) and searches it entirely in the browser — one row
 // per curated track plus one per show. No backend, no external library.
+//
+// Two modes share one result list. With text in the box the filters narrow
+// the query and the list is capped (RESULT_CAP) with a "refine" nudge. With
+// an empty box and any filter set, the page BROWSES: it lists everything the
+// filters pass, uncapped — "every Sean Hannan track" is a chip click, not a
+// search. Both the query and the filters live in the URL (?q=, ?type=,
+// ?artist=, ?source=) so a browse view is a link. Empty box + no filters
+// still shows nothing but the counts; the index is 700+ rows and nobody
+// asked for them yet.
 (function () {
   var qEl = document.getElementById("q");
   var filtersEl = document.getElementById("filters");
@@ -9,6 +18,11 @@
 
   var INDEX = [];
   var filters = { type: "all", artist: "all", source: "all" };
+  var FILTER_KEYS = ["type", "artist", "source"];
+  function anyFilter() {
+    return FILTER_KEYS.some(function (k) { return filters[k] !== "all"; });
+  }
+  function plural(n, word) { return n + " " + word + (n === 1 ? "" : "s"); }
 
   var norm = function (s) { return (s == null ? "" : String(s)).toLowerCase(); };
   var esc = function (s) {
@@ -85,18 +99,20 @@
     var q = qEl.value.trim();
     var tokens = norm(q).split(/\s+/).filter(Boolean);
     var pool = INDEX.filter(passFilters);
+    var nSongs = pool.filter(function (r) { return r.type === "track"; }).length;
+    var nShows = pool.filter(function (r) { return r.type === "show"; }).length;
+    var counts = plural(nSongs, "song") + " and " + plural(nShows, "show");
+    var browsing = !tokens.length;
 
-    if (!tokens.length) {
+    if (browsing && !anyFilter()) {
       resultsEl.innerHTML = "";
-      var nSongs = pool.filter(function (r) { return r.type === "track"; }).length;
-      var nShows = pool.filter(function (r) { return r.type === "show"; }).length;
-      statusEl.textContent = nSongs + " songs and " + nShows + " shows — start typing to search.";
+      statusEl.textContent = counts + " — start typing to search, or pick a filter to browse.";
       syncUrl(q);
       return;
     }
     var hits = [];
     pool.forEach(function (r) {
-      var sc = score(r, tokens);
+      var sc = browsing ? 0 : score(r, tokens);
       if (sc >= 0) hits.push([sc, r]);
     });
     // Sorted for browsing, not by match relevance: title, then date, then
@@ -112,8 +128,10 @@
     });
 
     var total = hits.length;
-    var shown = hits.slice(0, RESULT_CAP);
-    statusEl.textContent = !total ? "No matches for “" + q + "”."
+    var shown = browsing ? hits : hits.slice(0, RESULT_CAP);
+    statusEl.textContent = browsing
+      ? (total ? counts + " matching the filters — type to narrow." : "Nothing matches these filters.")
+      : !total ? "No matches for “" + q + "”."
       : shown.length < total
         ? "Showing " + shown.length + " of " + total + " results — refine your search to narrow it down."
         : total + (total === 1 ? " result" : " results");
@@ -122,8 +140,26 @@
   }
 
   function syncUrl(q) {
-    var u = q ? "?q=" + encodeURIComponent(q) : location.pathname;
-    history.replaceState(null, "", u);
+    var p = new URLSearchParams();
+    if (q) p.set("q", q);
+    FILTER_KEYS.forEach(function (k) { if (filters[k] !== "all") p.set(k, filters[k]); });
+    var s = p.toString();
+    history.replaceState(null, "", s ? "?" + s : location.pathname);
+  }
+
+  // Sets one filter group and repaints its chips. Returns false (and changes
+  // nothing) when no chip carries that value — that's what makes a hand-edited
+  // or stale ?artist= in the URL harmless rather than a silent empty page.
+  function setFilter(group, value) {
+    var chips = filtersEl.querySelectorAll('.chip[data-group="' + group + '"]');
+    var found = false;
+    chips.forEach(function (c) { if (c.dataset.value === value) found = true; });
+    if (!found) return false;
+    filters[group] = value;
+    chips.forEach(function (c) {
+      c.setAttribute("aria-pressed", c.dataset.value === value ? "true" : "false");
+    });
+    return true;
   }
 
   function chip(group, value, label) {
@@ -152,10 +188,7 @@
   filtersEl.addEventListener("click", function (e) {
     var b = e.target.closest(".chip");
     if (!b) return;
-    filters[b.dataset.group] = b.dataset.value;
-    filtersEl.querySelectorAll('.chip[data-group="' + b.dataset.group + '"]').forEach(function (c) {
-      c.setAttribute("aria-pressed", c.dataset.value === b.dataset.value ? "true" : "false");
-    });
+    setFilter(b.dataset.group, b.dataset.value);
     run();
   });
 
@@ -169,6 +202,7 @@
       renderFilters();
       var params = new URLSearchParams(location.search);
       if (params.get("q")) qEl.value = params.get("q");
+      FILTER_KEYS.forEach(function (k) { if (params.get(k)) setFilter(k, params.get(k)); });
       run();
     })
     .catch(function (e) {

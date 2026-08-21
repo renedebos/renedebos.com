@@ -152,6 +152,15 @@ is deliberate.
   broken since the feature landed on 2026-07-13. One-line
   `.track-select-bar[hidden] { display: none; }` fix; a parse of every other
   `hidden`-toggled element found no further bare `display` rule.
+- **"All songs by artist X" made reachable** (Rene's use case: every song Sean
+  & Jerry Hannan did). Two gaps: `/search/` listed nothing without typed text —
+  a filter chip only changed the count — and `/songs/`'s artist switch was a
+  hand-written All/Jerry/Mad/Sean that omitted "Sean & Jerry" although the
+  legend showed it. Now `/search/` **browses** when the box is empty and any
+  chip is set (uncapped, title→date order; query mode keeps the 60 cap), and
+  the chips live in the URL (`?artist=…&type=…&source=…`, unknown values
+  ignored). `/songs/`'s switch is generated from the same `present` list as
+  the legend, so the two can't drift again.
 
 ## ✅ Done this session (2026-08-19, fourth pass)
 
