@@ -24,6 +24,16 @@
   --player-accent: var(--accent);
   --player-track: var(--border);
   --player-surface: var(--player-bg);
+  /* The last four were added for the mini-player bar, whose whole rule block
+     reads only --player-* names (see its header comment at the end of this
+     file). Declared once here rather than per theme block on purpose — a
+     custom property holding a var() reference resolves against whatever the
+     referenced token computes to on the same element, and every theme block
+     below redefines those tokens on :root itself. */
+  --player-text: var(--text);
+  --player-muted: var(--muted);
+  --player-border: var(--border);
+  --player-mono: var(--mono);
 
   /* Header geometry, as tokens rather than three unrelated literals, because
      something else has to stick UNDER the sticky header: /playlist/'s
@@ -1047,7 +1057,7 @@ main {
    "+" button anywhere on the page, offers Clear or committing the selection
    to /playlist/#p=... (see track-select.js). */
 .track-select-bar {
-  position: fixed; left: 50%; bottom: 1.1rem; transform: translateX(-50%);
+  position: fixed; left: 50%; bottom: calc(1.1rem + var(--miniplayer-height, 0px)); transform: translateX(-50%);
   z-index: 40; display: flex; align-items: center; gap: 0.8rem;
   background: var(--player-bg); border: 1px solid var(--border); border-radius: 999px;
   padding: 0.5rem 0.6rem 0.5rem 1.1rem; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
@@ -1499,7 +1509,9 @@ tr:has(+ .ad-detail-row) .treat-toggle { transform: rotate(-135deg); }
   display: none;
   position: fixed;
   right: 1.2rem;
-  bottom: 1.2rem;
+  /* z-index 100 puts this above the mini-player's 50, so without the shift it
+     would sit on top of the bar rather than above it. */
+  bottom: calc(1.2rem + var(--miniplayer-height, 0px));
   z-index: 100;
   align-items: center;
   gap: 0.8rem;
@@ -1533,6 +1545,11 @@ tr:has(+ .ad-detail-row) .treat-toggle { transform: rotate(-135deg); }
 footer {
   text-align: center;
   padding: 2.5rem;
+  /* The footer is what a fixed bottom bar actually covers, so this is where the
+     page makes room for the mini-player. ADDED to the existing padding, never
+     replacing it, and read with a 0px fallback because miniplayer-views.js
+     REMOVES --miniplayer-height rather than zeroing it when no bar is showing. */
+  padding-bottom: calc(2.5rem + var(--miniplayer-height, 0px));
   border-top: 1px solid var(--border);
   font-size: 12px;
   color: var(--muted);
@@ -2159,4 +2176,158 @@ a.artist-chip:hover { filter: brightness(1.08); }
   .tracks-actions .select-all,
   .tracks-actions .zip-download-btn { flex: 1 1 0; }
   .zip-long { display: none; }
+}
+/* ── mini-player ─────────────────────────────────────────────────────────── */
+/* The fixed bottom bar rendered by MiniPlayerView (scripts/miniplayer-views.js),
+   mounted by player-boot.js on show pages so the current track's controls stay
+   on screen wherever the page is scrolled. Shipped 2026-08-20 as an on-page
+   control only — the cross-page coordinator (Phase 3 Stage 3a-canary Tasks
+   4-9) stays unbuilt; see plans/player-consolidation/.
+
+   Everything in this block reads only the --player-* aliases, never this
+   file's own token names. That is a deliberate property from the parked
+   design: the bar was written to render under BOTH design systems, and the
+   home.css port (on the `miniplayer-parked` branch) is byte-identical to this
+   block. If the bar ever ships on a home.css page, restore that port and keep
+   the two identical — and fix home.css's reduced-motion block first (it sets
+   animation-duration without iteration-count, which turns the loading
+   spinner's @keyframes spin into a perpetually rescheduled 1µs animation; the
+   Task 3 review's open defect 2, not applicable to this file).
+
+   The view adopts its root (`<div id="mini-player" class="mini-player" hidden>`,
+   emitted by build_show()) and never creates one; the markup it builds inside
+   is fixed and interpolates nothing. */
+.mini-player {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.7rem;
+  background: var(--player-surface);
+  border-top: 1px solid var(--player-border);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.14);
+  padding: 0.6rem 1rem;
+  /* The safe-area inset is the bar's OWN bottom padding on purpose: the
+     ResizeObserver publishes --miniplayer-height as the border-box height, so
+     the inset has to sit inside that measurement for consumers adding the
+     variable to clear the bar on a notched phone. Declared as a second
+     property rather than folded into the shorthand so a browser without env()
+     keeps the plain padding instead of dropping the declaration entirely. */
+  padding-bottom: calc(0.6rem + env(safe-area-inset-bottom, 0px));
+}
+/* An author `display` beats the UA [hidden] { display: none } rule, and the view
+   toggles both the root and the two step buttons via `hidden` — without these a
+   hidden bar renders as an empty strip, and a singleton queue (a hero card, a
+   song-page occurrence) shows two empty circles. The same trap site.css's
+   .pl-now[hidden] documents. */
+.mini-player[hidden] { display: none; }
+.mini-player .mp-btn[hidden] { display: none; }
+
+.mp-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid var(--player-accent);
+  background: transparent;
+  color: var(--player-accent);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.mp-btn:hover { background: var(--player-accent); color: var(--player-surface); }
+.mp-btn svg { width: 14px; height: 14px; }
+/* Prev/next/close are secondary to play: same outline shape, hairline border,
+   and they tint rather than fill on hover so the play button stays the one
+   emphatic control. */
+.mp-prev, .mp-next, .mp-close {
+  width: 30px;
+  height: 30px;
+  border-color: var(--player-border);
+  color: var(--player-muted);
+}
+.mp-prev:hover, .mp-next:hover, .mp-close:hover {
+  background: transparent;
+  border-color: var(--player-accent);
+  color: var(--player-accent);
+}
+.mp-prev svg, .mp-next svg, .mp-close svg { width: 12px; height: 12px; }
+
+/* min-width: 0 is what lets the two lines below ellipsize: a flex item's
+   default min-width is auto, which refuses to shrink past its content. */
+.mp-info { flex: 1 1 8rem; min-width: 0; }
+.mp-title, .mp-meta {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* text-decoration is set explicitly, not inherited: home.css resets `a` to no
+   underline globally and site.css has no `a` rule at all, so a bare <a href>
+   picked up the UA underline on one stylesheet and not the other — the exact
+   kind of divergence this block being identical is supposed to prevent. Caught
+   in the browser, not by reading the CSS. */
+.mp-title { color: var(--player-text); font-size: 0.9rem; font-weight: 700; text-decoration: none; }
+/* The <a> keeps NO href when the item's pageUrl fails isSitePath(), so the link
+   affordance is scoped to [href] — an inert title must not look clickable. */
+.mp-title[href] { cursor: pointer; }
+.mp-title[href]:hover { color: var(--player-accent); text-decoration: underline; }
+.mp-meta { color: var(--player-muted); font-size: 0.75rem; }
+
+.mp-progress {
+  flex: 1 1 16rem;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.mp-progress .progress-range { flex: 1; min-width: 0; }
+.mp-time {
+  flex-shrink: 0;
+  color: var(--player-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
+}
+
+.mp-controls { display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0; }
+
+/* The error line is appended as a direct child of the bar, not inside any of the
+   groups above, so give it a full-width row of its own rather than letting it
+   squeeze the controls. */
+.mini-player .player-error-msg {
+  flex: 1 1 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 600px) {
+  /* Wrap the seek row underneath play + info + controls. `order` is what puts it
+     below them despite .mp-progress coming BEFORE .mp-controls in the DOM. */
+  .mp-progress { flex-basis: 100%; order: 1; }
+  /* And zero the info's basis, so the first row stays ONE row. Flex breaks lines
+     using each item's hypothetical size (its flex-basis), and only shrinks what
+     already landed on a line — so an 8rem basis pushed the controls onto a line
+     of their own at 320px before the shrink that would have made them fit could
+     happen. Measured: a 3-row, 142px-tall bar. With basis 0 the info simply
+     grows into whatever play and the controls leave. */
+  .mp-info { flex-basis: 0; }
+  .mini-player .player-error-msg { order: 2; }
+  /* Larger touch targets for thumbs, the same rule site.css applies to
+     .ws-track rows at this breakpoint. */
+  .mp-btn { width: 44px; height: 44px; }
+  .mp-btn svg { width: 15px; height: 15px; }
+  .mp-prev, .mp-next, .mp-close { width: 38px; height: 38px; }
+  .mp-prev svg, .mp-next svg, .mp-close svg { width: 14px; height: 14px; }
+  /* Tighter padding and gaps buy the title back roughly 16px of a 320px
+     viewport, where four buttons and two fixed gaps otherwise leave it around
+     eleven characters before the ellipsis. Measured, not guessed. */
+  .mini-player { padding-left: 0.75rem; padding-right: 0.75rem; gap: 0.55rem; }
+  .mp-controls { gap: 0.3rem; }
 }

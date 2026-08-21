@@ -67,6 +67,12 @@ def main():
     write("assets/player-controller.js", open(os.path.join(here, "player-controller.js")).read())
     write("assets/player-views.js", open(os.path.join(here, "player-views.js")).read())
     write("assets/player-boot.js", open(os.path.join(here, "player-boot.js")).read())
+    # The mini-player bar (mounted by player-boot.js on show pages).
+    # miniplayer-state.js is deliberately NOT shipped: it is the parked
+    # cross-page coordinator's persistence codec, kept in scripts/ only so
+    # test-miniplayer-views.mjs can exercise the real codec and so Stage
+    # 3a-canary (plans/player-consolidation/) can resume without a branch dig.
+    write("assets/miniplayer-views.js", open(os.path.join(here, "miniplayer-views.js")).read())
     write("assets/wavesurfer.esm.js", open(os.path.join(here, "vendor", "wavesurfer.esm.js")).read())
     # client-zip@2.4.5 (MIT) — assembles multiple fetch() Responses into a
     # streamed ZIP Response in the browser, no server-side buffering.

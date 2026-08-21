@@ -998,7 +998,14 @@ def build_show(show):
         heading=f"{esc(artist['name'])}<br><em>Live at {esc(show['venue_short'])}</em>",
         tagline=" &middot; ".join(esc(b) for b in tagline_bits),
         nav=site_nav(),
-        main="".join(parts) + wav_note,
+        # The mini-player's root, adopted (never created) by MiniPlayerView --
+        # the recorded Task 6 contract: <div id="mini-player"
+        # class="mini-player" hidden>. Only on pages that run the shared
+        # controller: the legacy fallback engine never mounts a bar, so an
+        # excluded slug gets no dead markup.
+        main="".join(parts) + wav_note + (
+            '\n  <div id="mini-player" class="mini-player" hidden></div>'
+            if show["slug"] in CONTROLLER_ENGINE_SLUGS else ""),
         extra_scripts=extra_scripts,
         extra_head=show_jsonld(show, artist),
         pre_scripts=pre_scripts,

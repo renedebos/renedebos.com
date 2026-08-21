@@ -119,12 +119,46 @@ export function bootShowPage(doc, win) {
     wireKeyboard(handle, doc, abort.signal);
     wireDeepLink(handle, doc, win, abort.signal);
     wireResize(handle, win, abort.signal);
+    attachMiniPlayer(handle, doc, abort.signal);
     return handle;
   } catch (e) {
     abort.abort();
     controller.destroy();          // unmounts every view mounted so far
     throw e;
   }
+}
+
+// The fixed bottom bar: the current track's play/pause, prev/next, seek and
+// title, visible wherever the page is scrolled (shipped 2026-08-20, replacing
+// the retired /player/ popup's on-THIS-page half; cross-page persistence is
+// the parked Stage 3a-canary coordinator, deliberately not built here).
+//
+// Dynamically imported, deliberately: a static import would put
+// miniplayer-views.js on this module's critical path, so a missing or broken
+// bar asset would fail the WHOLE boot and drop every show page to the legacy
+// engine — a much worse trade than a page without a bar. The bar renders
+// nothing until a track is current, so mounting late is invisible.
+//
+// Runs strictly after the rows-found guard: the bar is chrome, not playable
+// markup, and must never keep an otherwise-empty page claimed.
+function attachMiniPlayer(handle, doc, signal) {
+  const root = doc.getElementById('mini-player');
+  if (!root) return;
+  import('/assets/miniplayer-views.js').then(({ MiniPlayerView }) => {
+    if (signal.aborted) return;
+    const controller = handle.controller;
+    // Close is a REQUEST (the view's recorded contract) — policy lives here:
+    // pause and unmount, which hides the bar and releases its height. The
+    // next play remounts it. mount() is idempotent for a view already in the
+    // controller's set (onAttach aborts its outgoing listeners first), so the
+    // 'play' listener needs no mounted-state bookkeeping of its own.
+    const bar = new MiniPlayerView(root, {
+      onClose() { controller.pause(); controller.unmount(bar); },
+    });
+    controller.mount(bar);
+    handle.views.push(bar);
+    controller.audioElement.addEventListener('play', () => controller.mount(bar), { signal });
+  }).catch(() => { /* no bar — the page is complete without it */ });
 }
 
 // Peaks arrive asynchronously, but the mount above must be synchronous — the
