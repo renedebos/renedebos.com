@@ -516,11 +516,11 @@ waveform on every non-active track row. Detail in the fourth-pass log above.
 
 **Still open from the original round-2 list:**
 
-- **The noise-reduced pill renders twice** on the 8 shows carrying it —
-  page-level and on the technical-data summary. Predates this work; more visible
-  now the label row is gone.
-- `/contact/`'s `.contact-section` still has `padding-top: 2rem`, which existed
-  to sit under the sub that was cut. Slightly loose on desktop, fine on mobile.
+- ~~The noise-reduced pill renders twice~~ — **done 2026-08-21** (`3674a52`):
+  the tech-table `<summary>` copy was dropped; the page-level pill from
+  `status_line()` is the one that stays. Verified live on the 8 shows.
+- ~~`/contact/`'s orphaned `padding-top: 2rem`~~ — **done** in the same
+  commit; `main`'s own 4rem top padding already provides the gap.
 - Layout/placement rather than copy, plus the editorial items in inventory §8
   (per-show descriptions, `/history/`, the homepage cards).
 
