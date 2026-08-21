@@ -250,7 +250,7 @@ above.
 
 **Rolled out on every player surface (2026-08-18).** One preference module
 (`scripts/variant-pref.js`) is the single source of truth; show pages, song
-pages, `/songs/`, `/playlist/` and the `/player/` popup all read it, as does
+pages, `/songs/` and `/playlist/` all read it, as does
 the legacy `player.js` fallback engine (via the `window.HannanVariant` bridge
 and the `hannanvariantchange` DOM event, since classic scripts cannot import).
 `data-src` in the markup stays the **archive** URL on every row — the variant

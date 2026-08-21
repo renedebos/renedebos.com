@@ -324,8 +324,7 @@ def build_playlist():
       <p class="pl-actions"><button id="pl-generate" class="pl-generate" type="button" disabled>Generate playlist</button>
       <button id="pl-save" class="pl-generate pl-share" type="button" hidden>Save playlist</button>
       <button id="pl-share" class="pl-generate pl-share" type="button" hidden>Copy share link</button>
-      <button id="pl-download" class="pl-generate pl-share" type="button" hidden>Download ZIP</button>
-      <button id="pl-player" class="pl-generate pl-share" type="button" hidden>Open continuous player</button></p>
+      <button id="pl-download" class="pl-generate pl-share" type="button" hidden>Download ZIP</button></p>
     </div>
     <div id="pl-saved"></div>{variant_toggle(has_variant())}
     <div id="pl-now" class="pl-now" hidden></div>
@@ -602,59 +601,6 @@ main tbody tr:nth-child(even) td {{ background: color-mix(in srgb, var(--chip) 5
 
 VARIANT_UI_SCRIPT = '\n<script type="module" src="/assets/variant-ui.js"></script>'
 
-def build_player():
-    """/player/ — a dedicated popup window for continuous playback (see
-    scripts/continuous-player.js and player.js's sendToPlayer()). Deliberately
-    NOT page_shell(): no nav/footer chrome, since this is a small window a
-    visitor opens once and leaves alone, not a normal nav destination — same
-    reasoning as /manual/. Unlike /manual/'s own bespoke design system, this
-    reuses the main site's stylesheet/fonts and its existing .pl-now/.pl-btn/
-    .pl-row player styling so it still feels like part of the archive.
-
-    The variant control is templated in here rather than baked into
-    PLAYER_SHELL so a checkout with no rendered variant doesn't ship a dead
-    toggle -- same has_variant() gate the other client-rendered pages use."""
-    return (PLAYER_SHELL
-            .replace("<!--VARIANT_PICK-->", variant_toggle(has_variant()))
-            .replace("<!--VARIANT_SCRIPT-->", VARIANT_UI_SCRIPT if has_variant() else ""))
-
-PLAYER_SHELL = '''<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Hannan Tapes — Player</title>
-<meta name="description" content="Continuous playback window for The Hannan Tapes — keep listening while you browse.">
-<meta name="robots" content="noindex">
-<meta name="theme-color" content="#f5f2ed" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#17150f" media="(prefers-color-scheme: dark)">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9834;</text></svg>">
-<link rel="stylesheet" href="/assets/fonts.css">
-<link rel="stylesheet" href="/assets/site.css">
-<style>
-  body { max-width: 26rem; margin: 0 auto; padding: 1.1rem 1.1rem 3rem; }
-  .cp-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.8rem; margin-bottom: 0.8rem; }
-  .cp-head a { font-size: 12px; color: var(--muted); text-decoration: none; }
-  .cp-head a:hover { color: var(--accent); }
-  .cp-head h1 { font-family: var(--serif); font-size: 1.15rem; font-weight: 500; margin: 0; }
-  .cp-empty { font-size: 13px; color: var(--muted); font-weight: 300; line-height: 1.6; }
-  .cp-empty a { color: var(--accent); }
-</style>
-</head>
-<body>
-  <div class="cp-head">
-    <h1>&#9834; Player</h1>
-    <a href="/playlist/">Build a playlist &rarr;</a>
-  </div>
-  <!--VARIANT_PICK-->
-  <div id="cp-now" class="pl-now"></div>
-  <p id="cp-status" class="search-status"></p>
-  <div id="cp-queue"></div>
-  <script src="/assets/continuous-player.js"></script><!--VARIANT_SCRIPT-->
-</body>
-</html>
-'''
-
 def build_archive_data():
     """/archive-data/ — a single filterable/sortable table of every track's
     catalog + audio-processing spec data (loudness, true peak, LRA, workflow
@@ -663,7 +609,7 @@ def build_archive_data():
     destination: uses page_shell() (not a bespoke shell, unlike /manual/)
     since it's an interactive tool that belongs to the site's app-like pages,
     but is deliberately absent from SITE_PAGES/EXTRA_PAGES (so: no nav link,
-    no sitemap entry) and noindex'd, matching /player/'s "unlisted" treatment
+    no sitemap entry) and noindex'd — the same "unlisted" treatment
     for the same reason: not content for a visitor to stumble into."""
     return page_shell(
         title="Archive Data — The Hannan Tapes",
@@ -1269,4 +1215,4 @@ def build_404():
         nav=site_nav(), main=main)
 
 
-__all__ = ['CONTROLLER_ENGINE_SLUGS', 'SONG_BOOT_SCRIPT', 'SONG_ENGINE_FLAG', 'build_404', 'build_archive_data', 'build_contact', 'build_history', 'build_home', 'build_manual', 'build_player', 'build_playlist', 'build_process', 'build_search', 'build_show', 'build_song_page', 'build_songs_index', 'build_updates']
+__all__ = ['CONTROLLER_ENGINE_SLUGS', 'SONG_BOOT_SCRIPT', 'SONG_ENGINE_FLAG', 'build_404', 'build_archive_data', 'build_contact', 'build_history', 'build_home', 'build_manual', 'build_playlist', 'build_process', 'build_search', 'build_show', 'build_song_page', 'build_songs_index', 'build_updates']

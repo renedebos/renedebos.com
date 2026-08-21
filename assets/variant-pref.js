@@ -36,8 +36,7 @@ export function getVariant() {
 
 // One notification path for every source of a change (this tab's setVariant,
 // another tab's storage event). It fires the module subscribers AND a DOM
-// CustomEvent on window: classic scripts (player.js, continuous-player.js)
-// cannot import this module and, being parsed before it, cannot even rely on
+// CustomEvent on window: classic scripts (player.js) cannot import this module and, being parsed before it, cannot even rely on
 // the window bridge below existing yet at their own boot time — but they can
 // always add an event listener. See the bridge comment at the bottom.
 function notify(v) {
@@ -82,9 +81,9 @@ export function srcForItem(item, variant) {
 }
 
 // ── bridge for classic (non-module) scripts ─────────────────────────────────
-// player.js and continuous-player.js are classic scripts and cannot `import`.
-// Rather than let either re-implement the enum/localStorage handling (two more
-// places to get the fallback wrong), they read this one object. It is defined
+// player.js is a classic script and cannot `import`. Rather than let it
+// re-implement the enum/localStorage handling (one more place to get the
+// fallback wrong), it reads this one object. It is defined
 // as a side effect of loading this module, so a classic script MUST null-check
 // it: on a page that never loads the variant UI the global is absent and the
 // caller correctly falls back to the archive URL already in its markup.

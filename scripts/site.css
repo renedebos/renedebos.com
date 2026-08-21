@@ -443,7 +443,14 @@ main {
 .track-list {
   border: 1px solid var(--border);
   border-radius: 10px;
-  overflow: hidden;
+  /* `clip`, not `hidden`, purely so the active row below can be sticky:
+     `overflow: hidden` makes this a scroll container, and a sticky child
+     sticks to its nearest scroll container -- this one, which never scrolls,
+     so the row would simply never stick. `overflow: clip` does the same
+     rounded-corner clipping without creating one. Pre-2022 browsers ignore
+     it and fall back to no clipping, which costs the corner rounding on a
+     hovered first/last row and nothing else. */
+  overflow: clip;
   background: var(--player-bg);
 }
 
@@ -479,6 +486,15 @@ main {
    same "filled once engaged" language .track-add[aria-pressed] already uses. */
 .track-row.playing,
 .track-row.is-active { background: var(--accent-light); box-shadow: inset 3px 0 0 var(--accent); }
+/* Keep whatever is playing reachable on a 35-track page. Scroll past it and
+   the row itself pins under the header, so play/pause, the seek bar, the
+   title and the download button stay one click away instead of scrolling
+   off -- the thing /playlist/'s now-playing card does, without a second
+   engine or a second copy of the controls. `is-active` rather than
+   `playing` so hitting pause doesn't drop the row you just paused.
+   Unsticks at the bottom of the list, since .track-list is its containing
+   block. */
+.track-row.is-active { position: sticky; top: var(--header-h); z-index: 4; }
 .track-row.is-active .track-title { color: var(--accent); font-weight: 600; }
 .track-row.is-active .time-label { color: var(--accent); }
 .track-row.is-active .play-btn {
@@ -1042,7 +1058,7 @@ main {
   background: none; border: none; cursor: pointer; text-decoration: underline;
 }
 .tsb-clear:hover { color: var(--accent); }
-.tsb-add, .tsb-player { padding: 0.4rem 1rem; font-size: 12px; white-space: nowrap; }
+.tsb-add { padding: 0.4rem 1rem; font-size: 12px; white-space: nowrap; }
 
 /* ── alternates disclosure ───────────────────────────────────────────────── */
 

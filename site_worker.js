@@ -24,6 +24,11 @@
 const LEGACY_REDIRECTS = {
   "/jerry-hannan-19-broadway-2001/": "/shows/jerry-19-broadway-2001-01-08/",
   "/archive/": "/",
+  // The /player/ popup window was retired 2026-08-20 (see PLAYLIST FEATURE.md
+  // Phase 7). An old bookmark keeps working: the hash never reaches the
+  // server, so /player/#p=<ids> lands on /playlist/#p=<ids>, which
+  // playlist-boot.js hydrates into exactly that queue.
+  "/player/": "/playlist/",
 };
 
 const ID_RE = /^[a-z0-9-]{1,80}$/;
