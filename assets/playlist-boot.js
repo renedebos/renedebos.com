@@ -48,12 +48,22 @@ const CATALOG_FETCH_TIMEOUT_MS = 10000;
 
 const SAVED_KEY = 'savedPlaylists';
 
+// Which tags are offered as playlist facets -- deliberately a subset of the
+// TAGS.md vocabulary, not all of it (`medley`, `banter` and `beatles` have
+// always been catalogued but never offered here). The four genre-flavour tags
+// `folk`/`country`/`blues`/`rock` were dropped 2026-08-20: between them they
+// cover 94 of 680 tracks, so as facets they mostly produced thin playlists,
+// and the chips crowded a page that was already dense. They remain on the
+// tracks themselves and still work in /search/.
 const TAG_ORDER = ['original', 'cover', 'irish', 'ballad',
-  'upbeat', 'rocker', 'folk', 'country', 'blues',
-  'rock', 'guest', 'favorite', 'rarity'];
+  'upbeat', 'rocker', 'guest', 'favorite', 'rarity'];
 
-// Curated songwriter facet — mirrors playlist.js's SONGWRITER_MAP exactly
-// (a pre-existing data inconsistency it papers over, not fixed here).
+// The songwriter FACET was removed from the page 2026-08-20, but this map
+// stays: matches() still applies a songwriter filter, and the "Traditional &
+// Irish" preset is defined by it (the `traditional` TAG was retired
+// 2026-07-19 as redundant with songwriter, so nothing else can express it).
+// Mirrors playlist.js's SONGWRITER_MAP exactly — a pre-existing data
+// inconsistency it papers over, not fixed here.
 const SONGWRITER_MAP = {
   'Jerry Hannan & Sean Hannan': 'original',
   'Traditional': 'traditional',
@@ -61,13 +71,6 @@ const SONGWRITER_MAP = {
   'Lennon-McCartney': 'lennon-mccartney',
   'Steve Poltz': 'poltz',
 };
-const SONGWRITER_LABELS = [
-  ['original', 'Jerry & Sean'],
-  ['traditional', 'Traditional'],
-  ['lennon-mccartney', 'Lennon & McCartney'],
-  ['poltz', 'Steve Poltz'],
-];
-
 const PRESETS = {
   mixed45: { filters: { artist: [], venue: [], source: [], tags: [], songwriter: [] }, mode: 'minutes', amount: 45 },
   traditional: { filters: { artist: [], venue: [], source: [], tags: [], songwriter: ['traditional'] }, mode: 'songs', amount: 12 },
@@ -202,8 +205,6 @@ export function bootPlaylistPage(doc, win) {
     groups.push(filterGroup('Artist', 'artist', 'All artists', uniq('artist').map((a) => [a, ARTIST_NAMES[a] || a])));
     groups.push(filterGroup('Venue', 'venue', 'All venues', uniq('venue').map((v) => [v, v])));
     groups.push(filterGroup('Source', 'source', 'All sources', [['aud', 'AUD'], ['sbd', 'SBD']]));
-    const swPresent = SONGWRITER_LABELS.filter((sw) => CATALOG.some((t) => SONGWRITER_MAP[t.songwriter] === sw[0]));
-    groups.push(filterGroup('Songwriter', 'songwriter', 'All songwriters', swPresent));
     const present = TAG_ORDER.filter((tg) => CATALOG.some((t) => t.tags.indexOf(tg) !== -1));
     groups.push('<div class="pl-filter-group"><p class="pl-filter-label">Tags</p><div class="chip-row">'
       + present.map((tg) => chip('tag', tg, tg, filters.tags.indexOf(tg) !== -1)).join('') + '</div></div>');
