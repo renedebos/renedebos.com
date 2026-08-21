@@ -291,6 +291,9 @@ h1 em { font-style: italic; color: var(--accent); }
   margin-bottom: 0.4rem; color: var(--ink);
 }
 .pw-modal p { font-size: 13px; color: var(--ink-dim); margin-bottom: 1.4rem; }
+/* Size line when the modal has no version chooser (the complete-archive ZIP
+   on this page): "ZIP · 25.3 GB". Mirrors site.css. */
+.pw-modal .pw-size { margin-top: -1rem; font-size: 12px; font-variant-numeric: tabular-nums; }
 .pw-modal input {
   font-family: 'Karla', sans-serif; font-size: 14px; width: 100%;
   padding: 0.65rem 0.9rem; border: 1px solid var(--hairline); border-radius: 3px;

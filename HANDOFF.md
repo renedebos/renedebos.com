@@ -65,9 +65,15 @@ toolbars in two visual languages — are one row of same-height controls
 default to the Archive master" sentence and the "How these were made" link
 are gone (the download modal's own chooser states the format at the moment
 it matters); **the "You are hearing the Loud version" disclosure stays** —
-it is the price of the Loud default and must not be removed. ZIP button now
-carries its size on its face. Separately, 23 show descriptions lost their
-processing-boilerplate paragraph (that story lives at `/process/`).
+it is the price of the Loud default and must not be removed. ZIP button
+briefly carried its size on its face; **moved into the password modal on
+2026-08-21** — each version option now shows its own size (Archive FLAC vs
+Loud MP3), for single tracks, whole-show transfers and every ZIP, and a
+chooser-less download (complete-archive ZIP) gets a one-line `ZIP · 25.3 GB`.
+The loud size is `size_mb` (the archive MP3's): measured against all 680
+`MP3-14/` + `MP3/` objects in R2, the two differ by ≤ 7 bytes. Separately,
+23 show descriptions lost their processing-boilerplate paragraph (that story
+lives at `/process/`).
 
 ### /playlist/ page slimmed (`658f1bc`)
 

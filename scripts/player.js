@@ -289,6 +289,7 @@ modal.innerHTML = `
   <div class="pw-modal">
     <h3>Protected Download</h3>
     <p>This recording is password protected. Enter the password to download.</p>
+    <p class="pw-size" id="pwSize" hidden></p>
     <fieldset class="pw-variant" id="pwVariant" hidden>
       <legend>Version</legend>
       <label><input type="radio" name="pwVariant" value="archive" checked>
@@ -373,19 +374,59 @@ function targetHasLossy(target) {
 // WAV vs FLAC, since whole-show transfers are mostly WAV but not all.
 function variantLabels(target) {
   const kind = target && target.type === 'batch' ? 'loud' : (target && target.lossyKind) || 'loud';
+  const sizes = targetSizes(target);
+  const withSize = (sub, size) => (size ? sub + ' \u00b7 ' + size : sub);
   if (kind === 'mp3') {
     const fmt = (target.filename || '').split('.').pop().toUpperCase() || 'WAV';
     return {
-      archiveSub: 'lossless ' + fmt + ' \u00b7 the original transfer',
+      archiveSub: withSize('lossless ' + fmt + ' \u00b7 the original transfer', sizes.archive),
       lossyName: 'MP3',
-      lossySub: '320\u2009kbps \u00b7 not lossless',
+      lossySub: withSize('320\u2009kbps \u00b7 not lossless', sizes.lossy),
     };
   }
   return {
-    archiveSub: 'lossless FLAC \u00b7 \u221220 LUFS \u00b7 the master',
+    archiveSub: withSize('lossless FLAC \u00b7 \u221220 LUFS \u00b7 the master', sizes.archive),
     lossyName: 'Loud',
-    lossySub: 'MP3 320\u2009kbps \u00b7 \u221214 LUFS \u00b7 not lossless',
+    lossySub: withSize('MP3 320\u2009kbps \u00b7 \u221214 LUFS \u00b7 not lossless', sizes.lossy),
   };
+}
+
+// The size label of each version of a target, either of which may be missing.
+// A whole show is several hundred MB, so someone on cellular deserves the
+// number before committing -- and the modal opens before any byte moves, so
+// this is still "before the tap". The sizes live HERE rather than on the
+// buttons because every download has two formats and one figure on a button
+// face could only describe one of them. Batches carry the labels on the
+// manifest (sitegen/fragments.py for show/song ZIPs, playlist-boot.js for the
+// playlist one); single files carry them as data-size / data-lossy-size on
+// the button (dl_button()).
+function targetSizes(target) {
+  if (!target) return { archive: null, lossy: null };
+  if (target.type === 'batch') {
+    const m = target.manifest || {};
+    return { archive: m.size || null, lossy: (m.loud && m.loud.size) || null };
+  }
+  return { archive: target.size || null, lossy: target.lossySize || null };
+}
+
+// What to call the file on the size line when there is no chooser to put the
+// size on: the extension of what will be saved, or ZIP for a batch.
+function targetFormat(target) {
+  if (target && target.type === 'batch') return 'ZIP';
+  const ext = ((target && target.filename) || '').split('.').pop();
+  return ext && ext !== target.filename ? ext.toUpperCase() : 'File';
+}
+
+// Keep in step with fmt_size_mb() in sitegen/fragments.py: the server builds
+// the show/song ZIP size labels, this builds the playlist ZIP's. Integer,
+// half-up GB rounding on purpose -- toFixed(1) and Python's :.1f round an
+// exact .x5 differently, so a shared integer formula is what keeps a
+// playlist's label identical to a show's for the same total.
+function formatSizeMb(mb) {
+  if (!mb) return null;
+  if (mb < 1000) return mb + ' MB';
+  const tenths = Math.floor((Math.round(mb) + 50) / 100);
+  return Math.floor(tenths / 10) + '.' + (tenths % 10) + ' GB';
 }
 
 function openPasswordModal(target) {
@@ -402,7 +443,14 @@ function openPasswordModal(target) {
   document.getElementById('pwArchiveSub').textContent = labels.archiveSub;
   document.getElementById('pwLossyName').textContent = labels.lossyName;
   document.getElementById('pwLossySub').textContent = labels.lossySub;
-  document.getElementById('pwVariant').hidden = !targetHasLossy(target);
+  const hasLossy = targetHasLossy(target);
+  document.getElementById('pwVariant').hidden = !hasLossy;
+  // With the chooser hidden the sizes on its options are hidden too, so the
+  // one size there is gets its own line: "WAV \u00b7 631 MB", "ZIP \u00b7 25.3 GB".
+  const sizeEl = document.getElementById('pwSize');
+  const size = targetSizes(target).archive;
+  sizeEl.hidden = hasLossy || !size;
+  sizeEl.textContent = sizeEl.hidden ? '' : targetFormat(target) + ' \u00b7 ' + size;
   modal.classList.add('open');
   setTimeout(() => document.getElementById('pwInput').focus(), 50);
 }
@@ -645,6 +693,8 @@ document.querySelectorAll('a.download-btn').forEach(btn => {
       lossyFile: btn.dataset.lossyFile || null,
       lossyName: btn.dataset.lossyName || null,
       lossyKind: btn.dataset.lossyKind || null,
+      size: btn.dataset.size || null,
+      lossySize: btn.dataset.lossySize || null,
     });
   });
 });

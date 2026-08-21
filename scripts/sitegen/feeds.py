@@ -86,6 +86,11 @@ def build_track_catalog():
                 "file": t["file"],
                 "flac": t.get("flac"),
                 "flac_size_mb": t.get("flac_size_mb"),
+                # Archive MP3 size -- and, because both renders are 320 kbps
+                # CBR of the same audio, the loud variant's size too (measured
+                # within 7 bytes on all 680; see _loud_zip() in fragments.py).
+                # The playlist page sums it for the loud ZIP's size label.
+                "size_mb": t.get("size_mb"),
                 # Loud variant: emitted per track, and ONLY when that track has
                 # variant provenance — the player must never be handed a key
                 # that was not actually rendered.

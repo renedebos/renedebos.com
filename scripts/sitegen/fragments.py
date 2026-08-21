@@ -112,7 +112,27 @@ def recording_item_id(show_slug, file):
     """
     return f"recording:{show_slug}:{file}"
 
-def dl_button(file, *, title="Download", loud_file=None, mp3_file=None):
+def fmt_size_mb(mb):
+    """A file size in whole MB -> the label the download modal shows, or None.
+
+    Below 1 GB the figure is printed as it is stored (`size_mb`, a rounded
+    whole number); at and above, one decimal of GB, matching the homepage's
+    complete-archive line. Keep in step with formatSizeMb() in player.js,
+    which builds the same label for the client-assembled playlist ZIP. The
+    GB rounding is integer arithmetic, half-up, on purpose: Python's
+    `f"{x:.1f}"` rounds 1.25 to 1.2 and JavaScript's `toFixed(1)` to 1.3,
+    so the two helpers disagreed on every exact .x5 total until they shared
+    one integer formula.
+    """
+    if not mb:
+        return None
+    if mb < 1000:
+        return f"{mb} MB"
+    tenths = (int(mb) + 50) // 100
+    return f"{tenths // 10}.{tenths % 10} GB"
+
+def dl_button(file, *, title="Download", loud_file=None, mp3_file=None,
+              size=None, lossy_size=None):
     # Icon-only (no text label): with only the password-protected lossless
     # download left, the format doesn't need spelling out in the button —
     # it's in the hover title, and the password modal makes the gating clear
@@ -133,6 +153,12 @@ def dl_button(file, *, title="Download", loud_file=None, mp3_file=None):
     #
     # With neither, the modal hides its version control rather than offering
     # a dead option.
+    #
+    # `size` / `lossy_size` are display labels ("29 MB", "2.13 GB") the modal
+    # puts beside each option, so the number is in front of the visitor before
+    # any byte moves -- the modal opens first, so this is still "before the
+    # tap" for someone on cellular. Labels rather than numbers because the
+    # whole-show sizes are stored pre-formatted in recordings.json.
     url = stream_url(file)
     name = file.split("/")[-1]
     lossy = ""
@@ -141,8 +167,11 @@ def dl_button(file, *, title="Download", loud_file=None, mp3_file=None):
         lossy = (f' data-lossy-file="{esc(key)}" '
                  f'data-lossy-name="{esc(key.split("/")[-1])}" '
                  f'data-lossy-kind="{kind}"')
+        if lossy_size:
+            lossy += f' data-lossy-size="{esc(lossy_size)}"'
+    size_attr = f' data-size="{esc(size)}"' if size else ""
     return (f'<a class="download-btn" href="{esc(url)}" aria-label="{esc(title)}" '
-            f'download="{esc(name)}" title="{esc(title)}"{lossy}>{DL_SVG}</a>')
+            f'download="{esc(name)}" title="{esc(title)}"{size_attr}{lossy}>{DL_SVG}</a>')
 
 def _loud_zip(manifest, tracks, slug, info_text):
     """The -14 counterpart of a ZIP manifest, or None.
@@ -162,10 +191,18 @@ def _loud_zip(manifest, tracks, slug, info_text):
         return None
     by_flac = {t["flac"]: t for t in tracks if t.get("flac")}
     files = []
+    loud_mb = 0
     for f in manifest["files"]:
         t = by_flac.get(f["key"])
         if not t or str(t["num"]) not in vt or not t.get("file"):
             return None
+        # `size_mb` is the archive MP3's size, and it IS the -14 render's too:
+        # both are 320 kbps CBR of identical-length audio. Measured 2026-08-21
+        # against every MP3-14/ and MP3/ object in R2 (680 of each): the two
+        # differ by at most 7 bytes, and round(bytes/1e6) == size_mb on all
+        # 680 for both. No separate variant size is recorded, and none needs
+        # to be.
+        loud_mb += t.get("size_mb") or 0
         files.append({"key": variant_key(t["file"]),
                       "name": f["name"].replace(f'{manifest["zipName"][:-4]}/',
                                                 f'{manifest["zipName"][:-4]} (loud -14 LUFS)/', 1)
@@ -176,6 +213,7 @@ def _loud_zip(manifest, tracks, slug, info_text):
         "files": files,
         "infoName": f"{folder}/show-info.txt",
         "infoText": info_text + LOUD_ZIP_NOTE,
+        "size": fmt_size_mb(loud_mb),
     }
 
 # Appended to a loud ZIP's info file. The download is the one place a visitor
@@ -188,24 +226,6 @@ LOUD_ZIP_NOTE = (
     "lossless FLAC at -20 LUFS, downloadable from the same button.\n"
     "https://renedebos.com/process/\n")
 
-
-def zip_size_html(total_mb):
-    """The ZIP's total size, on the button rather than only in its hover title.
-
-    A whole show is several hundred MB and the old label said only "Download
-    ZIP"; someone on cellular deserves the number before the tap, not after.
-    It is the archive (FLAC) figure -- the -14 MP3 option the download box
-    offers is smaller -- so it over-states rather than under-states what a
-    loud ZIP costs, which is the direction a warning should be wrong in.
-
-    Emitted inside the label's own text flow rather than as a sibling flex
-    item of the button: as its own item there is no real space before the
-    separator, only the flex gap, and the accessible name came out
-    "Download ZIP\u00b7 572 MB".
-    """
-    if not total_mb:
-        return ""
-    return f' <span class="zip-size">&middot; {total_mb}\u00a0MB</span>'
 
 def show_zip_button_html(show):
     """Manifest + 'Download all tracks (.zip)' button for a show page. The ZIP
@@ -229,6 +249,11 @@ def show_zip_button_html(show):
         "files": [{"key": e["key"], "name": e["name"]} for e in entries],
         "infoName": f"{folder}/show-info.txt",
         "infoText": info,
+        # Shown beside the Archive option in the password modal (the loud
+        # half carries its own). The button itself no longer states a size:
+        # one figure on its face could only describe one of the two formats
+        # the modal offers.
+        "size": fmt_size_mb(total_mb),
     }
     # Parallel -14 file list, when every track in the ZIP has a variant
     # rendered. All-or-nothing on purpose: a ZIP that silently mixed loud and
@@ -242,11 +267,10 @@ def show_zip_button_html(show):
     title = f"Download all {n} tracks (.zip) · {total_mb} MB"
     return (f'<script>window.ZIP_MANIFEST = {json.dumps(manifest, ensure_ascii=False)};</script>'
             f'<button type="button" class="zip-download-btn" title="{esc(title)}">{ZIP_SVG}'
-            f'<span class="zip-label"><span class="zip-long">Download </span>ZIP'
-            f'{zip_size_html(total_mb)}</span></button>')
+            f'<span class="zip-label"><span class="zip-long">Download </span>ZIP</span></button>')
 
 def player(file, duration=None, download_file=None, version=None, label=None, item_attr="",
-           mp3_file=None):
+           mp3_file=None, size=None, lossy_size=None):
     """A custom-player row: play button, progress bar, and (optionally) a
     password-protected download button.
 
@@ -278,7 +302,8 @@ def player(file, duration=None, download_file=None, version=None, label=None, it
         # "lossless" would now under-describe what the button opens.
         title = (f"Download {loss_fmt} or MP3 (password protected)" if mp3_file
                  else f"Download lossless {loss_fmt} (password protected)")
-        downloads = dl_button(download_file, title=title, mp3_file=mp3_file)
+        downloads = dl_button(download_file, title=title, mp3_file=mp3_file,
+                              size=size, lossy_size=lossy_size if mp3_file else None)
     else:
         downloads = ""
     play_label = f' {esc(label)}' if label else ""
@@ -295,7 +320,7 @@ def player(file, duration=None, download_file=None, version=None, label=None, it
         </div>'''
 
 def recording_card(title, meta_pairs, badge, file, stream_file=None, play_label=None,
-                   show=None):
+                   show=None, size=None, stream_size=None):
     # Stream the lossy proxy (stream_file) when one exists; the lossless `file`
     # is only reachable through the download/password flow.
     grid = "".join(f'<span class="meta-label">{esc(k)}</span><span class="meta-value">{esc(v)}</span>'
@@ -304,9 +329,12 @@ def recording_card(title, meta_pairs, badge, file, stream_file=None, play_label=
     # The MP3 proxy this card already streams doubles as its lossy download
     # option. Only meaningful alongside a lossless download -- a card with no
     # gated original has nothing to offer an alternative TO.
+    # `size` / `stream_size` are recordings.json's pre-formatted labels
+    # ("2.13 GB", "453 MB") -- the same strings the card's meta grid shows.
     play = player(stream_file or file,
                   download_file=file if is_lossless else None, label=play_label,
-                  mp3_file=stream_file if (is_lossless and stream_file) else None)
+                  mp3_file=stream_file if (is_lossless and stream_file) else None,
+                  size=size, lossy_size=stream_size)
     # `show` is optional so the attribute is purely additive: callers that
     # don't pass it emit exactly the markup they did before. The attribute goes
     # on .recording-item (not the inner .custom-player) because that card is
@@ -1023,6 +1051,7 @@ def song_zip_button_html(s):
         "files": files,
         "infoName": f"{folder}/collection-info.txt",
         "infoText": info,
+        "size": fmt_size_mb(total_mb),
     }
     # -14 counterpart, offered only when every performance in the ZIP has one
     # rendered — same all-or-nothing rule as the show ZIP, for the same reason
@@ -1040,12 +1069,13 @@ def song_zip_button_html(s):
                       for o in zip_occ],
             "infoName": f"{lfolder}/collection-info.txt",
             "infoText": info + LOUD_ZIP_NOTE,
+            # size_mb doubles as the -14 size; see _loud_zip() for the measurement.
+            "size": fmt_size_mb(sum(o.get("size_mb") or 0 for o in zip_occ)),
         }
     title = f"Download all {n} performance{plural} (.zip) · {total_mb} MB"
     return (f'<script>window.ZIP_MANIFEST = {json.dumps(manifest, ensure_ascii=False)};</script>'
             f'<button type="button" class="zip-download-btn" title="{esc(title)}">{ZIP_SVG}'
-            f'<span class="zip-label"><span class="zip-long">Download </span>ZIP'
-            f'{zip_size_html(total_mb)}</span></button>')
+            f'<span class="zip-label"><span class="zip-long">Download </span>ZIP</span></button>')
 
 def jsonld(*objs):
     """Wrap schema.org object(s) in a JSON-LD <script> for the page <head>."""
@@ -1115,7 +1145,7 @@ def song_jsonld(s):
     })
 
 
-__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'PLAYBACK_READY_ARM', 'PLAYBACK_READY_SNIPPETS', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', '_pre_edit_class', '_pre_edit_label', '_show_label', '_song_occ_html', '_src_tag', 'contact_block', 'content', 'dl_button', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'playable_item_attr', 'playback_ready_onerror', 'player', 'recording_card', 'recording_item_id', 'show_jsonld', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'track_add_button', 'updates_list', 'variant_toggle', 'zip_size_html']
+__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'PLAYBACK_READY_ARM', 'PLAYBACK_READY_SNIPPETS', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', '_pre_edit_class', '_pre_edit_label', '_show_label', '_song_occ_html', '_src_tag', 'contact_block', 'content', 'dl_button', 'fmt_size_mb', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'playable_item_attr', 'playback_ready_onerror', 'player', 'recording_card', 'recording_item_id', 'show_jsonld', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'track_add_button', 'updates_list', 'variant_toggle']
 
 
 def variant_toggle(any_loud=True, deferred=False):

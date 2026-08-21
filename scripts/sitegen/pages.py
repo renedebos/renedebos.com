@@ -190,7 +190,8 @@ def _archive_zip_line():
     updated = meta["generated"][:10]
     btn = dl_button(meta["r2_key"],
                      title=f'Download the complete archive (password protected) · '
-                           f'{meta["n_tracks"]} tracks · {size_gb} GB FLAC')
+                           f'{meta["n_tracks"]} tracks · {size_gb} GB FLAC',
+                     size=f'{size_gb} GB')
     return f'''
   <p class="archive-zip-line">
     {btn}
@@ -792,7 +793,12 @@ def build_show(show):
                 # download and the player can never disagree about whether a
                 # variant exists for this track.
                 dl_btns.append(dl_button(t["flac"], title=flac_title,
-                                         loud_file=variant_key(t["file"]) if vt else None))
+                                         loud_file=variant_key(t["file"]) if vt else None,
+                                         size=fmt_size_mb(t.get("flac_size_mb")),
+                                         # size_mb is the -14 render's size too
+                                         # (320 kbps CBR, same audio length);
+                                         # see _loud_zip() for the measurement.
+                                         lossy_size=fmt_size_mb(t.get("size_mb")) if vt else None))
             # Playlist-selection id: {show-slug}-{tracknum:02d}, matching assets/tracks.json.
             track_id = f'{show["slug"]}-{t["num"]:02d}'
             add_btn = track_add_button(track_id)
@@ -910,7 +916,7 @@ def build_show(show):
         meta = recording_meta(r)
         play_label = f'{title}, {artist["name"]}, {date_with_subtitle(show)}'
         cards.append(recording_card(title, meta, r["source"], r["file"], r.get("stream"), play_label,
-                                    show=show))
+                                    show=show, size=r.get("size"), stream_size=r.get("stream_size")))
     label = "Full Recording" if len(canon) == 1 else "Full Recording &middot; " + f"{len(canon)} parts"
     # A standalone "Full shows stream as 320 kbps MP3." hint used to sit here.
     # Cut 2026-08-19; the fact it carried now rides in each card's own Stream
@@ -933,7 +939,7 @@ def build_show(show):
             meta = recording_meta(r)
             play_label = f'{r["alt_label"]}, {artist["name"]}, {date_with_subtitle(show)}'
             cards.append(recording_card(r["alt_label"], meta, r["source"], r["file"], r.get("stream"), play_label,
-                                        show=show))
+                                        show=show, size=r.get("size"), stream_size=r.get("stream_size")))
         parts.append(f'''
   <section>
     <details class="alt-details">

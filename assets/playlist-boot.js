@@ -307,11 +307,16 @@ export function bootPlaylistPage(doc, win) {
     const lines = withFlac.map(label).join('\n');
     const info = name + '\n' + withFlac.length + ' tracks · ' + totalMb + ' MB\n\n' + lines + '\n\n'
       + 'Recreate this playlist: ' + win.location.origin + '/playlist/#p=' + withFlac.map((t) => t.id).join(',') + '\n';
+    // Size labels for the password modal's two options. formatSizeMb is
+    // player.js's (a classic script, so a global); the label is optional by
+    // design, so a page without it simply shows no size.
+    const sizeLabel = (mb) => (win.formatSizeMb ? win.formatSizeMb(mb) : null);
     const manifest = {
       zipName: folder + '.zip',
       files,
       infoName: folder + '/playlist-info.txt',
       infoText: info,
+      size: sizeLabel(totalMb),
     };
     // -14 counterpart, offered in the password modal only when EVERY track in
     // the ZIP has one rendered -- same all-or-nothing rule the server-built
@@ -325,6 +330,10 @@ export function bootPlaylistPage(doc, win) {
         files: withFlac.map((t) => ({ key: t.loud, name: lfolder + '/' + sanitizeFilename(label(t)) + '.mp3' })),
         infoName: lfolder + '/playlist-info.txt',
         infoText: info + LOUD_ZIP_NOTE,
+        // size_mb is the archive MP3's size and, both renders being 320 kbps
+        // CBR of the same audio, the -14 variant's too -- see _loud_zip() in
+        // sitegen/fragments.py for the measurement.
+        size: sizeLabel(Math.round(withFlac.reduce((a, t) => a + (t.size_mb || 0), 0))),
       };
     }
     return manifest;

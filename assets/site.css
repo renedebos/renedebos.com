@@ -1029,13 +1029,14 @@ main {
 .zip-download-btn { color: var(--accent); background: var(--accent-light); border: 1px solid transparent; }
 .zip-download-btn:hover { background: var(--accent); color: var(--on-accent); }
 .zip-download-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
-/* ALL of the label is one flex item, so it is also one text flow. Split across
-   sibling items, each fragment became its own anonymous flex item, picked up
-   the button's gap in place of a space, and the accessible name came out
-   "Download ZIP· 572 MB". The size is secondary to the verb, and "Download" is
-   what goes when the row has to fit a phone — the icon already says download. */
+/* ALL of the label is one flex item, so it is also one text flow — split
+   across sibling items each fragment picks up the button's gap in place of a
+   space and the accessible name comes out mangled. "Download" is what goes
+   when the row has to fit a phone — the icon already says download. The ZIP's
+   size is deliberately NOT on the face (it was, 2026-08-20/21): the modal
+   offers two formats, and one figure could only describe one of them, so each
+   option in the modal carries its own. */
 .zip-label { white-space: nowrap; }
-.zip-size { opacity: 0.72; font-variant-numeric: tabular-nums; }
 
 /* Floating summary bar — appears once at least one track is selected via a
    "+" button anywhere on the page, offers Clear or committing the selection
@@ -1386,6 +1387,10 @@ tr:has(+ .ad-detail-row) .treat-toggle { transform: rotate(-135deg); }
   margin-bottom: 1.4rem;
   font-weight: 300;
 }
+/* Size line for a download with no version chooser (the complete-archive ZIP,
+   a transfer with no stream proxy): "WAV · 631 MB". With a chooser showing,
+   each option carries its own size instead. Mirrored in home.css. */
+.pw-modal .pw-size { margin-top: -1rem; font-size: 12px; font-variant-numeric: tabular-nums; }
 
 .pw-modal input {
   font-family: var(--sans);
