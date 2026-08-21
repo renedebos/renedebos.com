@@ -21,6 +21,21 @@ import { PLAY_ICON, PAUSE_ICON, LOADING_ICON, formatTime } from '/assets/player-
 
 const RANGE_MAX = 1000;
 
+// The one mount policy every boot module shares (player-boot, playlist-boot,
+// song-boot). Close is the view's REQUEST; the policy here is pause + unmount
+// (which hides the bar and releases --miniplayer-height), and the audio's next
+// 'play' event remounts. mount() is idempotent for a view already in the
+// controller's set — onAttach() aborts its outgoing listeners first — so the
+// 'play' listener needs no mounted-state bookkeeping.
+export function attachMiniPlayerBar(controller, root, signal) {
+  const bar = new MiniPlayerView(root, {
+    onClose() { controller.pause(); controller.unmount(bar); },
+  });
+  controller.mount(bar);
+  controller.audioElement.addEventListener('play', () => controller.mount(bar), { signal });
+  return bar;
+}
+
 // Published on <html> so page chrome can make room for the bar. Consumers must
 // read it with a fallback — `var(--miniplayer-height, 0px)` — because it is
 // REMOVED, not zeroed, whenever the bar isn't showing.
@@ -31,6 +46,12 @@ export const HEIGHT_VAR = '--miniplayer-height';
 const PREV_ICON = '<svg viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2" width="2" height="12"/><polygon points="14,2 14,14 4,8"/></svg>';
 const NEXT_ICON = '<svg viewBox="0 0 16 16" fill="currentColor"><polygon points="2,2 2,14 12,8"/><rect x="12" y="2" width="2" height="12"/></svg>';
 const X_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
+// Identical to playlist-views.js's SHUFFLE_ICON — the same control in two
+// engines-worth of chrome should not draw two different glyphs.
+const SHUFFLE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
+  + 'stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/>'
+  + '<line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/>'
+  + '<line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>';
 
 // Same rule as miniplayer-state.js's boundedPath(), and for the same reason it
 // is resolved with the URL parser rather than by inspecting characters: a
@@ -136,6 +157,7 @@ export class MiniPlayerView extends QueueView {
       if (!this.controller) return;
       if (act === 'prev') { this._prev(); return; }
       if (act === 'next') { this.controller.next(); return; }
+      if (act === 'shuffle') { this.controller.toggleShuffle(); return; }
       // Play/pause, Resume (blocked autoplay) and Retry (a real failure) are
       // one control: toggle() already routes an 'error' state to play() rather
       // than toggling (player-controller.js's toggle()), so the button's LABEL
@@ -247,7 +269,7 @@ export class MiniPlayerView extends QueueView {
     if (this._currentId === null) return;   // nothing was ever built
     this.root.innerHTML = '';
     this._currentId = null;
-    this._playBtn = this._prevBtn = this._nextBtn = this._range = null;
+    this._playBtn = this._shuffleBtn = this._prevBtn = this._nextBtn = this._range = null;
     this._timeCur = this._titleEl = this._metaEl = this._totalEl = null;
     this._errorEl = null;
     this._errorKind = null;
@@ -270,11 +292,13 @@ export class MiniPlayerView extends QueueView {
       + '<input type="range" class="progress-range" min="0" max="' + RANGE_MAX + '" value="0" step="1">'
       + '<span class="mp-time mp-time-total"></span></div>'
       + '<div class="mp-controls">'
+      + '<button type="button" class="mp-btn mp-shuffle" data-act="shuffle" aria-pressed="false" aria-label="Shuffle">' + SHUFFLE_ICON + '</button>'
       + '<button type="button" class="mp-btn mp-prev" data-act="prev" aria-label="Previous track">' + PREV_ICON + '</button>'
       + '<button type="button" class="mp-btn mp-next" data-act="next" aria-label="Next track">' + NEXT_ICON + '</button>'
       + '<button type="button" class="mp-btn mp-close" data-act="close" aria-label="Close player">' + X_SVG + '</button>'
       + '</div>';
     this._playBtn = this.root.querySelector('.mp-play');
+    this._shuffleBtn = this.root.querySelector('.mp-shuffle');
     this._prevBtn = this.root.querySelector('.mp-prev');
     this._nextBtn = this.root.querySelector('.mp-next');
     this._range = this.root.querySelector('.progress-range');
@@ -381,6 +405,19 @@ export class MiniPlayerView extends QueueView {
       const stepping = snapshot.queue.length > 1;
       if (this._prevBtn) this._prevBtn.hidden = !stepping;
       if (this._nextBtn) this._nextBtn.hidden = !stepping;
+      // Shuffle rides the same gate: reordering a single item is meaningless,
+      // exactly like stepping to it.
+      if (this._shuffleBtn) this._shuffleBtn.hidden = !stepping;
+    }
+    // Outside the queueRevision gate: toggleShuffle() flips state without
+    // changing queue membership on an unstarted queue (its graceful-degrade
+    // path), so the pressed state has to track the snapshot, not the
+    // revision. Unconditional attribute writes at ~4/sec, matching
+    // playlist-views.js's shuffle button exactly.
+    if (this._shuffleBtn) {
+      this._shuffleBtn.setAttribute('aria-pressed', String(!!snapshot.shuffleOn));
+      this._shuffleBtn.setAttribute('aria-label', snapshot.shuffleOn
+        ? 'Shuffle on — restore order' : 'Shuffle');
     }
 
     const t = audio ? audio.currentTime : 0;

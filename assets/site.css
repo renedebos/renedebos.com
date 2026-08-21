@@ -1872,11 +1872,11 @@ a.artist-chip:hover { filter: brightness(1.08); }
 .pl-generate:hover { opacity: 0.9; }
 .pl-generate:disabled { opacity: 0.45; cursor: default; }
 
-/* Now-playing card sticks while the queue scrolls under it. The default
-   offset is 0 for the /player/ popup, which has no site header; /playlist/
-   overrides it below to clear one. */
+/* The queue's now-playing header. It STOPPED being sticky 2026-08-20: the
+   mini-player bar is /playlist/'s persistent control now, and a card pinned
+   at the top plus a bar at the bottom showed the same song twice — the exact
+   doubling the show pages' sticky row was removed for. */
 .pl-now {
-  position: sticky; top: 0; z-index: 5;
   display: flex; flex-direction: column; gap: 0.55rem;
   background: var(--player-bg); border: 1px solid var(--border);
   border-radius: 6px; padding: 0.9rem 1.1rem; margin: 1rem 0;
@@ -1885,10 +1885,6 @@ a.artist-chip:hover { filter: brightness(1.08); }
    (author rules always win over user-agent ones), so the empty card was
    rendering as an empty bar even while marked hidden. */
 .pl-now[hidden] { display: none; }
-/* On /playlist/ the site header is itself sticky at top:0 with a higher
-   z-index, so an unoffset card parks BEHIND it. /player/ has no header and
-   keeps the 0 above. */
-.playlist .pl-now { top: var(--header-h); }
 .pl-now-info { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.6rem; }
 .pl-now-title {
   font-size: 16px; font-weight: 500; color: var(--text); text-decoration: none;
@@ -2230,18 +2226,26 @@ a.artist-chip:hover { filter: brightness(1.08); }
 /* Prev/next/close are secondary to play: same outline shape, hairline border,
    and they tint rather than fill on hover so the play button stays the one
    emphatic control. */
-.mp-prev, .mp-next, .mp-close {
+.mp-shuffle, .mp-prev, .mp-next, .mp-close {
   width: 30px;
   height: 30px;
   border-color: var(--player-border);
   color: var(--player-muted);
 }
-.mp-prev:hover, .mp-next:hover, .mp-close:hover {
+.mp-shuffle:hover, .mp-prev:hover, .mp-next:hover, .mp-close:hover {
   background: transparent;
   border-color: var(--player-accent);
   color: var(--player-accent);
 }
-.mp-prev svg, .mp-next svg, .mp-close svg { width: 12px; height: 12px; }
+.mp-shuffle svg, .mp-prev svg, .mp-next svg, .mp-close svg { width: 12px; height: 12px; }
+/* Shuffle on — the same filled-solid language as the playlist card's
+   .pl-btn[aria-pressed] and the track-add toggle, in --player-* terms. */
+.mp-shuffle[aria-pressed="true"],
+.mp-shuffle[aria-pressed="true"]:hover {
+  background: var(--player-accent);
+  border-color: var(--player-accent);
+  color: var(--player-surface);
+}
 
 /* min-width: 0 is what lets the two lines below ellipsize: a flex item's
    default min-width is auto, which refuses to shrink past its content. */
@@ -2307,8 +2311,8 @@ a.artist-chip:hover { filter: brightness(1.08); }
      .ws-track rows at this breakpoint. */
   .mp-btn { width: 44px; height: 44px; }
   .mp-btn svg { width: 15px; height: 15px; }
-  .mp-prev, .mp-next, .mp-close { width: 38px; height: 38px; }
-  .mp-prev svg, .mp-next svg, .mp-close svg { width: 14px; height: 14px; }
+  .mp-shuffle, .mp-prev, .mp-next, .mp-close { width: 38px; height: 38px; }
+  .mp-shuffle svg, .mp-prev svg, .mp-next svg, .mp-close svg { width: 14px; height: 14px; }
   /* Tighter padding and gaps buy the title back roughly 16px of a 320px
      viewport, where four buttons and two fixed gaps otherwise leave it around
      eleven characters before the ellipsis. Measured, not guessed. */

@@ -117,6 +117,18 @@ export function bootSongPage(doc, win) {
       destroy() { abort.abort(); controller.destroy(); },
     };
     wireKeyboard(handle, doc, abort.signal);
+    // The mini-player bar. Occurrence rows are singleton queues, so the bar
+    // shows play/seek/title only (prev/next/shuffle self-hide) — still worth
+    // having: a song page's rows keep playing while you read, and the row you
+    // started may be ten occurrences up. Same dynamic-import isolation and
+    // shared attachMiniPlayerBar policy as player-boot/playlist-boot.
+    const miniRoot = doc.getElementById('mini-player');
+    if (miniRoot) {
+      import('/assets/miniplayer-views.js').then(({ attachMiniPlayerBar }) => {
+        if (abort.signal.aborted) return;
+        attachMiniPlayerBar(controller, miniRoot, abort.signal);
+      }).catch(() => {});
+    }
     resolveReady();
     return handle;
   } catch (e) {

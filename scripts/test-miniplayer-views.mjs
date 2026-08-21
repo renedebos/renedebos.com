@@ -161,6 +161,33 @@ test('prev/next are hidden for a singleton queue and shown once the queue has mo
   c.destroy();
 });
 
+// ── shuffle ────────────────────────────────────────────────────────────────
+test('shuffle rides the singleton gate, toggles the controller, and mirrors shuffleOn', () => {
+  const c = makeController();
+  const { root } = mount(c);
+  c.playSingleton(item('a'));
+  assert.equal(root.querySelector('.mp-shuffle').hidden, true,
+    'reordering a single item is as meaningless as stepping to it');
+
+  c.setQueue([item('a'), item('b'), item('c')], { startIndex: 0 });
+  const btn = root.querySelector('.mp-shuffle');
+  assert.equal(btn.hidden, false);
+  assert.equal(btn.getAttribute('aria-pressed'), 'false');
+
+  // Through the CLICK path, not by calling toggleShuffle() directly — the
+  // mutation this must fail on is the data-act handler being dropped. The
+  // listener is delegated on the root, so that is where the event goes.
+  root.dispatch('click', { target: btn });
+  assert.equal(c.snapshot().shuffleOn, true, 'the click reached the controller');
+  assert.equal(btn.getAttribute('aria-pressed'), 'true');
+  assert.match(btn.getAttribute('aria-label'), /restore order/);
+
+  root.dispatch('click', { target: btn });
+  assert.equal(c.snapshot().shuffleOn, false);
+  assert.equal(btn.getAttribute('aria-pressed'), 'false');
+  c.destroy();
+});
+
 // Gated on queueRevision rather than recomputed per tick, so this proves the
 // gate opens for an in-place queue mutation. removeAt() splices the SAME array
 // — a queue-identity check would miss it entirely.

@@ -791,6 +791,19 @@ export function bootPlaylistPage(doc, win) {
         resolveReady({ recognized: hashIsRecognizedShareLink(), hadIds: false });
       });
 
+    // The mini-player bar — /playlist/'s persistent control since the
+    // now-playing card stopped sticking (2026-08-20). Dynamic import for the
+    // same reason player-boot.js gives: a broken bar asset costs the bar,
+    // never the page. Policy (close = pause + unmount, remount on 'play')
+    // lives in attachMiniPlayerBar, shared verbatim with the other boots.
+    const miniRoot = doc.getElementById('mini-player');
+    if (miniRoot) {
+      import('/assets/miniplayer-views.js').then(({ attachMiniPlayerBar }) => {
+        if (abort.signal.aborted) return;
+        attachMiniPlayerBar(controller, miniRoot, abort.signal);
+      }).catch(() => {});
+    }
+
     return handle;
   } catch (e) {
     abort.abort();

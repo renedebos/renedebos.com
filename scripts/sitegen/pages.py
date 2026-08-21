@@ -329,6 +329,7 @@ def build_playlist():
     <div id="pl-saved"></div>{variant_toggle(has_variant())}
     <div id="pl-now" class="pl-now" hidden></div>
     <div id="pl-queue" class="pl-queue"></div>
+    <div id="mini-player" class="mini-player" hidden></div>
   </section>''',
     )
 
@@ -1140,7 +1141,11 @@ def build_songs_index():
         description=f"Every song across the Hannan live archive — {len(songs)} songs cross-referenced against every show and performance.",
         url="https://renedebos.com/songs/", heading="Songs",
         tagline="Every song, and every time it was played",
-        nav=site_nav("Songs"), main=main,
+        nav=site_nav("Songs"),
+        # The trailing div is the mini-player's root (same contract as
+        # build_show()'s) — /songs/ plays occurrence rows through the same
+        # song-boot.js controller, so it gets the same bar.
+        main=main + '\n  <div id="mini-player" class="mini-player" hidden></div>',
         # Shared player engine (song-boot.js), unconditional on every song page
         # since Stage 3a-foundation -- see SONG_BOOT_SCRIPTS' own comment.
         # songs.js still loads: it owns the list/grid sort/filter/search
@@ -1194,7 +1199,11 @@ def build_song_page(s):
         # above a line that says "Played N times · <artists>" and carries the
         # artists too (page-cleanup row E2).
         tagline="",
-        nav=site_nav("Songs"), main="".join(parts), extra_head=song_jsonld(s),
+        nav=site_nav("Songs"),
+        # The mini-player's root — same contract as build_show()'s: adopted by
+        # MiniPlayerView, mounted by song-boot.js.
+        main="".join(parts) + '\n  <div id="mini-player" class="mini-player" hidden></div>',
+        extra_head=song_jsonld(s),
         # Every occurrence row is server-rendered here (unlike /songs/'s lazy
         # per-<details> insertion), so song-boot.js mounts the whole page's
         # queue synchronously at parse time, same shape as a show page.

@@ -144,20 +144,11 @@ export function bootShowPage(doc, win) {
 function attachMiniPlayer(handle, doc, signal) {
   const root = doc.getElementById('mini-player');
   if (!root) return;
-  import('/assets/miniplayer-views.js').then(({ MiniPlayerView }) => {
+  import('/assets/miniplayer-views.js').then(({ attachMiniPlayerBar }) => {
     if (signal.aborted) return;
-    const controller = handle.controller;
-    // Close is a REQUEST (the view's recorded contract) — policy lives here:
-    // pause and unmount, which hides the bar and releases its height. The
-    // next play remounts it. mount() is idempotent for a view already in the
-    // controller's set (onAttach aborts its outgoing listeners first), so the
-    // 'play' listener needs no mounted-state bookkeeping of its own.
-    const bar = new MiniPlayerView(root, {
-      onClose() { controller.pause(); controller.unmount(bar); },
-    });
-    controller.mount(bar);
-    handle.views.push(bar);
-    controller.audioElement.addEventListener('play', () => controller.mount(bar), { signal });
+    // Close/remount policy lives in attachMiniPlayerBar — ONE copy, shared
+    // with playlist-boot and song-boot, so the three surfaces cannot drift.
+    handle.views.push(attachMiniPlayerBar(handle.controller, root, signal));
   }).catch(() => { /* no bar — the page is complete without it */ });
 }
 
