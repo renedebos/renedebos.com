@@ -929,7 +929,7 @@ mini-player suites came back with the bar — see "Sticky experiments" above):
 
 (History: the fourth pass ran 164 after the two mini-player suites, 164
 tests, were deleted with the parked modules; the fifth pass lifted them back
-UNMODIFIED and 165 → 329. `test-player-controller.mjs` went 60 → 57 in the same
+UNMODIFIED and 164 → 329. `test-player-controller.mjs` went 60 → 57 in the same
 commit, then 57 → 58 with the `load()`-on-source-change contract. The three
 tests added to `test-player-views.mjs` in PR #48 cover the blocked-autoplay
 cue, that a real failure still reads as a failure, and that a stale block from
