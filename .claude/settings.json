@@ -74,7 +74,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /home/renedebos/renedebos.com/.claude/hooks/git-build-stagger.sh",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/git-build-stagger.sh\"",
             "timeout": 10
           }
         ]

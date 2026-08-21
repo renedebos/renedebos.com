@@ -9,10 +9,23 @@ set -euo pipefail
 
 input=$(cat)
 
-python3 - "$input" <<'PYEOF'
+# Pick a working Python. On Windows `python3` resolves to the Microsoft Store
+# alias stub: it exists, so `command -v python3` finds it, but every invocation
+# exits non-zero without running anything. Probe by executing each candidate
+# rather than by presence.
+PY=""
+for cand in python3 python py; do
+  if "$cand" -c "" >/dev/null 2>&1; then PY="$cand"; break; fi
+done
+# No usable interpreter — fail open rather than block the tool call.
+[ -n "$PY" ] || exit 0
+
+"$PY" - "$input" <<'PYEOF'
 import json
+import os
 import re
 import sys
+import tempfile
 import time
 
 payload = json.loads(sys.argv[1])
@@ -24,7 +37,12 @@ pattern = re.compile(
 if not pattern.search(cmd):
     sys.exit(0)
 
-lock = "/tmp/renedebos-git-build.lock"
+# Keep the literal /tmp on the Chromebook — every session must agree on one
+# path or the stagger guard silently stops seeing the other session. Only
+# Windows diverges, where a native-Python "/tmp/..." resolves to a nonexistent
+# C:\tmp and fails to write.
+_tmp = "/tmp" if os.path.isdir("/tmp") else tempfile.gettempdir()
+lock = os.path.join(_tmp, "renedebos-git-build.lock")
 now = time.time()
 threshold = 300
 
