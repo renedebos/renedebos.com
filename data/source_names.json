@@ -69,7 +69,7 @@
             "05 The Wind.flac",
             "06 Perfect Autumn Day (early version).flac",
             "07 Everything Reminds Me of You.flac",
-            "08 I Need a Lover.flac",
+            "08 Hear Me.flac",
             "09 Open Door.flac",
             "10 The Bold Fenian Men.flac",
             "11 Smoke in Heaven.flac",
@@ -107,7 +107,7 @@
         "05 The Wind.flac",
         "06 Perfect Autumn Day (early version).flac",
         "07 Everything Reminds Me of You.flac",
-        "08 I Need a Lover.flac",
+        "08 Hear Me.flac",
         "09 Open Door.flac",
         "10 The Bold Fenian Men.flac",
         "11 Smoke in Heaven.flac",
@@ -224,7 +224,7 @@
             "24 Okie from Muskogee .flac",
             "25 Nicolai.flac",
             "26 Happy Birthday Marco.flac",
-            "27 Come On All You Young Maidens.flac",
+            "27 A Bunch of Thyme.flac",
             "28 Everything Reminds Me of You.flac",
             "29 Ted Kennedy Song.flac"
           ]
@@ -257,7 +257,7 @@
         "24 Okie from Muskogee.flac",
         "25 Nicolai.flac",
         "26 Happy Birthday Marco.flac",
-        "27 Come On All You Young Maidens.flac",
+        "27 A Bunch of Thyme.flac",
         "28 Everything Reminds Me of You.flac",
         "29 Ted Kennedy Song.flac"
       ]
@@ -281,7 +281,7 @@
             "10 Learn About Love.flac",
             "11 Good Life.flac",
             "12 Everything Reminds Me of You.flac",
-            "13 Lover.flac",
+            "13 Hear Me.flac",
             "14 Hard Drinkin'.flac",
             "15 Still I Love Him  .flac",
             "16 You're Pulling Me Leg _ The Ted Kennedy Song.flac",
@@ -306,7 +306,7 @@
         "10 Learn About Love.flac",
         "11 Good Life.flac",
         "12 Everything Reminds Me of You.flac",
-        "13 Lover.flac",
+        "13 Hear Me.flac",
         "14 Hard Drinkin'.flac",
         "15 Still I Love Him.flac",
         "16 You're Pulling Me Leg _ The Ted Kennedy Song.flac",
@@ -345,7 +345,7 @@
             "19 Smoke in Heaven.flac",
             "20 Getaway Blues.flac",
             "21 She is The Girlfriend of The Boyfriend of Herself.flac",
-            "22 Leprechaun.flac",
+            "22 The Blarney Stone Blues.flac",
             "23 Kilkelly Ireland.flac",
             "24 My Father's House.flac",
             "25 Slave Woman.flac",
@@ -375,7 +375,7 @@
         "19 Smoke in Heaven.flac",
         "20 Getaway Blues.flac",
         "21 She is The Girlfriend of The Boyfriend of Herself.flac",
-        "22 Leprechaun.flac",
+        "22 The Blarney Stone Blues.flac",
         "23 Kilkelly Ireland.flac",
         "24 My Father's House.flac",
         "25 Slave Woman.flac",
@@ -630,7 +630,7 @@
           "sub": "Tracks",
           "first": 1,
           "files": [
-            "01 State Trooper.flac",
+            "01 Highway Patrolman.flac",
             "02 Crystal Rose.flac",
             "03 Truck.flac",
             "04 Everything.flac",
@@ -649,7 +649,7 @@
             "17 Black is The Color.flac",
             "18 The Fields of Athenry.flac",
             "19 Johnny McEldoo.flac",
-            "20 Four Leaf Clover Inn.flac",
+            "20 The Blarney Stone Blues.flac",
             "21 Rugburns .flac",
             "22 Houses of the Holy .flac",
             "23 Loser.flac",
@@ -659,13 +659,13 @@
             "27 Slave Woman.flac",
             "28 I Thought I Was You.flac",
             "29 The Kiss.flac",
-            "30 Never Knew a Woman.flac",
+            "30 Woman.flac",
             "31 The Old Triangle.flac"
           ]
         }
       ],
       "files": [
-        "01 State Trooper.flac",
+        "01 Highway Patrolman.flac",
         "02 Crystal Rose.flac",
         "03 Truck.flac",
         "04 Everything.flac",
@@ -684,7 +684,7 @@
         "17 Black is The Color.flac",
         "18 The Fields of Athenry.flac",
         "19 Johnny McEldoo.flac",
-        "20 Four Leaf Clover Inn.flac",
+        "20 The Blarney Stone Blues.flac",
         "21 Rugburns.flac",
         "22 Houses of the Holy.flac",
         "23 Loser.flac",
@@ -694,7 +694,7 @@
         "27 Slave Woman.flac",
         "28 I Thought I Was You.flac",
         "29 The Kiss.flac",
-        "30 Never Knew a Woman.flac",
+        "30 Woman.flac",
         "31 The Old Triangle.flac"
       ]
     },
@@ -839,7 +839,7 @@
             "18 Woman.flac",
             "19 The Parting Glass.flac",
             "20 Everything Reminds Me of You.flac",
-            "21 Leprechaun.flac"
+            "21 The Blarney Stone Blues.flac"
           ]
         }
       ],
@@ -864,7 +864,7 @@
         "18 Woman.flac",
         "19 The Parting Glass.flac",
         "20 Everything Reminds Me of You.flac",
-        "21 Leprechaun.flac"
+        "21 The Blarney Stone Blues.flac"
       ]
     },
     "jerry-cafe-java-1999-05-27": {
@@ -932,7 +932,7 @@
             "03 Nicolai.flac",
             "04 Butter.flac",
             "05 Everything Reminds Me of You.flac",
-            "06 I Need a Lover.flac",
+            "06 Hear Me.flac",
             "07 Truck.flac",
             "08 Black Is the Color.flac",
             "09 Father and Son.flac",
@@ -963,7 +963,7 @@
         "03 Nicolai.flac",
         "04 Butter.flac",
         "05 Everything Reminds Me of You.flac",
-        "06 I Need a Lover.flac",
+        "06 Hear Me.flac",
         "07 Truck.flac",
         "08 Black Is the Color.flac",
         "09 Father and Son.flac",
@@ -1003,7 +1003,7 @@
             "07 The Good Life.flac",
             "08 Luxury of Murder.flac",
             "09 Everything Reminds Me of You.flac",
-            "10 I Need a Lover.flac",
+            "10 Hear Me.flac",
             "11 Blahana.flac",
             "12 Tougher Than the Rest.flac",
             "13 Recycle.flac",
@@ -1031,7 +1031,7 @@
         "07 The Good Life.flac",
         "08 Luxury of Murder.flac",
         "09 Everything Reminds Me of You.flac",
-        "10 I Need a Lover.flac",
+        "10 Hear Me.flac",
         "11 Blahana.flac",
         "12 Tougher Than the Rest.flac",
         "13 Recycle.flac",
@@ -1211,7 +1211,7 @@
             "07 Rugburns.flac",
             "08 Baby.flac",
             "09 Everything Reminds Me of You.flac",
-            "10 I Need a Lover .flac",
+            "10 Hear Me.flac",
             "11 ABC.flac",
             "12 I Thought I Was You.flac",
             "13 Anna May.flac",
@@ -1229,7 +1229,7 @@
         "07 Rugburns.flac",
         "08 Baby.flac",
         "09 Everything Reminds Me of You.flac",
-        "10 I Need a Lover.flac",
+        "10 Hear Me.flac",
         "11 ABC.flac",
         "12 I Thought I Was You.flac",
         "13 Anna May.flac",
@@ -1262,7 +1262,7 @@
             "17 Butter.flac",
             "18 Anna May.flac",
             "19 Everything Reminds Me of You.flac",
-            "20 I Need a Lover.flac",
+            "20 Hear Me.flac",
             "21 Good Life.flac",
             "22 The Kiss - Da Da Da (Slave to an Angel).flac"
           ]
@@ -1288,7 +1288,7 @@
         "17 Butter.flac",
         "18 Anna May.flac",
         "19 Everything Reminds Me of You.flac",
-        "20 I Need a Lover.flac",
+        "20 Hear Me.flac",
         "21 Good Life.flac",
         "22 The Kiss - Da Da Da (Slave to an Angel).flac"
       ]
@@ -1312,15 +1312,15 @@
             "10 Plastic Lemons.flac",
             "11 Elephant Shoes.flac",
             "12 Everything Reminds Me of You.flac",
-            "13 I Need a Dream.flac",
+            "13 Hear Me.flac",
             "14 Butter.flac",
             "15 Hollywood.flac",
             "16 Rugburns.flac",
             "17 Truck.flac",
             "18 Angel from Montgomery.flac",
-            "18 Dysfunctional Guy.flac",
-            "19 Baby.flac",
-            "20 DaDaDa.flac"
+            "19 Dysfunctional Guy.flac",
+            "20 Baby.flac",
+            "21 The Kiss - Da Da Da (Slave to an Angel).flac"
           ]
         }
       ],
@@ -1337,15 +1337,15 @@
         "10 Plastic Lemons.flac",
         "11 Elephant Shoes.flac",
         "12 Everything Reminds Me of You.flac",
-        "13 I Need a Dream.flac",
+        "13 Hear Me.flac",
         "14 Butter.flac",
         "15 Hollywood.flac",
         "16 Rugburns.flac",
         "17 Truck.flac",
         "18 Angel from Montgomery.flac",
-        "18 Dysfunctional Guy.flac",
-        "19 Baby.flac",
-        "20 DaDaDa.flac"
+        "19 Dysfunctional Guy.flac",
+        "20 Baby.flac",
+        "21 The Kiss - Da Da Da (Slave to an Angel).flac"
       ]
     },
     "mad-sweetwater-2000-10-17": {
@@ -1693,7 +1693,7 @@
           "files": [
             "01 Soundcheck.flac",
             "02 Ride On.flac",
-            "03 Never Knew a Woman.flac",
+            "03 Woman.flac",
             "04 Long Black Veil.flac",
             "05 I Thought I Was You.flac",
             "06 Sam Hall.flac",
@@ -1727,7 +1727,7 @@
       "files": [
         "01 Soundcheck.flac",
         "02 Ride On.flac",
-        "03 Never Knew a Woman.flac",
+        "03 Woman.flac",
         "04 Long Black Veil.flac",
         "05 I Thought I Was You.flac",
         "06 Sam Hall.flac",

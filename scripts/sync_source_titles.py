@@ -219,9 +219,17 @@ def merge_parts(parts):
 
 
 def sanitize(s):
-    """Strip characters illegal in a filename. Same rule as the ZIP entry
-    names in sitegen.core, so a source file and its download share a spelling."""
-    s = re.sub(r'[<>:"/\\|?*]', "", s)
+    """Catalog title -> the filename spelling the archive already uses.
+
+    A medley title like 'The Kiss / Da Da Da (Slave to an Angel)' is published
+    as '21 The Kiss - Da Da Da (Slave to an Angel).flac' -- the separator is
+    kept as ' - ', not dropped. sitegen's sanitize_filename() deletes the slash
+    outright, which is right for a ZIP folder name built from artist/venue and
+    wrong here: it would spell a medley 'The Kiss Da Da Da (...)', matching
+    nothing else in the archive. The rest of the illegal set is the same.
+    """
+    s = re.sub(r"\s*[/\\]\s*", " - ", s)
+    s = re.sub(r'[<>:"|?*]', "", s)
     return re.sub(r"\s+", " ", s).strip().rstrip(". ")
 
 
