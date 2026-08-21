@@ -37,7 +37,8 @@ superseded by this.
 ## ✅ Done this session (2026-08-20/21, fifth pass)
 
 Thirteen commits, all on `main`, each deployed and then verified against
-production (not just a green Action). The pass had two arcs: a metadata/
+production (not just a green Action) — plus three more later on 2026-08-21,
+listed last below. The pass had two arcs: a metadata/
 cleanup arc, and a playback-UX arc that ended with the mini-player bar as the
 site's one persistent player control.
 
@@ -128,6 +129,29 @@ the view suite exercises its real codec, and its own 126-test suite now runs
 in CI via the `test-*.mjs` glob — so controller changes that would break the
 parked coordinator's assumptions fail CI even though nothing ships it. That
 is deliberate.
+
+### Later on 2026-08-21: pills, modal sizes, and a bar that never hid (`3674a52`, `e70848b`, `e024b5b`)
+
+- **Hand-work pill once per show page** (`3674a52`): the noise-reduced /
+  pre-edited / corrective-eq pill was emitted twice (status line + the
+  Technical-data `<summary>`); the summary copy is gone. `/contact/` lost an
+  orphaned `padding-top` from page-cleanup round 1.
+- **Download sizes moved into the password modal** (`e70848b`): the ZIP pill
+  reads just "Download ZIP"; the modal names a size beside *each* version on
+  every surface (track, show/song/playlist ZIP, whole-show transfer incl.
+  alternates). The loud size is the archive MP3's `size_mb` — measured over
+  all 680 `MP3-14/` vs `MP3/` objects, ≤ 7 bytes apart, same rounded MB on
+  every one, so no new field. `fmt_size_mb()`/`formatSizeMb()` share one
+  integer half-up GB rounding (`:.1f` and `toFixed(1)` disagree on exact .x5).
+  Codex review caught the alternate-transfer cards left sizeless; fixed
+  before shipping.
+- **Playlist selection bar never hid** (`e024b5b`, Rene found it): the
+  "N songs selected · Clear · Build playlist" bar toggles `hidden`, but
+  `.track-select-bar { display: flex }` beat the UA `[hidden]` rule, so Clear
+  and un-ticking emptied the selection while the bar stayed on screen —
+  broken since the feature landed on 2026-07-13. One-line
+  `.track-select-bar[hidden] { display: none; }` fix; a parse of every other
+  `hidden`-toggled element found no further bare `display` rule.
 
 ## ✅ Done this session (2026-08-19, fourth pass)
 
@@ -643,6 +667,15 @@ still lives only on the parked branch); and `onAnyExternalClaim()` in
 ## Gotchas worth carrying forward
 
 These came out of the player work but are general.
+
+Added 2026-08-21 (fifth pass):
+
+- **An author `display` silently defeats the `hidden` attribute.** The UA
+  `[hidden] { display: none }` rule loses to any `.foo { display: flex }`, so
+  an element that shows/hides via `el.hidden` needs its own
+  `.foo[hidden] { display: none; }` (or `.foo:not([hidden]) { display: … }`).
+  Bitten four times now: `.pl-now`, `.mini-player`, `.variant-reveal`, and the
+  playlist selection bar (which never hid for five weeks).
 
 Added 2026-08-19 (fourth pass):
 
