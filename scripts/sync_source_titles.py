@@ -64,12 +64,13 @@ SOURCE_FOLDERS = {
     # No date in the catalog, so nothing to match a folder name against.
     "sean-19-broadway-unknown": "SeanHannan - 19 Broadway unknown date",
 
-    # Two tapes, one published show, and the Drive names are genuinely back to
-    # front: the tape in the plain folder is labelled "Pt 2" but runs FIRST
-    # (catalog 1-14), while the folder named "Pt1 Distorted" runs SECOND
-    # (catalog 15-21) and is the distorted tape. Confirmed by Rene 2026-08-20.
-    # Do not "correct" this by swapping the order -- the catalog is right and
-    # the folder names are the thing that's wrong.
+    # Two tapes, one published show, and the Drive folder names are misleading.
+    # The unlabelled folder is the FIRST tape (catalog 1-14, the clean 14-song
+    # set). The folder named "Pt1 Distorted" is the distorted tape and is the
+    # SECOND part of the published show (catalog 15-21) -- "Pt1" in its name
+    # refers to the reel, not to its position on the show page. Confirmed by
+    # Rene 2026-08-20. Do not "correct" this by swapping the order: the catalog
+    # is right and the folder name is the thing that's wrong.
     "jerry-19-broadway-1999-08-23": [
         {"folder": "JerryHannan - 19 Broadway 1999-08-23", "first": 1},
         {"folder": "JerryHannan - 19 Broadway 1999-08-23 Pt1 Distorted",
