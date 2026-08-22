@@ -1207,7 +1207,7 @@ def build_track_page(show, t, song, code):
         "@context": "https://schema.org", "@type": "MusicRecording",
         "name": t["title"],
         "byArtist": {"@type": "MusicGroup", "name": track_artist},
-        "url": f"https://renedebos.com/t/{code}",
+        "url": f"https://renedebos.com/t/{code}/",
         "recordingOf": ({"@type": "MusicComposition", "name": song["canonical"],
                          "url": f"https://renedebos.com/songs/{song['slug']}/"}
                         if song else None),
@@ -1217,17 +1217,31 @@ def build_track_page(show, t, song, code):
         title=f'{t["title"]} — {track_artist}, {show["venue_short"]}, {show["date"] or "unknown date"}',
         description=(f'{t["title"]} — live by {track_artist} at {show["venue"] or show["venue_short"]}, '
                      f'{date_with_subtitle(show)}. Stream this one performance from the Hannan archive.'),
-        url=f"https://renedebos.com/t/{code}",
+        # WITH the trailing slash. og:url is what Facebook takes as the
+        # post's canonical address: point it at the redirecting form and the
+        # crawler is told "the real URL is X", fetches X, and is bounced back
+        # to the page it already had. That is what broke sharing to Facebook
+        # on 2026-08-22 -- caught by Rene trying it, not by any check, so
+        # verify_markup.py now asserts canonical == the track's own shareUrl.
+        url=f"https://renedebos.com/t/{code}/",
         heading=esc(t["title"]),
         tagline=f'{esc(track_artist)} &middot; {where}',
         nav=site_nav(),
         main=main,
         extra_scripts=extra_scripts,
-        # noindex, and no sitemap entry (see build_sitemap): 680 near-identical
-        # pages would compete in search with the show and song pages that are
-        # designed to be found. Same "unlisted" treatment /archive-data/ gets.
-        # Link previews are unaffected — unfurlers read og: and ignore robots.
-        extra_head='\n<meta name="robots" content="noindex">' + rec_jsonld,
+        # NO noindex, reversed 2026-08-22 after Facebook refused these links.
+        # "Unfurlers read og: and ignore robots" -- what the first version of
+        # this comment asserted -- is simply false: Facebook's crawler honours
+        # the tag and will not scrape a page carrying it, so a share page that
+        # could not be shared was the exact outcome.
+        #
+        # Little is lost. These pages stay out of the sitemap and NOTHING on
+        # the site links to them, so a search engine has no route to them in
+        # the first place; the tag was buying almost nothing and costing the
+        # feature its entire purpose. If they ever do start showing up in
+        # search and crowding out the show and song pages, the answer is a
+        # narrower rule than a blanket noindex.
+        extra_head=rec_jsonld,
         pre_scripts="<script>window.PLAYER_ENGINE = 'controller';</script>\n",
         playback_ready="deferred")
 

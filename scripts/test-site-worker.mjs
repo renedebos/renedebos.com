@@ -94,8 +94,17 @@ test('the canonical /t/{code}/ passes straight through to the asset server', asy
     'the page carries its own canonical/share URL');
   assert.ok(body.includes('window.PLAYER_AUTOPLAY = true'),
     'the page a recipient opens to hear one song starts it');
-  assert.ok(body.includes('name="robots" content="noindex"'),
-    'share pages stay out of the index (§9.3)');
+  // Reversed 2026-08-22: these pages must be SCRAPEABLE. Facebook honours
+  // noindex and refuses to preview a page carrying it, so the tag turned a
+  // share page into one that could not be shared.
+  assert.ok(!body.includes('content="noindex"'),
+    'a share page must not be noindex -- it blocks Facebook (§9.3, reversed)');
+  // og:url is the canonical a crawler adopts for the post. If it points at
+  // the redirecting slash-less form, Facebook is told "the real URL is X",
+  // fetches X, and is bounced back -- which is how sharing broke.
+  const ogUrl = (body.match(/<meta property="og:url" content="([^"]+)"/) || [])[1];
+  assert.equal(ogUrl, 'https://renedebos.com/t/' + code + '/',
+    'og:url must be the canonical, non-redirecting address');
 });
 
 test('the Worker sets no Cache-Control of its own on a share page', async () => {

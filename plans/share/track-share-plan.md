@@ -315,13 +315,48 @@ The variant disclosure line is **required, not decorative** — CLAUDE.md's
 `-14` section obliges every page with a player to say which version is
 playing, and this page will be many visitors' only page.
 
-### 9.3 `noindex`
+### 9.3 ~~`noindex`~~ — reversed 2026-08-22, see 9.3a
 
 These 680 pages are share targets, not browse targets. Indexed, they would
 compete with the show and song pages that are *designed* to be found, on
 near-identical text. Same "unlisted" treatment `/archive-data/` already
-gets: `<meta name="robots" content="noindex">`, no sitemap entry. Link
-previews are unaffected — unfurlers read `og:` tags and ignore `robots`.
+gets: `<meta name="robots" content="noindex">`, no sitemap entry. ~~Link
+previews are unaffected — unfurlers read `og:` tags and ignore `robots`.~~
+
+### 9.3a The share page could not be shared
+
+Rene, trying the feature for what it exists for: *"Sharing the link on
+Facebook as a reply is an issue because Facebook doesn't seem to accept it as
+a working link."*
+
+Two causes, both in the page head, and the first was a plain regression:
+
+1. **`og:url` and `<link rel="canonical">` pointed at the slash-less form.**
+   When §9.1a made `/t/{code}/` canonical, `track_share_url()` was updated and
+   `build_track_page()`'s own `url=` argument was not. `og:url` is the address
+   a crawler *adopts* for the post, so Facebook was told "the real URL is X",
+   fetched X, and was bounced straight back by the redirect.
+2. **`noindex`.** The claim above — "unfurlers read `og:` tags and ignore
+   `robots`" — is simply **false**. Facebook's crawler honours the tag and
+   will not scrape a page carrying it. The tag turned a page whose only
+   purpose is being shared into one that could not be.
+
+Little is lost by dropping it. These pages stay out of the sitemap and
+**nothing on the site links to them**, so a search engine has no route to
+them in the first place; `noindex` was buying almost nothing and costing the
+feature its entire reason to exist. If they ever do start crowding out the
+show and song pages, that wants a narrower rule, not a blanket tag.
+
+Both are now build-time assertions in `verify_markup.py` — canonical must
+equal `og:url`, canonical must equal the `shareUrl` the page's own track
+hands out, and a share page must not carry `noindex`. Confirmed to fail on a
+deliberately broken page before being trusted.
+
+**The lesson is the one this route keeps teaching:** the failure was not
+found by any check, local or production. It was found by Rene doing the one
+thing the feature is *for*. Every automated pass was green. When a feature's
+value is "it works somewhere else" — a chat app, a social network, a mail
+client — the only real test is trying it there.
 
 ### 9.4 Deliberately still deferred
 

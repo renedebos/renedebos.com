@@ -479,6 +479,8 @@ def check():
 # build-time one ("no page for that code") -- checked here in both directions,
 # because a shared link that 404s is the single worst outcome this feature has.
 TRACK_PAGE_AUTOPLAY = "window.PLAYER_AUTOPLAY = true"
+CANONICAL_RE = re.compile(r'<link rel="canonical" href="([^"]+)"')
+OG_URL_RE = re.compile(r'<meta property="og:url" content="([^"]+)"')
 PEAKS_URL_RE = re.compile(r'window\.WS_PEAKS_URL\s*=\s*"([^"]+)"')
 
 def check_track_pages(track_links):
@@ -513,8 +515,24 @@ def check_track_pages(track_links):
         if TRACK_PAGE_AUTOPLAY not in src:
             errors.append(f"{rel}: share page must set window.PLAYER_AUTOPLAY -- without it the "
                           f"page a recipient opens to hear one song does not start it")
-        if 'name="robots" content="noindex"' not in src:
-            errors.append(f"{rel}: share page must be noindex (see build_track_page)")
+        # canonical/og:url must be the page's OWN canonical address. Pointing
+        # them at the redirecting slash-less form is what broke sharing to
+        # Facebook on 2026-08-22: og:url is the canonical the crawler adopts,
+        # so it fetched a URL that bounced straight back. Checked against the
+        # track's shareUrl below rather than reconstructed here, so the two
+        # cannot drift apart again.
+        m_can = CANONICAL_RE.search(src)
+        if not m_can:
+            errors.append(f"{rel}: share page has no <link rel=\"canonical\">")
+        m_og = OG_URL_RE.search(src)
+        if not m_og:
+            errors.append(f"{rel}: share page has no og:url")
+        if m_can and m_og and m_can.group(1) != m_og.group(1):
+            errors.append(f"{rel}: canonical {m_can.group(1)!r} != og:url {m_og.group(1)!r}")
+        # A share page must be scrapeable: noindex blocks Facebook's crawler.
+        if 'content="noindex"' in src:
+            errors.append(f"{rel}: share page must NOT be noindex -- Facebook honours it "
+                          f"and refuses to scrape, which is how sharing broke on 2026-08-22")
         errors += check_assets_exist(rel, src)
         errors += check_playback_ready_first(rel, src)
 
@@ -547,6 +565,11 @@ def check_track_pages(track_links):
             share = str(item.get("shareUrl") or "")
             if not share.endswith("/" + code + "/"):
                 errors.append(f"{rel}: page is /t/{code}/ but its track's shareUrl is {share!r}")
+            # The address the page advertises to crawlers and the address the
+            # share button hands out have to be the same string.
+            if m_can and m_can.group(1) != share:
+                errors.append(f"{rel}: canonical {m_can.group(1)!r} != the shareUrl this page "
+                              f"hands out ({share!r}) -- a crawler would be sent elsewhere")
     return errors, n_track, n_pages
 
 
