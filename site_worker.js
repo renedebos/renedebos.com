@@ -115,8 +115,18 @@ export default {
       // a 307 hop in front of every shared link, and it is the shared link
       // that has to feel instant. Keeping the slash-less /t/{code} a plain
       // 200 is also what lets the copied URL stay slash-less.
+      //
+      // The DIRECTORY form, not "/index.html": the assets binding applies the
+      // same html_handling a public request gets, and that redirects
+      // /{path}/index.html -> /{path}/ (307) rather than serving it. Asking
+      // for the file form therefore returns a redirect, page.ok is false, and
+      // this whole branch silently falls through to exactly the hop it exists
+      // to avoid. That is what shipped on 2026-08-22, and it was caught by a
+      // production spot-check rather than by the tests: their fake assets
+      // binding read straight from disk and was perfectly happy to serve the
+      // file form. test-site-worker.mjs's fake now models the redirect.
       const page = await env.ASSETS.fetch(
-        new URL(`/t/${t[1].toLowerCase()}/index.html`, url));
+        new URL(`/t/${t[1].toLowerCase()}/`, url));
       if (page.ok) {
         return secure(new Response(request.method === "HEAD" ? null : page.body, {
           status: 200,

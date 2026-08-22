@@ -34,11 +34,36 @@ function fakeEnv() {
         if (p === '/assets/track-links.json') mapFetches++;
         // Only the share branch's OWN fetch, not the generic asset
         // fallthrough that a non-matching /t/... path also produces.
-        if (p.startsWith('/t/') && p.endsWith('/index.html')) pageFetches.push(p);
+        if (p.startsWith('/t/') && p !== '/t/' && p.endsWith('/')) pageFetches.push(p);
+
+        // Cloudflare's assets binding applies html_handling, it does not read
+        // a filesystem. Two rules matter to this Worker, and BOTH were missing
+        // here until 2026-08-22, when a version of site_worker.js that fetched
+        // "/t/{code}/index.html" passed every test below and then no-op'd in
+        // production -- the real binding 307s that path instead of serving it,
+        // so page.ok was false and the branch fell through to the redirect it
+        // exists to prevent. A fake that is more permissive than production
+        // does not test the Worker, it tests the fake.
+        if (p.endsWith('/index.html')) {
+          return new Response(null, { status: 307, headers: { Location: p.slice(0, -'index.html'.length) } });
+        }
+        if (p.endsWith('/')) {
+          const idx = path.join(ROOT, p, 'index.html');
+          try {
+            if (statSync(idx).isFile()) return new Response(readFileSync(idx), { status: 200 });
+          } catch (e) { /* no directory index */ }
+          return new Response('not found', { status: 404 });
+        }
         const file = path.join(ROOT, p);
         try {
           if (statSync(file).isFile()) return new Response(readFileSync(file), { status: 200 });
         } catch (e) { /* not a file */ }
+        // auto-trailing-slash: a bare path that IS a directory redirects.
+        try {
+          if (statSync(path.join(ROOT, p, 'index.html')).isFile()) {
+            return new Response(null, { status: 307, headers: { Location: p + '/' } });
+          }
+        } catch (e) { /* not a directory either */ }
         return new Response('not found', { status: 404 });
       },
     },
@@ -133,6 +158,18 @@ test('the code -> deep-link map is never on a request path any more (§9.1)', as
   await get(env, '/t/abcdef');
   assert.equal(mapFetches, before,
     'assets/track-links.json is a build artifact now, not a routing table');
+});
+
+test('the share branch asks the assets binding for the DIRECTORY, not index.html', async () => {
+  // The 2026-08-22 production bug, pinned. Fetching "/t/{code}/index.html"
+  // gets a 307 from the real binding, not the page -- so this asserts the
+  // shape of the request, not just that the response came out right.
+  const env = fakeEnv();
+  pageFetches = [];
+  const r = await get(env, '/t/' + code);
+  assert.equal(r.status, 200);
+  assert.deepEqual(pageFetches, ['/t/' + code + '/'],
+    'one fetch, for the directory form');
 });
 
 test('/play/ is untouched by the share route', async () => {

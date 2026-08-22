@@ -795,6 +795,21 @@ async function checkSharePage(context) {
   const bogus = await context.request.get(BASE + '/t/abcdef', { maxRedirects: 0 });
   record('/t/abcdef (unknown code): 404, never a redirect to some other song',
     bogus.status() === 404, `status=${bogus.status()}`);
+
+  // Worker-only, so remote runs only: the local `python3 -m http.server`
+  // redirects a slash-less directory path itself and has no Worker in front
+  // of it, so this would fail there for a reason that says nothing about the
+  // code. Against a real deploy it is the check that would have caught the
+  // 2026-08-22 no-op -- the Worker's share branch fell through, and every
+  // shared link paid a 307 and lost its one-hour Cache-Control, while the
+  // page itself still rendered fine and looked entirely healthy.
+  if (isRemote) {
+    const direct = await context.request.get(BASE + url, { maxRedirects: 0 });
+    const cc = direct.headers()['cache-control'] || '';
+    record('/t/{code} is served by the Worker: a 200 with no hop, cached an hour',
+      direct.status() === 200 && /max-age=3600/.test(cc),
+      `status=${direct.status()} cache-control=${cc || 'none'}`);
+  }
 }
 
 async function checkSongPage(context) {
