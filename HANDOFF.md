@@ -1,12 +1,12 @@
 # Session Handoff — Hannan Recordings (renedebos.com)
-**Date:** 2026-08-21 (fifth pass) · **Branch:** `main` — everything merged, deployed, verified live
+**Date:** 2026-08-22 (sixth pass) · **Branch:** `main` — everything merged, deployed, verified live
 
 ## ⛔ READ THIS FIRST
 
 **Nothing is open.** No PRs, no unmerged branches, no stale worktrees. The
 fourth pass's warnings are all resolved: **#48 merged** (the iPhone autoplay
 cue is live), the branch sweep is done, and `main` = `origin/main` =
-`d51ffe96` (2026-08-22; this HANDOFF commit sits on top of it). Local branches are `main` plus the deliberate `miniplayer-parked`
+`86cd45df` (2026-08-22, sixth pass; this HANDOFF commit sits on top of it). Local branches are `main` plus the deliberate `miniplayer-parked`
 archive — the target state. (Two stray remote branches predate this pass and
 were left alone: `claude/hannan-chromebook-droplet-sync-jq0hfb`,
 `cloudflare/workers-autoconfig`.)
@@ -41,6 +41,165 @@ both tried and both deliberately removed/unstuck once the bar superseded them
 — the same song pinned twice reads as a bug. `codex-notes.md` (untracked,
 external review doc) still proposes popup/continuous-player ideas; they are
 superseded by this.
+
+## ✅ Done this session (2026-08-22, sixth pass)
+
+Four commits on `main`. One feature — **share a single song** — and three
+corrections to it, all deployed and each verified against production by hand
+before being called done. Read the "shipped three times before it was
+shipped" note at the end of this section before trusting a green Action for
+anything Worker- or routing-shaped.
+
+### `/t/{code}/` is a single-song page (`245eb7d8`)
+
+Rene, the morning after the `/t/{code}` redirect shipped: *"Is it possible
+that clicking on the link opens a player to only play that single song rather
+than linking to a show page with all songs from that show?"* That reverses
+`track-share-plan.md` §2's landing decision, which optimised for **context**
+(the whole show, its description, the set); the ask is for **focus**. Cheap
+to reverse only because it was one day old — essentially no links existed in
+the wild. Full reasoning: §9 and §10 of the plan.
+
+- **680 built static pages**, one per curated track. The set of performances
+  is finite at build time, so the link needs no lookup — the same argument §2
+  used against a create-call API, one level up. Each page carries its own
+  `og:` tags, which closes §6's deferred "song-specific link previews" as a
+  side effect: an unfurl now shows the song, not the show.
+- **`noindex`, no sitemap entry** — share targets, not browse targets; 680
+  near-identical pages would compete with the show and song pages that are
+  designed to be found. Unfurlers read `og:` and ignore `robots`.
+- **`show_track_row()` was extracted out of `build_show()`** so the share
+  page renders the *identical* row — same markup, same engine, same bar. The
+  extraction was verified byte-identical across all 166 pre-existing pages
+  before anything new was built on it.
+- **Peaks are sliced per track** into `assets/peaks/t/{code}.json` (~2.5 KB)
+  rather than loading a show's 60–90 KB file to draw one waveform. Same
+  `WS_PEAKS_URL` contract, no player change — the file is just a one-key map.
+  They pick up the existing `/assets/peaks/*` one-day rule with no new
+  `_headers` entry.
+- **`window.PLAYER_AUTOPLAY`** (player-boot.js): a clean `/t/{code}/` has no
+  `?autoplay=1` and no `#track-N`, so the deep-link path can never fire for
+  it. Strictly a fallback — a deep link that already started something wins,
+  and `initialIntent` stays truthful either way.
+- **`verify_markup.py` checks codes and pages against each other in BOTH
+  directions.** An orphaned share page (what a renumber leaves behind) now
+  prints its own `git rm`, exactly as `check_orphan_song_dirs()` does.
+
+### Share without playing: the per-row button (same commit)
+
+`track-share-plan.md` §5's deferred item, built the same day at Rene's
+request, in the shape §5 recommended: **a share icon on the ACTIVE row only**,
+beside the download.
+
+- It lives in **`track-select.js`, not the player** — everything it needs is
+  already in the row's `data-item`, so it works on a row nobody has pressed
+  play on (the entire point) and on a page whose engine never mounted.
+  `share.js` is imported on first press, as the bar does it.
+- **An `<a href>`, not a `<button>`:** with JS it opens the share sheet or the
+  Copy link / Email popover; with none it navigates to the share page. This is
+  now the *primary* way to share a song, so it must not be dead if a module
+  fails to load.
+- Three renderers grew it, as always on a track row: `track_share_button()`
+  (fragments.py, both the show row and the occurrence row) and
+  `trackShareButtonHtml()` (track-select.js) for `songs.js`'s lazy rows.
+  Escaping lives in the builder, not the call sites.
+
+**The phone layout nearly sank it, and the numbers are worth keeping.** Both
+§5 and site.css's `.track-add` note predicted it. Measured at 390px:
+
+| surface | before | naive version | shipped |
+|---|---|---|---|
+| show row, active title width | 74px | **40px** (`Smoke in Heaven` → `Smo... in...`) | 74px |
+| song-occurrence row height | 56px | **88px** (every other row 56px) | 55px |
+
+Two different fixes, because the rows differ in the one way that matters.
+**Show rows already have a second line** (the waveform, which only the active
+row carries) — the control moves onto it (`order: 6`, `.ws-wave` basis
+reduced), so line one lays out exactly as before and none of the tuned mobile
+rules had to be re-derived. **Occurrence rows have no second line** — the
+active row trades its `↗` for the share control, losing nothing, because `↗`
+and the artist chip point at the *same* anchor. Desktop keeps both.
+Both numbers are `browser_check.mjs` assertions now, phrased as "no worse
+than with the control hidden" rather than pixel constants.
+
+### The Loud note lost a clause (same commit)
+
+Rene: cut *"about as loud as a streaming service, so it isn't too quiet on
+phone speakers or in a car"*. It justified the Loud **default** rather than
+telling a listener what they are hearing, and that justification belongs on
+`/process/`. The disclosure CLAUDE.md requires is the first half of the
+sentence and is untouched. The **Archive** note keeps its shorter form, where
+it describes the option you have *not* chosen and is the only thing that makes
+"−14 LUFS" mean anything to a non-engineer.
+
+### Then it was wrong twice, and the fix was to delete code (`403c3a44`, `fb49ee5f`, `86cd45df`)
+
+The first version put the Worker on the share path: match `/t/{code}`, fetch
+the page through `env.ASSETS`, return it — one 200, no hop, `shareUrl` stays
+slash-free. **It passed 10/10 unit tests and 204/204 in the harness, and was a
+complete no-op in production.** Every shared link fell through to exactly the
+redirect the branch existed to remove. The page rendered perfectly, so nothing
+looked wrong.
+
+**The cause, which is a durable fact about this deployment:** Cloudflare's
+asset layer answers paths it can resolve **before** the Worker runs, even with
+`run_worker_first: true`. Measured — `/t/007269` returns the asset layer's
+307, while `/t/00810C/` (uppercase, matching no asset) falls through and gets
+the Worker's 301. So the branch never executed for a share link at all;
+`env.ASSETS` was never the problem, and the first "fix" (fetch the directory
+form instead of the file form) was built on a wrong diagnosis and also failed.
+
+It stopped being worth chasing once it was clear the branch was **buying the
+wrong thing anyway**: it also set a one-hour `Cache-Control`, and the root
+`_headers` file argues explicitly against a long max-age on stable, unhashed
+names. `/t/{code}/` is exactly that — a reprocess rewrites the page under the
+same address — so it would have served a stale share page for an hour after
+every reprocess, with no client-side purge. An imperceptible hop was being
+traded for a real bug.
+
+**Resolution (Rene's call): `/t/{code}/` — with the trailing slash — is
+canonical**, the asset server owns it, and the page takes the site-wide
+`max-age=0, must-revalidate` + ETag policy the rest of the site uses on
+purpose. What is left in the Worker is string work that cannot touch the
+binding: normalise a non-canonical `/t/` URL to the canonical one, which
+covers an uppercased code and every slash-less link copied before the
+revision. Verified live: `/t/{code}/` is **200 with zero redirects**.
+
+### Two things that were already broken, found by finally running `--prod`
+
+- **`browser_check.mjs --prod` had been crashing outright**, probably for
+  weeks. It still clicked the play button on `/player/`, retired in the fifth
+  pass, so a locator timeout threw and killed the run before it printed a
+  single result. Nothing runs the prod path automatically, so nobody saw it.
+  Replaced with a check of the promise that retirement makes — a fragment
+  never reaches the server, so an old `/player/#p=<ids>` bookmark still
+  restores exactly that queue — and wrapped so the next stale assertion fails
+  loudly instead of taking the run down. **`--prod` now reports 213/213.**
+- **`assets/miniplayer-views.js` was stale** (`eaeac21a`): `59df8121` and
+  `e7c8118f` edited `scripts/miniplayer-views.js` without rebuilding, so CI's
+  "committed site is current" gate had been failing **every deploy since 08:09
+  that morning** — three red runs, none for a reason in the code.
+
+### "Shipped three times before it was shipped" — read this
+
+The feature is good. It was also announced as verified and deployed three
+times before that was true, and the reason was the same shape every time: **a
+test environment friendlier than production.**
+
+1. A fake assets binding that read files off disk, so the broken Worker
+   passed 10/10. *A fake more permissive than production does not test the
+   code, it tests the fake.*
+2. Every harness client follows redirects, and **a following client cannot
+   tell a one-hop link from a two-hop one**. `page.goto()` reported success
+   either way. Redirect assertions need `maxRedirects: 0` and a real deploy.
+3. A local preview server left running on **port 8124** — which is exactly
+   the port `browser_check.mjs` uses for its breakage-test sandbox copy — so
+   all 11 breakage tests were served the real repo with nothing disabled, and
+   failed. Use 8130+ for ad-hoc servers.
+
+The runbook already says a green Action is not a deployed feature. Only a
+by-hand `curl` found the no-op. `--prod` is the check that closes that gap and
+it works again now.
 
 ## ✅ Done this session (2026-08-20/21, fifth pass)
 
@@ -864,10 +1023,20 @@ waveform on every non-active track row. Detail in the fourth-pass log above.
    item with a *recurring* cost: `draft_tracks.py` re-derives titles from Drive
    filenames with zero preservation, so every corrected title is clobbered on
    the next reprocess. Only bites when publishing/reprocessing a show.
-3. **`plans/share/`** — proposal, unblocked. Its §4 blocker **dissolved rather
-   than resolved**: it waited on player-consolidation's URL-grammar decision,
-   which was never made (Phase 3 parked). Whoever builds the timestamp piece
-   owns that decision; the two in-scope pieces were never blocked.
+3. **`plans/share/`** — `track-share-plan.md` is **shipped and closed** (sixth
+   pass: the single-song `/t/{code}/` page and the per-row share control).
+   `share-plan.md` — the search-filter URL half — is still a proposal,
+   unblocked. Its §4 blocker **dissolved rather than resolved**: it waited on
+   player-consolidation's URL-grammar decision, which was never made (Phase 3
+   parked). Whoever builds the **share-at-a-timestamp** piece owns that
+   decision, and `/t/{code}/?t=83` is the natural slot for it — it has to be
+   designed once against `#p=`, `&t=`, `#track-N` and `?autoplay=1` together.
+   **Also still open, deliberately: a short domain.** Deferred by Rene to save
+   time; it stays purely additive because `renedebos.com/t/{code}/` is
+   canonical — a short domain redirects to it, old links keep working, and no
+   build output changes. The origin is constructed in exactly two places
+   (`core.py`'s `track_share_url()`, `songs.js`) and asserted in one
+   (`verify_markup.py`).
 4. ~~Retire `player-consolidation`~~ — **done.** Branch, remote and worktree
    are all gone; `git worktree list` is back to `main` plus whatever feature
    worktree is open.
@@ -962,6 +1131,39 @@ still lives only on the parked branch); and `onAnyExternalClaim()` in
 ## Gotchas worth carrying forward
 
 These came out of the player work but are general.
+
+Added 2026-08-22 (sixth pass):
+
+- **Cloudflare's asset layer answers before the Worker, even with
+  `run_worker_first: true`.** A Worker branch for a path that maps to a real
+  asset never runs. Measured: `/t/007269` gets the asset layer's 307;
+  `/t/00810C/` (uppercase, no such asset) falls through to the Worker's 301.
+  Cost a day and two wrong diagnoses. If a route needs Worker logic, it must
+  be a path the asset server *cannot* resolve.
+- **A fake more permissive than production tests the fake, not the code.**
+  `test-site-worker.mjs`'s assets binding read straight off disk and happily
+  served `/t/{code}/index.html`, which the real binding redirects. The broken
+  Worker passed 10/10. When a fake stands in for a platform service, model the
+  behaviour you actually depend on — and assert the **shape of the request**,
+  not only the response.
+- **A client that follows redirects cannot see a redirect.** Every
+  `page.goto()` in the harness reported success on a link that was quietly
+  taking an extra hop. Any assertion about hops, status codes or cache headers
+  needs `maxRedirects: 0` (or `curl -I`) *and* a real deploy behind it.
+- **Don't leave a local server on port 8124.** `browser_check.mjs` starts its
+  breakage-test sandbox on `PORT + 1` = 8124; a squatter there silently serves
+  the real repo to all 11 breakage tests, which then fail for a reason that
+  has nothing to do with the code. Use 8130+ for ad-hoc previews.
+- **When a design decision is one day old, reversing it is nearly free — and
+  that window closes.** The `/t/` landing reversal cost an afternoon because
+  no links were in the wild yet. The same change a month later is a
+  compatibility problem. If a shipped decision already feels wrong, say so
+  immediately rather than filing it.
+- **A stale assertion that CRASHES a suite is worse than one that fails.** The
+  `--prod` sweep threw on a retired page's locator and reported nothing at
+  all, for weeks, which is indistinguishable from "nobody ran it". Wrap
+  optional/environment-specific blocks so they record a failure instead of
+  taking the run down.
 
 Added 2026-08-21 (fifth pass):
 
@@ -1116,6 +1318,18 @@ Added 2026-08-19 (third pass):
 - **`site_worker.js`'s CSP is the one that takes effect**, not `_headers` —
   `secure()` calls `headers.set()` on every response. Both must be updated
   together; `build.py --check` fails the build if they diverge.
+- **`Cache-Control` is the exception to that**: it is set in `_headers`, per
+  path, and deliberately NOT in `SECURITY_HEADERS` (which is applied
+  blanketly and would clobber both the per-path values and the 404's
+  `no-store`). The default — `max-age=0, must-revalidate` + ETag — is the
+  correct policy for any stable, unhashed name whose content can change, which
+  includes every generated page and `/t/{code}/`. A long max-age there serves
+  a stale page after a reprocess with no way to purge it client-side.
+- **The canonical share URL is `/t/{code}/`, with the trailing slash**, served
+  by the asset server with no Worker on the path. The slash is load-bearing:
+  it is what makes the link a single 200. `track_share_url()` (core.py) and
+  `songs.js` both emit it; `verify_markup.py` requires it. A slash-less link
+  still lands, via a redirect.
 
 - **`.progress-range` is a 24px pointer target drawing a 3px rail via
   `background-size: 100% 3px`.** Every painter must assign
@@ -1185,8 +1399,11 @@ instructions.
 - `plans/applause-provenance-repair/` — not started, written 2026-08-18. The
   stored-provenance half of the applause defect above; step 1 is a 20-minute
   scoping pass that decides whether the rest is worth doing.
-- `plans/share/` — proposal, unblocked; its stated blocker dissolved rather
-  than resolved (see "Other open items").
+- `plans/share/` — `track-share-plan.md` is **shipped and closed** (§9 the
+  single-song page, §9.1a the trailing-slash revision and the Cloudflare
+  asset-layer finding, §10 the per-row control and its phone-layout numbers).
+  `share-plan.md` itself — search-filter URLs — is still just a proposal;
+  its stated blocker dissolved rather than resolved (see "Other open items").
 - `plans/home-page/` — **closed**, shipped 2026-08-13. Its §8 records the
   stray second deploy mechanism, now disconnected.
 - `plans/page-cleanup/` — **round 1 shipped** (PR #29). Register fully decided;
@@ -1199,9 +1416,13 @@ instructions.
 - `plans/player-consolidation/` — closed; `-codex.md` logs every review round.
 
 **Tests:** `node scripts/test-*.mjs` — 8 suites plus `test-fake-dom.mjs`
-(a helper). **212/212 passing** as of 2026-08-22 (`test-miniplayer-state.mjs`
-retired with the file it tested; `test-site-worker.mjs` is new, for the
-share-a-song `/t/{code}` route — see both above):
+(a helper). **221/221 passing** as of 2026-08-22, sixth pass
+(`test-miniplayer-state.mjs` retired with the file it tested;
+`test-site-worker.mjs` covers the share-a-song `/t/{code}/` route — see both
+above). The real-browser harness is separate and manual:
+`NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs --skip-webkit`
+(**204/204**), and **`--prod` against the live deploy (213/213)** — run that
+one before calling anything Worker- or routing-shaped shipped:
 
 | suite | tests |
 |---|---|
