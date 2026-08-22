@@ -110,9 +110,25 @@ export default {
 
     const t = url.pathname.match(TRACK_RE);
     if (t && (request.method === "GET" || request.method === "HEAD")) {
-      const hit = await resolveTrackLink(t[1].toLowerCase(), env, url);
-      if (hit) return secure(hit);
-      // unknown code: fall through to the asset layer, which 404s below
+      // Serve the built single-song page directly rather than letting the
+      // asset layer's auto-trailing-slash redirect handle it: that would put
+      // a 307 hop in front of every shared link, and it is the shared link
+      // that has to feel instant. Keeping the slash-less /t/{code} a plain
+      // 200 is also what lets the copied URL stay slash-less.
+      const page = await env.ASSETS.fetch(
+        new URL(`/t/${t[1].toLowerCase()}/index.html`, url));
+      if (page.ok) {
+        return secure(new Response(request.method === "HEAD" ? null : page.body, {
+          status: 200,
+          headers: {
+            "Content-Type": "text/html; charset=utf-8",
+            // An hour, not the day /play/ gets: a playlist entry is
+            // immutable, but a republished show can change this page.
+            "Cache-Control": "public, max-age=3600",
+          },
+        }));
+      }
+      // unknown code: fall through to the branded 404 below
     }
 
     const resp = await env.ASSETS.fetch(request);
@@ -195,28 +211,11 @@ async function resolveShortLink(slug, env) {
     { "Cache-Control": "public, max-age=86400" });
 }
 
-// The code -> deep-link map, fetched through the assets binding once per
-// isolate and kept for its lifetime; a failed fetch is forgotten so the next
-// request tries again rather than 404ing every share link until a restart.
-let trackLinks = null;
-
-function loadTrackLinks(env, url) {
-  if (!trackLinks) {
-    trackLinks = env.ASSETS.fetch(new URL("/assets/track-links.json", url))
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("track-links " + r.status))))
-      .catch(() => { trackLinks = null; return {}; });
-  }
-  return trackLinks;
-}
-
-async function resolveTrackLink(code, env, url) {
-  const links = await loadTrackLinks(env, url);
-  const target = Object.prototype.hasOwnProperty.call(links, code) ? links[code] : null;
-  if (typeof target !== "string" || target.charCodeAt(0) !== 47) return null;
-  // An hour, not the day /play/ gets: a playlist entry is immutable, but a
-  // republished show can move a code's target.
-  return redirect(target, { "Cache-Control": "public, max-age=3600" });
-}
+// /t/{code} needs no lookup table in the Worker any more: the build emits
+// one page per code (plans/share/track-share-plan.md §9), so the asset either
+// exists or the code is wrong. assets/track-links.json survives as the
+// build's own integrity artifact (verify_markup.py checks it both ways); it
+// is deliberately no longer on any request path.
 
 function safeIds(raw) {
   try {

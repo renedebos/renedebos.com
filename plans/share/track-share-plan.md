@@ -192,3 +192,160 @@ Rough size: ~250 lines across seven files, one session, one deploy.
    *share at a timestamp* — still the URL-grammar question from
    `share-plan.md` §4; `/t/{code}?t=83` would be the natural slot, and has
    to be designed once against `#p=`, `&t=`, `#track-N` and `?autoplay=1`.
+
+---
+
+## 9. Amendment 2026-08-22 — `/t/{code}` becomes a page, not a redirect
+
+Rene, the day after the redirect shipped: *"Is it possible that clicking on
+the link opens a player to only play that single song rather than linking to
+a show page with all songs from that show?"*
+
+This reverses §2's landing decision. Stated plainly because §2 argued the
+other way and the argument was not wrong — it was answering a different
+question. §2 optimised for *context* (the recipient gets the show, its
+description, the rest of the set). Rene is asking for *focus*: the link
+should deliver the one performance he chose to send, and nothing else
+competing for the first tap.
+
+The reversal is cheap **because it shipped yesterday**. Essentially no
+`/t/` links exist in the wild, so there is no cohort whose links change
+meaning under them. That will not be true a month from now, which is the
+argument for doing it in this session rather than shelving it.
+
+### 9.1 What changes
+
+`/t/{code}` serves a **built static page**: one track, one player, the
+show and song reachable but not in the way.
+
+- **Static, not Worker-rendered.** The set of performances is finite and
+  known at build time — the same argument §2 used against a create-call
+  API applies again one level up. 680 small pages cost a build second and
+  give per-song `og:` tags for free, which closes §6's deferred
+  "song-specific link previews" as a side effect rather than as a project.
+- **The Worker keeps its `/t/` branch, but rewrites instead of
+  redirecting** — `env.ASSETS.fetch('/t/{code}/index.html')`. Serving the
+  asset directly rather than falling through to the auto-trailing-slash
+  behaviour keeps the shared URL a single 200 with no redirect hop, and
+  keeps `shareUrl` slash-free (`/t/7f3a2c`, not `/t/7f3a2c/`).
+- **`assets/track-links.json` stays**, repointed at the page. It is no
+  longer the Worker's routing table but it is still the build's proof that
+  every code resolves, and `verify_markup.py` still checks it.
+- **Autoplay stays yes** (§8.1), but can no longer ride on `?autoplay=1`
+  + `#track-N` — a clean `/t/{code}` has neither. `player-boot.js` gains
+  `window.PLAYER_AUTOPLAY`: on `load`, if the deep-link path did not
+  already start something, start row 0. Four lines, inside the existing
+  handler, and `initialIntent` stays honest.
+
+### 9.2 What the receiver sees
+
+```
+                    THE HANNAN TAPES
+
+                        Truck
+          Jerry Hannan · 19 Broadway · 1999-02-01
+
+     [▶]  ▁▃▅▇▅▃▁▂▄▆█▆▄▂▁▃▅▇▅▃▁▂▄▆█▆▄▂▁    0:00 / 3:58
+          Playing the Loud version · ⓘ            [↓]
+
+          Hear the whole show (23 songs) →
+          All 25 recordings of "Truck" →
+```
+
+The page is structurally *a show page with one track*: the same
+`.track-row.ws-track` markup, the same `player-boot.js`, the same
+mini-player bar — so the recipient can re-share what they just heard
+without the bar being a special case. Nothing new to keep in sync.
+
+Peaks come from a **per-track** `assets/peaks/t/{code}.json` (~2.5 KB)
+rather than the show's whole file (~60–90 KB for one waveform). Same
+`window.WS_PEAKS_URL` contract, no JavaScript change: the file is just
+`{"<num>": {…}}`.
+
+The variant disclosure line is **required, not decorative** — CLAUDE.md's
+`-14` section obliges every page with a player to say which version is
+playing, and this page will be many visitors' only page.
+
+### 9.3 `noindex`
+
+These 680 pages are share targets, not browse targets. Indexed, they would
+compete with the show and song pages that are *designed* to be found, on
+near-identical text. Same "unlisted" treatment `/archive-data/` already
+gets: `<meta name="robots" content="noindex">`, no sitemap entry. Link
+previews are unaffected — unfurlers read `og:` tags and ignore `robots`.
+
+### 9.4 Deliberately still deferred
+
+- **The short domain.** Rene, asked whether to settle it first: *"Can we
+  save time by delaying the decision about different domains and accept
+  renedebos for now?"* — yes. `renedebos.com/t/{code}` stays **canonical**,
+  which is what makes a short domain purely additive later: it redirects to
+  canonical, old links keep working, and no build output has to change.
+  The origin is constructed in exactly two places (`core.py`'s
+  `track_share_url()`, `songs.js`'s `occRowHtml()`), asserted in one
+  (`verify_markup.py`).
+- ~~**Share without playing** (§5).~~ Built the same day — see §10.
+
+---
+
+## 10. Built 2026-08-22 — the per-row share control
+
+§5 deferred "share without playing" and recommended a share icon on the
+**active row only, beside ↓**. Rene asked for it immediately after §9 landed,
+and that recommendation is what shipped, unchanged in shape.
+
+- **`track-select.js` owns it**, not the player. Everything the control needs
+  is already in the row's `data-item`, so it works on a row nobody has pressed
+  play on — the entire point — and on a page whose engine never mounted.
+  `share.js` is imported on the first press, as the bar does it.
+- **An `<a href>`, not a `<button>`.** With JavaScript it opens the share
+  sheet (touch) or the Copy link / Email popover (desktop); with none it
+  navigates to the share page, where the URL can be copied by hand. This is
+  now the *primary* way to share a song, so it must not be dead if a module
+  fails to load.
+- Three renderers had to grow it, as always on a track row:
+  `track_share_button()` (fragments.py, both the show row and the song
+  occurrence row), and `trackShareButtonHtml()` (track-select.js) for
+  `songs.js`'s lazily-inserted rows. Escaping lives in the builder, not the
+  call sites.
+- Hidden by CSS on every row but the active one, keyed on `.is-active` **and**
+  `.playing` — the legacy fallback engine only ever sets the latter.
+
+### 10.1 The phone layout, which nearly sank it
+
+§5 said "the rows have no room — a phone row is at its limit", and site.css's
+note on `.track-add`'s size says the same thing more loudly. Both were right,
+and the first version proved it. Measured at 390px, not eyeballed:
+
+| surface | before | naive version | shipped |
+|---|---|---|---|
+| show row, active title width | 74px | **40px** (`Smoke in Heaven` → `Smo... in...`) | 74px |
+| song-occurrence row height | 56px | **88px** (every other row 56px) | 55px |
+
+Two different fixes, because the two rows differ in the one way that matters:
+
+- **Show rows have a second line already** — the waveform, which only the
+  active row carries. The control moves onto it (`order: 6`, with `.ws-wave`'s
+  flex-basis reduced so the two share a line). Line one then lays out exactly
+  as it did before this button existed, so none of the carefully-tuned mobile
+  rules above it had to be re-derived.
+- **Song-occurrence rows have no second line.** There, the active row trades
+  its `↗` for the share control rather than carrying both. Nothing is lost:
+  `↗` and the artist chip point at the *same* anchor, so the show page is
+  still one tap away on that row. Desktop keeps both — it has the width.
+
+Both numbers are now assertions in `browser_check.mjs`'s `checkRowShare()`,
+stated as "no worse than with the control hidden" rather than as pixel
+constants, so a future type-scale change can't fail them for an unrelated
+reason.
+
+### 10.2 Also cut, same day
+
+The Loud note's clause "about as loud as a streaming service, so it isn't too
+quiet on phone speakers or in a car" (Rene). It justified the Loud *default*
+rather than telling a listener what they are hearing, and the justification
+belongs on `/process/`. The disclosure CLAUDE.md requires — which version is
+playing, in plain words — is the first half of that sentence and is untouched.
+The **Archive** note keeps its shorter "about as loud as a streaming service",
+because there it describes the option you have *not* chosen and is the only
+thing that makes "−14 LUFS" mean anything to a non-engineer.

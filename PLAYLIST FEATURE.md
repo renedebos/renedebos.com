@@ -114,11 +114,18 @@ match `/search/` etc., not the sketched `playlist.html`).
 ## Phase 4: Short links (KV)
 
 **Sibling, not part of this phase — share ONE song (2026-08-22):**
-`/t/{code}` in the same Worker resolves a per-performance short link to the
-show page's `?autoplay=1#track-N` deep link. Unlike playlist slugs these are
-build outputs (`assets/track-links.json`, codes in `sitegen/core.py`), with
-no create call and no KV; the share button lives in the mini-player bar
-(`scripts/share.js`). Plan and decisions: `plans/share/track-share-plan.md`.
+`/t/{code}` is a per-performance short link. Unlike playlist slugs these are
+build outputs (codes in `sitegen/core.py`), with no create call and no KV;
+the share button lives in the mini-player bar (`scripts/share.js`).
+
+It shipped that morning as a 302 to the show page's `?autoplay=1#track-N`
+deep link and was changed the same day (§9 of the plan) to serve a **built
+single-song page** instead: the recipient gets the one performance that was
+sent them, with the show and the song one link away. The Worker still owns
+the route but now rewrites to `/t/{code}/index.html` rather than redirecting,
+so a shared link costs no hop; `assets/track-links.json` survives as the
+build's integrity artifact and is deliberately no longer read at request
+time. Plan and decisions: `plans/share/track-share-plan.md`.
 
 **Status (2026-07-08): DONE — short links re-enabled with client-side
 self-verification.** First attempt: a stale Cloudflare edge node served

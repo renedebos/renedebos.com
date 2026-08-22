@@ -138,8 +138,26 @@ def main():
     songs, _ = collect_songs()
     for s in songs:
         write(f"songs/{s['slug']}/index.html", build_song_page(s))
+    # Single-song share pages (plans/share/track-share-plan.md §9): one per
+    # curated track, at the /t/{code} a share button hands out. Built rather
+    # than resolved at request time for the same reason playlist slugs are
+    # not: the set of performances is finite and known here, so the link needs
+    # no API, no storage and no round trip — and each page gets its own og:
+    # tags, which a redirect could never have.
+    by_track = {track_id(o["slug"], o["num"]): s for s in songs for o in s["occ"]}
+    t_pages = 0
+    for show in PUBLIC_SHOWS:
+        for t in show.get("tracks") or []:
+            tid = track_id(show["slug"], t["num"])
+            code = TRACK_CODES.get(tid)
+            if not code:
+                continue
+            write(f"t/{code}/index.html",
+                  build_track_page(show, t, by_track.get(tid), code))
+            t_pages += 1
     total = sum(len(s["recordings"]) for s in M["shows"]) + len(M["singles"])
-    print(f"Built 7 site pages + {n} show pages + {len(songs)} song pages ({total} recordings, "
+    print(f"Built 7 site pages + {n} show pages + {len(songs)} song pages + "
+          f"{t_pages} share pages ({total} recordings, "
           f"{sum(len(s['tracks'] or []) for s in M['shows'])} curated tracks)")
     # Integrity of the *generated* player markup — validate() covers source data
     # but never reads the emitted data-item attributes. Cheap (a regex pass over

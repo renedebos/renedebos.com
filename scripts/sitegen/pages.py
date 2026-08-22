@@ -746,113 +746,10 @@ def build_show(show):
         <div class="group-label-bare">{esc(grp)}</div>
       </div>''')
                 prev_group = grp
-            # Version the stream URL with the track's MD5 (when known) so the edge
-            # caches hard yet a re-normalized upload goes live instantly.
-            ver = (proc_tracks.get(str(t["num"]), {}).get("md5") or "")[:12] or None
-            stream = stream_url(t["file"], ver)
-            # Loud variant, only when this track actually has one rendered.
-            vt = var_tracks.get(str(t["num"]))
-            loud_stream = (stream_url(variant_key(t["file"]),
-                                      (vt.get("mp3_md5") or "")[:12] or None)
-                           if vt else None)
-            sizes = []
-            if t.get("flac_size_mb"):
-                sizes.append(f'FLAC {t["flac_size_mb"]} MB')
-            if t.get("size_mb"):
-                sizes.append(f'MP3 {t["size_mb"]} MB')
-            # A track may override the show artist (e.g. a guest singer).
-            track_artist = t.get("artist") or artist["name"]
-            proc_ver = proc_tracks.get(str(t["num"]), {}).get("ver")
-            info_rows = [
-                ["Artist", track_artist],
-                ["Song", t["title"]],
-                ["Venue", show["venue"] or "—"],
-                ["Date", show["date"] or "Unknown date"],
-                ["Format", "FLAC + MP3" if t.get("flac") else "MP3"],
-                ["Size", " · ".join(sizes) or "—"],
-                ["Process version", f"v{proc_ver}" if proc_ver else "Not yet processed"],
-            ]
-            # Some tracks have audible tape damage / dropouts; flag them inline
-            # with a small badge and in the track info popup.
-            if t.get("dropouts"):
-                info_rows.append(["Condition", "Significant tape damage — audible dropouts"])
-            info = esc(json.dumps(info_rows, ensure_ascii=False))
-            badge = ('<span class="track-badge" title="Significant tape damage'
-                     ' — audible dropouts">dropouts</span>') if t.get("dropouts") else ""
-            title_html = (f'<div class="track-main"><span class="track-title" data-info="{info}">'
-                          f'{esc(t["title"])}</span>{badge}</div>')
-            play_label = esc(f'{t["title"]}, {track_artist}, {date_with_subtitle(show)}')
-            # Password-protected lossless FLAC download when a FLAC exists;
-            # otherwise the track is stream-only.
-            dl_btns = []
-            if t.get("flac"):
-                flac_title = "Download FLAC (password protected)" + (f" · {t['flac_size_mb']} MB" if t.get("flac_size_mb") else "")
-                # The -14 key rides along when this track has a variant; the
-                # password modal turns it into the Archive/Loud choice. Reuses
-                # `vt` (already resolved above for the stream URL) so the
-                # download and the player can never disagree about whether a
-                # variant exists for this track.
-                dl_btns.append(dl_button(t["flac"], title=flac_title,
-                                         loud_file=variant_key(t["file"]) if vt else None,
-                                         size=fmt_size_mb(t.get("flac_size_mb")),
-                                         # size_mb is the -14 render's size too
-                                         # (320 kbps CBR, same audio length);
-                                         # see _loud_zip() for the measurement.
-                                         lossy_size=fmt_size_mb(t.get("size_mb")) if vt else None))
-            # Playlist-selection id: {show-slug}-{tracknum:02d}, matching assets/tracks.json.
-            track_id = f'{show["slug"]}-{t["num"]:02d}'
-            add_btn = track_add_button(track_id)
-            # The shared player reads this; nothing consumes it until the
-            # controller is switched on for a page (see the plan's Step 4).
-            # play_label is rebuilt unescaped here on purpose — playable_item_attr
-            # escapes the whole JSON itself, so passing the esc()'d one would
-            # double-escape it.
-            item_attr = playable_item_attr(
-                item_id=track_id,
-                kind="track",
-                stream=stream,
-                title=t["title"],
-                artist=track_artist,
-                venue=show.get("venue"),
-                date=show.get("date"),
-                date_display=date_with_subtitle(show),
-                duration_label=t["duration"],
-                # Peaks JSON is keyed by track number as a string; a row whose
-                # key is missing from the fetched map just renders without a
-                # waveform, per-row rather than per-show.
-                peaks_key=str(t["num"]) if has_waves else None,
-                page_url=f'{show_url(show)}#track-{t["num"]}',
-                play_label=f'{t["title"]}, {track_artist}, {date_with_subtitle(show)}',
-                lossless_file=t.get("flac"),
-                lossless_size_mb=t.get("flac_size_mb"),
-                dropouts=t.get("dropouts"),
-                loud_stream=loud_stream,
-                share_url=track_share_url(track_id),
-            )
-            if has_waves:
-                # waveform replaces the progress bar; the download (if any) keeps the
-                # .ws-dl wrapper so the mobile grouping styles apply.
-                dl = ('\n        <div class="ws-dl">' +
-                      "".join("\n          " + b for b in dl_btns) +
-                      "\n        </div>") if dl_btns else ""
-                rows.append(f'''      <div class="track-row ws-track" id="track-{t["num"]}" data-trackid="{t["num"]}" data-src="{esc(stream)}" {item_attr}>
-        <button class="play-btn" aria-label="Play {play_label}" data-play-label="{play_label}">{PLAY_SVG}</button>
-        <span class="track-num">{t["num"]:02d}</span>
-        {title_html}
-        <div class="ws-wave"></div>
-        <span class="time-label current" data-duration="{esc(t["duration"])}">0:00 / {esc(t["duration"])}</span>{dl}
-        {add_btn}
-      </div>''')
-            else:
-                dl = "".join("\n        " + b for b in dl_btns)
-                rows.append(f'''      <div class="track-row custom-player" id="track-{t["num"]}" data-src="{esc(stream)}" {item_attr}>
-        <button class="play-btn" aria-label="Play {play_label}" data-play-label="{play_label}">{PLAY_SVG}</button>
-        <span class="track-num">{t["num"]:02d}</span>
-        {title_html}
-        <span class="time-label current" data-duration="{esc(t["duration"])}">0:00 / {esc(t["duration"])}</span>{dl}
-        <input type="range" class="progress-range" min="0" max="1000" value="0" step="1" aria-label="Seek {play_label}" aria-valuetext="0:00 of {esc(t["duration"])}">
-        {add_btn}
-      </div>''')
+            rows.append(show_track_row(show, t, artist=artist,
+                                       proc_tracks=proc_tracks,
+                                       var_tracks=var_tracks,
+                                       has_waves=has_waves))
         # The count/duration caption and the controls used to share one
         # space-between row (.tracks-head), with the Archive/Loud control in a
         # second block underneath -- two toolbars, in two visual languages, and
@@ -1227,6 +1124,113 @@ def build_song_page(s):
         pre_scripts=SONG_ENGINE_FLAG,
         playback_ready="deferred")
 
+# ── the single-song share page (/t/{code}) ──────────────────────────────────
+# plans/share/track-share-plan.md §9. A shared link lands here rather than on
+# the show page: the recipient was sent ONE performance, so that is what the
+# page opens with, and the show and the song are one link away instead of
+# competing for the first tap.
+#
+# Structurally a show page with one track — same show_track_row() markup, same
+# player-boot.js, same mini-player bar (so the recipient can re-share what they
+# just heard without the bar being a special case here). Nothing about this
+# page is a second rendering path.
+TRACK_PAGE_BOOT = (f'\n<script type="module" src="/assets/player-boot.js" '
+                   f'onerror="{playback_ready_onerror("legacy")}"></script>')
+
+def build_track_page(show, t, song, code):
+    artist = next(a for a in M["artists"] if a["id"] == show["artist"])
+    proc = load_processing(show["slug"]) or {}
+    proc_tracks = proc.get("tracks", {})
+    var = load_variant(show["slug"]) or {}
+    var_tracks = var.get("tracks", {})
+    vt = var_tracks.get(str(t["num"]))
+
+    # Peaks: the show's file is 60–90 KB and this page draws ONE waveform from
+    # it, so slice out just this track's entry (~2.5 KB) into its own asset.
+    # Same window.WS_PEAKS_URL contract, no player change — the file is simply
+    # a one-key map, and attachPeaks() looks up item.peaksKey either way.
+    peaks_path = os.path.join(ROOT, "data", "peaks", f"{show['slug']}.json")
+    has_waves = False
+    if os.path.exists(peaks_path):
+        all_peaks = json.load(open(peaks_path))
+        one = all_peaks.get(str(t["num"]))
+        if one is not None:
+            has_waves = True
+            write(f"assets/peaks/t/{code}.json",
+                  json.dumps({str(t["num"]): one}, ensure_ascii=False))
+
+    row = show_track_row(show, t, artist=artist, proc_tracks=proc_tracks,
+                         var_tracks=var_tracks, has_waves=has_waves)
+    track_artist = t.get("artist") or artist["name"]
+
+    links = [f'<li><a href="{esc(show_url(show))}#track-{t["num"]}">Hear the whole show'
+             f' &mdash; {len(show["tracks"])} songs at {esc(show["venue_short"])}</a></li>']
+    if song:
+        plural = "s" if song["plays"] != 1 else ""
+        links.append(f'<li><a href="/songs/{esc(song["slug"])}/">All {song["plays"]}'
+                     f' recording{plural} of &ldquo;{esc(song["canonical"])}&rdquo;</a></li>')
+    links.append('<li><a href="/">Browse the whole archive</a></li>')
+
+    main = f'''
+  <section id="tracks">
+    <div class="tracks-toolbar">
+{variant_toggle(bool(vt))}
+    </div>
+    <div class="track-list">
+{row}
+    </div>
+  </section>
+  <section class="about">
+    <h2>More from the archive</h2>
+    <ul class="notfound-links">
+      {chr(10).join("      " + l for l in links).strip()}
+    </ul>
+  </section>
+  <div id="mini-player" class="mini-player" hidden></div>'''
+
+    extra_scripts = '\n<script src="/assets/track-select.js"></script>'
+    if has_waves:
+        extra_scripts += f'\n<script>window.WS_PEAKS_URL = "/assets/peaks/t/{code}.json";</script>'
+    # Autoplay, per §8.1's decision, carried over from the redirect this page
+    # replaces. It can no longer ride on ?autoplay=1 + #track-N — a shared
+    # /t/{code} has neither — so the page states the intent directly and
+    # player-boot.js's deep-link handler starts row 0 when nothing else did.
+    extra_scripts += '\n<script>window.PLAYER_AUTOPLAY = true;</script>'
+    extra_scripts += TRACK_PAGE_BOOT
+    if vt:
+        extra_scripts += '\n<script type="module" src="/assets/variant-ui.js"></script>'
+
+    where = f'{show["venue_short"]} &middot; {date_with_subtitle(show)}'
+    # jsonld() drops empty OBJECTS but not null values inside one, so the
+    # optional keys are filtered here rather than emitted as nulls.
+    rec_jsonld = jsonld({k: v for k, v in {
+        "@context": "https://schema.org", "@type": "MusicRecording",
+        "name": t["title"],
+        "byArtist": {"@type": "MusicGroup", "name": track_artist},
+        "url": f"https://renedebos.com/t/{code}",
+        "recordingOf": ({"@type": "MusicComposition", "name": song["canonical"],
+                         "url": f"https://renedebos.com/songs/{song['slug']}/"}
+                        if song else None),
+        "duration": iso_duration(t.get("duration")),
+    }.items() if v is not None})
+    return page_shell(
+        title=f'{t["title"]} — {track_artist}, {show["venue_short"]}, {show["date"] or "unknown date"}',
+        description=(f'{t["title"]} — live by {track_artist} at {show["venue"] or show["venue_short"]}, '
+                     f'{date_with_subtitle(show)}. Stream this one performance from the Hannan archive.'),
+        url=f"https://renedebos.com/t/{code}",
+        heading=esc(t["title"]),
+        tagline=f'{esc(track_artist)} &middot; {where}',
+        nav=site_nav(),
+        main=main,
+        extra_scripts=extra_scripts,
+        # noindex, and no sitemap entry (see build_sitemap): 680 near-identical
+        # pages would compete in search with the show and song pages that are
+        # designed to be found. Same "unlisted" treatment /archive-data/ gets.
+        # Link previews are unaffected — unfurlers read og: and ignore robots.
+        extra_head='\n<meta name="robots" content="noindex">' + rec_jsonld,
+        pre_scripts="<script>window.PLAYER_ENGINE = 'controller';</script>\n",
+        playback_ready="deferred")
+
 def build_404():
     main = '''
   <section class="about">
@@ -1246,4 +1250,4 @@ def build_404():
         nav=site_nav(), main=main)
 
 
-__all__ = ['CONTROLLER_ENGINE_SLUGS', 'SONG_BOOT_SCRIPT', 'SONG_ENGINE_FLAG', 'build_404', 'build_archive_data', 'build_contact', 'build_history', 'build_home', 'build_manual', 'build_playlist', 'build_process', 'build_search', 'build_show', 'build_song_page', 'build_songs_index', 'build_updates']
+__all__ = ['CONTROLLER_ENGINE_SLUGS', 'SONG_BOOT_SCRIPT', 'SONG_ENGINE_FLAG', 'build_404', 'build_archive_data', 'build_contact', 'build_history', 'build_home', 'build_manual', 'build_playlist', 'build_process', 'build_search', 'build_show', 'build_song_page', 'build_songs_index', 'build_track_page', 'build_updates']

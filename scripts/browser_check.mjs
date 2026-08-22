@@ -628,6 +628,175 @@ async function checkPlaylistPage(context) {
 // lazy-insertion/queue-extension path that has no equivalent on any other
 // page type, so it gets its own real-browser proof here rather than relying
 // on scripts/test-song-boot.mjs's fake-DOM coverage alone).
+// ── the per-row share control (active row only) ───────────────────────────
+// plans/share/track-share-plan.md §5's deferred "share without playing",
+// built 2026-08-22. Two things are worth a real browser here: that the button
+// is genuinely absent until a row is active (a CSS rule, invisible to the
+// deterministic suites), and that adding it did not cost the phone layout
+// anything -- which is what nearly sank it, and is measured below rather than
+// eyeballed.
+async function checkRowShare(context) {
+  const SHOW = '/shows/jerry-cafe-java-1999-05-27/';
+  {
+    const page = await context.newPage();
+    const consoleErrors = [];
+    page.on('console', (m) => { if (m.type() === 'error' && !KNOWN_UNRELATED_CSP_WARNING.test(m.text())) consoleErrors.push(m.text()); });
+    page.on('pageerror', (e) => consoleErrors.push('pageerror: ' + e.message));
+
+    await page.goto(BASE + SHOW, { waitUntil: 'load' });
+    await page.waitForFunction(() => window.PLAYER_ENGINE_MOUNTED === true, null, { timeout: 15000 });
+
+    const rendered = await page.locator('.track-row .track-share').count();
+    const visibleIdle = await page.locator('.track-row .track-share:visible').count();
+    record(`${SHOW} share buttons are rendered on every row but hidden while none is active`,
+      rendered > 1 && visibleIdle === 0, `rendered=${rendered} visible=${visibleIdle}`);
+
+    await page.locator('.track-row .play-btn').nth(2).click();
+    await page.waitForTimeout(2000);
+    const visibleActive = await page.locator('.track-row .track-share:visible').count();
+    const onActive = await page.locator('.track-row.is-active .track-share:visible').count();
+    record(`${SHOW} exactly one share button appears, on the active row`,
+      visibleActive === 1 && onActive === 1, `visible=${visibleActive} onActive=${onActive}`);
+
+    // The <a>'s own href is the no-JavaScript answer, so it has to be the
+    // real share link and not a placeholder the handler quietly replaces.
+    const [href, itemShare] = await page.evaluate(() => {
+      const row = document.querySelector('.track-row.is-active');
+      return [row.querySelector('.track-share').getAttribute('href'),
+              JSON.parse(row.dataset.item).shareUrl];
+    });
+    record(`${SHOW} the button's href IS the share link (works with no JS)`,
+      href === itemShare && /\/t\/[a-f0-9]{5,}$/.test(href), `${href} vs ${itemShare}`);
+
+    await page.locator('.track-row.is-active .track-share').click();
+    await page.waitForTimeout(600);
+    const popOpen = await page.locator('.share-pop.open').count();
+    const popText = await page.locator('.share-pop.open').first().innerText().catch(() => '');
+    record(`${SHOW} pressing it opens the Copy link / Email popover`,
+      popOpen === 1 && /Copy link/i.test(popText), `open=${popOpen} text=${popText.replace(/\n/g, ' / ')}`);
+
+    record(`${SHOW} no console errors with the row share control`,
+      consoleErrors.length === 0, consoleErrors.join(' | '));
+    await page.close();
+  }
+
+  // Phone layout regression guard. Adding a third trailing control to the
+  // active row cut its title from 74px to 40px at 390px wide ("Smoke in
+  // Heaven" -> "Smo... in..."); the fix moves the button onto the waveform's
+  // line, restoring the first line exactly. Asserted as "no worse than with
+  // the button hidden", not against a hardcoded pixel count, so a future
+  // type-scale change doesn't make this fail for an unrelated reason.
+  {
+    const page = await context.newPage();
+    await page.setViewportSize({ width: 390, height: 844 });
+    const widthOf = async (hideShare) => {
+      await page.goto(BASE + SHOW, { waitUntil: 'load' });
+      if (hideShare) await page.addStyleTag({ content: '.track-share{display:none !important}' });
+      await page.waitForFunction(() => window.PLAYER_ENGINE_MOUNTED === true, null, { timeout: 15000 });
+      await page.locator('.track-row .play-btn').nth(2).click();
+      await page.waitForTimeout(1800);
+      const box = await page.locator('.track-row.is-active .track-title').first().boundingBox();
+      return box ? Math.round(box.width) : -1;
+    };
+    const without = await widthOf(true);
+    const with_ = await widthOf(false);
+    record('phone: the share control costs the active row no title width',
+      with_ >= without && without > 0, `title ${without}px without -> ${with_}px with`);
+
+    await page.goto(BASE + '/songs/truck/', { waitUntil: 'load' });
+    await page.waitForFunction(() => window.PLAYER_ENGINE_MOUNTED === true, null, { timeout: 15000 });
+    await page.locator('.song-occ .play-btn').first().click();
+    await page.waitForTimeout(1800);
+    const heights = await page.evaluate(() => Array.from(document.querySelectorAll('.song-occ'))
+      .slice(0, 6).map((r) => Math.round(r.getBoundingClientRect().height)));
+    const spread = Math.max(...heights) - Math.min(...heights);
+    record('phone: the active song-occurrence row stays the same height as the rest',
+      spread <= 4, `heights=${heights.join(',')} spread=${spread}`);
+    await page.close();
+  }
+}
+
+// ── /t/{code}: the single-song share page ─────────────────────────────────
+// plans/share/track-share-plan.md §9. This is the surface a recipient who has
+// never seen the site lands on, so the bar is "it works cold, first try" --
+// which is exactly what the deterministic suites cannot prove and this can.
+async function checkSharePage(context) {
+  const linksRes = await context.request.get(BASE + '/assets/track-links.json');
+  if (!linksRes.ok()) {
+    record('/t/: track-links.json fetched', false, `status=${linksRes.status()}`);
+    return;
+  }
+  const links = await linksRes.json();
+  const code = Object.keys(links)[0];
+  const deep = links[code].replace('?autoplay=1', '');
+  // Slash-less, exactly as the share button hands it out -- the shape that
+  // gets pasted into a message, not a normalised variant of it.
+  const url = '/t/' + code;
+
+  const page = await context.newPage();
+  const consoleErrors = [];
+  page.on('console', (m) => { if (m.type() === 'error' && !KNOWN_UNRELATED_CSP_WARNING.test(m.text())) consoleErrors.push(m.text()); });
+  page.on('pageerror', (e) => consoleErrors.push('pageerror: ' + e.message));
+
+  await page.goto(BASE + url, { waitUntil: 'load' });
+  await page.waitForFunction(() => window.PLAYER_ENGINE_MOUNTED === true, null, { timeout: 15000 });
+
+  const mountInfo = await page.evaluate(() => ({
+    hasBoot: !!window.PLAYER_BOOT,
+    queueLen: window.PLAYER_BOOT && window.PLAYER_BOOT.controller.queue.length,
+    idx: window.PLAYER_BOOT && window.PLAYER_BOOT.controller.currentIndex,
+    rows: document.querySelectorAll('.track-row').length,
+  }));
+  // The queue IS set on load even in a headless browser that refuses to make
+  // sound: window.PLAYER_AUTOPLAY calls setQueue({autoplay:true}), and a
+  // blocked play() leaves the item cued. Asserting the QUEUE rather than
+  // "playing" is what makes this check meaningful on a phone too, where
+  // autoplay is blocked in exactly the same way.
+  record(`${url}: mounts with exactly the shared song queued`,
+    mountInfo.hasBoot && mountInfo.queueLen === 1 && mountInfo.idx === 0 && mountInfo.rows === 1,
+    JSON.stringify(mountInfo));
+
+  const readiness = await page.evaluate(() => window.PLAYBACK_HOST_READY.then((v) => v));
+  record(`${url}: PLAYBACK_HOST_READY reports initialIntent "autoplay"`,
+    readiness && readiness.mode === 'controller' && readiness.initialIntent === 'autoplay',
+    readiness && readiness.initialIntent);
+
+  // The share button in the bar has to hand back the SAME link the recipient
+  // arrived on, or a re-share silently drifts to a different track.
+  const shareUrl = await page.evaluate(() => {
+    const it = window.PLAYER_BOOT.controller.currentItem;
+    return it && it.shareUrl;
+  });
+  record(`${url}: the current item's shareUrl round-trips to this same code`,
+    typeof shareUrl === 'string' && shareUrl.endsWith('/t/' + code), String(shareUrl));
+
+  await page.locator('.track-row .play-btn').first().click();
+  await page.waitForTimeout(2500);
+  const playback = await page.evaluate(() => {
+    const c = window.PLAYER_BOOT.controller;
+    return { t: c.audioElement.currentTime, paused: c.audioElement.paused, state: c.state };
+  });
+  record(`${url}: real playback of the shared song`,
+    playback.t > 0.3 && !playback.paused && playback.state === 'playing',
+    JSON.stringify(playback));
+
+  const canvasCount = await page.locator('.track-row .ws-wave canvas').count();
+  record(`${url}: the waveform renders (peaks from the per-track slice)`,
+    canvasCount > 0, `canvases=${canvasCount}`);
+
+  // Focus, not amputation (§9.2): the show stays one click away.
+  const showHref = await page.locator(`a[href="${deep}"]`).count();
+  record(`${url}: links back to its show (${deep})`, showHref > 0, `matches=${showHref}`);
+
+  record(`${url}: no console errors`, consoleErrors.length === 0, consoleErrors.join(' | '));
+  await page.close();
+
+  // An unknown code must fail visibly rather than land on a plausible song.
+  const bogus = await context.request.get(BASE + '/t/abcdef', { maxRedirects: 0 });
+  record('/t/abcdef (unknown code): 404, never a redirect to some other song',
+    bogus.status() === 404, `status=${bogus.status()}`);
+}
+
 async function checkSongPage(context) {
   // ── /songs/<slug>/: synchronous mount, real playback ──
   {
@@ -1289,6 +1458,17 @@ try {
     const songCtx = await browser.newContext();
     await checkSongPage(songCtx);
     await songCtx.close();
+  }
+
+  // Single-song share pages (plans/share/track-share-plan.md §9). Own context:
+  // a share page is the FIRST page a recipient ever loads, so any state an
+  // earlier scenario left behind (a variant choice, a warmed cache) would
+  // make this check less like the thing it is meant to represent.
+  {
+    const shareCtx = await browser.newContext();
+    await checkSharePage(shareCtx);
+    await checkRowShare(shareCtx);
+    await shareCtx.close();
   }
 
   // Loudness variant. Needs its OWN context: check #1 asserts a FRESH profile

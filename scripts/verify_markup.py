@@ -462,7 +462,89 @@ def check():
         if dupes:
             errors.append(f"{rel}: DUPLICATE item ids on one page: {dupes}")
 
+    t_errors, t_track, t_pages = check_track_pages(track_links)
+    errors += t_errors
+    n_track += t_track
+    n_pages += t_pages
+
     return errors, n_track, n_rec, n_pages
+
+
+# ── single-song share pages (/t/{code}/) ────────────────────────────────────
+# plans/share/track-share-plan.md §9. These replaced the Worker's redirect, so
+# what used to be a runtime lookup failure ("code not in the map") is now a
+# build-time one ("no page for that code") -- checked here in both directions,
+# because a shared link that 404s is the single worst outcome this feature has.
+TRACK_PAGE_AUTOPLAY = "window.PLAYER_AUTOPLAY = true"
+PEAKS_URL_RE = re.compile(r'window\.WS_PEAKS_URL\s*=\s*"([^"]+)"')
+
+def check_track_pages(track_links):
+    """Errors, tracks counted, pages counted for the built /t/{code}/ pages."""
+    errors, n_track, n_pages = [], 0, 0
+    pages = sorted(glob.glob(os.path.join(ROOT, "t", "*", "index.html")))
+    if not pages:
+        return ["no generated /t/{code} share pages found -- run scripts/build.py first"], 0, 0
+
+    built = {os.path.basename(os.path.dirname(p)) for p in pages}
+    if track_links is not None:
+        # Every code the build hands out in a shareUrl must have a page. This
+        # is the check that would have caught a half-written /t/ tree.
+        for code in sorted(set(track_links) - built):
+            errors.append(f"share code {code!r} is in assets/track-links.json but has no /t/{code}/ page")
+        # Same failure mode, and the same remedy, as check_orphan_song_dirs():
+        # the build never deletes output, so a renumbered track strands the
+        # page its old code pointed at. Emit the exact cleanup command.
+        for code in sorted(built - set(track_links)):
+            errors.append(f"orphaned share page /t/{code}/ -- no track hands out that code "
+                          f"any more (a renumber?). Clean up with: git rm -r 't/{code}/' "
+                          f"'assets/peaks/t/{code}.json'")
+
+    for path in pages:
+        rel = os.path.relpath(path, ROOT)
+        code = os.path.basename(os.path.dirname(path))
+        src = open(path).read()
+        n_pages += 1
+
+        if ENGINE_FLAG not in src or BOOT_TAG not in src:
+            errors.append(f"{rel}: share page must emit the engine flag and player-boot.js")
+        if TRACK_PAGE_AUTOPLAY not in src:
+            errors.append(f"{rel}: share page must set window.PLAYER_AUTOPLAY -- without it the "
+                          f"page a recipient opens to hear one song does not start it")
+        if 'name="robots" content="noindex"' not in src:
+            errors.append(f"{rel}: share page must be noindex (see build_track_page)")
+        errors += check_assets_exist(rel, src)
+        errors += check_playback_ready_first(rel, src)
+
+        m = PEAKS_URL_RE.search(src)
+        if m and not os.path.exists(os.path.join(ROOT, m.group(1).lstrip("/"))):
+            errors.append(f"{rel}: WS_PEAKS_URL points at {m.group(1)}, which build.py never writes")
+
+        rows = ROW_RE.findall(src)
+        if len(rows) != 1:
+            errors.append(f"{rel}: expected exactly one track row, found {len(rows)} -- "
+                          f"a share page is one performance by definition")
+        for data_src, raw in rows:
+            try:
+                item = json.loads(html.unescape(raw))
+            except Exception as e:
+                errors.append(f"{rel}: unparseable data-item ({e})")
+                continue
+            n_track += 1
+            for field in REQUIRED:
+                if not item.get(field):
+                    errors.append(f"{rel}: item {item.get('id')!r} missing required field {field!r}")
+            if item.get("kind") != "track":
+                errors.append(f"{rel}: item {item.get('id')!r} has bad kind {item.get('kind')!r}")
+            if html.unescape(data_src) != item.get("streamUrl"):
+                errors.append(f"{rel}: item {item.get('id')!r} streamUrl != legacy data-src")
+            errors += check_share_link(rel, item, track_links)
+            # The page for code X must be the page code X hands out. Without
+            # this, a build that paired pages and codes off by one would still
+            # pass every other check on this page.
+            share = str(item.get("shareUrl") or "")
+            if not share.endswith("/" + code):
+                errors.append(f"{rel}: page is /t/{code}/ but its track's shareUrl is {share!r}")
+    return errors, n_track, n_pages
 
 
 def check_allowlist_covers_every_public_show(controller_engine_slugs, excluded_slugs, public_show_slugs):
@@ -677,7 +759,7 @@ def main():
             print(f"  ... and {len(errors) - 40} more")
         sys.exit(1)
     print(f"markup OK — {n_track + n_rec} items ({n_track} tracks, {n_rec} recordings) "
-          f"across {n_pages} generated show/song pages")
+          f"across {n_pages} generated show/song/share pages")
 
 
 if __name__ == "__main__":

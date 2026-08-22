@@ -92,11 +92,14 @@ function showDoc({ rows = 3, heroes = 1, badRow = -1, badHero = false } = {}) {
 // bootstrap. Returns everything a test needs to poke at afterwards.
 async function boot({ rows = 3, heroes = 1, flag = true, hash = '', search = '',
                       peaksUrl = null, peaks = {}, peaksFail = false, badRow = -1,
-                      badHero = false, holdPeaks = false } = {}) {
+                      badHero = false, holdPeaks = false, pageAutoplay = false } = {}) {
   const doc = showDoc({ rows, heroes, badRow, badHero });
   const win = new FakeWindow({ hash, search });
   if (flag) win.PLAYER_ENGINE = 'controller';
   if (peaksUrl) win.WS_PEAKS_URL = peaksUrl;
+  // The single-song share page's "this page exists to play one thing" flag
+  // (plans/share/track-share-plan.md §9.1) -- set by build_track_page().
+  if (pageAutoplay) win.PLAYER_AUTOPLAY = true;
   globalThis.document = doc;
   globalThis.window = win;
   // Readiness-contract resolution (plans/dynamic-hugging-rossum.md) — a test
@@ -353,6 +356,53 @@ test('a later hashchange re-targets but never autoplays', async () => {
     assert.equal(doc.querySelector('#track-3').classList.contains('target'), false,
       'the previous deep-link highlight is cleared');
     assert.equal(c.currentIndex, 2, 'the newly hashed row must not start playing');
+  } finally { c.destroy(); }
+});
+
+// ── window.PLAYER_AUTOPLAY: the single-song share page (/t/{code}) ────────
+// plans/share/track-share-plan.md §9.1. A shared link is deliberately clean --
+// no ?autoplay=1, no #track-N -- so the deep-link path can never fire for it
+// and the page declares the intent instead.
+
+test('PLAYER_AUTOPLAY starts row 0 on a page with no hash and no query', async () => {
+  const { win, c } = await boot({ rows: 1, heroes: 0, pageAutoplay: true });
+  try {
+    win.dispatch('load');
+    await tick();
+    assert.equal(c.currentIndex, 0);
+    assert.equal(c.queue.length, 1, 'a share page queues exactly the song that was shared');
+  } finally { c.destroy(); }
+});
+
+test('a deep link still wins over PLAYER_AUTOPLAY -- no double start', async () => {
+  // Belt and braces: build_track_page() emits no hash, but a page carrying
+  // both must not start twice or start the wrong row.
+  const { win, c } = await boot({ rows: 4, hash: '#track-3', search: '?autoplay=1',
+                                  pageAutoplay: true });
+  try {
+    win.dispatch('load');
+    await tick();
+    assert.equal(c.currentIndex, 2, 'the deep-linked row, not row 0');
+  } finally { c.destroy(); }
+});
+
+test('PLAYER_AUTOPLAY reports initialIntent "autoplay" to the readiness contract', async () => {
+  const { win, c, readiness } = await boot({ rows: 1, heroes: 0, pageAutoplay: true });
+  try {
+    win.dispatch('load');
+    await tick();
+    assert.equal(readiness().initialIntent, 'autoplay',
+      'a page that started itself must say so, or the bar mis-reads its own state');
+  } finally { c.destroy(); }
+});
+
+test('without the flag nothing starts -- ordinary show pages are unaffected', async () => {
+  const { win, c } = await boot({ rows: 3 });
+  try {
+    win.dispatch('load');
+    await tick();
+    assert.equal(c.currentIndex, -1);
+    assert.equal(c.state, 'idle');
   } finally { c.destroy(); }
 });
 

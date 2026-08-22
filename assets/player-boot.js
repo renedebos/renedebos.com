@@ -240,7 +240,17 @@ function wireDeepLink(handle, doc, win, signal) {
   // Deliberately on 'load', matching player.js: scrollIntoView wants layout
   // settled, and a module runs well before that.
   win.addEventListener('load', () => {
-    const autoplayed = focus(true);
+    let autoplayed = focus(true);
+    // The single-song share page (/t/{code}, plans/share/track-share-plan.md
+    // §9) exists to play one thing, and its URL is deliberately clean -- no
+    // ?autoplay=1, no #track-N -- so focus() above can never fire for it.
+    // The page states the intent directly instead. Strictly a fallback: a
+    // deep link that already started something wins, so a page carrying both
+    // can't double-start, and initialIntent stays truthful either way.
+    if (!autoplayed && win.PLAYER_AUTOPLAY && handle.rowViews.length) {
+      handle.controller.setQueue(handle.rowItems, { startIndex: 0, autoplay: true });
+      autoplayed = true;
+    }
     if (win.__resolvePlaybackHost) {
       win.__resolvePlaybackHost({
         mode: 'controller', controller: handle.controller,

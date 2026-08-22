@@ -175,7 +175,7 @@ Enumerated by the research pass, for reference by whoever builds this:
 | `?autoplay=1` | auto-start playback of the hash-targeted track | `pages.py` (random-tape), consumed in `player.js` |
 | `?q=<text>` | search free-text query (search page only) | `search.js` |
 | `/play/{slug}` | path-based short link, server-resolved to `#p=` | `site_worker.js` |
-| `/t/{code}` | share-a-song short link, server-resolved to `/shows/<slug>/?autoplay=1#track-N` (built 2026-08-22; `track-share-plan.md`) | `site_worker.js`, `core.py`, `assets/track-links.json` |
+| `/t/{code}` | share-a-song short link &mdash; a **built single-song page**, one performance with its own player and `og:` tags (built 2026-08-22, changed from a 302-to-show-page the same day; `track-share-plan.md` §9) | `site_worker.js`, `core.py`, `sitegen/pages.py` (`build_track_page`), `t/{code}/index.html` |
 
 This project's in-scope work (extending `?q=`-style search-filter params,
 sharing canonical `/songs/<slug>/`  and show URLs) doesn't touch any of the

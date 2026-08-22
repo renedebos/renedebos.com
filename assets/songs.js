@@ -116,6 +116,11 @@
       + '<span class="time-label current" data-duration="' + escOcc(dur) + '">0:00' + (dur ? " / " + escOcc(dur) : "") + "</span>"
       + '<a class="track-open" href="' + escOcc(anchor) + '" title="Open on show page" aria-label="Open ' + escOcc(label) + ' on its show page">' + openIcon + "</a>"
       + '<input type="range" class="progress-range" min="0" max="' + RANGE_MAX + '" value="0" step="1" aria-label="Seek ' + escOcc(label) + '" aria-valuetext="0:00' + (dur ? " of " + escOcc(dur) : "") + '">'
+      // Per-row share, on the active row only (track-select.js owns the
+      // control and the click; fragments.py's track_share_button() is the
+      // server-side twin these rows are meant to match byte-for-byte).
+      // Empty string when this performance has no code, same as the server.
+      + trackShareButtonHtml(o.code ? "https://renedebos.com/t/" + o.code : null, songTitle)
       + trackAddButtonHtml(trackId)
       + "</div>";
   }

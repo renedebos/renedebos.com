@@ -42,6 +42,38 @@ def track_add_button(track_id):
     return (f'<button type="button" class="track-add" data-id="{esc(track_id)}" '
             f'aria-pressed="false" aria-label="Add to playlist selection">{PLUS_SVG}</button>')
 
+# Same glyph as miniplayer-views.js's SHARE_ICON and track-select.js's
+# SHARE_SVG -- one action, one drawing, three renderers.
+SHARE_SVG = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" '
+             'stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.6"/>'
+             '<circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/>'
+             '<path d="M8.2 13.3l7.6 4.4M15.8 6.3l-7.6 4.4"/></svg>')
+
+def track_share_button(share_url, title):
+    """The per-row share control (plans/share/track-share-plan.md §5's deferred
+    "share without playing", built 2026-08-22).
+
+    Hidden by CSS on every row but the active one -- the row has no space for a
+    third always-visible control, and site.css's own note on .track-add's size
+    is emphatic about not making it heavier. The active row is already the
+    expanded state (it is the only one carrying a waveform), so this is the
+    one place a third button fits.
+
+    An <a href>, not a <button>: with JavaScript it opens the share sheet or
+    popover, and without it navigates to the share page, where the URL can be
+    copied by hand. This is now the primary way to share a song, so it must
+    not be dead when a module fails to load. Keep in sync with
+    trackShareButtonHtml() in track-select.js and occRowHtml() in songs.js.
+
+    Returns "" for a track with no code (a hidden show's track, a whole-show
+    recording) -- there is nothing short to hand out.
+    """
+    if not share_url:
+        return ""
+    label = f"Share &ldquo;{esc(title)}&rdquo;" if title else "Share this song"
+    return (f'<a class="track-share" href="{esc(share_url)}" '
+            f'aria-label="{label}" title="{label}">{SHARE_SVG}</a>')
+
 def playable_item_attr(*, item_id, kind, stream, title, artist=None, venue=None,
                        date=None, date_display=None, duration_label=None,
                        peaks_key=None, page_url=None, play_label=None,
@@ -1012,6 +1044,7 @@ def _song_occ_html(o, song_title):
     )
     stream = stream_url(o["file"], o["ver"])
     add_btn = track_add_button(track_id)
+    share_btn = track_share_button(track_share_url(track_id), song_title)
     sizes = []
     if o.get("flac_size_mb"):
         sizes.append(f'FLAC {o["flac_size_mb"]} MB')
@@ -1049,6 +1082,7 @@ def _song_occ_html(o, song_title):
         <span class="time-label current" data-duration="{esc(dur)}">0:00{f' / {esc(dur)}' if dur else ''}</span>
         <a class="track-open" href="{anchor}" title="Open on show page" aria-label="Open {esc(label)} on its show page">{OPEN_SVG}</a>
         <input type="range" class="progress-range" min="0" max="1000" value="0" step="1" aria-label="Seek {esc(label)}" aria-valuetext="0:00{f' of {esc(dur)}' if dur else ''}">
+        {share_btn}
         {add_btn}
       </div>'''
 
@@ -1170,7 +1204,132 @@ def song_jsonld(s):
     })
 
 
-__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'OPEN_SVG', 'PLAYBACK_READY_ARM', 'PLAYBACK_READY_SNIPPETS', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', '_pre_edit_class', '_pre_edit_label', '_show_label', '_song_occ_html', '_src_tag', 'contact_block', 'content', 'dl_button', 'fmt_size_mb', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'playable_item_attr', 'playback_ready_onerror', 'player', 'recording_card', 'recording_item_id', 'show_jsonld', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'track_add_button', 'updates_list', 'variant_toggle']
+def show_track_row(show, t, *, artist, proc_tracks, var_tracks, has_waves):
+    """One track row for a show page — the waveform row (`.ws-track`) when the
+    show has pre-computed peaks, the classic progress-bar row otherwise.
+
+    Extracted from build_show()'s loop 2026-08-22 so the single-song share page
+    (/t/{code}, build_track_page) renders a byte-identical row instead of
+    growing a second copy of this logic — that page is deliberately "a show page
+    with one track": same markup, same engine, same mini-player bar. Everything
+    below derives from (show, t) plus the show-level lookups the caller has
+    already loaded, so there is no per-page state that can drift.
+
+    `artist` is the show's artist record; an individual track may override it
+    (a guest singer), which is why the override lives here and not in the caller.
+    """
+    # Version the stream URL with the track's MD5 (when known) so the edge
+    # caches hard yet a re-normalized upload goes live instantly.
+    ver = (proc_tracks.get(str(t["num"]), {}).get("md5") or "")[:12] or None
+    stream = stream_url(t["file"], ver)
+    # Loud variant, only when this track actually has one rendered.
+    vt = var_tracks.get(str(t["num"]))
+    loud_stream = (stream_url(variant_key(t["file"]),
+                              (vt.get("mp3_md5") or "")[:12] or None)
+                   if vt else None)
+    sizes = []
+    if t.get("flac_size_mb"):
+        sizes.append(f'FLAC {t["flac_size_mb"]} MB')
+    if t.get("size_mb"):
+        sizes.append(f'MP3 {t["size_mb"]} MB')
+    # A track may override the show artist (e.g. a guest singer).
+    track_artist = t.get("artist") or artist["name"]
+    proc_ver = proc_tracks.get(str(t["num"]), {}).get("ver")
+    info_rows = [
+        ["Artist", track_artist],
+        ["Song", t["title"]],
+        ["Venue", show["venue"] or "—"],
+        ["Date", show["date"] or "Unknown date"],
+        ["Format", "FLAC + MP3" if t.get("flac") else "MP3"],
+        ["Size", " · ".join(sizes) or "—"],
+        ["Process version", f"v{proc_ver}" if proc_ver else "Not yet processed"],
+    ]
+    # Some tracks have audible tape damage / dropouts; flag them inline
+    # with a small badge and in the track info popup.
+    if t.get("dropouts"):
+        info_rows.append(["Condition", "Significant tape damage — audible dropouts"])
+    info = esc(json.dumps(info_rows, ensure_ascii=False))
+    badge = ('<span class="track-badge" title="Significant tape damage'
+             ' — audible dropouts">dropouts</span>') if t.get("dropouts") else ""
+    title_html = (f'<div class="track-main"><span class="track-title" data-info="{info}">'
+                  f'{esc(t["title"])}</span>{badge}</div>')
+    play_label = esc(f'{t["title"]}, {track_artist}, {date_with_subtitle(show)}')
+    # Password-protected lossless FLAC download when a FLAC exists;
+    # otherwise the track is stream-only.
+    dl_btns = []
+    if t.get("flac"):
+        flac_title = "Download FLAC (password protected)" + (f" · {t['flac_size_mb']} MB" if t.get("flac_size_mb") else "")
+        # The -14 key rides along when this track has a variant; the
+        # password modal turns it into the Archive/Loud choice. Reuses
+        # `vt` (already resolved above for the stream URL) so the
+        # download and the player can never disagree about whether a
+        # variant exists for this track.
+        dl_btns.append(dl_button(t["flac"], title=flac_title,
+                                 loud_file=variant_key(t["file"]) if vt else None,
+                                 size=fmt_size_mb(t.get("flac_size_mb")),
+                                 # size_mb is the -14 render's size too
+                                 # (320 kbps CBR, same audio length);
+                                 # see _loud_zip() for the measurement.
+                                 lossy_size=fmt_size_mb(t.get("size_mb")) if vt else None))
+    # Playlist-selection id: {show-slug}-{tracknum:02d}, matching assets/tracks.json.
+    track_id = f'{show["slug"]}-{t["num"]:02d}'
+    add_btn = track_add_button(track_id)
+    share_btn = track_share_button(track_share_url(track_id), t["title"])
+    # The shared player reads this; nothing consumes it until the
+    # controller is switched on for a page (see the plan's Step 4).
+    # play_label is rebuilt unescaped here on purpose — playable_item_attr
+    # escapes the whole JSON itself, so passing the esc()'d one would
+    # double-escape it.
+    item_attr = playable_item_attr(
+        item_id=track_id,
+        kind="track",
+        stream=stream,
+        title=t["title"],
+        artist=track_artist,
+        venue=show.get("venue"),
+        date=show.get("date"),
+        date_display=date_with_subtitle(show),
+        duration_label=t["duration"],
+        # Peaks JSON is keyed by track number as a string; a row whose
+        # key is missing from the fetched map just renders without a
+        # waveform, per-row rather than per-show.
+        peaks_key=str(t["num"]) if has_waves else None,
+        page_url=f'{show_url(show)}#track-{t["num"]}',
+        play_label=f'{t["title"]}, {track_artist}, {date_with_subtitle(show)}',
+        lossless_file=t.get("flac"),
+        lossless_size_mb=t.get("flac_size_mb"),
+        dropouts=t.get("dropouts"),
+        loud_stream=loud_stream,
+        share_url=track_share_url(track_id),
+    )
+    if has_waves:
+        # waveform replaces the progress bar; the download (if any) keeps the
+        # .ws-dl wrapper so the mobile grouping styles apply.
+        dl = ('\n        <div class="ws-dl">' +
+              "".join("\n          " + b for b in dl_btns) +
+              "\n        </div>") if dl_btns else ""
+        return (f'''      <div class="track-row ws-track" id="track-{t["num"]}" data-trackid="{t["num"]}" data-src="{esc(stream)}" {item_attr}>
+        <button class="play-btn" aria-label="Play {play_label}" data-play-label="{play_label}">{PLAY_SVG}</button>
+        <span class="track-num">{t["num"]:02d}</span>
+        {title_html}
+        <div class="ws-wave"></div>
+        <span class="time-label current" data-duration="{esc(t["duration"])}">0:00 / {esc(t["duration"])}</span>{dl}
+        {share_btn}
+        {add_btn}
+      </div>''')
+    else:
+        dl = "".join("\n        " + b for b in dl_btns)
+        return (f'''      <div class="track-row custom-player" id="track-{t["num"]}" data-src="{esc(stream)}" {item_attr}>
+        <button class="play-btn" aria-label="Play {play_label}" data-play-label="{play_label}">{PLAY_SVG}</button>
+        <span class="track-num">{t["num"]:02d}</span>
+        {title_html}
+        <span class="time-label current" data-duration="{esc(t["duration"])}">0:00 / {esc(t["duration"])}</span>{dl}
+        <input type="range" class="progress-range" min="0" max="1000" value="0" step="1" aria-label="Seek {play_label}" aria-valuetext="0:00 of {esc(t["duration"])}">
+        {share_btn}
+        {add_btn}
+      </div>''')
+
+__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'OPEN_SVG', 'PLAYBACK_READY_ARM', 'PLAYBACK_READY_SNIPPETS', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', '_pre_edit_class', '_pre_edit_label', '_show_label', '_song_occ_html', '_src_tag', 'contact_block', 'content', 'dl_button', 'fmt_size_mb', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'playable_item_attr', 'playback_ready_onerror', 'player', 'recording_card', 'recording_item_id', 'show_jsonld', 'show_track_row', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'track_add_button', 'track_share_button', 'updates_list', 'variant_toggle']
 
 
 def variant_toggle(any_loud=True, deferred=False):
@@ -1203,9 +1362,17 @@ def variant_toggle(any_loud=True, deferred=False):
     if not any_loud:
         return ""
     notes = {
+        # The "about as loud as a streaming service, so it isn't too quiet on
+        # phone speakers or in a car" clause was cut 2026-08-22 (Rene): it
+        # justified the Loud default rather than telling a listener what they
+        # are hearing, and the justification belongs on /process/. The
+        # disclosure CLAUDE.md requires -- which version is playing, in plain
+        # words -- is the first half of the sentence and is untouched. The
+        # ARCHIVE note keeps its short "about as loud as a streaming service",
+        # because there it describes the option you have NOT chosen and is the
+        # only thing that makes "-14 LUFS" mean anything to a non-engineer.
         "loud": ('<strong>You are hearing the Loud version</strong> &mdash; an extra render at '
-                 '&minus;14&nbsp;LUFS, about as loud as a streaming service, so it isn\u2019t too '
-                 'quiet on phone speakers or in a car. Switch to <strong>Archive</strong> for the '
+                 '&minus;14&nbsp;LUFS. Switch to <strong>Archive</strong> for the '
                  '&minus;20&nbsp;LUFS masters exactly as they were mastered.'),
         "archive": ('<strong>You are hearing the Archive version</strong> &mdash; the '
                     '&minus;20&nbsp;LUFS masters exactly as they were mastered. Switch to '
