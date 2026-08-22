@@ -6,7 +6,7 @@
 **Nothing is open.** No PRs, no unmerged branches, no stale worktrees. The
 fourth pass's warnings are all resolved: **#48 merged** (the iPhone autoplay
 cue is live), the branch sweep is done, and `main` = `origin/main` =
-`3e7bb72` (2026-08-22; this HANDOFF commit sits on top of it). Local branches are `main` plus the deliberate `miniplayer-parked`
+`ffc66eb` (2026-08-22; this HANDOFF commit sits on top of it). Local branches are `main` plus the deliberate `miniplayer-parked`
 archive — the target state. (Two stray remote branches predate this pass and
 were left alone: `claude/hannan-chromebook-droplet-sync-jq0hfb`,
 `cloudflare/workers-autoconfig`.)
@@ -39,7 +39,8 @@ superseded by this.
 Thirteen commits, all on `main`, each deployed and then verified against
 production (not just a green Action) — plus a handful more later on
 2026-08-21, listed last below, ending with the song-page row rebuild, the
-Select-all toggle and (2026-08-22) the share-a-song links. The pass had two arcs: a metadata/
+Select-all toggle and (2026-08-22) the share-a-song links and the Codex-review
+fixes. The pass had two arcs: a metadata/
 cleanup arc, and a playback-UX arc that ended with the mini-player bar as the
 site's one persistent player control.
 
@@ -273,6 +274,51 @@ is deliberate.
   tracks retires their codes — same blast radius as `#track-N` and playlist
   ids. Mention it in the show's `updates` note when it happens.
 - Screenshots: the "Song Share Button" artifact; plan: "Share a Song Plan".
+
+### Codex review of 2026-08-22 acted on (`ffc66eb`) — and what it turned up
+
+`codex-notes.md`'s last section (baseline `ce81d792`) listed nine findings.
+Each was verified against the code before anything changed; seven fixed,
+two declined as decisions rather than bugs. **Read the Drive-backup
+discovery under #4 — it is the one thing here that still needs Rene.**
+
+| # | Finding | Verdict | Done |
+|---|---|---|---|
+| 1 | `/stream` refused only `.wav`/`.flac`, so a gated non-audio object (the complete-archive ZIP under `Downloads/`) was streamable past `/auth`+`/download` | **Real, latent** — no ZIP in the bucket, probe 404'd | `worker/index.js` allowlists `.mp3`/`.m4a` (every catalog stream key is one; checked all 680 tracks, 69 whole-show proxies, 17 Soundcloud singles). **Live-verified:** `.zip` → 403 (was 404), `.flac` → 403, MP3 track / Soundcloud MP3 / the one `.m4a` → 206 |
+| 2 | `build_archive_zip.py` copied whole R2 prefixes (orphans included) into a staging dir that persisted between runs | **Real, latent** (script not yet run on this bucket: no `archive_zip_meta.json`) | `--files-from` with the exact keys, refuses a partial show, `rmtree` staging every run, `PUBLIC_SHOWS` only; `--dry-run` inspected |
+| 3 | R2 rclone calls without `--s3-no-check-bucket` | **Partly** — only the archive script's `lsjson`/`copy` and `publish_show.rclone_lsf()`; every other R2 call already had it | flag added where missing (on `r2:` paths only) |
+| 4 | `verify --drive` printed "skipping" and exited 0 | **Real** | implemented: Drive `Processed/<basename>` read back and MD5-compared, missing = failure; `remote_md5()` checks rclone's exit code. **First real run found the Drive backups stale — see below** |
+| 5 | docs still said "two-pass loudnorm" renders | **Real** (engine docstring + AUDIO_PROCESSING.md tooling summary; the detailed Pass 2 section was already right) | both reworded: one measurement pass, one fixed `volume` gain |
+| 6 | split `audio_process.py` into modules | decision, not a bug | **declined** — a ~2,500-line refactor of the render path with no failing behaviour; Rene's call, not a review action |
+| 7 | `miniplayer-state.js` has no production consumer | known and deliberate (`build.py:71` does not ship it; it is the parked coordinator's codec, see "Phase 3 is HALF-unparked") | **no action** — deleting it is the coordinator decision, not housekeeping |
+| 8 | hidden track-listed shows leak into song pages, `tracks.json`, song occurrences, sitemap | **Real, latent** (the only hidden show has no tracks) | `collect_songs()`, `build_track_catalog()`, `build_track_spec_catalog()`, `updates_list()`, curated-playlist ids and their validator use `PUBLIC_SHOWS`; `check_hidden_show_boundary()` (core.py) runs on every build, pushing a synthetic hidden show through the live generators — proven to flag a leak when the guard is removed |
+| 9 | `browser_check.mjs` 31 false failures | **Real** — my own 2026-08-21 song-row change (`.song-occ` became the `.custom-player`) and the bar (one extra view/page) | both assertions fixed; **189/189** (was 158) |
+
+**The Drive `Processed/` backups are out of step with R2 (found by #4).**
+`verify --drive` on `sean-19-broadway-2000-02-21`: R2 all 11 OK; Drive 3 OK
+(the 2026-08-13 v8 tracks), **8 MISMATCH** — Drive still holds the
+2026-06-29 render, R2 the 2026-07-16 one. Cause: the 2026-07-16 republish's
+backup poll counted files, and the same-named 06-29 leftovers satisfied it
+(the failure mode fixed on 2026-07-22). Drive also carries an old-spelling
+orphan pair (`06 The German Clock Winder.*`). A listings-only sweep (name +
+size, no audio read) of all 30 shows: **11 of 30 differ** —
+`sean-19-broadway-2000-01-24` 15/31 stale, `sean-19-broadway-2000-02-21`
+8/11, `jerry-19-broadway-1999-11-15` 2 missing +3 extras,
+`jerry-19-broadway-2001-01-15` 1 differs +1 missing +2 extras,
+`mad-sweetwater-2000-02-17` / `2000-10-17` / `seanjerry-19-broadway-1999-12`
+1 missing each (+ extras), and extras only on `jerry-19-broadway-1999-10-25`,
+`jerry-cafe-java-1999-04-29`, `jerry-cafe-java-1999-06-17`,
+`mad-4th-street-tavern-1999-05-01`. R2 (what the site serves) is fine
+throughout; this is the *backup* that is stale. **Not touched: resyncing is
+a write to `gdrive:` and needs Rene's go** — the fix is an R2→Drive
+`rclone copy --files-from` per show plus deleting the listed orphans, then
+`verify --drive` on each. The sweep script is in this session's scratchpad
+only; re-deriving it is ten lines (`rclone lsl` both sides, compare by
+basename and size).
+
+**Lesson recorded (memory + this file):** run `browser_check.mjs` before
+shipping any player/row markup change — the node suites and `build.py`
+were green through both changes that broke it.
 
 ## ✅ Done this session (2026-08-19, fourth pass)
 
