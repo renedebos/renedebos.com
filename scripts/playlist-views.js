@@ -175,6 +175,11 @@ export class PlaylistQueueView extends QueueView {
       + (queue.length ? '<button type="button" class="select-all" data-target="#pl-queue">Select all</button>' : '');
     const rows = queue.map((t, i) => this._rowHtml(t, i)).join('');
     this.root.innerHTML = header + '<div class="search-results">' + rows + '</div>';
+    // The "Select all" button above was just rebuilt with its default label;
+    // track-select.js owns its toggle state ("Unselect all" once the whole
+    // queue is selected), so hand it the fresh buttons to repaint. A classic
+    // script, reached off window like trackAddButtonHtml; absent in tests.
+    if (typeof window !== 'undefined' && window.syncTrackSelection) window.syncTrackSelection();
   }
 
   _rowHtml(t, i) {

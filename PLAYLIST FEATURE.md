@@ -236,7 +236,12 @@ shape — shows here are 20–35 track concerts, not shuffled singles, so a
   needing more than a purely additive change.
 - "Select all" targets a specific tracklist via `data-target="<selector>"`
   (`.track-list` on show pages, `.song-occs` on the individual song page,
-  `#pl-queue` on `/playlist/`). Deliberately **not** added to the `/songs/`
+  `#pl-queue` on `/playlist/`). Since 2026-08-21 it is a true toggle: once
+  every track in its target is selected it reads "Unselect all", carries
+  `aria-pressed="true"` and the accent-light fill, and clicking removes
+  those tracks; a partial selection still reads "Select all" and adds the
+  missing ones. `/playlist/` re-renders its button on every queue change and
+  calls `window.syncTrackSelection()` afterwards so the label stays right. Deliberately **not** added to the `/songs/`
   matrix expand rows — every song's occurrences render into a `.song-occs`
   div, but the class isn't unique per song on that page (100+ of them), so a
   generic selector would select across every open song's rows, not just one.

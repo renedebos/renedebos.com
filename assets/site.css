@@ -1025,6 +1025,12 @@ main {
 }
 .select-all { color: var(--muted); background: var(--surface); border: 1px solid var(--border); }
 .select-all:hover { color: var(--accent); border-color: var(--accent); }
+/* Everything in its list is selected: the button now reads "Unselect all"
+   (track-select.js sets aria-pressed) and takes the accent-light fill -- the
+   ZIP button's idle face -- so the state shows before the label is read. Same
+   "filled once engaged" language as .track-add[aria-pressed="true"]. */
+.select-all[aria-pressed="true"] { color: var(--accent); background: var(--accent-light); border-color: var(--accent); }
+.select-all[aria-pressed="true"]:hover { background: var(--accent); color: var(--on-accent); }
 .zip-download-btn { color: var(--accent); background: var(--accent-light); border: 1px solid transparent; }
 .zip-download-btn:hover { background: var(--accent); color: var(--on-accent); }
 .zip-download-btn svg { width: 13px; height: 13px; flex-shrink: 0; }

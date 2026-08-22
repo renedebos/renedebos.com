@@ -67,7 +67,29 @@
   // used instead of touching just the clicked button, since `selected` can
   // change out from under a page (another tab, or a fresh localStorage read)
   // in ways a single button's before/after state doesn't capture.
+  // The ids a "Select all" button governs: every "+" button inside its
+  // data-target (the show page's .track-list, the song page's .song-occs,
+  // /playlist/'s #pl-queue), read from the DOM at click/sync time.
+  function selectAllIds(btn) {
+    var root = (btn.dataset.target && document.querySelector(btn.dataset.target)) || document;
+    return Array.prototype.map.call(root.querySelectorAll('.track-add[data-id]'), function (b) {
+      return b.dataset.id;
+    });
+  }
+  function allSelected(ids) {
+    return ids.length > 0 && ids.every(function (id) { return selected.indexOf(id) !== -1; });
+  }
+
   function syncAllButtons() {
+    // "Select all" is a true toggle (Rene, 2026-08-21): once every track in
+    // its list is selected it reads "Unselect all", carries aria-pressed and
+    // the filled face, and the click below removes them. A partial selection
+    // still reads "Select all" -- clicking then adds whatever is missing.
+    document.querySelectorAll('.select-all').forEach(function (b) {
+      var on = allSelected(selectAllIds(b));
+      b.setAttribute('aria-pressed', on);
+      b.textContent = on ? 'Unselect all' : 'Select all';
+    });
     document.querySelectorAll('.track-add[data-id]').forEach(function (b) {
       var on = selected.indexOf(b.dataset.id) !== -1;
       var label = on ? 'Remove from playlist selection' : 'Add to playlist selection';
@@ -156,15 +178,24 @@
     if (btn) { e.preventDefault(); toggle(btn.dataset.id); return; }
     var all = e.target.closest('.select-all');
     if (all) {
-      selected = loadSelection();
-      var root = (all.dataset.target && document.querySelector(all.dataset.target)) || document;
-      var changed = false;
-      root.querySelectorAll('.track-add[data-id]').forEach(function (b) {
-        if (selected.indexOf(b.dataset.id) === -1) { selected.push(b.dataset.id); changed = true; }
-      });
-      if (changed) { saveSelection(); syncAllButtons(); renderBar(); }
+      selected = loadSelection();  // same race guard as toggle()
+      var ids = selectAllIds(all);
+      if (!ids.length) return;
+      if (allSelected(ids)) {
+        selected = selected.filter(function (id) { return ids.indexOf(id) === -1; });
+      } else {
+        ids.forEach(function (id) { if (selected.indexOf(id) === -1) selected.push(id); });
+      }
+      saveSelection(); syncAllButtons(); renderBar();
     }
   });
+
+  // /playlist/ re-renders its queue (and the "Select all" button with it) on
+  // every controller change; playlist-views.js calls this afterwards so the
+  // fresh buttons are painted against the stored selection. Off `window`
+  // because this is a classic script and that one is a module -- the same
+  // route trackAddButtonHtml takes.
+  window.syncTrackSelection = syncAllButtons;
 
   // Keep this tab's buttons/bar in sync if the selection changes in another
   // tab while this page stays open — `storage` only fires in other same-
