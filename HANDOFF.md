@@ -6,7 +6,7 @@
 **Nothing is open.** No PRs, no unmerged branches, no stale worktrees. The
 fourth pass's warnings are all resolved: **#48 merged** (the iPhone autoplay
 cue is live), the branch sweep is done, and `main` = `origin/main` =
-`6852d14` (late 2026-08-21; this HANDOFF commit sits on top of it). Local branches are `main` plus the deliberate `miniplayer-parked`
+`3e7bb72` (2026-08-22; this HANDOFF commit sits on top of it). Local branches are `main` plus the deliberate `miniplayer-parked`
 archive — the target state. (Two stray remote branches predate this pass and
 were left alone: `claude/hannan-chromebook-droplet-sync-jq0hfb`,
 `cloudflare/workers-autoconfig`.)
@@ -38,8 +38,8 @@ superseded by this.
 
 Thirteen commits, all on `main`, each deployed and then verified against
 production (not just a green Action) — plus a handful more later on
-2026-08-21, listed last below, ending with the song-page row rebuild and
-the Select-all toggle. The pass had two arcs: a metadata/
+2026-08-21, listed last below, ending with the song-page row rebuild, the
+Select-all toggle and (2026-08-22) the share-a-song links. The pass had two arcs: a metadata/
 cleanup arc, and a playback-UX arc that ended with the mini-player bar as the
 site's one persistent player control.
 
@@ -224,6 +224,55 @@ is deliberate.
   queue does not unselect it, so the floating bar can say "3 songs selected"
   over a 2-song queue. Surfaced to Rene as a separate decision.
 - Screenshots: the "Select All Toggle" artifact in Rene's claude.ai/code gallery.
+
+### Share a song: `/t/{code}` links and a share button in the player bar (`3e7bb72`, 2026-08-22)
+
+- **Rene's ask (2026-08-21):** "no good way to share a single song"; wanted
+  an icon/pill and a *short* link to copy/paste. Plan written first
+  (`plans/share/track-share-plan.md`), decisions taken: autoplay on arrival,
+  desktop popover = Copy link + Email only. Note the older
+  `plans/share/share-plan.md` claimed a per-row share UI "already exists" —
+  stale since 2026-06-24, when the waveform rows dropped its markup
+  (`a8ac100e`); corrected in that file.
+- **The link:** `https://renedebos.com/t/{code}`, six hex chars of SHA-256 of
+  the track id (the playlist-slug recipe), lengthened on collision. Codes
+  are a **build output** — `sitegen/core.py` (`TRACK_CODES`,
+  `track_share_url()`, `build_track_links()`) → `assets/track-links.json`
+  (680, none collide) — carried as `shareUrl` in every track row's
+  `data-item` (show rows, song rows, `/songs/` lazy rows via
+  `song-occurrences.json`'s `code`). No API, no KV, no rate limit.
+- **Resolution:** `site_worker.js` `TRACK_RE` → 302 to
+  `/shows/<slug>/?autoplay=1#track-N`, map read through `env.ASSETS` once
+  per isolate (a failed fetch is forgotten so the next request retries),
+  `Cache-Control: public, max-age=3600` (an hour, not `/play/`'s day — a
+  republish can move a target); unknown code falls through to the branded
+  404. **Verified live** by `curl`, by a navigation-shaped `curl`
+  (`Sec-Fetch-Mode: navigate`, the Phase 4 trap) and by a real Chromium
+  navigation that landed on the show page with the row targeted.
+- **The control:** `.mp-share` in `miniplayer-views.js`, between next and
+  close, hands the item the bar is painting (`this._currentItem`) to
+  `opts.onShare`; `attachMiniPlayerBar` wires that to `scripts/share.js`
+  via `import()` on first press (the bar's static-import boundary test
+  still holds; a third test asserts the dynamic import). `share.js`:
+  coarse pointer + `navigator.share` → system sheet; else `.share-pop`
+  popover anchored above the button — Copy link ("Link copied", closes
+  after 0.9 s; `window.prompt` fallback) and `mailto:`. Text:
+  `Title — Artist, Venue, Date · The Hannan Tapes`.
+- **Schema:** `normalizeItem()` carries `shareUrl` (nullable);
+  `miniplayer-state.js`'s envelope deliberately untouched (the codec is
+  unused outside tests). `verify_markup.py`'s `check_share_link()` fails
+  the build when a track has no code, the code is not in the map, or the
+  map's target is not that track's own `pageUrl` (+autoplay).
+- **Removed:** the unreachable 2026-06 per-row share handler in `player.js`
+  and its `.share-btn` CSS; `.share-pop` CSS stays (the new popover's).
+- **Tests:** new `scripts/test-site-worker.mjs` (8, runs the real Worker
+  module with a fake assets binding — note the map cache is module-level,
+  so fetch counts are per file, not per env) + 3 bar tests → **9 suites,
+  340/340.**
+- **Gotcha for the runbook** (now in CLAUDE.md step 2): renumbering a show's
+  tracks retires their codes — same blast radius as `#track-N` and playlist
+  ids. Mention it in the show's `updates` note when it happens.
+- Screenshots: the "Song Share Button" artifact; plan: "Share a Song Plan".
 
 ## ✅ Done this session (2026-08-19, fourth pass)
 
