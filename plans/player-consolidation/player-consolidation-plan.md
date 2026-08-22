@@ -9,6 +9,16 @@
 >
 > - **Phase 3 (sticky mini-player) is ⛔ PARKED** — see its section in §6 for
 >   the full reasoning. Code is on the `miniplayer-parked` branch.
+> - **2026-08-20/22 update:** the on-page **bar** (`miniplayer-views.js`)
+>   shipped from the parked branch and is live on every player surface —
+>   see HANDOFF.md's "Phase 3 is now HALF-unparked". The **coordinator**
+>   (tab identity, fenced lease, cross-page restore, Stage 3a-canary Tasks
+>   4-9) is still what "PARKED" above refers to, and its persistence codec
+>   (`miniplayer-state.js`) no longer has a copy on `main` — deleted
+>   2026-08-22 (Codex review: no production consumer; Rene's call), confirmed
+>   byte-identical to `miniplayer-parked` first. Resuming this phase now
+>   means pulling the whole coordinator, codec included, back from that
+>   branch — nothing here changed about when or whether to do that.
 > - **Phase 4 (loudness) has MOVED OUT** of this initiative and out of the
 >   browser: `plans/loudness-variants/loudness-variants-plan.md`.
 > - **The `/player/` popup migration is the only work left here**, and it is

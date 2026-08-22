@@ -73,11 +73,13 @@ def main():
     write("assets/player-controller.js", open(os.path.join(here, "player-controller.js")).read())
     write("assets/player-views.js", open(os.path.join(here, "player-views.js")).read())
     write("assets/player-boot.js", open(os.path.join(here, "player-boot.js")).read())
-    # The mini-player bar (mounted by player-boot.js on show pages).
-    # miniplayer-state.js is deliberately NOT shipped: it is the parked
-    # cross-page coordinator's persistence codec, kept in scripts/ only so
-    # test-miniplayer-views.mjs can exercise the real codec and so Stage
-    # 3a-canary (plans/player-consolidation/) can resume without a branch dig.
+    # The mini-player bar (mounted by player-boot.js on show pages, live on
+    # every player surface since 2026-08-20). miniplayer-state.js -- the
+    # PARKED cross-page coordinator's persistence codec this bar never used --
+    # was deleted from main 2026-08-22 (no production consumer; Codex review
+    # finding 7, Rene's call); it survives only on the miniplayer-parked
+    # branch, so resuming that coordinator means pulling the file back from
+    # there, not just dropping this comment.
     write("assets/miniplayer-views.js", open(os.path.join(here, "miniplayer-views.js")).read())
     write("assets/share.js", open(os.path.join(here, "share.js")).read())
     write("assets/wavesurfer.esm.js", open(os.path.join(here, "vendor", "wavesurfer.esm.js")).read())
@@ -95,10 +97,6 @@ def main():
     # 3a-foundation) -- reuses player-views.js's CompactPlayerView, so no
     # separate song-views.js exists.
     write("assets/song-boot.js", open(os.path.join(here, "song-boot.js")).read())
-    # Phase 3's sticky mini-player (miniplayer-state.js / miniplayer-views.js)
-    # was parked before it ever shipped -- see the plan's Phase 3 section. The
-    # modules are preserved on the `miniplayer-parked` branch, not here, since
-    # no page ever referenced them and building them only deployed dead bytes.
     write("assets/songs.js", open(os.path.join(here, "songs.js")).read())
     write("assets/track-select.js", open(os.path.join(here, "track-select.js")).read())
     write("assets/archive-data.js", open(os.path.join(here, "archive-data.js")).read())

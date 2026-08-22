@@ -26,6 +26,14 @@ it; don't resume the coordinator or run `/apply-review` on its findings
 without Rene asking. The plan doc is
 `~/.claude/plans/imperative-frolicking-widget.md`.
 
+**2026-08-22: the coordinator's persistence codec (`miniplayer-state.js`) no
+longer has a copy on `main`** — deleted per Codex review finding 7 (no
+production consumer) and Rene's explicit go-ahead, confirmed byte-identical
+to the `miniplayer-parked` copy first. This does not change anything above:
+the branch itself is untouched, still never-merge/never-delete, and resuming
+the coordinator still means going there — it just now means going there for
+this file too, not only for Tasks 4–9.
+
 **Playback UX settled into one shape this pass. Don't re-litigate it:** the
 bottom bar is the persistent control everywhere; nothing else sticks. The
 show pages' sticky active row and `/playlist/`'s sticky now-playing card were
@@ -126,11 +134,16 @@ The path matters because two shipped steps were then deliberately undone:
    ONCE in `attachMiniPlayerBar()`, exported from the view module and called
    by all three boots — three hand copies is how engines drift.
 
-`miniplayer-state.js` is on main in `scripts/` ONLY (never built to assets):
-the view suite exercises its real codec, and its own 126-test suite now runs
-in CI via the `test-*.mjs` glob — so controller changes that would break the
-parked coordinator's assumptions fail CI even though nothing ships it. That
-is deliberate.
+`miniplayer-state.js` used to sit on `main` in `scripts/` ONLY (never built
+to assets) so the view suite could exercise its real codec and its own
+126-test suite could run in CI. **Deleted from `main` 2026-08-22** (Codex
+review finding 7 — no production consumer; Rene's call). It is unchanged on
+the `miniplayer-parked` branch (confirmed byte-identical before deletion);
+resuming the coordinator means pulling it back from there, not finding it on
+`main`. The two `test-miniplayer-views.mjs` tests that drove fixtures
+through its real codec were removed with it (the render-layer behavior they
+protected — venue and dateDisplay-null-falls-back-to-date — stays covered by
+existing tests that build fixtures directly).
 
 ### Later on 2026-08-21: pills, modal sizes, and a bar that never hid (`3674a52`, `e70848b`, `e024b5b`)
 
@@ -1071,19 +1084,20 @@ instructions.
 - `plans/player-consolidation/` — closed; `-codex.md` logs every review round.
 
 **Tests:** `node scripts/test-*.mjs` — 8 suites plus `test-fake-dom.mjs`
-(a helper). **329/329 passing** as of 2026-08-21 (fifth pass; the two
-mini-player suites came back with the bar — see "Sticky experiments" above):
+(a helper). **212/212 passing** as of 2026-08-22 (`test-miniplayer-state.mjs`
+retired with the file it tested; `test-site-worker.mjs` is new, for the
+share-a-song `/t/{code}` route — see both above):
 
 | suite | tests |
 |---|---|
-| `test-miniplayer-state.mjs` | 126 |
-| `test-miniplayer-views.mjs` | 39 |
 | `test-player-controller.mjs` | 58 |
+| `test-miniplayer-views.mjs` | 40 |
 | `test-player-boot.mjs` | 28 |
 | `test-playlist-state.mjs` | 29 |
 | `test-player-views.mjs` | 20 |
 | `test-playlist-views.mjs` | 16 |
 | `test-song-boot.mjs` | 13 |
+| `test-site-worker.mjs` | 8 |
 
 (History: the fourth pass ran 164 after the two mini-player suites, 164
 tests, were deleted with the parked modules; the fifth pass lifted them back

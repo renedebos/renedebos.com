@@ -16,7 +16,6 @@ import { readFileSync } from 'node:fs';
 import { PlaybackController } from './player-controller.js';
 // The real persistence codec, so at least one test crosses it: fixtures built
 // by hand are how a field the codec silently drops stays invisible here.
-import { buildEnvelope, decodeEnvelope } from './miniplayer-state.js';
 import {
   FakeElement, FakeDocument, FakeAudio, FakeResizeObserver, resizeObservers, loadMiniplayerViews,
 } from './test-fake-dom.mjs';
@@ -538,21 +537,15 @@ test('a seek that ends outside the control, or is cancelled, ends on every input
 });
 
 // ── post-fix review findings, 2026-08-16 ──────────────────────────────────
-// Finding 1. Every other test here builds its fixtures directly and so never
-// crosses the persistence codec — which is exactly why a missing venue stayed
-// invisible. This one goes through the real envelope, both directions.
-test('an item restored through the real persistence codec still renders its venue', () => {
-  const env = buildEnvelope({
-    queue: [item('a', { venue: 'Cafe Java' })], currentItemId: 'a',
-    positionSec: 0, playing: false, ownerId: 't1', ownerEpoch: 'e1',
-  });
-  const restored = decodeEnvelope(JSON.parse(JSON.stringify(env)));
-  const c = makeController();
-  const { root } = mount(c);
-  c.restoreSession({ queue: restored.queue, currentItemId: restored.currentItemId });
-  assert.equal(root.querySelector('.mp-meta').textContent, 'Jerry Hannan · Cafe Java · 1999-05-27');
-  c.destroy();
-});
+// Findings 1 and 4 (below) originally drove their fixtures through the real
+// persistence codec (miniplayer-state.js's buildEnvelope/decodeEnvelope) to
+// prove venue/dateDisplay survived a round trip -- worth doing at the time,
+// since that codec was the one thing here NOT built by hand. The codec was
+// deleted 2026-08-22 (no production consumer; Codex review finding 7,
+// Rene's call) along with its own suite; both tests were removed with it.
+// The render-layer behavior they were protecting stays covered directly:
+// venue rendering at 'the bar reveals...' above, and the dateDisplay-null
+// fallback to date at 'idle vs stepping controls' below (line ~602).
 
 // Finding 2. localStorage is same-origin-writable, so a corrupted or
 // hand-edited envelope is the threat model the plan already assumes — and this
@@ -764,21 +757,6 @@ test('unmounting a doubly-mounted view removes every listener it ever added', as
   c.unmount(view);
   root.dispatch('click', { target: closeBtn });
   assert.equal(closes, 0, 'a listener from the first attachment must not survive teardown');
-  c.destroy();
-});
-
-// Finding 4. Same shape as venue, one field over: the view falls back to `date`
-// when dateDisplay is null, and the codec did not carry it.
-test('a date-only item keeps its date through the real persistence codec', () => {
-  const env = buildEnvelope({
-    queue: [item('a', { date: '1999-05-27', dateDisplay: null })], currentItemId: 'a',
-    positionSec: 0, playing: false, ownerId: 't1', ownerEpoch: 'e1',
-  });
-  const restored = decodeEnvelope(JSON.parse(JSON.stringify(env)));
-  const c = makeController();
-  const { root } = mount(c);
-  c.restoreSession({ queue: restored.queue, currentItemId: restored.currentItemId });
-  assert.equal(root.querySelector('.mp-meta').textContent, 'Jerry Hannan · Cafe Java · 1999-05-27');
   c.destroy();
 });
 
