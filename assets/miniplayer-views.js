@@ -66,7 +66,9 @@ const SHUFFLE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
   + '<line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/>'
   + '<line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>';
 
-// Same rule as miniplayer-state.js's boundedPath(), and for the same reason it
+// Same rule as boundedPath() in the parked coordinator's codec (deleted from
+// main 2026-08-22; survives on the miniplayer-parked branch as
+// miniplayer-state.js), and for the same reason it
 // is resolved with the URL parser rather than by inspecting characters: a
 // leading "/" is not proof of same-origin once the parser is involved
 // ("/\evil.test/x" resolves off-origin, and a tab/CR/LF before a second slash
@@ -89,8 +91,10 @@ function isSitePath(url) {
 // replaces say so explicitly — playlist-views.js's trackMeta() and
 // continuous-player.js's now-playing line. Omitting it shows less than what it
 // replaces, on real content. Every field read here must survive persistence;
-// see miniplayer-state.js's encodeItem(), where venue and date each had to be
-// added after this line started reading them.
+// see encodeItem() in the parked coordinator's codec (miniplayer-state.js,
+// deleted from main 2026-08-22 -- survives on the miniplayer-parked branch),
+// where venue and date each had to be added after this line started reading
+// them.
 function trackMeta(item) {
   return [item.artist, item.venue, item.dateDisplay || item.date || 'unknown date']
     .filter(Boolean).join(' · ');
@@ -367,11 +371,13 @@ export class MiniPlayerView extends QueueView {
       // current page, while an <a> with no href at all is inert and unfocusable
       // — the correct degradation, and it keeps one node type across the change.
       //
-      // The path check is the second of two: miniplayer-state.js's codec
-      // already rejects anything that isn't root-relative on both its read and
-      // write paths. Repeated here because this is the line that actually
-      // creates the link, and an item can reach a controller from somewhere
-      // other than that codec (a page's own data-item markup today, a future
+      // The path check is the second of two: the parked coordinator's codec
+      // (miniplayer-state.js, deleted from main 2026-08-22, survives on the
+      // miniplayer-parked branch) already rejects anything that isn't
+      // root-relative on both its read and write paths. Repeated here because
+      // this is the line that actually creates the link, and an item can
+      // reach a controller from somewhere other than that codec (a page's own
+      // data-item markup today, a future
       // hash- or catalog-derived queue). A value that executes is not worth
       // leaving to one layer.
       if (isSitePath(item.pageUrl)) this._titleEl.setAttribute('href', item.pageUrl);
