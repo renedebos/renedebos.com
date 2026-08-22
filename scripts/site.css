@@ -970,8 +970,8 @@ main {
 .track-add[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: white; }
 /* Right-aligned on every surface: show-page rows put it last in the flex row
    (after the download button — .track-main/.ws-wave grow to absorb the
-   space, so trailing items sit flush right); .song-occ-head pushes it with
-   margin-left: auto; .pl-row-play carries flex: 1, leaving .track-add as the
+   space, so trailing items sit flush right -- song-page occurrence rows are
+   .track-rows too); .pl-row-play carries flex: 1, leaving .track-add as the
    fixed-size sibling that lands at the row's right edge. */
 /* These sizes are DELIBERATE and were restored after being "fixed" once. The
    add-to-playlist control is intentionally the smallest of the three: play is
@@ -985,7 +985,6 @@ main {
    comfortably. Don't "fix" this again without asking. */
 .track-row .track-add { width: 19px; height: 19px; }
 .track-row .track-add svg { width: 9px; height: 9px; }
-.song-occ-head .track-add { width: 18px; height: 18px; margin-left: auto; }
 
 /* Controls above a tracklist — the Archive/Loud playback mode and the list
    actions — in ONE row and ONE visual language.
@@ -1729,26 +1728,35 @@ a.artist-chip:hover { filter: brightness(1.08); }
 }
 .song-name:hover { text-decoration: underline; }
 .song-chips { margin-left: auto; display: flex; align-items: center; gap: .4rem; flex-shrink: 0; }
-.song-occs { padding: .2rem 0 .8rem 1.6rem; }
+/* A song's performances are the show page's own track rows (.track-row,
+   above; .song-occs carries .track-list for the box) -- one line each, the
+   artist chip in the track-number slot and "venue · date" in the title slot.
+   Until 2026-08-21 each was a two-band card (chip / venue / "open on show
+   page →" over a full .custom-player with its own time row): 100px a row on
+   desktop and 129px on a phone, against 43px / 58px for a show row, so the
+   25 performances of Truck took three screens where the rows take one and a
+   bit. Everything the row does while playing (accent bar, highlight, the
+   2px progress line) comes from the .track-row rules unchanged. */
+.song-occs:empty { display: none; }   /* /songs/: a group not rendered yet is not an empty box */
+.song-item .song-occs { margin: .2rem 0 .8rem 1.6rem; }
+.track-row.song-occ .track-main { gap: .6rem; }
+/* One width for every chip so the venue column lines up down the list --
+   "Mad Hannans" is 87px at this size, "Jerry Hannan" 83, and a ragged edge
+   between them reads as misalignment on a 25-row list. */
+.track-row.song-occ .artist-chip { flex-shrink: 0; min-width: 8em; justify-content: center; }
+.track-row.song-occ .occ-date::before { content: "\00B7"; margin: 0 .35em; }   /* margin, not spaces in content: a hex escape eats the space after it */
 
-/* Tighter card now that the download button is a small icon rather than a
-   labeled pill — songs played a dozen-plus times (the top of the list runs
-   to 14) stay scannable instead of scrolling forever. */
-.song-occ {
-  border: 1px solid var(--border); border-radius: 8px;
-  background: var(--surface); padding: .55rem .75rem; margin: .4rem 0;
+/* "Open on show page", as an icon in the slot a show row gives its download
+   button -- same footprint, same muted-until-hover treatment. The chip links
+   there as well; this is the affordance you can see. */
+.track-row .track-open {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+  color: var(--muted); text-decoration: none;
+  transition: background 0.15s, color 0.15s;
 }
-.song-occ-head {
-  display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
-  margin-bottom: .4rem; font-size: 13px;
-}
-.song-occ-where { color: var(--muted); }
-.song-occ-open {
-  margin-left: auto; font-size: 12px; color: var(--accent);
-  text-decoration: none; white-space: nowrap;
-}
-.song-occ-open:hover { text-decoration: underline; }
-.song-occ .custom-player { margin: 0; }
+.track-row .track-open:hover { background: var(--accent-light); color: var(--accent); }
+.track-row .track-open svg { width: 13px; height: 13px; display: block; }
 
 /* grid view */
 .song-grid-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
@@ -1801,8 +1809,34 @@ a.artist-chip:hover { filter: brightness(1.08); }
 .song-variants { color: var(--muted); font-size: 14px; }
 
 @media (max-width: 600px) {
-  .song-occs { padding-left: .5rem; }
-  .song-occ-open { margin-left: 0; }
+  .song-item .song-occs { margin-left: .5rem; }
+  /* Chip above venue · date rather than beside it: side by side on a 390px
+     row they leave the title about 40px. Stacked, the row is the same ~58px
+     a show row's two-line title already costs. */
+  .track-row.song-occ { column-gap: .5rem; }
+  /* Chip + date on the first line, venue on the second: the title span
+     dissolves (display: contents) so its two halves lay out beside the chip,
+     and `order` puts the date before the venue even though the markup has
+     it after. A wrapping flex row rather than a grid so the one chip that
+     does not fit beside its date -- "Sean & Jerry Hannan", 115px against the
+     144px the line has on a 390px phone -- drops the date to its own line
+     (a 72px row, on 30 of 680 performances) instead of clipping either. */
+  .track-row.song-occ .track-main {
+    display: flex; flex-wrap: wrap; align-items: center; column-gap: .35rem; row-gap: .1rem;
+  }
+  .track-row.song-occ .track-title { display: contents; }
+  /* The first line has 144px: a full-size "Mad Hannans" chip (88px) plus a
+     12px date (63px) does not fit it. The chip takes the .sm size the song
+     list already uses and the date drops a point; the widest common pair
+     then measures ~137px. */
+  .track-row.song-occ .artist-chip { order: 0; min-width: 0; font-size: 10px; padding: .12em .5em; }
+  .track-row.song-occ .occ-date { order: 1; font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .track-row.song-occ .occ-date::before { content: none; }
+  .track-row.song-occ .occ-venue {
+    order: 2; flex: 1 1 100%; min-width: 0; line-height: 1.25;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .track-row.song-occ .time-label { min-width: 0; }
   /* phone grid view: keep the sticky song column to ~a third of the screen
      so the show columns stay visible and horizontal scrolling works */
   .song-grid th.g-song a { max-width: 34vw; }

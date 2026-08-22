@@ -1098,7 +1098,7 @@ def build_songs_index():
         <a class="song-name" href="/songs/{s['slug']}/">{esc(s['canonical'])}</a>
         <span class="song-chips">{chips}</span>
       </summary>
-      <div class="song-occs" data-song="{s['slug']}"></div>
+      <div class="song-occs track-list" data-song="{s['slug']}"></div>
     </details>''')
 
     col_head = "".join(
@@ -1186,10 +1186,10 @@ def build_song_page(s):
     occs = "\n".join(_song_occ_html(o, s["canonical"]) for o in s["occ"])
     any_loud = any(o.get("loud") for o in s["occ"])
     zip_html = song_zip_button_html(s)
-    # No hint line: its second sentence captioned the "open on show page →"
-    # link that every occurrence row below already carries in its own text,
-    # and its first mirrored the show page's, cut in the same pass
-    # (page-cleanup row E1).
+    # No hint line: its second sentence captioned the "open on show page"
+    # link that every occurrence row below already carries (as its ↗ icon,
+    # since 2026-08-21), and its first mirrored the show page's, cut in the
+    # same pass (page-cleanup row E1).
     parts.append(f'''
   <section id="tracks">
     <div class="group-label-bare">Played {s['plays']} time{plural} &middot; {esc(arts)}</div>
@@ -1200,7 +1200,7 @@ def build_song_page(s):
         {zip_html}
       </div>
     </div>
-    <div class="song-occs">
+    <div class="song-occs track-list">
 {occs}
     </div>
   </section>''')

@@ -69,6 +69,17 @@
     });
   }
 
+  // Up-right arrow for the row's "open on show page" link -- the JS twin of
+  // fragments.py's OPEN_SVG.
+  var openIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>';
+
+  // The show page's own no-waveform track row, byte-for-byte the shape
+  // _song_occ_html() (sitegen/fragments.py) renders on a song detail page:
+  // chip in the track-number slot, "venue · date" as the title, the
+  // show-page link as a ↗ icon where a show row keeps its download button.
+  // data-src/data-item ride on the row itself so song-boot.js's PlayerView
+  // and the initCustomPlayers() fallback both bind to it exactly as they do
+  // to a show page's rows.
   function occRowHtml(o, songTitle) {
     var label = songTitle + ", " + o.artist_name + ", " + o.date;
     var anchor = o.url + "#track-" + o.num;
@@ -76,7 +87,7 @@
     var loudStream = o.loud
       ? WORKER + "/stream?file=" + encodeURIComponent(o.loud) + (o.loud_ver ? "&v=" + o.loud_ver : "")
       : null;
-    var dur = o.duration ? '<span class="time-label">' + escOcc(o.duration) + "</span>" : "";
+    var dur = o.duration || "";
     var trackId = o.slug + "-" + (o.num < 10 ? "0" + o.num : o.num);
     var sizes = [];
     if (o.flac_size_mb) sizes.push("FLAC " + o.flac_size_mb + " MB");
@@ -91,20 +102,17 @@
       ["Process version", o.proc_ver ? "v" + o.proc_ver : "Not yet processed"],
     ]);
     var itemJson = occItemJson(o, songTitle, trackId, anchor, stream, loudStream);
-    return '<div class="song-occ">'
-      + '<div class="song-occ-head">'
-      + '<a class="artist-chip artist-' + o.artist + '" href="' + escOcc(anchor) + '">' + escOcc(o.artist_name) + "</a>"
-      + '<span class="song-occ-where" data-info="' + escOcc(info) + '">' + escOcc(o.venue) + " &middot; " + escOcc(o.date) + "</span>"
-      + '<a class="song-occ-open" href="' + escOcc(anchor) + '">open on show page &rarr;</a>'
-      + trackAddButtonHtml(trackId)
-      + "</div>"
-      + '<div class="custom-player" data-src="' + escOcc(stream) + '" data-item="' + escOcc(itemJson) + '">'
+    return '<div class="track-row custom-player song-occ" data-src="' + escOcc(stream) + '" data-item="' + escOcc(itemJson) + '">'
       + '<button class="play-btn" aria-label="Play ' + escOcc(label) + '" data-play-label="' + escOcc(label) + '">' + playIcon + "</button>"
-      + '<div class="progress-wrap">'
-      + '<input type="range" class="progress-range" min="0" max="' + RANGE_MAX + '" value="0" step="1" aria-label="Seek ' + escOcc(label) + '" aria-valuetext="0:00' + (o.duration ? ' of ' + escOcc(o.duration) : '') + '">'
-      + '<div class="time-row"><span class="time-label current">0:00</span>' + dur + "</div>"
+      + '<div class="track-main">'
+      + '<a class="artist-chip artist-' + o.artist + '" href="' + escOcc(anchor) + '">' + escOcc(o.artist_name) + "</a>"
+      + '<span class="track-title song-occ-where" data-info="' + escOcc(info) + '">'
+      + '<span class="occ-venue">' + escOcc(o.venue) + '</span><span class="occ-date">' + escOcc(o.date) + "</span></span>"
       + "</div>"
-      + "</div>"
+      + '<span class="time-label current" data-duration="' + escOcc(dur) + '">0:00' + (dur ? " / " + escOcc(dur) : "") + "</span>"
+      + '<a class="track-open" href="' + escOcc(anchor) + '" title="Open on show page" aria-label="Open ' + escOcc(label) + ' on its show page">' + openIcon + "</a>"
+      + '<input type="range" class="progress-range" min="0" max="' + RANGE_MAX + '" value="0" step="1" aria-label="Seek ' + escOcc(label) + '" aria-valuetext="0:00' + (dur ? " of " + escOcc(dur) : "") + '">'
+      + trackAddButtonHtml(trackId)
       + "</div>";
   }
 

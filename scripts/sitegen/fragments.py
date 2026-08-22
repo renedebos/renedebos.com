@@ -27,6 +27,10 @@ PLAY_SVG = '<svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14
 
 PLUS_SVG = ('<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" '
             'stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg>')
+# Up-right arrow: a song-page occurrence row's "open on show page" link,
+# sized and placed like a show row's download button (see .track-open).
+OPEN_SVG = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
+            'stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>')
 
 def track_add_button(track_id):
     """The +/checkmark control that adds one track to the in-progress playlist
@@ -1000,7 +1004,7 @@ def _song_occ_html(o, song_title):
         # to the master rather than to a key that might not be there.
         loud_stream=(stream_url(o["loud"], o.get("loud_ver")) if o.get("loud") else None),
     )
-    p = player(o["file"], duration=o.get("duration"), version=o["ver"], label=label, item_attr=item_attr)
+    stream = stream_url(o["file"], o["ver"])
     add_btn = track_add_button(track_id)
     sizes = []
     if o.get("flac_size_mb"):
@@ -1017,14 +1021,29 @@ def _song_occ_html(o, song_title):
         ["Process version", f'v{o["proc_ver"]}' if o.get("proc_ver") else "Not yet processed"],
     ]
     info = esc(json.dumps(info_rows, ensure_ascii=False))
-    return f'''<div class="song-occ">
-        <div class="song-occ-head">
+    dur = o.get("duration") or ""
+    # The show page's own no-waveform track row (build_show()'s
+    # `.track-row.custom-player` branch), not a card of its own: the artist
+    # chip stands in for the track number and "venue · date" takes the title
+    # slot, so a song's performances list at one line each -- 43px a row on
+    # desktop against the 100px the old two-band card cost (2026-08-21). The
+    # data-src/data-item pair sits on the row itself, exactly as it does on a
+    # show page, so song-boot.js's PlayerView and the legacy initCustomPlayers()
+    # fallback bind to it unchanged. "Open on show page" is the ↗ icon in the
+    # slot a show row gives its download button; the chip links there too.
+    # Venue and date are separate spans: one "Venue · date" line on desktop
+    # (the dot is CSS), and on a phone the date moves up beside the chip so
+    # the venue has the second line to itself (.occ-venue/.occ-date).
+    return f'''<div class="track-row custom-player song-occ" data-src="{esc(stream)}" {item_attr}>
+        <button class="play-btn" aria-label="Play {esc(label)}" data-play-label="{esc(label)}">{PLAY_SVG}</button>
+        <div class="track-main">
           <a class="artist-chip artist-{o['artist']}" href="{anchor}">{esc(o['artist_name'])}</a>
-          <span class="song-occ-where" data-info="{info}">{esc(o['venue'])} &middot; {esc(o['date'])}</span>
-          <a class="song-occ-open" href="{anchor}">open on show page &rarr;</a>
-          {add_btn}
+          <span class="track-title song-occ-where" data-info="{info}"><span class="occ-venue">{esc(o['venue'])}</span><span class="occ-date">{esc(o['date'])}</span></span>
         </div>
-        {p}
+        <span class="time-label current" data-duration="{esc(dur)}">0:00{f' / {esc(dur)}' if dur else ''}</span>
+        <a class="track-open" href="{anchor}" title="Open on show page" aria-label="Open {esc(label)} on its show page">{OPEN_SVG}</a>
+        <input type="range" class="progress-range" min="0" max="1000" value="0" step="1" aria-label="Seek {esc(label)}" aria-valuetext="0:00{f' of {esc(dur)}' if dur else ''}">
+        {add_btn}
       </div>'''
 
 def song_zip_button_html(s):
@@ -1145,7 +1164,7 @@ def song_jsonld(s):
     })
 
 
-__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'PLAYBACK_READY_ARM', 'PLAYBACK_READY_SNIPPETS', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', '_pre_edit_class', '_pre_edit_label', '_show_label', '_song_occ_html', '_src_tag', 'contact_block', 'content', 'dl_button', 'fmt_size_mb', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'playable_item_attr', 'playback_ready_onerror', 'player', 'recording_card', 'recording_item_id', 'show_jsonld', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'track_add_button', 'updates_list', 'variant_toggle']
+__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'OPEN_SVG', 'PLAYBACK_READY_ARM', 'PLAYBACK_READY_SNIPPETS', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', '_pre_edit_class', '_pre_edit_label', '_show_label', '_song_occ_html', '_src_tag', 'contact_block', 'content', 'dl_button', 'fmt_size_mb', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'playable_item_attr', 'playback_ready_onerror', 'player', 'recording_card', 'recording_item_id', 'show_jsonld', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'track_add_button', 'updates_list', 'variant_toggle']
 
 
 def variant_toggle(any_loud=True, deferred=False):

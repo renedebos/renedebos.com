@@ -51,7 +51,7 @@ SONG_BOOT_TAG = '<script type="module" src="/assets/song-boot.js"'
 # lazy) carry data-item on the SAME element as data-src (player()'s item_attr
 # param) — the non-waveform show-page track-row shape, not the Hero-card
 # shape (CARD_RE below), since song occurrence rows never have a waveform.
-SONG_OCC_RE = re.compile(r'<div class="custom-player" data-src="([^"]*)" data-item="([^"]*)"')
+SONG_OCC_RE = re.compile(r'<div class="track-row custom-player song-occ" data-src="([^"]*)" data-item="([^"]*)"')
 
 
 def check_engine_wiring(rel, src, slug, allowlist):

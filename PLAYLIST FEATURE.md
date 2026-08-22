@@ -193,8 +193,9 @@ shape — shows here are 20–35 track concerts, not shuffled singles, so a
   the `/playlist/` queue itself (selecting a sub-set of an already-generated
   queue seeds a *new* playlist — recursive by design). Right-aligned on every
   row — show pages put it last in the flex row (the title/waveform area
-  grows to absorb space, so trailing items sit flush right), `.song-occ-head`
-  pushes it with `margin-left: auto`, and the playlist row's play button
+  grows to absorb space, so trailing items sit flush right; since 2026-08-21
+  song-page occurrence rows are `.track-row`s too and get the same treatment),
+  and the playlist row's play button
   carries `flex: 1` so the fixed-size "+"/"✓" lands at the row's right edge.
 - **Phase 5b (2026-07-13): cross-page persistence.** Selection now lives in
   `localStorage` (`trackSelection` key), not just an in-memory array — browse

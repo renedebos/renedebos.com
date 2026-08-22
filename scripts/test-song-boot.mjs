@@ -21,13 +21,14 @@ globalThis.Audio = class extends FakeAudio {
 };
 
 // ── fixtures mirroring _song_occ_html()'s/occRowHtml()'s generated markup ──
+// Since 2026-08-21 an occurrence row IS a show-style track row: one
+// .track-row.custom-player.song-occ carrying data-src/data-item itself
+// (no inner .custom-player), with the chip + "venue · date" in .track-main,
+// a single .time-label.current, the ↗ .track-open link and a .progress-range.
 function occRow(n, itemOverride) {
-  const wrap = new FakeElement('div', ['song-occ']);
-  const head = new FakeElement('div', ['song-occ-head']);
-  wrap.appendChild(head);
-  const player = new FakeElement('div', ['custom-player']);
-  player.dataset.src = `https://example.test/occ${n}.mp3`;
-  player.dataset.item = itemOverride !== undefined ? itemOverride : JSON.stringify({
+  const row = new FakeElement('div', ['track-row', 'custom-player', 'song-occ']);
+  row.dataset.src = `https://example.test/occ${n}.mp3`;
+  row.dataset.item = itemOverride !== undefined ? itemOverride : JSON.stringify({
     id: `song-occ-${n}`,
     kind: 'track',
     streamUrl: `https://example.test/occ${n}.mp3`,
@@ -40,15 +41,17 @@ function occRow(n, itemOverride) {
   });
   const btn = new FakeElement('button', ['play-btn']);
   btn.dataset.playLabel = `A Song, Jerry Hannan, 1999-05-27 (occ ${n})`;
-  player.appendChild(btn);
-  const wrapInner = new FakeElement('div', ['progress-wrap']);
-  wrapInner.appendChild(new FakeElement('input', ['progress-range']));
-  const timeRow = new FakeElement('div', ['time-row']);
-  timeRow.appendChild(new FakeElement('span', ['time-label', 'current']));
-  wrapInner.appendChild(timeRow);
-  player.appendChild(wrapInner);
-  wrap.appendChild(player);
-  return wrap;
+  row.appendChild(btn);
+  const main = new FakeElement('div', ['track-main']);
+  main.appendChild(new FakeElement('a', ['artist-chip', 'artist-jerry']));
+  main.appendChild(new FakeElement('span', ['track-title', 'song-occ-where']));
+  row.appendChild(main);
+  const time = new FakeElement('span', ['time-label', 'current']);
+  time.dataset.duration = '3:20';
+  row.appendChild(time);
+  row.appendChild(new FakeElement('a', ['track-open']));
+  row.appendChild(new FakeElement('input', ['progress-range']));
+  return row;
 }
 
 // A song DETAIL page: every occurrence row present at parse time inside one
