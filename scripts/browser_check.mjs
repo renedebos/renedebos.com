@@ -794,9 +794,17 @@ async function checkSharePage(context) {
   await page.close();
 
   // An unknown code must fail visibly rather than land on a plausible song.
-  const bogus = await context.request.get(BASE + '/t/abcdef', { maxRedirects: 0 });
-  record('/t/abcdef (unknown code): 404, never a redirect to some other song',
-    bogus.status() === 404, `status=${bogus.status()}`);
+  // Followed to the END, not checked one hop in: in production the Worker
+  // normalises /t/abcdef to /t/abcdef/ before anything knows whether that
+  // page exists (it cannot know without the lookup table this route
+  // deliberately no longer consults), so a bad link costs one redirect and
+  // THEN 404s. What matters is where it stops, and that it never stops on
+  // somebody else's song.
+  const bogus = await context.request.get(BASE + '/t/abcdef');
+  const landed = new URL(bogus.url()).pathname;
+  record('/t/abcdef (unknown code): ends at a 404, never on another song',
+    bogus.status() === 404 && landed.startsWith('/t/abcdef'),
+    `status=${bogus.status()} landed=${landed}`);
 
   // The whole point of the trailing slash: the shared link is a plain 200
   // with no redirect. Checked WITHOUT following redirects, because a
@@ -810,10 +818,14 @@ async function checkSharePage(context) {
       direct.status() === 200 && !direct.headers()['location'],
       `status=${direct.status()} location=${direct.headers()['location'] || 'none'}`);
 
-    // And the slash-less form still works for anything already shared.
+    // And the slash-less form still works for anything already shared. The
+    // status is 307 (the asset layer's, which answers before the Worker) or
+    // 301 (the Worker's, for a path the asset layer cannot resolve) -- what
+    // matters is that it lands on the canonical page either way.
     const legacy = await context.request.get(BASE + '/t/' + code, { maxRedirects: 0 });
-    record('/t/{code} (no slash, pre-existing links): 301 to the canonical form',
-      legacy.status() === 301 && legacy.headers()['location'] === url,
+    const loc = (legacy.headers()['location'] || '').split('?')[0];
+    record('/t/{code} (no slash, pre-existing links): redirects to the canonical form',
+      (legacy.status() === 301 || legacy.status() === 307) && loc === url,
       `status=${legacy.status()} location=${legacy.headers()['location'] || 'none'}`);
   }
 }
@@ -1378,23 +1390,38 @@ async function checkNonAllowlistedPagesUnaffected(context) {
     await page.close();
   }
 
-  // /player/: cue a real track via the same #p=<id> hash sendToPlayer() uses
-  // for a hand-off from /playlist/, then a real click on the play button
-  // (same "genuine user-gesture click" pattern as the deep-link Retry test
-  // in runParityPass) starts playback.
-  {
+  // /player/ is RETIRED (fifth pass) -- it 301s to /playlist/. This block used
+  // to click the continuous-player popup's play button and, since that page
+  // stopped existing, threw a locator timeout that killed the entire --prod
+  // sweep before it could report anything. It was invisible because nothing
+  // runs the prod path automatically; it was found on 2026-08-22 by finally
+  // running one. A stale assertion that CRASHES the run is worse than a
+  // failing one, hence the try/catch as well as the rewrite.
+  //
+  // What is worth protecting here is the promise HANDOFF.md makes about that
+  // retirement: because a fragment never reaches the server, an old
+  // /player/#p=<ids> bookmark still lands on exactly that queue.
+  try {
     const tracksRes = await context.request.get(BASE + '/assets/tracks.json');
     const tracks = await tracksRes.json();
     const trackId = tracks[0].id;
     const page = await context.newPage();
     await page.goto(BASE + '/player/#p=' + trackId, { waitUntil: 'load' });
-    await page.waitForTimeout(500);
-    await page.locator('#cp-now [data-act="play"]').click(); // real user gesture
-    await page.waitForTimeout(2500);
-    const timeText = (await page.locator('#cp-now .pl-time-current').textContent().catch(() => null) || '').trim();
-    record('/player/ real legacy playback works (queued track -> real <audio> advances)',
-      timeText !== '' && timeText !== '0:00', `time=${timeText}`);
+    await page.waitForFunction(() => window.PLAYER_ENGINE_MOUNTED === true, null, { timeout: 15000 })
+      .catch(() => {});
+    const landed = new URL(page.url());
+    record('/player/ (retired) lands on /playlist/ with the bookmarked queue intact',
+      landed.pathname === '/playlist/' && landed.hash === '#p=' + trackId,
+      `url=${landed.pathname}${landed.hash}`);
+    const queued = await page.evaluate(() => {
+      const c = window.PLAYLIST_BOOT && window.PLAYLIST_BOOT.controller;
+      return c ? c.queue.map((i) => i.id) : null;
+    });
+    record('/player/ (retired) the old bookmark still restores its track',
+      Array.isArray(queued) && queued.includes(trackId), `queue=${JSON.stringify(queued)}`);
     await page.close();
+  } catch (e) {
+    record('/player/ (retired) redirect check', false, String(e && e.message || e));
   }
 }
 

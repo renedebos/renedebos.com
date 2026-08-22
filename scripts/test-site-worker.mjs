@@ -110,16 +110,30 @@ test('the Worker sets no Cache-Control of its own on a share page', async () => 
   assert.ok(!/max-age=[1-9]/.test(cc), `expected no positive max-age, got ${cc || 'none'}`);
 });
 
-test('a slash-less link is 301d to the canonical form, not left to bounce', async () => {
-  // Links copied before the trailing slash became canonical must keep
-  // working, and a permanent redirect is the honest answer for them.
+test('a slash-less link is redirected to the canonical form, not left to 404', async () => {
+  // Links copied before the trailing slash became canonical must keep working.
+  //
+  // The STATUS is deliberately not asserted, because this Worker is not what
+  // answers in production. Cloudflare's asset layer resolves paths it
+  // recognises BEFORE the Worker sees them (measured 2026-08-22: /t/{code}
+  // returns the asset layer's 307, while /t/{CODE}/ -- uppercase, matching no
+  // asset -- falls through and gets this Worker's 301). Asserting 301 here
+  // would be a test passing on behaviour production does not have, which is
+  // the exact failure this whole route already shipped once.
+  //
+  // That interception is also the real reason the original serve-it-from-the-
+  // Worker design never worked: the branch never ran for /t/{code} at all.
   const env = fakeEnv();
   const r = await get(env, '/t/' + code);
-  assert.equal(r.status, 301);
-  assert.equal(r.headers.get('Location'), '/t/' + code + '/');
+  assert.ok(r.status === 301 || r.status === 307, `got ${r.status}`);
+  assert.equal((r.headers.get('Location') || '').split('?')[0], '/t/' + code + '/');
 });
 
 test('an uppercased code is normalised (chat clients mangle links)', async () => {
+  // This one IS the Worker's job in production: an uppercased path matches no
+  // asset, so the asset layer cannot resolve it and the request reaches here.
+  // Verified live 2026-08-22: /t/00810C/ -> 301 /t/00810c/.
+  //
   // Needs a code that actually CONTAINS a letter -- codes are hex, so a
   // digits-only one (the first entry happens to be one) uppercases to
   // itself and would pass this test without exercising anything.
