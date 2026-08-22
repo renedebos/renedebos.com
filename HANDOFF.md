@@ -6,7 +6,7 @@
 **Nothing is open.** No PRs, no unmerged branches, no stale worktrees. The
 fourth pass's warnings are all resolved: **#48 merged** (the iPhone autoplay
 cue is live), the branch sweep is done, and `main` = `origin/main` =
-`2f2c765` (end of 2026-08-21). Local branches are `main` plus the deliberate `miniplayer-parked`
+`a97a2fb` (late 2026-08-21; this HANDOFF commit sits on top of it). Local branches are `main` plus the deliberate `miniplayer-parked`
 archive — the target state. (Two stray remote branches predate this pass and
 were left alone: `claude/hannan-chromebook-droplet-sync-jq0hfb`,
 `cloudflare/workers-autoconfig`.)
@@ -37,8 +37,8 @@ superseded by this.
 ## ✅ Done this session (2026-08-20/21, fifth pass)
 
 Thirteen commits, all on `main`, each deployed and then verified against
-production (not just a green Action) — plus three more later on 2026-08-21,
-listed last below. The pass had two arcs: a metadata/
+production (not just a green Action) — plus a handful more later on
+2026-08-21, listed last below, ending with the song-page row rebuild. The pass had two arcs: a metadata/
 cleanup arc, and a playback-UX arc that ended with the mini-player bar as the
 site's one persistent player control.
 
@@ -161,6 +161,40 @@ is deliberate.
   the chips live in the URL (`?artist=…&type=…&source=…`, unknown values
   ignored). `/songs/`'s switch is generated from the same `present` list as
   the legend, so the two can't drift again.
+
+### Song-page performances became show-style track rows (`a97a2fb`)
+
+- **Rene's ask (2026-08-21):** make the song page's per-performance player
+  look like the other players, and would an icon for "open on show page" let
+  more performances fit a screen? Measured first: the icon alone saved
+  nothing on desktop — the link sat on the chip's own 21px line — the height
+  was the two-band card itself (chip / venue / link over a full
+  `.custom-player` with its own time row): 100px a row on desktop, 129px on
+  a phone, against 43px / 58px for a show-page row.
+- **What shipped:** `_song_occ_html()` (fragments.py) and its lazy twin
+  `occRowHtml()` (songs.js, the `/songs/` index) emit the show page's own
+  no-waveform `.track-row.custom-player.song-occ`: artist chip in the
+  track-number slot, "venue · date" as the title (two spans, `.occ-venue` /
+  `.occ-date`, the dot is CSS), a ↗ `.track-open` link where a show row
+  keeps its download button (the chip still links there too). `.song-occs`
+  carries `.track-list` for the box (`:empty` hidden, for `/songs/`'s
+  not-yet-rendered groups). `data-src`/`data-item` ride on the row, so
+  song-boot's `PlayerView` and the `initCustomPlayers()` fallback bind
+  unchanged — **no engine code touched**. `SONG_OCC_RE` in verify_markup.py
+  follows the new opener (1360 tracks verified at build); the song-boot
+  fixture mirrors the shape. 329/329 still.
+- **Numbers (Truck, 25 performances):** desktop 43px a row, 21 per 900px
+  screen (was 9); phone 55px, 15 per screen (was 6.5). On a phone the chip
+  (`.sm` size) and an 11px date share the first line and the venue takes the
+  second; "Sean & Jerry Hannan" (115px, 30 rows archive-wide) wraps its date
+  to a third line (71px) rather than clipping — the first line is a wrapping
+  flex row, not a grid, for exactly that case.
+- **Not done, deliberately:** no waveform on the active song row — show pages
+  fetch one peaks file per show, a song page spans up to 25 shows. Idle rows
+  hide their wave anyway, so only the active row differs (2px line vs wave).
+  Lazy-fetching peaks on activation would be its own change.
+- Before/after screenshots: the "Song Page Rows" artifact in Rene's
+  claude.ai/code gallery.
 
 ## ✅ Done this session (2026-08-19, fourth pass)
 
