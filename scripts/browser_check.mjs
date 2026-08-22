@@ -666,7 +666,7 @@ async function checkRowShare(context) {
               JSON.parse(row.dataset.item).shareUrl];
     });
     record(`${SHOW} the button's href IS the share link (works with no JS)`,
-      href === itemShare && /\/t\/[a-f0-9]{5,}$/.test(href), `${href} vs ${itemShare}`);
+      href === itemShare && /\/t\/[a-f0-9]{5,}\/$/.test(href), `${href} vs ${itemShare}`);
 
     await page.locator('.track-row.is-active .track-share').click();
     await page.waitForTimeout(600);
@@ -729,9 +729,11 @@ async function checkSharePage(context) {
   const links = await linksRes.json();
   const code = Object.keys(links)[0];
   const deep = links[code].replace('?autoplay=1', '');
-  // Slash-less, exactly as the share button hands it out -- the shape that
-  // gets pasted into a message, not a normalised variant of it.
-  const url = '/t/' + code;
+  // WITH the trailing slash, exactly as the share button hands it out -- the
+  // shape that gets pasted into a message, not a normalised variant of it.
+  // The slash is what makes this a one-hop static page with no Worker on the
+  // path (track-share-plan.md §9.1, revised).
+  const url = '/t/' + code + '/';
 
   const page = await context.newPage();
   const consoleErrors = [];
@@ -768,7 +770,7 @@ async function checkSharePage(context) {
     return it && it.shareUrl;
   });
   record(`${url}: the current item's shareUrl round-trips to this same code`,
-    typeof shareUrl === 'string' && shareUrl.endsWith('/t/' + code), String(shareUrl));
+    typeof shareUrl === 'string' && shareUrl.endsWith('/t/' + code + '/'), String(shareUrl));
 
   await page.locator('.track-row .play-btn').first().click();
   await page.waitForTimeout(2500);
@@ -796,19 +798,23 @@ async function checkSharePage(context) {
   record('/t/abcdef (unknown code): 404, never a redirect to some other song',
     bogus.status() === 404, `status=${bogus.status()}`);
 
-  // Worker-only, so remote runs only: the local `python3 -m http.server`
-  // redirects a slash-less directory path itself and has no Worker in front
-  // of it, so this would fail there for a reason that says nothing about the
-  // code. Against a real deploy it is the check that would have caught the
-  // 2026-08-22 no-op -- the Worker's share branch fell through, and every
-  // shared link paid a 307 and lost its one-hour Cache-Control, while the
-  // page itself still rendered fine and looked entirely healthy.
+  // The whole point of the trailing slash: the shared link is a plain 200
+  // with no redirect. Checked WITHOUT following redirects, because a
+  // following client cannot tell a one-hop link from a two-hop one -- which
+  // is exactly how the 2026-08-22 no-op survived a green deploy and a full
+  // green harness run. Remote-only: the local `python3 -m http.server` has
+  // no Worker in front of it and its own redirect behaviour differs.
   if (isRemote) {
     const direct = await context.request.get(BASE + url, { maxRedirects: 0 });
-    const cc = direct.headers()['cache-control'] || '';
-    record('/t/{code} is served by the Worker: a 200 with no hop, cached an hour',
-      direct.status() === 200 && /max-age=3600/.test(cc),
-      `status=${direct.status()} cache-control=${cc || 'none'}`);
+    record('/t/{code}/ is one hop: a plain 200, no Location header',
+      direct.status() === 200 && !direct.headers()['location'],
+      `status=${direct.status()} location=${direct.headers()['location'] || 'none'}`);
+
+    // And the slash-less form still works for anything already shared.
+    const legacy = await context.request.get(BASE + '/t/' + code, { maxRedirects: 0 });
+    record('/t/{code} (no slash, pre-existing links): 301 to the canonical form',
+      legacy.status() === 301 && legacy.headers()['location'] === url,
+      `status=${legacy.status()} location=${legacy.headers()['location'] || 'none'}`);
   }
 }
 

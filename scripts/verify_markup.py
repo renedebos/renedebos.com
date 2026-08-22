@@ -41,7 +41,10 @@ REQUIRED = ("id", "kind", "streamUrl", "title", "playLabel")
 # item's code must be in the map, and the map's target must be the item's own
 # pageUrl (plus the autoplay flag) -- a stale map would otherwise send a
 # shared link to whatever track last owned that code.
-SHARE_RE = re.compile(r'^https://renedebos\.com/t/([a-f0-9]{5,64})$')
+# Trailing slash required: it is the canonical form the asset server serves
+# in one hop (see track_share_url()). A slash-less URL still works -- the
+# Worker 301s it -- but the build must never HAND OUT the bouncing form.
+SHARE_RE = re.compile(r'^https://renedebos\.com/t/([a-f0-9]{5,64})/$')
 
 def load_track_links():
     path = os.path.join(ROOT, "assets", "track-links.json")
@@ -57,7 +60,7 @@ def check_share_link(rel, item, links):
         return [f"{rel}: track {item.get('id')!r} has no shareUrl"]
     m = SHARE_RE.match(str(share))
     if not m:
-        return [f"{rel}: track {item.get('id')!r} shareUrl {share!r} is not https://renedebos.com/t/<code>"]
+        return [f"{rel}: track {item.get('id')!r} shareUrl {share!r} is not https://renedebos.com/t/<code>/"]
     if links is None:
         return [f"{rel}: assets/track-links.json missing or unreadable -- run scripts/build.py first"]
     target = links.get(m.group(1))
@@ -542,7 +545,7 @@ def check_track_pages(track_links):
             # this, a build that paired pages and codes off by one would still
             # pass every other check on this page.
             share = str(item.get("shareUrl") or "")
-            if not share.endswith("/" + code):
+            if not share.endswith("/" + code + "/"):
                 errors.append(f"{rel}: page is /t/{code}/ but its track's shareUrl is {share!r}")
     return errors, n_track, n_pages
 

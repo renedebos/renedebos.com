@@ -3,11 +3,15 @@
 // a fake assets binding that serves files from the repo root -- so the pages
 // the tests resolve to are the ones scripts/build.py actually wrote.
 //
-// Rewritten 2026-08-22 for §9: /t/{code} used to 302 to a show-page deep link
-// and is now a built single-song page the Worker serves directly. The tests
-// that asserted the map's lifecycle are gone with the map; what replaces them
-// is a test that the map is NEVER fetched on a request path, which is the
-// property §9 actually claims.
+// Rewritten twice on 2026-08-22. /t/{code} began as a 302 to a show-page deep
+// link; became a built single-song page the Worker served through the assets
+// binding (which never worked in production -- see site_worker.js's own note);
+// and is now a built page the ASSET SERVER owns outright, with the Worker
+// reduced to normalising a non-canonical URL to the canonical one.
+//
+// So what these tests assert has inverted: the point is no longer that the
+// Worker serves the page, it is that the Worker stays OUT OF THE WAY of a
+// canonical request and never touches the assets binding for it.
 //
 // Run: node scripts/test-site-worker.mjs   (after scripts/build.py)
 
@@ -79,25 +83,14 @@ const get = (env, url, method = 'GET') => worker.fetch(new Request('https://rene
 const tests = [];
 function test(name, fn) { tests.push({ name, fn }); }
 
-test('a known code serves its page as a 200, edge-cacheable for an hour', async () => {
+test('the canonical /t/{code}/ passes straight through to the asset server', async () => {
   const env = fakeEnv();
-  const r = await get(env, '/t/' + code);
+  pageFetches = [];
+  const r = await get(env, '/t/' + code + '/');
   assert.equal(r.status, 200);
-  assert.equal(r.headers.get('Content-Type'), 'text/html; charset=utf-8');
-  assert.equal(r.headers.get('Cache-Control'), 'public, max-age=3600');
-  assert.ok(r.headers.get('Content-Security-Policy'), 'dynamic responses carry the security headers');
-});
-
-test('no redirect hop: the shared link itself is the 200', async () => {
-  const env = fakeEnv();
-  const r = await get(env, '/t/' + code);
-  assert.equal(r.headers.get('Location'), null, 'a share link must not cost a redirect');
-});
-
-test('the page served is the page for THAT code', async () => {
-  const env = fakeEnv();
-  const body = await (await get(env, '/t/' + code)).text();
-  assert.ok(body.includes('https://renedebos.com/t/' + code),
+  assert.equal(r.headers.get('Location'), null, 'no hop on the canonical link');
+  const body = await r.text();
+  assert.ok(body.includes('https://renedebos.com/t/' + code + '/'),
     'the page carries its own canonical/share URL');
   assert.ok(body.includes('window.PLAYER_AUTOPLAY = true'),
     'the page a recipient opens to hear one song starts it');
@@ -105,71 +98,103 @@ test('the page served is the page for THAT code', async () => {
     'share pages stay out of the index (§9.3)');
 });
 
+test('the Worker sets no Cache-Control of its own on a share page', async () => {
+  // Deliberate: /t/{code}/ is a stable, unhashed name whose CONTENT changes
+  // when a show is reprocessed, so the root _headers file's default
+  // (max-age=0, must-revalidate + ETag) is the correct policy. An earlier
+  // version set an hour here and would have served stale share pages after
+  // every reprocess.
+  const env = fakeEnv();
+  const r = await get(env, '/t/' + code + '/');
+  const cc = r.headers.get('Cache-Control') || '';
+  assert.ok(!/max-age=[1-9]/.test(cc), `expected no positive max-age, got ${cc || 'none'}`);
+});
+
+test('a slash-less link is 301d to the canonical form, not left to bounce', async () => {
+  // Links copied before the trailing slash became canonical must keep
+  // working, and a permanent redirect is the honest answer for them.
+  const env = fakeEnv();
+  const r = await get(env, '/t/' + code);
+  assert.equal(r.status, 301);
+  assert.equal(r.headers.get('Location'), '/t/' + code + '/');
+});
+
+test('an uppercased code is normalised (chat clients mangle links)', async () => {
+  // Needs a code that actually CONTAINS a letter -- codes are hex, so a
+  // digits-only one (the first entry happens to be one) uppercases to
+  // itself and would pass this test without exercising anything.
+  const mixed = Object.keys(links).find((c) => /[a-f]/.test(c));
+  assert.ok(mixed, 'no hex code with a letter in it?');
+  const env = fakeEnv();
+  const r = await get(env, '/t/' + mixed.toUpperCase() + '/');
+  assert.equal(r.status, 301);
+  assert.equal(r.headers.get('Location'), '/t/' + mixed + '/');
+});
+
+test('a query string survives normalisation', async () => {
+  const env = fakeEnv();
+  const r = await get(env, '/t/' + code + '?utm_source=sms');
+  assert.equal(r.status, 301);
+  assert.equal(r.headers.get('Location'), '/t/' + code + '/?utm_source=sms');
+});
+
+test('the canonical form never redirects to itself', async () => {
+  // The normalisation branch matches the canonical URL too; without its
+  // equality guard this is an infinite redirect loop on every shared link.
+  const env = fakeEnv();
+  const r = await get(env, '/t/' + code + '/');
+  assert.equal(r.status, 200);
+});
+
+test('the Worker never fetches a share page through the assets binding', async () => {
+  // The property the 2026-08-22 production failure taught: the Worker has no
+  // business resolving these pages, so it must not try. String work only.
+  const env = fakeEnv();
+  pageFetches = [];
+  await get(env, '/t/' + code + '/');
+  await get(env, '/t/' + code);
+  assert.deepEqual(pageFetches.filter((p) => p.endsWith('/index.html')), [],
+    'no /index.html lookups');
+});
+
+test('every built code resolves to a real page', async () => {
+  const env = fakeEnv();
+  const codes = Object.keys(links);
+  for (const c of [codes[0], codes[Math.floor(codes.length / 2)], codes[codes.length - 1]]) {
+    assert.equal((await get(env, '/t/' + c + '/')).status, 200, `/t/${c}/ serves`);
+  }
+});
+
 test('the show it came from is still one link away', async () => {
   const env = fakeEnv();
-  const body = await (await get(env, '/t/' + code)).text();
-  // track-links.json still records the deep link; the page must link there.
+  const body = await (await get(env, '/t/' + code + '/')).text();
   const deep = target.replace('?autoplay=1', '');
   assert.ok(body.includes('href="' + deep + '"'),
     `the page links to ${deep} -- focus, not amputation (§9.2)`);
 });
 
-test('every built code has a page the Worker can serve', async () => {
+test('HEAD works (link unfurlers use it)', async () => {
   const env = fakeEnv();
-  // Sampled, not exhaustive: verify_markup.py checks all 680 at build time
-  // both ways. This asserts the Worker's own path reaches them.
-  const codes = Object.keys(links);
-  for (const c of [codes[0], codes[Math.floor(codes.length / 2)], codes[codes.length - 1]]) {
-    assert.equal((await get(env, '/t/' + c)).status, 200, `/t/${c} serves`);
-  }
-});
-
-test('uppercase, a trailing slash, and HEAD all resolve (chat apps mangle links)', async () => {
-  const env = fakeEnv();
-  const r1 = await get(env, '/t/' + code.toUpperCase() + '/');
-  assert.equal(r1.status, 200);
-  const r2 = await get(env, '/t/' + code, 'HEAD');
-  assert.equal(r2.status, 200);
-  assert.equal(await r2.text(), '', 'HEAD carries no body');
+  const r = await get(env, '/t/' + code + '/', 'HEAD');
+  assert.ok(r.status === 200 || r.status === 301, `got ${r.status}`);
 });
 
 test('an unknown code is the branded 404, uncached -- never someone else\'s song', async () => {
   const env = fakeEnv();
-  const r = await get(env, '/t/abcdef');
+  const r = await get(env, '/t/abcdef/');
   assert.equal(r.status, 404);
   assert.equal(r.headers.get('Cache-Control'), 'no-store');
   const body = await r.text();
   assert.ok(body.includes('<!DOCTYPE html>') || body.includes('<html'), 'the 404 page body is served');
 });
 
-test('a malformed code never reaches the asset layer as a share page', async () => {
-  const env = fakeEnv();
-  pageFetches = [];
-  const r = await get(env, '/t/not-hex!');
-  assert.equal(r.status, 404);
-  assert.deepEqual(pageFetches, [],
-    'TRACK_RE rejects it before the share branch fetches any page');
-});
-
-test('the code -> deep-link map is never on a request path any more (§9.1)', async () => {
+test('the code -> deep-link map is never on a request path (§9.1)', async () => {
   const env = fakeEnv();
   const before = mapFetches;
-  await get(env, '/t/' + code);
-  await get(env, '/t/abcdef');
+  await get(env, '/t/' + code + '/');
+  await get(env, '/t/abcdef/');
   assert.equal(mapFetches, before,
     'assets/track-links.json is a build artifact now, not a routing table');
-});
-
-test('the share branch asks the assets binding for the DIRECTORY, not index.html', async () => {
-  // The 2026-08-22 production bug, pinned. Fetching "/t/{code}/index.html"
-  // gets a 307 from the real binding, not the page -- so this asserts the
-  // shape of the request, not just that the response came out right.
-  const env = fakeEnv();
-  pageFetches = [];
-  const r = await get(env, '/t/' + code);
-  assert.equal(r.status, 200);
-  assert.deepEqual(pageFetches, ['/t/' + code + '/'],
-    'one fetch, for the directory form');
 });
 
 test('/play/ is untouched by the share route', async () => {

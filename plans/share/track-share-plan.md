@@ -40,7 +40,7 @@ Everything in `share-plan.md` about search-filter URLs stands untouched.
 ## 2. The link
 
 ```
-https://renedebos.com/t/7f3a2c
+https://renedebos.com/t/7f3a2c/
 ```
 
 - **Path `/t/{code}`**. `code` = the first 6 hex characters of SHA-256 of
@@ -223,11 +223,10 @@ show and song reachable but not in the way.
   API applies again one level up. 680 small pages cost a build second and
   give per-song `og:` tags for free, which closes §6's deferred
   "song-specific link previews" as a side effect rather than as a project.
-- **The Worker keeps its `/t/` branch, but rewrites instead of
-  redirecting** — `env.ASSETS.fetch('/t/{code}/index.html')`. Serving the
-  asset directly rather than falling through to the auto-trailing-slash
-  behaviour keeps the shared URL a single 200 with no redirect hop, and
-  keeps `shareUrl` slash-free (`/t/7f3a2c`, not `/t/7f3a2c/`).
+- ~~**The Worker keeps its `/t/` branch, but rewrites instead of
+  redirecting**~~ — **superseded the same day; see §9.1a.** The canonical
+  share URL is `/t/{code}/`, **with** the trailing slash, served by the asset
+  server with no Worker on the path.
 - **`assets/track-links.json` stays**, repointed at the page. It is no
   longer the Worker's routing table but it is still the build's proof that
   every code resolves, and `verify_markup.py` still checks it.
@@ -236,6 +235,56 @@ show and song reachable but not in the way.
   `window.PLAYER_AUTOPLAY`: on `load`, if the deep-link path did not
   already start something, start row 0. Four lines, inside the existing
   handler, and `initialIntent` stays honest.
+
+### 9.1a The trailing slash, and why the Worker is not on this path
+
+The first version of §9.1 shipped and did not work. Recorded in full because
+the failure is more instructive than the feature.
+
+The idea was: the Worker matches `/t/{code}`, fetches the built page through
+`env.ASSETS`, and returns it — one 200, no redirect, and `shareUrl` stays
+slash-free. It passed 10/10 in `test-site-worker.mjs` and 204/204 in
+`browser_check.mjs`. In production it was a **complete no-op**: the assets
+binding returned not-ok, `page.ok` was false, and every request fell through
+to exactly the redirect the branch existed to remove. The page rendered
+perfectly, so nothing looked wrong.
+
+Three things kept it hidden, each worth remembering separately:
+
+1. **The test fake was more permissive than production.** It read files
+   straight off disk, so `/t/{code}/index.html` returned 200. A fake more
+   generous than the real thing does not test the code, it tests the fake.
+   It now models the binding's `html_handling` rules, and asserts the
+   *shape* of the request rather than only the response.
+2. **Every client in the harness follows redirects.** A following client
+   cannot tell a one-hop link from a two-hop one, so `page.goto()` reported
+   success either way. The check that catches this must pass
+   `maxRedirects: 0`, and it must run against a real deploy.
+3. **A green Action is not a deployed feature.** The runbook already says
+   this. It was still only the by-hand `curl` that found it.
+
+A second fix — fetching the directory form instead of the file form — also
+failed, and the reason the binding refuses both was never established
+(reproducing it needs `wrangler dev`, which needs Node 22; this machine has
+20). At that point the question stopped being worth answering, because
+**the branch was buying the wrong thing anyway**: it also set a one-hour
+`Cache-Control`, and the root `_headers` file argues explicitly against a
+long max-age for stable, unhashed names. `/t/{code}/` is exactly that — a
+reprocess rewrites the page under the same address — so the header would
+have served a stale share page for an hour after every reprocess, with no
+client-side purge. The Worker branch was trading a real bug for an
+imperceptible hop.
+
+So: **`/t/{code}/` is canonical**, the asset server owns it, and the page
+takes the site-wide `max-age=0, must-revalidate` + ETag policy the rest of
+the site uses on purpose. Per-track peaks pick up the existing
+`/assets/peaks/*` one-day rule with no new entry.
+
+What remains in the Worker is string work that cannot touch the binding:
+normalise a non-canonical `/t/` URL to the canonical one, which covers an
+uppercased code and — importantly — every slash-less link copied before this
+revision, giving them a permanent 301 instead of the asset layer's temporary
+307.
 
 ### 9.2 What the receiver sees
 

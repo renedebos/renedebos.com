@@ -66,7 +66,7 @@
       // Short share link, from the build's code for this performance (see
       // track_share_url() in sitegen/core.py) -- same absolute form the
       // server-rendered rows carry.
-      shareUrl: o.code ? "https://renedebos.com/t/" + o.code : null,
+      shareUrl: o.code ? "https://renedebos.com/t/" + o.code + "/" : null,
       playLabel: songTitle + ", " + o.artist_name + ", " + o.date,
       downloads: { lossless: lossless },
       dropouts: false,
@@ -120,7 +120,7 @@
       // control and the click; fragments.py's track_share_button() is the
       // server-side twin these rows are meant to match byte-for-byte).
       // Empty string when this performance has no code, same as the server.
-      + trackShareButtonHtml(o.code ? "https://renedebos.com/t/" + o.code : null, songTitle)
+      + trackShareButtonHtml(o.code ? "https://renedebos.com/t/" + o.code + "/" : null, songTitle)
       + trackAddButtonHtml(trackId)
       + "</div>";
   }

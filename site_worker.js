@@ -108,37 +108,31 @@ export default {
       return secure(await resolveShortLink(m[1].toLowerCase(), env));
     }
 
+    // /t/{code}/ is a BUILT PAGE the asset server serves on its own -- the
+    // Worker is deliberately not on that path (plans/share/track-share-plan.md
+    // §9.1, revised 2026-08-22). A branch that fetched the page through
+    // env.ASSETS and returned it shipped first, and never worked: the binding
+    // returned not-ok for both the file and the directory form, for a reason
+    // that was never established, so every shared link silently fell through
+    // to the redirect the branch existed to remove. It was also setting a
+    // one-hour Cache-Control, which the root `_headers` file argues against
+    // for exactly this kind of path: /t/{code}/ is a stable, unhashed name
+    // whose CONTENT changes when a show is reprocessed, so a cached copy
+    // would shadow the new one with no way to purge it client-side.
+    //
+    // What is left here is string work only, and cannot touch the assets
+    // binding: normalise a non-canonical /t/ URL to the canonical one. That
+    // covers an uppercased code (chat clients do mangle links) and any
+    // slash-less link copied before the trailing slash became canonical --
+    // and gives them a permanent 301 rather than the asset layer's temporary
+    // 307. An already-canonical URL is left alone, or this would loop.
     const t = url.pathname.match(TRACK_RE);
     if (t && (request.method === "GET" || request.method === "HEAD")) {
-      // Serve the built single-song page directly rather than letting the
-      // asset layer's auto-trailing-slash redirect handle it: that would put
-      // a 307 hop in front of every shared link, and it is the shared link
-      // that has to feel instant. Keeping the slash-less /t/{code} a plain
-      // 200 is also what lets the copied URL stay slash-less.
-      //
-      // The DIRECTORY form, not "/index.html": the assets binding applies the
-      // same html_handling a public request gets, and that redirects
-      // /{path}/index.html -> /{path}/ (307) rather than serving it. Asking
-      // for the file form therefore returns a redirect, page.ok is false, and
-      // this whole branch silently falls through to exactly the hop it exists
-      // to avoid. That is what shipped on 2026-08-22, and it was caught by a
-      // production spot-check rather than by the tests: their fake assets
-      // binding read straight from disk and was perfectly happy to serve the
-      // file form. test-site-worker.mjs's fake now models the redirect.
-      const page = await env.ASSETS.fetch(
-        new URL(`/t/${t[1].toLowerCase()}/`, url));
-      if (page.ok) {
-        return secure(new Response(request.method === "HEAD" ? null : page.body, {
-          status: 200,
-          headers: {
-            "Content-Type": "text/html; charset=utf-8",
-            // An hour, not the day /play/ gets: a playlist entry is
-            // immutable, but a republished show can change this page.
-            "Cache-Control": "public, max-age=3600",
-          },
-        }));
+      const canonical = `/t/${t[1].toLowerCase()}/`;
+      if (url.pathname !== canonical) {
+        return secure(redirect(canonical + url.search, { "Cache-Control": "public, max-age=3600" }, 301));
       }
-      // unknown code: fall through to the branded 404 below
+      // Canonical already: fall through to the asset server, which owns it.
     }
 
     const resp = await env.ASSETS.fetch(request);

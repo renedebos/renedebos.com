@@ -47,10 +47,19 @@ def _track_codes():
 TRACK_CODES = _track_codes()
 
 def track_share_url(tid):
-    """https://renedebos.com/t/{code} for a curated track id, or None for an
-    id that has no code (a hidden show's track, a whole-show recording)."""
+    """https://renedebos.com/t/{code}/ for a curated track id, or None for an
+    id that has no code (a hidden show's track, a whole-show recording).
+
+    The trailing slash is load-bearing (2026-08-22, Rene's call after the
+    first attempt shipped without it). It is the canonical form the asset
+    server serves directly, so the shared link lands in one hop with no
+    Worker on the path at all. Without it the link works but bounces through
+    a redirect, and the Worker branch written to remove that bounce refused
+    to serve the page for reasons never established -- see §9.1 of
+    plans/share/track-share-plan.md. Simplicity won.
+    """
     code = TRACK_CODES.get(tid)
-    return f"https://renedebos.com/t/{code}" if code else None
+    return f"https://renedebos.com/t/{code}/" if code else None
 
 def track_link_target(show, num):
     """Where /t/{code} lands: the performance's deep link on its show page,
