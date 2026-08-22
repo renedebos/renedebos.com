@@ -113,6 +113,13 @@ match `/search/` etc., not the sketched `playlist.html`).
 
 ## Phase 4: Short links (KV)
 
+**Sibling, not part of this phase — share ONE song (2026-08-22):**
+`/t/{code}` in the same Worker resolves a per-performance short link to the
+show page's `?autoplay=1#track-N` deep link. Unlike playlist slugs these are
+build outputs (`assets/track-links.json`, codes in `sitegen/core.py`), with
+no create call and no KV; the share button lives in the mini-player bar
+(`scripts/share.js`). Plan and decisions: `plans/share/track-share-plan.md`.
+
 **Status (2026-07-08): DONE — short links re-enabled with client-side
 self-verification.** First attempt: a stale Cloudflare edge node served
 one user's browser a 404 for a correctly-stored slug while every other

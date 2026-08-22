@@ -583,21 +583,6 @@ main {
 .track-row .download-btn:hover { background: var(--accent-light); color: var(--accent); }
 .track-row .download-btn svg { width: 12px; height: 12px; }
 
-.share-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 8px;
-  border: none;
-  border-radius: 3px;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: background 0.2s, color 0.2s;
-}
-.share-btn:hover { background: var(--accent-light); color: var(--accent); }
-.share-btn svg { width: 14px; height: 14px; display: block; }
 
 .track-row .progress-range {
   position: absolute;
@@ -1608,6 +1593,9 @@ footer a:hover { text-decoration: underline; }
 
 /* ── share popover ───────────────────────────────────────────────────────── */
 
+/* The desktop share popover (scripts/share.js), opened from the mini-player
+   bar's share button: Copy link, then Email. The rules date from the 2026-06
+   per-row share button; the popover is the part of it that survived. */
 .share-pop {
   position: fixed;
   z-index: 210;
@@ -2277,18 +2265,18 @@ a.artist-chip:hover { filter: brightness(1.08); }
 /* Prev/next/close are secondary to play: same outline shape, hairline border,
    and they tint rather than fill on hover so the play button stays the one
    emphatic control. */
-.mp-shuffle, .mp-prev, .mp-next, .mp-close {
+.mp-shuffle, .mp-prev, .mp-next, .mp-share, .mp-close {
   width: 30px;
   height: 30px;
   border-color: var(--player-border);
   color: var(--player-muted);
 }
-.mp-shuffle:hover, .mp-prev:hover, .mp-next:hover, .mp-close:hover {
+.mp-shuffle:hover, .mp-prev:hover, .mp-next:hover, .mp-share:hover, .mp-close:hover {
   background: transparent;
   border-color: var(--player-accent);
   color: var(--player-accent);
 }
-.mp-shuffle svg, .mp-prev svg, .mp-next svg, .mp-close svg { width: 12px; height: 12px; }
+.mp-shuffle svg, .mp-prev svg, .mp-next svg, .mp-share svg, .mp-close svg { width: 12px; height: 12px; }
 /* Shuffle on — the same filled-solid language as the playlist card's
    .pl-btn[aria-pressed] and the track-add toggle, in --player-* terms. */
 .mp-shuffle[aria-pressed="true"],
@@ -2362,8 +2350,8 @@ a.artist-chip:hover { filter: brightness(1.08); }
      .ws-track rows at this breakpoint. */
   .mp-btn { width: 44px; height: 44px; }
   .mp-btn svg { width: 15px; height: 15px; }
-  .mp-shuffle, .mp-prev, .mp-next, .mp-close { width: 38px; height: 38px; }
-  .mp-shuffle svg, .mp-prev svg, .mp-next svg, .mp-close svg { width: 14px; height: 14px; }
+  .mp-shuffle, .mp-prev, .mp-next, .mp-share, .mp-close { width: 38px; height: 38px; }
+  .mp-shuffle svg, .mp-prev svg, .mp-next svg, .mp-share svg, .mp-close svg { width: 14px; height: 14px; }
   /* Tighter padding and gaps buy the title back roughly 16px of a 320px
      viewport, where four buttons and two fixed gaps otherwise leave it around
      eleven characters before the ellipsis. Measured, not guessed. */

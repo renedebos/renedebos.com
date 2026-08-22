@@ -111,6 +111,10 @@ export function normalizeItem(raw) {
     durationLabel: raw.durationLabel || null,
     peaksKey: raw.peaksKey || null,
     pageUrl: raw.pageUrl || '',
+    // The performance's short share link (/t/{code}), a build output carried
+    // in data-item; absent on whole-show recordings. share.js falls back to
+    // pageUrl when it is missing, so nothing downstream requires it.
+    shareUrl: raw.shareUrl ? String(raw.shareUrl) : null,
     playLabel: raw.playLabel || raw.title || '',
     downloads: raw.downloads || { flac: null },
     dropouts: !!raw.dropouts,

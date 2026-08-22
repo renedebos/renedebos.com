@@ -827,6 +827,7 @@ def build_show(show):
                 lossless_size_mb=t.get("flac_size_mb"),
                 dropouts=t.get("dropouts"),
                 loud_stream=loud_stream,
+                share_url=track_share_url(track_id),
             )
             if has_waves:
                 # waveform replaces the progress bar; the download (if any) keeps the

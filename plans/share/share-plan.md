@@ -21,6 +21,15 @@ Re-verified 2026-08-19: `search.js`'s `syncUrl()` still writes only
 `?q=<text>` and discards filter state, so §2's "filters are not persisted to
 the URL" — the actual gap this project exists to close — is unchanged.
 
+**2026-08-21 — two corrections, and a sibling plan.** (1) §2's "a full
+share UI already exists per track on show pages" has been stale since
+2026-06-24: the per-row share button's markup went with the waveform-row
+template (`a8ac100e`); `player.js`'s `sharePop` and the `.share-btn` CSS
+survive unrendered. (2) Rene's actual ask is to share one *performance*
+with a short copy/paste link, not the song's catalog page — that is
+designed in **`track-share-plan.md`** beside this file, which supersedes
+the song-page half of §3. The search-filter half of §3 stands.
+
 Codex notes and repository review: see `share-codex.md` in this folder
 (currently a placeholder — no review has run yet).
 
@@ -166,6 +175,7 @@ Enumerated by the research pass, for reference by whoever builds this:
 | `?autoplay=1` | auto-start playback of the hash-targeted track | `pages.py` (random-tape), consumed in `player.js` |
 | `?q=<text>` | search free-text query (search page only) | `search.js` |
 | `/play/{slug}` | path-based short link, server-resolved to `#p=` | `site_worker.js` |
+| `/t/{code}` | share-a-song short link, server-resolved to `/shows/<slug>/?autoplay=1#track-N` (built 2026-08-22; `track-share-plan.md`) | `site_worker.js`, `core.py`, `assets/track-links.json` |
 
 This project's in-scope work (extending `?q=`-style search-filter params,
 sharing canonical `/songs/<slug>/`  and show URLs) doesn't touch any of the

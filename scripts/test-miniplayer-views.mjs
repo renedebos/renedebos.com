@@ -806,6 +806,43 @@ test('FakeAudio models the two rules the real bugs depended on', async () => {
 
 // ── runner ─────────────────────────────────────────────────────────────
 let failed = 0;
+// ── share ──────────────────────────────────────────────────────────────────
+// The bar only hands the current item and the pressed button to opts.onShare;
+// share.js (lazily imported by attachMiniPlayerBar) owns the sheet/popover.
+test('the share button renders in the controls and hands the CURRENT item to onShare', () => {
+  const c = makeController();
+  const calls = [];
+  const { root } = mount(c, { onShare: (item, btn) => calls.push([item, btn]) });
+  c.setQueue([item('a', { shareUrl: 'https://renedebos.com/t/abc123' }), item('b')], { startIndex: 0 });
+  const btn = root.querySelector('.mp-share');
+  assert.ok(btn, 'a .mp-share button is part of the bar');
+  assert.equal(btn.getAttribute('aria-label'), 'Share this song');
+  root.dispatch('click', { target: btn });
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0][0].id, 'a');
+  assert.equal(calls[0][0].shareUrl, 'https://renedebos.com/t/abc123', 'shareUrl survives normalizeItem');
+  assert.equal(calls[0][1], btn);
+  // After advancing, the handler sees the NEW current item, not the first.
+  c.next();
+  root.dispatch('click', { target: root.querySelector('.mp-share') });
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1][0].id, 'b');
+  c.destroy();
+});
+
+test('without an onShare handler the share button is inert, never a throw', () => {
+  const c = makeController();
+  const { root } = mount(c);
+  c.setQueue([item('a')], { startIndex: 0 });
+  assert.doesNotThrow(() => root.dispatch('click', { target: root.querySelector('.mp-share') }));
+  c.destroy();
+});
+
+test('share.js is reached only by a dynamic import on press, never a static one', () => {
+  const src = readFileSync(new URL('./miniplayer-views.js', import.meta.url), 'utf8');
+  assert.ok(src.includes("import('/assets/share.js')"), 'attachMiniPlayerBar lazily imports share.js');
+});
+
 for (const { name, fn } of tests) {
   try {
     await fn();

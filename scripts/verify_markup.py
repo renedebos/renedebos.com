@@ -35,6 +35,39 @@ CARD_RE = re.compile(r'<div class="recording-item" data-item="([^"]*)">.*?<div c
 
 REQUIRED = ("id", "kind", "streamUrl", "title", "playLabel")
 
+# Share-a-song links (plans/share/track-share-plan.md): every curated track
+# item carries shareUrl = https://renedebos.com/t/{code}; the build writes the
+# code -> deep-link map the Worker resolves. Checked both ways below: the
+# item's code must be in the map, and the map's target must be the item's own
+# pageUrl (plus the autoplay flag) -- a stale map would otherwise send a
+# shared link to whatever track last owned that code.
+SHARE_RE = re.compile(r'^https://renedebos\.com/t/([a-f0-9]{5,64})$')
+
+def load_track_links():
+    path = os.path.join(ROOT, "assets", "track-links.json")
+    try:
+        return json.load(open(path))
+    except Exception:
+        return None
+
+def check_share_link(rel, item, links):
+    """Errors for one kind=track item's shareUrl against the built map."""
+    share = item.get("shareUrl")
+    if not share:
+        return [f"{rel}: track {item.get('id')!r} has no shareUrl"]
+    m = SHARE_RE.match(str(share))
+    if not m:
+        return [f"{rel}: track {item.get('id')!r} shareUrl {share!r} is not https://renedebos.com/t/<code>"]
+    if links is None:
+        return [f"{rel}: assets/track-links.json missing or unreadable -- run scripts/build.py first"]
+    target = links.get(m.group(1))
+    if target is None:
+        return [f"{rel}: track {item.get('id')!r} share code {m.group(1)!r} is not in assets/track-links.json"]
+    expected = str(item.get("pageUrl") or "").replace("#", "?autoplay=1#", 1)
+    if target != expected:
+        return [f"{rel}: share code {m.group(1)!r} resolves to {target!r}, expected {expected!r}"]
+    return []
+
 
 ENGINE_FLAG = "window.PLAYER_ENGINE = 'controller'"
 # A tag PREFIX, not the whole tag: both player-boot.js's and song-boot.js's
@@ -285,6 +318,7 @@ def check_assets_exist(rel, src):
 
 def check():
     errors, n_track, n_rec, n_pages = [], 0, 0, 0
+    track_links = load_track_links()
 
     sys.path.insert(0, os.path.join(ROOT, "scripts"))
     from sitegen.pages import CONTROLLER_ENGINE_SLUGS, CONTROLLER_ENGINE_EXCLUDED_SLUGS
@@ -349,6 +383,7 @@ def check():
                     errors.append(f"{rel}: track {item.get('id')!r} has no durationSec")
                 if not item.get("peaksKey"):
                     errors.append(f"{rel}: track {item.get('id')!r} has no peaksKey")
+                errors += check_share_link(rel, item, track_links)
             else:
                 n_rec += 1
             # The lossless original is only reachable via /auth + /download;
@@ -417,6 +452,7 @@ def check():
                 errors.append(f"{rel}: song occurrence item {item.get('id')!r} has bad kind {item.get('kind')!r}")
             else:
                 n_track += 1
+                errors += check_share_link(rel, item, track_links)
             if html.unescape(data_src) != item.get("streamUrl"):
                 errors.append(f"{rel}: item {item.get('id')!r} streamUrl != legacy data-src")
             loss = (item.get("downloads") or {}).get("lossless")

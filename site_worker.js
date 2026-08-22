@@ -18,6 +18,15 @@
 // the first 6 hex chars of SHA-256 of the track-id list, lengthened only on
 // collision with different content — so the same playlist always maps to the
 // same slug and re-shares dedupe. Entries never expire.
+//
+// Share-a-song links (plans/share/track-share-plan.md): /t/{code} -> the
+// performance's deep link on its show page, autoplay flagged. Unlike
+// playlists, the set of performances is known when the site is built, so the
+// codes are a BUILD OUTPUT (assets/track-links.json, written by
+// scripts/build.py, checked by scripts/verify_markup.py) read through the
+// assets binding -- no create call, no KV, nothing to rate-limit. A code that
+// is not in the map falls through to the branded 404 below, on purpose: a
+// mistyped link should fail visibly, not land on some other song.
 
 // Permanent redirects for retired URLs (SEO/bookmarks), checked before the
 // asset layer. Add an entry here whenever a page's path changes.
@@ -35,6 +44,7 @@ const ID_RE = /^[a-z0-9-]{1,80}$/;
 // Liberal in what we accept: trailing slash (chat apps often append one when
 // linkifying), any letter case, and HEAD as well as GET (link previewers).
 const SLUG_RE = /^\/play\/([a-f0-9]{6,64})\/?$/i;
+const TRACK_RE = /^\/t\/([a-f0-9]{5,64})\/?$/i;
 const MAX_TRACKS = 500;
 
 // Applied to every dynamic response (redirects, /api/*, the branded 404) via
@@ -96,6 +106,13 @@ export default {
     const m = url.pathname.match(SLUG_RE);
     if (m && (request.method === "GET" || request.method === "HEAD")) {
       return secure(await resolveShortLink(m[1].toLowerCase(), env));
+    }
+
+    const t = url.pathname.match(TRACK_RE);
+    if (t && (request.method === "GET" || request.method === "HEAD")) {
+      const hit = await resolveTrackLink(t[1].toLowerCase(), env, url);
+      if (hit) return secure(hit);
+      // unknown code: fall through to the asset layer, which 404s below
     }
 
     const resp = await env.ASSETS.fetch(request);
@@ -176,6 +193,29 @@ async function resolveShortLink(slug, env) {
   // Stored playlists are immutable, so the redirect is edge-cacheable.
   return redirect("/playlist/#p=" + ids.join(","),
     { "Cache-Control": "public, max-age=86400" });
+}
+
+// The code -> deep-link map, fetched through the assets binding once per
+// isolate and kept for its lifetime; a failed fetch is forgotten so the next
+// request tries again rather than 404ing every share link until a restart.
+let trackLinks = null;
+
+function loadTrackLinks(env, url) {
+  if (!trackLinks) {
+    trackLinks = env.ASSETS.fetch(new URL("/assets/track-links.json", url))
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("track-links " + r.status))))
+      .catch(() => { trackLinks = null; return {}; });
+  }
+  return trackLinks;
+}
+
+async function resolveTrackLink(code, env, url) {
+  const links = await loadTrackLinks(env, url);
+  const target = Object.prototype.hasOwnProperty.call(links, code) ? links[code] : null;
+  if (typeof target !== "string" || target.charCodeAt(0) !== 47) return null;
+  // An hour, not the day /play/ gets: a playlist entry is immutable, but a
+  // republished show can move a code's target.
+  return redirect(target, { "Cache-Control": "public, max-age=3600" });
 }
 
 function safeIds(raw) {

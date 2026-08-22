@@ -1,5 +1,6 @@
 """sitegen.core: data, constants, small helpers, validation, and the song concordance."""
 import datetime
+import hashlib
 import html
 import json
 import os
@@ -15,6 +16,55 @@ WORKER = M["worker"]
 # are kept in recordings.json for provenance but excluded from every public
 # listing/page/feed. validate()/stamp_added_dates() still see the full M["shows"].
 PUBLIC_SHOWS = [s for s in M["shows"] if not s.get("hidden")]
+
+# ── share-a-song codes (plans/share/track-share-plan.md) ───────────────────
+# Every curated track gets a short code at build time: the first 6 hex chars
+# of SHA-256 of its track id ("<show-slug>-NN"), lengthened on a collision --
+# the same recipe site_worker.js uses for playlist slugs, so the site has one
+# way of making short ids. The set of performances is finite and known here,
+# which is why this is a build output and not a create-on-demand API: no KV,
+# no rate limit, and the link exists the day the track is published.
+# Measured 2026-08-21 on 680 tracks: no collisions even at 5 characters.
+#
+# Stability is that of the track id itself: a reprocess that renumbers a show
+# changes the id, the code, the #track-N anchor and the playlist id alike.
+def track_id(show_slug, num):
+    return f"{show_slug}-{int(num):02d}"
+
+def _track_codes():
+    codes, by_code = {}, {}
+    for s in PUBLIC_SHOWS:
+        for t in (s.get("tracks") or []):
+            tid = track_id(s["slug"], t["num"])
+            digest = hashlib.sha256(tid.encode("utf-8")).hexdigest()
+            n = 6
+            while digest[:n] in by_code and by_code[digest[:n]] != tid:
+                n += 1
+            codes[tid] = digest[:n]
+            by_code[digest[:n]] = tid
+    return codes
+
+TRACK_CODES = _track_codes()
+
+def track_share_url(tid):
+    """https://renedebos.com/t/{code} for a curated track id, or None for an
+    id that has no code (a hidden show's track, a whole-show recording)."""
+    code = TRACK_CODES.get(tid)
+    return f"https://renedebos.com/t/{code}" if code else None
+
+def track_link_target(show, num):
+    """Where /t/{code} lands: the performance's deep link on its show page,
+    autoplay flagged (Rene, 2026-08-21) -- where the browser blocks sound the
+    row shows the tap-to-play cue instead, so the worst case is today's."""
+    return f"{show_url(show)}?autoplay=1#track-{int(num)}"
+
+def build_track_links():
+    """assets/track-links.json: code -> deep link, read by site_worker.js."""
+    out = {}
+    for s in PUBLIC_SHOWS:
+        for t in (s.get("tracks") or []):
+            out[TRACK_CODES[track_id(s["slug"], t["num"])]] = track_link_target(s, t["num"])
+    return out
 
 SOURCE_LABEL = {"SBD": "Soundboard", "AUD": "Audience recording"}
 
@@ -484,6 +534,8 @@ def collect_songs():
                 "size_mb": t.get("size_mb"), "proc_ver": proc_ver,
                 "loud": variant_key(t["file"]) if vt else None,
                 "loud_ver": ((vt.get("mp3_md5") or "")[:12] or None) if vt else None,
+                # share-a-song code; songs.js's occRowHtml() builds shareUrl from it
+                "code": TRACK_CODES.get(track_id(s["slug"], t["num"])),
             })
     songs, used = [], set()
     for key, g in groups.items():
@@ -518,4 +570,4 @@ def write(path, content):
         f.write(content)
 
 
-__all__ = ['write', 'ARTIST_SHORT', 'DURATION_RE', 'LEGACY_KEY_NAMING', 'M', 'PUBLIC_SHOWS', 'ROOT', 'SONG_CANONICAL_OVERRIDE', 'SONG_MANUAL_MERGE', 'SOURCE_LABEL', 'TAG_VOCAB', 'WORKER', '_ARTIST_ORDER', '_duration_sec', 'added_sort_key', 'artist_name', 'check_orphan_song_dirs', 'check_rarity_drift', 'check_source_title_drift', 'check_variant_derivation', 'collect_songs', 'has_variant', 'date_with_subtitle', 'esc', 'iso_duration', 'load_processing', 'load_variant', 'variant_key', 'VARIANTS', 'sanitize_filename', 'show_city', 'show_title', 'show_url', 'show_zip_entries', 'show_zip_folder', 'singles_for_show', 'song_norm', 'song_slug', 'sort_key', 'stamp_added_dates', 'stream_url', 'track_total', 'validate']
+__all__ = ['write', 'ARTIST_SHORT', 'TRACK_CODES', 'track_id', 'track_share_url', 'track_link_target', 'build_track_links', 'DURATION_RE', 'LEGACY_KEY_NAMING', 'M', 'PUBLIC_SHOWS', 'ROOT', 'SONG_CANONICAL_OVERRIDE', 'SONG_MANUAL_MERGE', 'SOURCE_LABEL', 'TAG_VOCAB', 'WORKER', '_ARTIST_ORDER', '_duration_sec', 'added_sort_key', 'artist_name', 'check_orphan_song_dirs', 'check_rarity_drift', 'check_source_title_drift', 'check_variant_derivation', 'collect_songs', 'has_variant', 'date_with_subtitle', 'esc', 'iso_duration', 'load_processing', 'load_variant', 'variant_key', 'VARIANTS', 'sanitize_filename', 'show_city', 'show_title', 'show_url', 'show_zip_entries', 'show_zip_folder', 'singles_for_show', 'song_norm', 'song_slug', 'sort_key', 'stamp_added_dates', 'stream_url', 'track_total', 'validate']

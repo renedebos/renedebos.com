@@ -46,7 +46,7 @@ def playable_item_attr(*, item_id, kind, stream, title, artist=None, venue=None,
                        date=None, date_display=None, duration_label=None,
                        peaks_key=None, page_url=None, play_label=None,
                        lossless_file=None, lossless_size_mb=None, dropouts=False,
-                       loud_stream=None):
+                       loud_stream=None, share_url=None):
     """Build the `data-item="..."` attribute the shared player reads.
 
     One normalized playable item per playable thing, serialized into the markup
@@ -95,6 +95,11 @@ def playable_item_attr(*, item_id, kind, stream, title, artist=None, venue=None,
         "durationLabel": duration_label or None,
         "peaksKey": peaks_key,
         "pageUrl": page_url or "",
+        # The performance's short share link (https://renedebos.com/t/{code},
+        # core.py's track_share_url()), resolved by site_worker.js. None for
+        # whole-show recordings, which have no code; share.js then shares
+        # pageUrl instead.
+        "shareUrl": share_url or None,
         "playLabel": play_label or title,
         "downloads": {"lossless": lossless},
         "dropouts": bool(dropouts),
@@ -1003,6 +1008,7 @@ def _song_occ_html(o, song_title):
         # fallback engine reads, so a page whose module never mounts degrades
         # to the master rather than to a key that might not be there.
         loud_stream=(stream_url(o["loud"], o.get("loud_ver")) if o.get("loud") else None),
+        share_url=track_share_url(track_id),
     )
     stream = stream_url(o["file"], o["ver"])
     add_btn = track_add_button(track_id)

@@ -753,62 +753,10 @@ document.addEventListener('mouseout', e => {
 });
 window.addEventListener('scroll', hideTip, true);
 
-// ── per-track sharing ────────────────────────────────────────────────────────
-
-const sharePop = document.createElement('div');
-sharePop.className = 'share-pop';
-document.body.appendChild(sharePop);
-
-function trackUrl(btn) {
-  const row = btn.closest('[id]');
-  const hash = row && row.id ? '#' + row.id : '';
-  return location.origin + location.pathname + hash;
-}
-
-function openSharePop(btn) {
-  const url = trackUrl(btn);
-  const text = btn.dataset.text || document.title;
-  const e = encodeURIComponent;
-  sharePop.innerHTML = `
-    <a href="https://twitter.com/intent/tweet?text=${e(text)}&url=${e(url)}" target="_blank" rel="noopener">Share on X</a>
-    <a href="https://www.facebook.com/sharer/sharer.php?u=${e(url)}" target="_blank" rel="noopener">Share on Facebook</a>
-    <a href="mailto:?subject=${e(text)}&body=${e(text + '\n\n' + url)}">Email</a>
-    <button type="button" data-copy="${escapeHtml(url)}">Copy link</button>`;
-  sharePop.classList.add('open');
-  const r = btn.getBoundingClientRect();
-  const pw = sharePop.offsetWidth, ph = sharePop.offsetHeight;
-  let left = Math.max(8, Math.min(r.right - pw, window.innerWidth - pw - 8));
-  let top = r.bottom + 6;
-  if (top + ph > window.innerHeight - 8) top = r.top - ph - 6;
-  sharePop.style.left = left + 'px';
-  sharePop.style.top = top + 'px';
-}
-
-function closeSharePop() { sharePop.classList.remove('open'); }
-
-document.addEventListener('click', e => {
-  const shareBtn = e.target.closest('.share-btn');
-  if (shareBtn) {
-    e.preventDefault();
-    const url = trackUrl(shareBtn);
-    const text = shareBtn.dataset.text || document.title;
-    if (navigator.share) {
-      navigator.share({ title: document.title, text, url }).catch(() => {});
-    } else {
-      openSharePop(shareBtn);
-    }
-    return;
-  }
-  const copyBtn = e.target.closest('.share-pop [data-copy]');
-  if (copyBtn) {
-    navigator.clipboard.writeText(copyBtn.dataset.copy).then(() => {
-      copyBtn.textContent = 'Copied!';
-      setTimeout(closeSharePop, 800);
-    });
-    return;
-  }
-  if (!e.target.closest('.share-pop')) closeSharePop();
-});
+// Per-track sharing used to live here (a .share-btn on every row, 3dc47fb9).
+// Its markup went with the waveform rows on 2026-06-24 and the handler sat
+// unreachable until 2026-08-21, when sharing moved to the mini-player bar:
+// scripts/share.js, loaded by miniplayer-views.js on the first press.
 
 // ── deep-link to a track ──────────────────────────────────────────────────────
 

@@ -73,6 +73,7 @@ def main():
     # test-miniplayer-views.mjs can exercise the real codec and so Stage
     # 3a-canary (plans/player-consolidation/) can resume without a branch dig.
     write("assets/miniplayer-views.js", open(os.path.join(here, "miniplayer-views.js")).read())
+    write("assets/share.js", open(os.path.join(here, "share.js")).read())
     write("assets/wavesurfer.esm.js", open(os.path.join(here, "vendor", "wavesurfer.esm.js")).read())
     # client-zip@2.4.5 (MIT) — assembles multiple fetch() Responses into a
     # streamed ZIP Response in the browser, no server-side buffering.
@@ -103,6 +104,10 @@ def main():
     write("assets/tracks.json", json.dumps(build_track_catalog(), ensure_ascii=False))
     write("assets/track-spec.json", json.dumps(build_track_spec_catalog(), ensure_ascii=False))
     write("assets/song-occurrences.json", json.dumps(build_song_occurrences(), ensure_ascii=False))
+    # Share-a-song: code -> deep link, read by site_worker.js for /t/{code}
+    # (plans/share/track-share-plan.md). Sorted so the file only changes when
+    # the archive does.
+    write("assets/track-links.json", json.dumps(build_track_links(), ensure_ascii=False, sort_keys=True))
     write("assets/home-shows.json", json.dumps(build_home_shows(), ensure_ascii=False))
     write("assets/controller-excluded-slugs.json", json.dumps(sorted(CONTROLLER_ENGINE_EXCLUDED_SLUGS)))
     write("index.html", build_home())

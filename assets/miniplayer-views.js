@@ -30,6 +30,13 @@ const RANGE_MAX = 1000;
 export function attachMiniPlayerBar(controller, root, signal) {
   const bar = new MiniPlayerView(root, {
     onClose() { controller.pause(); controller.unmount(bar); },
+    // Share is answered by share.js, imported on the FIRST press rather than
+    // up front: this module ships on nearly every page and must not put one
+    // more asset on all of them (see the import-boundary test) for a control
+    // most visits never touch. A failed import leaves the press a no-op.
+    onShare(item, btn) {
+      import('/assets/share.js').then(({ shareItem }) => shareItem(item, btn)).catch(() => {});
+    },
   });
   controller.mount(bar);
   controller.audioElement.addEventListener('play', () => controller.mount(bar), { signal });
@@ -46,6 +53,12 @@ export const HEIGHT_VAR = '--miniplayer-height';
 const PREV_ICON = '<svg viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2" width="2" height="12"/><polygon points="14,2 14,14 4,8"/></svg>';
 const NEXT_ICON = '<svg viewBox="0 0 16 16" fill="currentColor"><polygon points="2,2 2,14 12,8"/><rect x="12" y="2" width="2" height="12"/></svg>';
 const X_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
+// The three-dots-and-lines share glyph the per-row share button used before
+// the waveform rows retired it (3dc47fb9, 2026-06-13).
+const SHARE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" '
+  + 'stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.6"/>'
+  + '<circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/>'
+  + '<path d="M8.2 13.3l7.6 4.4M15.8 6.3l-7.6 4.4"/></svg>';
 // Identical to playlist-views.js's SHUFFLE_ICON — the same control in two
 // engines-worth of chrome should not draw two different glyphs.
 const SHUFFLE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
@@ -136,7 +149,14 @@ export class MiniPlayerView extends QueueView {
     super(root, opts);
     // Close is a REQUEST, not an action — see the header note.
     this.onClose = typeof opts.onClose === 'function' ? opts.onClose : () => {};
+    // Share hands the CURRENT item and the pressed button to whoever owns the
+    // share UI (attachMiniPlayerBar wires share.js); the bar itself only knows
+    // what is playing. Absent handler: the button still renders and does
+    // nothing -- a dead control is better than a bar missing a slot on one
+    // surface and not another.
+    this.onShare = typeof opts.onShare === 'function' ? opts.onShare : () => {};
     this._currentId = null;
+    this._currentItem = null;
     this._seeking = false;
     this._lastQueueRevision = -1;
     this._lastControlsKey = null;
@@ -154,6 +174,12 @@ export class MiniPlayerView extends QueueView {
       // Close is answered even with no controller attached — it's the one
       // control that must never appear dead.
       if (act === 'close') { this.onClose(); return; }
+      if (act === 'share') {
+        // The item the bar is currently painting (set in _patch), not a fresh
+        // controller read: what the visitor sees is what they mean to share.
+        if (this._currentItem) this.onShare(this._currentItem, b);
+        return;
+      }
       if (!this.controller) return;
       if (act === 'prev') { this._prev(); return; }
       if (act === 'next') { this.controller.next(); return; }
@@ -269,6 +295,7 @@ export class MiniPlayerView extends QueueView {
     if (this._currentId === null) return;   // nothing was ever built
     this.root.innerHTML = '';
     this._currentId = null;
+    this._currentItem = null;
     this._playBtn = this._shuffleBtn = this._prevBtn = this._nextBtn = this._range = null;
     this._timeCur = this._titleEl = this._metaEl = this._totalEl = null;
     this._errorEl = null;
@@ -295,6 +322,7 @@ export class MiniPlayerView extends QueueView {
       + '<button type="button" class="mp-btn mp-shuffle" data-act="shuffle" aria-pressed="false" aria-label="Shuffle">' + SHUFFLE_ICON + '</button>'
       + '<button type="button" class="mp-btn mp-prev" data-act="prev" aria-label="Previous track">' + PREV_ICON + '</button>'
       + '<button type="button" class="mp-btn mp-next" data-act="next" aria-label="Next track">' + NEXT_ICON + '</button>'
+      + '<button type="button" class="mp-btn mp-share" data-act="share" aria-label="Share this song" title="Share this song">' + SHARE_ICON + '</button>'
       + '<button type="button" class="mp-btn mp-close" data-act="close" aria-label="Close player">' + X_SVG + '</button>'
       + '</div>';
     this._playBtn = this.root.querySelector('.mp-play');
@@ -356,6 +384,7 @@ export class MiniPlayerView extends QueueView {
 
   _patch(snapshot) {
     const item = snapshot.currentItem;
+    this._currentItem = item;
     const state = snapshot.state;
     const audio = this.controller ? this.controller.audioElement : null;
     const failure = this._failureKind(snapshot, item);

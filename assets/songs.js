@@ -63,6 +63,10 @@
       durationLabel: o.duration || null,
       peaksKey: null,
       pageUrl: anchor,
+      // Short share link, from the build's code for this performance (see
+      // track_share_url() in sitegen/core.py) -- same absolute form the
+      // server-rendered rows carry.
+      shareUrl: o.code ? "https://renedebos.com/t/" + o.code : null,
       playLabel: songTitle + ", " + o.artist_name + ", " + o.date,
       downloads: { lossless: lossless },
       dropouts: false,
