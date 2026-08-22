@@ -233,8 +233,12 @@ async function runParityPass(browser, allShows, heavyCheckSlugs) {
       const mounted = await page.evaluate(() => ({
         flag: window.PLAYER_ENGINE_MOUNTED, hasBoot: !!window.PLAYER_BOOT,
         viewCount: window.PLAYER_BOOT ? window.PLAYER_BOOT.views.length : 0,
+        // + the mini-player bar, which attachMiniPlayer() pushes onto
+        // handle.views on every page that has the #mini-player root
+        // (2026-08-20); the count read one short for 31 pages until 2026-08-22.
         expectedViewCount: document.querySelectorAll('.track-list [data-item]').length
-          + document.querySelectorAll('.recording-item[data-item]').length,
+          + document.querySelectorAll('.recording-item[data-item]').length
+          + (document.getElementById('mini-player') ? 1 : 0),
       }));
       record(`${path} controller mounted`, mounted.flag === true && mounted.hasBoot,
         `flag=${mounted.flag} views=${mounted.viewCount}`);
@@ -851,7 +855,9 @@ async function runBreakageTests(browser, copyDir, base) {
       await page.locator('.song-occ .play-btn').first().click();
       await page.waitForTimeout(2000);
       const occPlaying = await page.evaluate(() => {
-        const el = document.querySelector('.song-occ .custom-player');
+        // Since 2026-08-21 the occurrence row IS the .custom-player (a
+        // show-style .track-row), not a card wrapping one.
+        const el = document.querySelector('.song-occ.custom-player');
         return el && el._audio ? { found: true, t: el._audio.currentTime, paused: el._audio.paused } : { found: false };
       });
       record('breakage C3: legacy player.js drives the occurrence row (initCustomPlayers fallback)',

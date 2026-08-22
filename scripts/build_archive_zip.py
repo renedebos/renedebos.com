@@ -29,7 +29,7 @@ import sys
 import zipfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from sitegen.core import M, show_zip_entries  # noqa: E402
+from sitegen.core import PUBLIC_SHOWS, show_zip_entries  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WORK_ROOT = os.path.expanduser("~/work/archive-zip")
@@ -54,7 +54,8 @@ def remote_size(r2_key):
     code alone (per CLAUDE.md: rclone uploads of large files can stall)."""
     parent = "/".join(r2_key.split("/")[:-1])
     name = r2_key.split("/")[-1]
-    r = subprocess.run(["rclone", "lsjson", f"{R2}/{parent}"], capture_output=True, text=True)
+    r = subprocess.run(["rclone", "lsjson", f"{R2}/{parent}", "--s3-no-check-bucket"],
+                       capture_output=True, text=True)
     if r.returncode != 0:
         return None
     try:
@@ -79,18 +80,37 @@ def upload_with_retry(local_path, r2_key, attempts=10):
 
 
 def stage_show(show, staging_dir):
+    """Pull exactly the FLACs recordings.json names for this show into a fresh
+    per-show folder, under their ZIP names.
+
+    Exactly, via --files-from: an R2 show prefix can hold orphaned duplicates
+    under superseded filenames (CLAUDE.md's gotcha -- a pre-rename
+    `01 Highway Patrolman.flac` beside the published `01 State Trooper.flac`),
+    and until 2026-08-22 this copied the whole prefix with `--include *.flac`,
+    so those orphans went into the archive ZIP (Codex review, finding 2)."""
     folder, entries = show_zip_entries(show)
     if not entries:
         return folder, []
     r2_folder = os.path.dirname(entries[0]["key"])
     dest_dir = os.path.join(staging_dir, folder)
     os.makedirs(dest_dir, exist_ok=True)
-    run(["rclone", "copy", f"{R2}/{r2_folder}", dest_dir, "--include", "*.flac", "--transfers", "4"])
+    listing = os.path.join(staging_dir, f"{folder}.files-from.txt")
     if not DRY:
+        with open(listing, "w") as fh:
+            fh.write("".join(os.path.basename(e["key"]) + "\n" for e in entries))
+    run(["rclone", "copy", f"{R2}/{r2_folder}", dest_dir, "--files-from", listing,
+         "--s3-no-check-bucket", "--transfers", "4"])
+    if not DRY:
+        os.remove(listing)
+        missing = [e["key"] for e in entries
+                   if not os.path.exists(os.path.join(dest_dir, os.path.basename(e["key"])))]
+        if missing:
+            raise SystemExit(f"{folder}: {len(missing)} named FLAC(s) did not come down from R2, "
+                             f"e.g. {missing[0]!r} -- refusing to zip a partial show")
         for e in entries:
             src = os.path.join(dest_dir, os.path.basename(e["key"]))
             dst = os.path.join(dest_dir, os.path.basename(e["name"]))
-            if src != dst and os.path.exists(src):
+            if src != dst:
                 os.rename(src, dst)
     return folder, entries
 
@@ -102,9 +122,16 @@ def main():
     args = p.parse_args()
     DRY = args.dry_run
 
-    shows = [s for s in M["shows"] if s.get("tracks")]
+    # PUBLIC_SHOWS, not every track-listed show: a hidden show must not reach
+    # the public archive any more than it reaches a page.
+    shows = [s for s in PUBLIC_SHOWS if s.get("tracks")]
     staging = os.path.join(WORK_ROOT, "staging")
     zip_path = os.path.join(WORK_ROOT, ZIP_NAME)
+    # Fresh every run. The staging dir used to persist between builds, so a
+    # track renamed or withdrawn since the last run stayed on disk and was
+    # walked into the next ZIP (finding 2, second half).
+    if not DRY and os.path.isdir(staging):
+        shutil.rmtree(staging)
     os.makedirs(staging, exist_ok=True)
 
     print(f"[1/4] staging curated FLACs from {len(shows)} shows -> {staging}")

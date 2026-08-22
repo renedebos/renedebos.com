@@ -248,7 +248,7 @@ def _curated_playlists_html():
     if not pls:
         return ""
     by_id = {f'{s["slug"]}-{t["num"]:02d}': t
-             for s in M["shows"] for t in (s.get("tracks") or [])
+             for s in PUBLIC_SHOWS for t in (s.get("tracks") or [])
              if isinstance(t.get("num"), int)}
     rows = []
     for pl in pls:

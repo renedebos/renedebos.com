@@ -111,7 +111,9 @@ python3 scripts/audio_process.py verify   <slug> [--drive <path>]          # Pha
 The engine handles the lossless-only rule, the single −20 LUFS target shared by
 every artist (`jerry`/`sean`/`seanjerry`/`mad` — Mad Hannans moved from −16 after
 A/B testing showed no audible gain and it was forcing non-linear processing on
-band masters), two-pass loudnorm, the derived 320k MP3, the audio MD5, output
+band masters), a loudnorm/ebur128 *measurement* pass followed by one fixed
+linear gain (`volume`) at the measured value — loudnorm never renders, see
+Pass 2 below — the derived 320k MP3, the audio MD5, output
 verification (flags TP over ceiling / LUFS drift), and the provenance sidecar —
 and is **resumable** (skips tracks whose outputs exist). The sections below
 document the *why* and the underlying ffmpeg commands the engine runs; reach for

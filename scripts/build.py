@@ -30,6 +30,12 @@ from sitegen._csp_check import check_csp_in_sync  # not in __all__ (a repo check
 def main():
     validate()
     check_orphan_song_dirs()
+    # A hidden track-listed show must reach no public output (song pages,
+    # tracks.json, the sitemap...). Proven against the live generators with a
+    # synthetic hidden show, since recordings.json has none today.
+    herr = check_hidden_show_boundary()
+    if herr:
+        raise SystemExit("\n".join(herr))
     check_rarity_drift()
     check_source_title_drift()
     # Hard failure: site_worker.js and _headers both declare a CSP, and only

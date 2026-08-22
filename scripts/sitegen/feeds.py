@@ -63,7 +63,7 @@ def build_track_catalog():
         for o in s["occ"]:
             song_of[(o["slug"], o["num"])] = s["slug"]
     rows = []
-    for show in sorted([s for s in M["shows"] if s.get("tracks")], key=sort_key):
+    for show in sorted([s for s in PUBLIC_SHOWS if s.get("tracks")], key=sort_key):
         proc = load_processing(show["slug"])
         ptracks = proc.get("tracks", {}) if proc else {}
         var = load_variant(show["slug"])
@@ -141,7 +141,7 @@ def build_track_spec_catalog():
     — named distinctly from tracks.json's `ver`, which is an unrelated md5-prefix
     cache-buster, not a version number."""
     rows = []
-    for show in sorted(M["shows"], key=sort_key):
+    for show in sorted(PUBLIC_SHOWS, key=sort_key):
         if not show.get("tracks"):
             continue
         proc = load_processing(show["slug"])

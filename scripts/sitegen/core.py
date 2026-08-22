@@ -340,8 +340,10 @@ def validate():
     # Curated playlists (top-level "playlists"): every referenced track id
     # must exist, since a typo'd id would silently vanish from the queue
     # (hydrateFromHash drops unknown ids without complaint).
+    # Public tracks only: a curated playlist naming a hidden show's track
+    # would carry it onto /playlist/ -- reject it here, where the id is typed.
     valid_ids = {f'{s["slug"]}-{t["num"]:02d}'
-                 for s in M["shows"] for t in (s.get("tracks") or [])
+                 for s in PUBLIC_SHOWS for t in (s.get("tracks") or [])
                  if isinstance(t.get("num"), int)}
     pl_slugs = set()
     playlists = M.get("playlists", [])
@@ -503,7 +505,11 @@ def collect_songs():
     """Group every curated track across track-listed shows into canonical songs.
     Returns (songs, columns) where columns are the shows (chronological) that make
     up the grid, and each song carries its occurrences with playable stream info."""
-    tl = [s for s in M["shows"] if s.get("tracks")]
+    # PUBLIC_SHOWS, not M["shows"]: a hidden track-listed show used to reach
+    # every song page, song-occurrences.json, tracks.json and the sitemap
+    # through here (Codex review 2026-08-22, finding 8 -- latent, no hidden
+    # show had tracks at the time; check_hidden_show_boundary() keeps it so).
+    tl = [s for s in PUBLIC_SHOWS if s.get("tracks")]
     cols = sorted(tl, key=sort_key)
     groups = {}
     for s in tl:
@@ -570,4 +576,41 @@ def write(path, content):
         f.write(content)
 
 
-__all__ = ['write', 'ARTIST_SHORT', 'TRACK_CODES', 'track_id', 'track_share_url', 'track_link_target', 'build_track_links', 'DURATION_RE', 'LEGACY_KEY_NAMING', 'M', 'PUBLIC_SHOWS', 'ROOT', 'SONG_CANONICAL_OVERRIDE', 'SONG_MANUAL_MERGE', 'SOURCE_LABEL', 'TAG_VOCAB', 'WORKER', '_ARTIST_ORDER', '_duration_sec', 'added_sort_key', 'artist_name', 'check_orphan_song_dirs', 'check_rarity_drift', 'check_source_title_drift', 'check_variant_derivation', 'collect_songs', 'has_variant', 'date_with_subtitle', 'esc', 'iso_duration', 'load_processing', 'load_variant', 'variant_key', 'VARIANTS', 'sanitize_filename', 'show_city', 'show_title', 'show_url', 'show_zip_entries', 'show_zip_folder', 'singles_for_show', 'song_norm', 'song_slug', 'sort_key', 'stamp_added_dates', 'stream_url', 'track_total', 'validate']
+def check_hidden_show_boundary():
+    """Prove, against the live generators, that a hidden track-listed show
+    reaches no public output. recordings.json has no such show today, so the
+    invariant is exercised with a synthetic one pushed into M["shows"] for
+    the duration of the check (PUBLIC_SHOWS is already computed, so it stays
+    out, exactly as a real hidden show would). Returns a list of errors."""
+    from . import feeds  # noqa: E402  (feeds imports core; resolved at call time)
+    from . import fragments  # noqa: E402
+    probe = {
+        "slug": "zz-hidden-probe-1999-01-01", "hidden": True, "artist": "jerry",
+        "venue": "Probe Venue", "venue_short": "Probe", "date": "1999-01-01",
+        "city": "Nowhere", "source": "AUD", "page": None, "added": "2026-08-22",
+        "recordings": [], "tracks": [{"num": 1, "title": "Probe Song Zz", "file": "MP3/Probe/01 Probe Song Zz.mp3",
+                                      "duration": "1:00", "tags": [], "flac": "FLAC/Probe/01 Probe Song Zz.flac"}],
+    }
+    M["shows"].append(probe)
+    errors = []
+    try:
+        needle = probe["slug"]
+        outputs = {
+            "collect_songs()": json.dumps(collect_songs()[0], ensure_ascii=False),
+            "tracks.json": json.dumps(feeds.build_track_catalog(), ensure_ascii=False),
+            "track-spec.json": json.dumps(feeds.build_track_spec_catalog(), ensure_ascii=False),
+            "song-occurrences.json": json.dumps(feeds.build_song_occurrences(), ensure_ascii=False),
+            "search index": json.dumps(feeds.build_search_index(), ensure_ascii=False),
+            "sitemap": feeds.build_sitemap(),
+            "updates list": fragments.updates_list(),
+            "track-links.json": json.dumps(build_track_links()),
+        }
+        for name, text in outputs.items():
+            if needle in text or "Probe Song Zz" in text:
+                errors.append(f"hidden-show boundary: {name} carries the hidden show {needle!r}")
+    finally:
+        M["shows"].remove(probe)
+    return errors
+
+
+__all__ = ['write', 'ARTIST_SHORT', 'check_hidden_show_boundary', 'TRACK_CODES', 'track_id', 'track_share_url', 'track_link_target', 'build_track_links', 'DURATION_RE', 'LEGACY_KEY_NAMING', 'M', 'PUBLIC_SHOWS', 'ROOT', 'SONG_CANONICAL_OVERRIDE', 'SONG_MANUAL_MERGE', 'SOURCE_LABEL', 'TAG_VOCAB', 'WORKER', '_ARTIST_ORDER', '_duration_sec', 'added_sort_key', 'artist_name', 'check_orphan_song_dirs', 'check_rarity_drift', 'check_source_title_drift', 'check_variant_derivation', 'collect_songs', 'has_variant', 'date_with_subtitle', 'esc', 'iso_duration', 'load_processing', 'load_variant', 'variant_key', 'VARIANTS', 'sanitize_filename', 'show_city', 'show_title', 'show_url', 'show_zip_entries', 'show_zip_folder', 'singles_for_show', 'song_norm', 'song_slug', 'sort_key', 'stamp_added_dates', 'stream_url', 'track_total', 'validate']

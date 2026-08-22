@@ -14,16 +14,20 @@ Subcommands
 
   process <input-folder> <output-folder> --target LUFS [--hpf [FREQ]] [--lpf]
           [--notch [FREQ]] [--notch-harmonics N] [--slug SLUG]
-      Phase 2. Two-pass loudnorm to target / -1 dBTP, output mirrors the input
-      container, plus a derived 320k MP3 and an audio MD5 per track. Re-measures
+      Phase 2. One loudnorm/ebur128 MEASUREMENT pass, then one fixed linear
+      gain (`volume`) at the measured value -- loudnorm never renders (workflow
+      v6, WORKFLOW_VERSIONS[6]; the policy is in CLAUDE.md). Output mirrors the
+      input container, plus a derived 320k MP3 and an audio MD5 per track. Re-measures
       the output (Pass 3) and VERIFIES it (flags TP over ceiling or LUFS drift).
       Resumable: skips tracks whose outputs already exist. With --slug, writes
       the provenance sidecar to data/processing/<slug>.json.
 
-  verify <slug> [--drive "gdrive:.../Processed"]
-      Re-read each track's published copy (R2, and Drive if given), recompute the
-      audio MD5, and confirm it matches the provenance sidecar — closing the
-      integrity / drift-detection loop.
+  verify <slug> [--drive "gdrive:.../<Work Folder>/Processed"]
+      Re-read each track's published copy (R2, and with --drive the Drive
+      Processed/ backup, which carries the same filenames), recompute the audio
+      MD5, and confirm it matches the provenance sidecar — closing the
+      integrity / drift-detection loop. A missing Drive file is a failure, not
+      a skip.
 
 Lossless-only, per the workflow: only *.flac / *.wav are processed; the served
 MP3 is always derived from the processed lossless master.
@@ -2126,14 +2130,25 @@ def cmd_process(args):
 
 # ── verify (#8 integrity / drift) ─────────────────────────────────────────────
 
-def r2_md5(key):
-    rc = subprocess.Popen(["rclone", "cat", f"{BUCKET}/{key}", "--s3-no-check-bucket"],
+def remote_md5(remote):
+    """Decoded-audio MD5 of one remote object (rclone cat -> ffmpeg), or ""
+    when rclone could not read it (missing file, bad path). Checked on
+    rclone's exit code: an unreadable object hands ffmpeg an empty stream,
+    whose "MD5" is a perfectly valid-looking hash of nothing."""
+    flags = ["--s3-no-check-bucket"] if remote.startswith("r2:") else []
+    rc = subprocess.Popen(["rclone", "cat", remote, *flags],
                           stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     ff = subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-i", "pipe:0",
                          "-map", "0:a", "-f", "md5", "-"],
                         stdin=rc.stdout, capture_output=True, text=True)
     rc.wait()
+    if rc.returncode != 0:
+        return ""
     return ff.stdout.strip().replace("MD5=", "")
+
+
+def r2_md5(key):
+    return remote_md5(f"{BUCKET}/{key}")
 
 
 def cmd_verify(args):
@@ -2152,11 +2167,18 @@ def cmd_verify(args):
         bad += not ok
         print(f"  track {num}: R2 {'OK ' if ok else 'MISMATCH'} ({got[:8]} vs {want[:8]})")
         if args.drive:
-            # Drive copy: filename mirrors the local processed name; compare by track num.
-            import glob  # noqa
-            print(f"           (drive check: pass {args.drive!r} keys not auto-mapped — "
-                  "skipping unless filename known)")
-    print(f"\n{len(prov['tracks'])} track(s) checked, {bad} mismatch(es).")
+            # The Drive Processed/ backup carries the same filenames publish_show.py
+            # uploaded to R2 (it copies the one local out/ dir to both), so the
+            # track maps by basename. Until 2026-08-22 this branch printed
+            # "skipping" and the command still exited 0 (Codex review, finding 4).
+            dpath = f"{args.drive.rstrip('/')}/{os.path.basename(key)}"
+            dgot = remote_md5(dpath)
+            dok = dgot == want
+            bad += not dok
+            verdict = "OK " if dok else ("MISSING " if not dgot else "MISMATCH")
+            print(f"           Drive {verdict} ({(dgot or '-')[:8]} vs {want[:8]})")
+    print(f"\n{len(prov['tracks'])} track(s) checked, {bad} mismatch(es)"
+          + (" (R2 + Drive)" if args.drive else "") + ".")
     sys.exit(1 if bad else 0)
 
 

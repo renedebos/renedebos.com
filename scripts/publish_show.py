@@ -72,7 +72,10 @@ def run(cmd, **kw):
 
 
 def rclone_lsf(path):
-    r = subprocess.run(["rclone", "lsf", path], capture_output=True, text=True)
+    # R2 needs --s3-no-check-bucket on every operation (CLAUDE.md); Drive
+    # paths must not get it.
+    flags = ["--s3-no-check-bucket"] if path.startswith("r2:") else []
+    r = subprocess.run(["rclone", "lsf", path, *flags], capture_output=True, text=True)
     return [l for l in r.stdout.splitlines() if l] if r.returncode == 0 else []
 
 

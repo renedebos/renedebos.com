@@ -891,9 +891,9 @@ def updates_list():
     # Two kinds of events share the Updates feed, sorted most-recent-first by
     # timestamp: auto-stamped show additions and manual entries (e.g. a later
     # re-normalization pass) listed under the top-level "updates" key.
-    by_slug = {s["slug"]: s for s in M["shows"]}
+    by_slug = {s["slug"]: s for s in PUBLIC_SHOWS}
     events = []  # (sort_ts, slug, date, html)
-    for show in M["shows"]:
+    for show in PUBLIC_SHOWS:
         if show.get("added"):
             ts = show.get("added_ts") or f'{show["added"]}T00:00:00'
             n = len(show["tracks"]) if show.get("tracks") else 0

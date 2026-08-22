@@ -45,11 +45,16 @@ async function handleStream(request, env, url, origin) {
   const file = url.searchParams.get('file');
   if (!file) return new Response('Missing file', { status: 400 });
 
-  // The player only ever streams the lossy MP3 proxies. Refuse lossless keys so
-  // the password-gated WAV/FLAC can't be reassembled from Range requests here,
-  // bypassing /auth + /download.
+  // The player only ever streams the lossy proxies (MP3/, MP3-14/, the
+  // Soundcloud singles: .mp3, one .m4a). An ALLOWLIST of those extensions,
+  // not a denylist of .wav/.flac: until 2026-08-22 the check only refused
+  // lossless audio, so any other password-gated object -- the complete-archive
+  // ZIP that build_archive_zip.py puts under Downloads/ -- could have been
+  // fetched here without passing /auth + /download (Codex review, finding 1;
+  // latent, the ZIP was not in the bucket at the time). Everything gated stays
+  // reachable only through /auth + /download.
   const lower = file.toLowerCase();
-  if (lower.endsWith('.wav') || lower.endsWith('.flac')) {
+  if (!lower.endsWith('.mp3') && !lower.endsWith('.m4a')) {
     return new Response('Forbidden', { status: 403, headers: corsHeaders(origin) });
   }
 
