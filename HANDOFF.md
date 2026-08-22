@@ -6,7 +6,7 @@
 **Nothing is open.** No PRs, no unmerged branches, no stale worktrees. The
 fourth pass's warnings are all resolved: **#48 merged** (the iPhone autoplay
 cue is live), the branch sweep is done, and `main` = `origin/main` =
-`a97a2fb` (late 2026-08-21; this HANDOFF commit sits on top of it). Local branches are `main` plus the deliberate `miniplayer-parked`
+`6852d14` (late 2026-08-21; this HANDOFF commit sits on top of it). Local branches are `main` plus the deliberate `miniplayer-parked`
 archive — the target state. (Two stray remote branches predate this pass and
 were left alone: `claude/hannan-chromebook-droplet-sync-jq0hfb`,
 `cloudflare/workers-autoconfig`.)
@@ -38,7 +38,8 @@ superseded by this.
 
 Thirteen commits, all on `main`, each deployed and then verified against
 production (not just a green Action) — plus a handful more later on
-2026-08-21, listed last below, ending with the song-page row rebuild. The pass had two arcs: a metadata/
+2026-08-21, listed last below, ending with the song-page row rebuild and
+the Select-all toggle. The pass had two arcs: a metadata/
 cleanup arc, and a playback-UX arc that ended with the mini-player bar as the
 site's one persistent player control.
 
@@ -195,6 +196,34 @@ is deliberate.
   Lazy-fetching peaks on activation would be its own change.
 - Before/after screenshots: the "Song Page Rows" artifact in Rene's
   claude.ai/code gallery.
+
+### "Select all" became a true toggle (`6852d14`)
+
+- **Rene's ask (2026-08-21):** after "Select all" picks every track, the
+  button should read "Unselect all" and look selected. It did neither — the
+  handler only ever *added* (a second click was a no-op) and the button had
+  no pressed state.
+- **What shipped:** `track-select.js`'s `syncAllButtons()` now repaints every
+  `.select-all` against the stored selection. All of its `data-target`'s
+  tracks selected → "Unselect all", `aria-pressed="true"`, accent-light fill
+  + accent border (solid accent on hover — the ZIP button's language,
+  `.select-all[aria-pressed="true"]` in site.css); click removes that list's
+  tracks, other pages' picks stay. Partial selection → still "Select all",
+  click adds only what is missing. State is recomputed on load and after
+  every change, so a show you fully selected earlier shows "Unselect all"
+  on return.
+- **`/playlist/` wrinkle:** the queue view rebuilds its button on every
+  controller change, which would have reset the label. `playlist-views.js`
+  calls `window.syncTrackSelection()` after each `_renderRows()` (classic
+  script reached off `window`, like `trackAddButtonHtml`; absent in tests,
+  so the call is guarded).
+- **Verified by script, desktop and phone:** all → 21/21 + bar; untick one →
+  "Select all", 20/21; click → 21/21; click → 0, bar hides; on `/playlist/`
+  removing a queued song leaves "Unselect all" for the rest. 329/329.
+- **Pre-existing, deliberately untouched:** removing a song from the playlist
+  queue does not unselect it, so the floating bar can say "3 songs selected"
+  over a 2-song queue. Surfaced to Rene as a separate decision.
+- Screenshots: the "Select All Toggle" artifact in Rene's claude.ai/code gallery.
 
 ## ✅ Done this session (2026-08-19, fourth pass)
 
