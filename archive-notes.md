@@ -252,3 +252,96 @@ target it was normalised to.
 
 The `comment` is the quickest in-file check of which target a given file was
 rendered to.
+
+---
+
+## Log — 2026-08-22 23:00 PDT — "Black Is The Color", and why §5 is not optional reading
+
+Codex, having read §1–§4 above, proposed a conditional:
+
+> If its chain is just something like `volume=XdB:precision=double`, then the
+> FFmpeg stage cannot have introduced dynamic compression or limiter
+> distortion. Every sample was simply multiplied by the same constant. In
+> that case, any roughness/distortion we're hearing was already present in
+> the Audacity-exported source (or earlier) […] For a bare-volume track, the
+> last question is essentially eliminated.
+
+The reasoning is right. **The premise does not hold for this track**, which
+is exactly why the per-track check matters more than the engine's general
+design.
+
+**Track: `jerry-19-broadway-2001-01-08`, track 02, "Black Is The Color"**
+(the only track 02 of that title in the archive; nine other performances
+exist at other positions).
+
+```json
+"mode":  "sparse-transient-cap",
+"chain": "volume=7.73dB:precision=double,aresample=192000,
+          alimiter=limit=0.841395:attack=1:release=50:level=false:latency=1,
+          aresample=48000",
+"in_lufs": -27.7,  "lufs": -20.03,
+"tp": -1.5,        "mp3_tp": -1.44,
+"lra": 14.2,       "plr": 18.53,
+"max_m": -10.2,    "max_s": -13.1,
+"md5": "81c1493369678d01fed63f204beaf9dc",
+"transient_cap": {
+  "gain_db": 7.73, "limit_db": -1.5,
+  "gr_db": 2.06,   "p95_gr_db": 1.69,
+  "engaged_pct": 0.34, "events": 6, "longest_s": 0.2,
+  "near_peak_pct": 0.7, "in_lra": 14.2
+}
+```
+
+A limiter **did** run, so "did archive processing introduce artifacts" is not
+eliminated here. What the record bounds it to: **2.06 dB** maximum
+instantaneous attenuation, engaged for **0.34%** of the track — about 0.65 s
+of 3:13 — across **6 discrete events**, longest **0.20 s**.
+
+Three readings worth keeping:
+
+- **`in_lra` 14.2 → `lra` 14.2.** The loudness range is unchanged. That is
+  the strongest single indicator the dynamics survived the cap.
+- **The repeated peaks at −1.50 dBFS are the limiter's threshold, not a
+  coincidence.** `TCAP_LIMIT_DB = -1.5`, deliberately 0.5 dB under the
+  archive's −1.0 dBTP ceiling because downsampling from 4× reconstructs some
+  overshoot. An analyst seeing a flat ceiling at exactly −1.50 on a v8 track
+  is seeing the engine, not the tape.
+- **+7.73 dB of gain was applied** (source measured −27.7 LUFS). Any
+  pre-existing overload is 7.7 dB louder in the published file than it was on
+  the source. A quiet source is not a clean one.
+
+**Show context:** soundboard, 24-bit/48 kHz FLAC, `filters: none`, ffmpeg
+7.1.3, workflow v8. Not an audience tape. Of its 30 tracks, 17 are capped and
+the shave runs 1.69 dB to **8.65 dB** (track 8); track 02's 2.06 dB is
+second-lowest, so it is on the gentle end for this show.
+
+### The general lesson, for whoever reads this next
+
+**Do not generalise from the engine's design to a specific file.** §1–§4
+describe what the engine does; only `mode` and `chain` in
+`data/processing/<slug>.json` say what happened to *one track*. 38% of the
+archive has been through a peak limiter (§3's census). Asking for the
+provenance entry first, as Codex did, is the correct move — and the reason
+this document leads with "check the track before assuming that".
+
+### How to settle it rather than infer it
+
+Two tools already exist, and between them they separate the three questions
+Codex correctly identified (was the tape already distorted / did the Audacity
+edits change it / did we):
+
+- **`python3 scripts/split_raw.py "<work folder>"`** materialises the raw,
+  unedited split of a song from the whole-show WAV plus the Audacity
+  `labels.txt` — the signal *before* any hand editing. This answers the first
+  question directly.
+- **`python3 scripts/ab_compare.py <slug> <track>`** re-renders the track
+  from its unprocessed source with the current engine and serves both synced
+  at `http://127.0.0.1:8767/`, with a loudness-over-time chart and a
+  params diff.
+
+For this track the analysis Codex proposed — flat-topped or asymmetric
+segments, harmonic generation at vocal peaks, crest-factor collapse, whether
+distortion tracks amplitude — should be run against the **raw split**, not
+the published FLAC. On the published file, six known limiter events sit in
+the data and would have to be excluded by hand; on the raw split they do not
+exist.
