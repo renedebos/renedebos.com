@@ -78,7 +78,8 @@ def playable_item_attr(*, item_id, kind, stream, title, artist=None, venue=None,
                        date=None, date_display=None, duration_label=None,
                        peaks_key=None, page_url=None, play_label=None,
                        lossless_file=None, lossless_size_mb=None, dropouts=False,
-                       loud_stream=None, share_url=None):
+                       loud_stream=None, share_url=None,
+                       lossless_size_label=None, lossy=None, song=None):
     """Build the `data-item="..."` attribute the shared player reads.
 
     One normalized playable item per playable thing, serialized into the markup
@@ -106,7 +107,24 @@ def playable_item_attr(*, item_id, kind, stream, title, artist=None, venue=None,
         lossless = {"key": lossless_file,
                     "format": lossless_file.rsplit(".", 1)[-1].lower(),
                     "sizeMb": lossless_size_mb,
+                    # The pre-formatted label the password modal shows beside
+                    # the option ("33 MB", "2.13 GB"). dl_button() has always
+                    # carried this as data-size; it only reaches the item now
+                    # because the row overflow menu builds its Download from
+                    # the item and the button it used to read is going away
+                    # (plans/row-menu/row-menu-plan.md task 4).
+                    "sizeLabel": lossless_size_label,
                     "title": lossless_file.split("/")[-1]}
+    # The lossy alternative the modal offers as the second version. Two kinds,
+    # deliberately distinguished -- see dl_button()'s note: "loud" is a curated
+    # track's -14 LUFS render, "mp3" a whole-show recording's 320 kbps stream
+    # proxy, which is NOT re-levelled and must never be labelled as if it were.
+    lossy_out = None
+    if lossy and lossy.get("key"):
+        lossy_out = {"key": lossy["key"],
+                     "name": lossy["key"].split("/")[-1],
+                     "kind": lossy.get("kind") or "loud",
+                     "sizeLabel": lossy.get("sizeLabel")}
     item = {
         "id": item_id,
         "kind": kind,
@@ -133,7 +151,12 @@ def playable_item_attr(*, item_id, kind, stream, title, artist=None, venue=None,
         # pageUrl instead.
         "shareUrl": share_url or None,
         "playLabel": play_label or title,
-        "downloads": {"lossless": lossless},
+        "downloads": {"lossless": lossless, "lossy": lossy_out},
+        # {"url", "plays", "canonical"} for a curated track, None for a
+        # whole-show recording (which is not a song). Feeds the overflow
+        # menu's "All N recordings of this song" -- the one item in that menu
+        # that exists nowhere on the site today. Built by core.song_index().
+        "song": song or None,
         "dropouts": bool(dropouts),
     }
     return f'data-item="{esc(json.dumps(item, ensure_ascii=False))}"'
@@ -395,6 +418,13 @@ def recording_card(title, meta_pairs, badge, file, stream_file=None, play_label=
             page_url=show_url(show),
             play_label=play_label or title,
             lossless_file=file if is_lossless else None,
+            lossless_size_label=size,
+            # "mp3", not "loud": this is the stream proxy, which carries no
+            # gain change at all. Calling it Loud would be a false claim about
+            # the audio (dl_button()'s note).
+            lossy=({"key": stream_file, "kind": "mp3", "sizeLabel": stream_size}
+                   if (is_lossless and stream_file) else None),
+            # No `song`: a whole-show recording is not one.
         )
     return f'''      <div class="recording-item"{item_attr}>
         <div class="recording-meta">
@@ -1037,6 +1067,10 @@ def _song_occ_html(o, song_title):
         play_label=label,
         lossless_file=o.get("flac"),
         lossless_size_mb=o.get("flac_size_mb"),
+        lossless_size_label=fmt_size_mb(o.get("flac_size_mb")),
+        lossy=({"key": o["loud"], "kind": "loud",
+                "sizeLabel": fmt_size_mb(o.get("size_mb"))} if o.get("loud") else None),
+        song=song_index().get(track_id),
         dropouts=False,
         # -14 render, only where one exists for that track. `data-src` on the
         # row below stays the ARCHIVE url on purpose: it is what the legacy
@@ -1260,6 +1294,10 @@ def show_track_row(show, t, *, artist, proc_tracks, var_tracks, has_waves):
     # Password-protected lossless FLAC download when a FLAC exists;
     # otherwise the track is stream-only.
     dl_btns = []
+    # Hoisted out of the dl_button() call so the row's button and the row's
+    # data-item cannot disagree about whether a -14 render exists -- the same
+    # reasoning that already ties both to `vt`.
+    loud_key = variant_key(t["file"]) if vt else None
     if t.get("flac"):
         flac_title = "Download FLAC (password protected)" + (f" · {t['flac_size_mb']} MB" if t.get("flac_size_mb") else "")
         # The -14 key rides along when this track has a variant; the
@@ -1268,7 +1306,7 @@ def show_track_row(show, t, *, artist, proc_tracks, var_tracks, has_waves):
         # download and the player can never disagree about whether a
         # variant exists for this track.
         dl_btns.append(dl_button(t["flac"], title=flac_title,
-                                 loud_file=variant_key(t["file"]) if vt else None,
+                                 loud_file=loud_key,
                                  size=fmt_size_mb(t.get("flac_size_mb")),
                                  # size_mb is the -14 render's size too
                                  # (320 kbps CBR, same audio length);
@@ -1301,6 +1339,12 @@ def show_track_row(show, t, *, artist, proc_tracks, var_tracks, has_waves):
         play_label=f'{t["title"]}, {track_artist}, {date_with_subtitle(show)}',
         lossless_file=t.get("flac"),
         lossless_size_mb=t.get("flac_size_mb"),
+        lossless_size_label=fmt_size_mb(t.get("flac_size_mb")),
+        # size_mb is the -14 render's size too (320 kbps CBR, same length) --
+        # see _loud_zip() for the measurement.
+        lossy=({"key": loud_key, "kind": "loud",
+                "sizeLabel": fmt_size_mb(t.get("size_mb"))} if loud_key else None),
+        song=song_index().get(track_id),
         dropouts=t.get("dropouts"),
         loud_stream=loud_stream,
         share_url=track_share_url(track_id),

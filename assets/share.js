@@ -85,6 +85,34 @@ export function shareItem(item, anchorEl, deps = {}) {
   return 'popover';
 }
 
+// ── dismissal, shared with the row overflow menu ──────────────────────────
+// Outside-click, Escape, and (for anchored things only) scroll/resize. Wired
+// once per document by the caller that owns the element.
+//
+// `closeOnScroll` is a parameter rather than a constant because the two
+// callers genuinely differ: an ANCHORED popover must go away when its anchor
+// scrolls out from under it, while the row menu's bottom sheet is fixed to
+// the viewport and closing it on scroll would fight the finger that opened it
+// (plans/row-menu/row-menu-plan.md §5).
+export function attachDismiss(doc, win, opts) {
+  const isOpen = opts.isOpen;
+  const within = opts.within || [];
+  const onDismiss = opts.onDismiss;
+  const closeOnScroll = opts.closeOnScroll !== false;
+  doc.addEventListener('click', (e) => {
+    if (!isOpen()) return;
+    if (e.target.closest && within.some((sel) => e.target.closest(sel))) return;
+    onDismiss('outside-click');
+  });
+  doc.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isOpen()) onDismiss('escape');
+  });
+  if (closeOnScroll) {
+    win.addEventListener('scroll', () => { if (isOpen()) onDismiss('scroll'); }, true);
+  }
+  win.addEventListener('resize', () => { if (isOpen()) onDismiss('resize'); });
+}
+
 // ── the desktop popover ───────────────────────────────────────────────────
 // One element per document, created on first use; site.css's .share-pop
 // rules (kept from the 2026-06 per-row button) style it.
@@ -99,14 +127,15 @@ function ensurePop(doc, win) {
   pop.setAttribute('aria-label', 'Share this song');
   doc.body.appendChild(pop);
   popDoc = doc;
-  doc.addEventListener('click', (e) => {
-    if (!pop.classList.contains('open')) return;
-    if (e.target.closest && (e.target.closest('.share-pop') || e.target.closest('.mp-share'))) return;
-    closePopover();
+  attachDismiss(doc, win, {
+    isOpen: () => pop.classList.contains('open'),
+    // '.row-menu' is here because the overflow menu's Share item opens this
+    // popover from inside itself: without it, the very click that opened the
+    // popover would reach this dismiss handler, see a target outside
+    // '.share-pop', and close it again in the same tick.
+    within: ['.share-pop', '.mp-share', '.row-menu'],
+    onDismiss: closePopover,
   });
-  doc.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePopover(); });
-  win.addEventListener('scroll', closePopover, true);
-  win.addEventListener('resize', closePopover);
   return pop;
 }
 
@@ -128,21 +157,37 @@ function openPopover(doc, win, nav, anchorEl, url, text) {
     + '<a class="share-mail" href="mailto:?subject=' + enc(text) + '&amp;body=' + enc(url) + '">Email</a>';
   el.querySelector('.share-copy').addEventListener('click', () => copyLink(nav, win, url, el));
   el.classList.add('open');
-  place(el, anchorEl, win);
+  placeNear(el, anchorEl, win);
   const first = el.querySelector('.share-copy');
   if (first && first.focus) first.focus();
 }
 
 // Above the anchor when there is room -- the bar lives at the foot of the
 // viewport, so "above" is the normal case -- else below it.
-function place(el, anchorEl, win) {
+//
+// Exported because the row overflow menu (plans/row-menu/row-menu-plan.md §3)
+// anchors the same way, and the plan is explicit that it should generalise
+// this rather than grow a second copy of the geometry.
+export function placeNear(el, anchorEl, win) {
   if (!anchorEl || !anchorEl.getBoundingClientRect) return;
   const r = anchorEl.getBoundingClientRect();
   const pw = el.offsetWidth || 168, ph = el.offsetHeight || 80;
   const vw = win.innerWidth || 1024, vh = win.innerHeight || 768;
   let left = Math.max(8, Math.min(r.right - pw, vw - pw - 8));
   let top = r.top - ph - 8;
-  if (top < 8) top = Math.min(r.bottom + 8, vh - ph - 8);
+  if (top < 8) top = r.bottom + 8;
+  // Clamp in BOTH directions, not just the below-the-anchor branch.
+  //
+  // The old version only clamped when it fell through to "below", which was
+  // safe while the only caller was the mini-player's two-row popover anchored
+  // to a bar at the foot of the viewport. The row overflow menu is five or six
+  // rows tall and anchors to a row anywhere in a long list, so "above" can run
+  // off the bottom just as easily -- measured on the live page 2026-08-23,
+  // where the menu's last two items were cut off.
+  //
+  // A menu TALLER than the viewport still overflows; that wants a max-height
+  // and internal scrolling, which belongs with the real CSS.
+  top = Math.max(8, Math.min(top, vh - ph - 8));
   el.style.left = left + 'px';
   el.style.top = top + 'px';
 }

@@ -70,6 +70,73 @@ menu is not just a container for what the row already had.
 disagree about which controls a row gets. One menu builder, fed per-row data,
 ends that — and song rows gain a download they never had.
 
+## 2a. Contents, settled 2026-08-23 (supersedes the table in §2)
+
+Rene brought an Amazon Music track sheet as the reference and proposed eight
+items. Four conventions from that sheet were taken wholesale, and they are the
+part worth keeping even if the item list changes again:
+
+- an icon on **every** row, left-aligned, same size;
+- a hairline rule between rows;
+- a trailing chevron on rows that **navigate**, none on rows that **act** — it
+  tells you before you press whether the menu will do something or take you
+  somewhere;
+- "Dismiss" as plain centred text, not a bordered button.
+
+Icons are drawn to match `sitegen/fragments.py`'s existing set (24x24,
+`fill:none`, `stroke:currentColor`, stroke-width 2, round caps) rather than
+lifted from another library — this menu sits on the same page as those glyphs.
+
+### What ships
+
+| # | item | icon | notes |
+|---|---|---|---|
+| 1 | **Download** | download | no sub-label (Rene, 2026-08-23) — the password modal shows format and size before any byte moves, and a second line made this the only two-line row; format stays in the accessible name |
+| 2 | **Add to playlist** | playlist | flips to "Remove from playlist"; state rendered at build time (§7) |
+| 3 | **Share this song** | share | |
+| — | *rule* | | actions above, navigation below |
+| 4 | **View show** | show | chevron; suppressed when already on that show page |
+| 5 | **All N recordings of this song** | song | chevron; no Amazon analogue, and the best thing this archive has that a streaming service does not |
+| 6 | **Recording details** | info | chevron; opens a **second pane**, not an inline block |
+
+### Three decisions behind that list
+
+**Like: dropped (Rene, 2026-08-23).** There are no user accounts — the site is
+static pages, a Worker, R2, and one KV namespace holding playlist short links.
+A Like is therefore either localStorage (private, invisible, gone with site
+data) or KV-backed with an anonymous id (rate limiting, abuse, moderation).
+Either way it needs a "your likes" surface or it is a button with no
+perceptible effect — a feature, not a menu item, and one that overlaps what
+playlists already do here. Not built.
+
+**Play next / Add to queue: parked, not rejected.** `PlaybackController`
+already has `appendQueue()`, `reorder()`, `removeAt()`, so both compose from
+existing primitives — no new architecture. The blocker is that `QueueView` is
+mounted only by `playlist-boot.js` and the mini-player bar, so **a show page
+has no visible queue**: both items would silently mutate something the visitor
+cannot see or reorder. They are additive whenever a visible queue exists (the
+bar is the natural home). That is a bigger UX decision than this menu and
+should be taken on its own terms.
+
+**Recording details is a pane, not an inline block.** Seven rows of provenance
+nearly doubled the menu's height — measured on the live page, where it pushed
+the desktop popover off the bottom of the viewport. Behind a chevron it fixes
+the height *and* matches the reference.
+
+### Two bugs this section cost, both fixed
+
+- **Synchronous pane swaps orphan the clicked item.** Rebuilding the menu
+  inside the click handler detaches the pressed row, so the document-level
+  dismiss handler's `closest('.row-menu')` walks a parentless node, concludes
+  the click was outside, and closes everything — the pane opened and vanished
+  in one tick. Same mechanism as the 2026-08-22 row-click double-fire. Every
+  DOM change now waits for the event to finish; see `defer()`.
+- **`placeNear()` only clamped downwards.** Safe while its only caller was the
+  mini-player's two-row popover anchored to a bar at the foot of the viewport;
+  wrong for a six-row menu anchored to a row anywhere in a long list. Now
+  clamped in both directions. A menu taller than the viewport still needs a
+  max-height and internal scrolling — that belongs with the CSS in task 6.
+
 ## 3. Delivery: sheet on touch, popover on desktop
 
 `share.js` already makes exactly this choice, by pointer type rather than by

@@ -635,6 +635,77 @@ async function checkPlaylistPage(context) {
 // deterministic suites), and that adding it did not cost the phone layout
 // anything -- which is what nearly sank it, and is measured below rather than
 // eyeballed.
+// Download password-modal delegation (plans/row-menu/row-menu-plan.md §4).
+// player.js binds the modal by DELEGATION on document, deliberately not with a
+// load-time querySelectorAll().forEach() snapshot. The failure that guards
+// against is silent: a download button that did not exist at load would get no
+// listener, its click would follow the href to /stream, and the wav-download
+// Worker 403s every .flac there by design -- so the visitor gets a 403 instead
+// of the password modal, nothing throws, and every deterministic suite stays
+// green. Only a real click in a real browser can see it, which is why this
+// lives here and not in test-player-views.mjs.
+async function checkDownloadDelegation(context) {
+  const SHOW = '/shows/jerry-cafe-java-1999-05-27/';
+  const page = await context.newPage();
+  const consoleErrors = [];
+  page.on('console', (m) => { if (m.type() === 'error' && !KNOWN_UNRELATED_CSP_WARNING.test(m.text())) consoleErrors.push(m.text()); });
+  page.on('pageerror', (e) => consoleErrors.push('pageerror: ' + e.message));
+
+  await page.goto(BASE + SHOW, { waitUntil: 'load' });
+  await page.waitForFunction(() => window.PLAYER_ENGINE_MOUNTED === true, null, { timeout: 15000 });
+
+  const modalOpen = () => page.locator('#pwOverlay.open').count();
+  const onShow = () => new URL(page.url()).pathname === SHOW;
+  const dismiss = async () => {
+    if (await modalOpen()) {
+      await page.locator('#pwCancel').click();
+      await page.waitForTimeout(200);
+    }
+  };
+
+  // 1. A row's FLAC -- the ordinary route.
+  await page.locator('.track-row a.download-btn').first().click();
+  await page.waitForTimeout(400);
+  const rowOpen = await modalOpen();
+  record(`${SHOW} a row's download button reaches the password modal`,
+    rowOpen === 1 && onShow(), `open=${rowOpen} url=${page.url()}`);
+  await dismiss();
+
+  // 2. The whole-show ZIP -- a different target type ('batch') through the
+  //    same listener, and a <button> rather than an <a>.
+  await page.locator('.zip-download-btn').first().click();
+  await page.waitForTimeout(400);
+  const zipOpen = await modalOpen();
+  record(`${SHOW} the show ZIP button reaches the password modal`,
+    zipOpen === 1 && onShow(), `open=${zipOpen} url=${page.url()}`);
+  await dismiss();
+
+  // 3. THE GUARD. A download button created after load is exactly what the row
+  //    overflow menu will be. Revert player.js to a per-element binding and
+  //    this is the only assertion here that fails.
+  await page.evaluate(() => {
+    const src = document.querySelector('.track-row a.download-btn');
+    const host = document.createElement('div');
+    host.style.cssText = 'position:fixed;left:0;bottom:0;z-index:99999;background:#fff;padding:8px';
+    const clone = src.cloneNode(true);
+    clone.id = 'injectedDownloadBtn';
+    host.appendChild(clone);
+    document.body.appendChild(host);
+  });
+  await page.locator('#injectedDownloadBtn').click();
+  await page.waitForTimeout(400);
+  const injOpen = await modalOpen();
+  record(`${SHOW} a download button added AFTER load also reaches the modal (delegation guard)`,
+    injOpen === 1 && onShow(),
+    injOpen === 1 ? `url=${page.url()}`
+                  : `modal did not open -- the click followed its href instead (url=${page.url()})`);
+  await dismiss();
+
+  record(`${SHOW} no console errors through the download path`,
+    consoleErrors.length === 0, consoleErrors.join(' | '));
+  await page.close();
+}
+
 async function checkRowShare(context) {
   const SHOW = '/shows/jerry-cafe-java-1999-05-27/';
   {
@@ -1557,6 +1628,15 @@ try {
     await checkSharePage(shareCtx);
     await checkRowShare(shareCtx);
     await shareCtx.close();
+  }
+
+  // Download delegation (plans/row-menu/row-menu-plan.md §4, task 1). Its own
+  // context: this scenario deliberately opens the password modal three times,
+  // and a modal left up by a failing assertion must not leak into another.
+  {
+    const dlCtx = await browser.newContext();
+    await checkDownloadDelegation(dlCtx);
+    await dlCtx.close();
   }
 
   // Loudness variant. Needs its OWN context: check #1 asserts a FRESH profile

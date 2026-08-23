@@ -82,6 +82,7 @@ def main():
     # there, not just dropping this comment.
     write("assets/miniplayer-views.js", open(os.path.join(here, "miniplayer-views.js")).read())
     write("assets/share.js", open(os.path.join(here, "share.js")).read())
+    write("assets/row-menu.js", open(os.path.join(here, "row-menu.js")).read())
     write("assets/wavesurfer.esm.js", open(os.path.join(here, "vendor", "wavesurfer.esm.js")).read())
     # client-zip@2.4.5 (MIT) — assembles multiple fetch() Responses into a
     # streamed ZIP Response in the browser, no server-side buffering.

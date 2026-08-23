@@ -142,6 +142,20 @@ test('shareText reads as a label, and degrades when fields are missing', () => {
   assert.equal(share.shareText({}), 'A song · The Hannan Tapes');
 });
 
+// placeNear() is shared with the row overflow menu, whose popover is three
+// times the height of this one and anchors to a row anywhere in a long list --
+// see its own note about the clipping this caught on the live page 2026-08-23.
+test('placeNear keeps a tall popover inside the viewport', () => {
+  const el = new FakeElement('div');
+  el.offsetWidth = 300; el.offsetHeight = 240;
+  const anchor = new FakeElement('button');
+  anchor._rect = { left: 900, right: 940, top: 760, bottom: 790 };
+  share.placeNear(el, anchor, { innerWidth: 1200, innerHeight: 820 });
+  const top = parseInt(el.style.top, 10);
+  assert.ok(top + 240 <= 820 - 8, `must stay on screen, got top=${top}`);
+  assert.ok(top >= 8, 'and not run off the top either');
+});
+
 let passed = 0, failed = 0;
 for (const t of tests) {
   try {
@@ -156,3 +170,4 @@ for (const t of tests) {
 }
 console.log(`\n${passed}/${passed + failed} passed`);
 if (failed) process.exit(1);
+

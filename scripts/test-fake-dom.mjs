@@ -159,6 +159,16 @@ export class FakeElement {
   // layout, so tests set _rect explicitly on the elements they click.
   getBoundingClientRect() { return this._rect || { left: 0, width: 0, top: 0, height: 0 }; }
   scrollIntoView() { this.scrolledIntoView = true; }
+  // Focus is part of a menu's contract, not decoration: "Escape returns focus
+  // to the trigger" is a testable promise (plans/row-menu/row-menu-plan.md
+  // §5). Walks to the root so document.activeElement tracks, the way a real
+  // one does.
+  focus() {
+    this.focused = true;
+    let n = this;
+    while (n._parent) n = n._parent;
+    if (n && Object.prototype.hasOwnProperty.call(n, 'activeElement')) n.activeElement = this;
+  }
   setAttribute(k, v) { this.attributes[k] = v; }
   getAttribute(k) { return this.attributes[k]; }
   removeAttribute(k) { delete this.attributes[k]; }

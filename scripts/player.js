@@ -676,8 +676,18 @@ modal.addEventListener('click', e => {
   if (e.target === modal && !batchAbort) closeModal();
 });
 
-document.querySelectorAll('a.download-btn').forEach(btn => {
-  btn.addEventListener('click', e => {
+// Delegated on document, deliberately NOT a load-time
+// querySelectorAll().forEach() snapshot. The row overflow menu
+// (plans/row-menu/row-menu-plan.md) builds its Download item on first press,
+// long after this file has run — a per-element binding would simply never
+// reach it. The click would then follow the href to /stream, which the
+// wav-download Worker 403s for every .flac by design, so the visitor gets a
+// 403 instead of the password modal with nothing thrown and every test green.
+// closest() also means the handler survives the icon <svg> inside the button
+// being the actual event target.
+document.addEventListener('click', e => {
+  const btn = e.target.closest('a.download-btn');
+  if (btn) {
     e.preventDefault();
     const fileParam = new URL(btn.href).searchParams.get('file');
     const displayName = btn.getAttribute('download') || decodeURIComponent(fileParam.split('/').pop());
@@ -696,11 +706,11 @@ document.querySelectorAll('a.download-btn').forEach(btn => {
       size: btn.dataset.size || null,
       lossySize: btn.dataset.lossySize || null,
     });
-  });
-});
+    return;
+  }
 
-document.querySelectorAll('.zip-download-btn').forEach(btn => {
-  btn.addEventListener('click', e => {
+  const zipBtn = e.target.closest('.zip-download-btn');
+  if (zipBtn) {
     e.preventDefault();
     if (!window.ZIP_MANIFEST) return;
     // Only one batch at a time — a second click while one's already running
@@ -708,7 +718,7 @@ document.querySelectorAll('.zip-download-btn').forEach(btn => {
     // batchAbort/toast state.
     if (batchAbort) return;
     openPasswordModal({ type: 'batch', manifest: window.ZIP_MANIFEST });
-  });
+  }
 });
 
 // ── hover info tooltip ───────────────────────────────────────────────────────

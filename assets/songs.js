@@ -43,9 +43,15 @@
   // rendered occurrence row — see that function's docstring for the field
   // list. Consumed by itemFromRowElement()/normalizeItem() in song-boot.js,
   // exactly like a show page's rows.
-  function occItemJson(o, songTitle, trackId, anchor, stream, loudStream) {
+  function occItemJson(o, songTitle, trackId, anchor, stream, loudStream, song) {
     var lossless = o.flac ? { key: o.flac, format: "flac", sizeMb: o.flac_size_mb || null,
+      sizeLabel: o.flac_size_mb ? o.flac_size_mb + " MB" : null,
       title: o.flac.split("/").pop() } : null;
+    // The lossy option the password modal offers as the second version. Same
+    // shape and same "loud" vs "mp3" distinction playable_item_attr() emits --
+    // a curated track's is always the -14 render.
+    var lossy = o.loud ? { key: o.loud, name: o.loud.split("/").pop(), kind: "loud",
+      sizeLabel: o.size_mb ? o.size_mb + " MB" : null } : null;
     return JSON.stringify({
       id: trackId,
       kind: "track",
@@ -68,7 +74,11 @@
       // server-rendered rows carry.
       shareUrl: o.code ? "https://renedebos.com/t/" + o.code + "/" : null,
       playLabel: songTitle + ", " + o.artist_name + ", " + o.date,
-      downloads: { lossless: lossless },
+      downloads: { lossless: lossless, lossy: lossy },
+      // {url, plays, canonical} -- the overflow menu's "All N recordings"
+      // item. Passed in rather than derived: song_slug() lives in the build
+      // (see core.song_index()) and must not be re-implemented here.
+      song: song || null,
       dropouts: false,
     });
   }
@@ -84,7 +94,7 @@
   // data-src/data-item ride on the row itself so song-boot.js's PlayerView
   // and the initCustomPlayers() fallback both bind to it exactly as they do
   // to a show page's rows.
-  function occRowHtml(o, songTitle) {
+  function occRowHtml(o, songTitle, song) {
     var label = songTitle + ", " + o.artist_name + ", " + o.date;
     var anchor = o.url + "#track-" + o.num;
     var stream = WORKER + "/stream?file=" + encodeURIComponent(o.file) + (o.ver ? "&v=" + o.ver : "");
@@ -105,7 +115,7 @@
       ["Size", sizes.join(" · ") || "—"],
       ["Process version", o.proc_ver ? "v" + o.proc_ver : "Not yet processed"],
     ]);
-    var itemJson = occItemJson(o, songTitle, trackId, anchor, stream, loudStream);
+    var itemJson = occItemJson(o, songTitle, trackId, anchor, stream, loudStream, song);
     return '<div class="track-row custom-player song-occ" data-src="' + escOcc(stream) + '" data-item="' + escOcc(itemJson) + '">'
       + '<button class="play-btn" aria-label="Play ' + escOcc(label) + '" data-play-label="' + escOcc(label) + '">' + playIcon + "</button>"
       + '<div class="track-main">'
@@ -155,7 +165,10 @@
     loadOccurrences().then(function (data) {
       var entry = data[slug];
       if (!entry) return;
-      container.innerHTML = entry.occ.map(function (o) { return occRowHtml(o, entry.title); }).join("\n");
+      // plays === occ.length by construction (collect_songs() sets it from the
+      // same list), so the count the menu shows cannot drift from the rows.
+      var song = { url: "/songs/" + slug + "/", plays: entry.occ.length, canonical: entry.title };
+      container.innerHTML = entry.occ.map(function (o) { return occRowHtml(o, entry.title, song); }).join("\n");
       revealVariantPick();
       // song-boot.js is the primary engine (same handshake show pages use —
       // see its own header comment); initCustomPlayers() is retained

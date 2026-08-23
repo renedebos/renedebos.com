@@ -569,6 +569,36 @@ def collect_songs():
     songs.sort(key=lambda s: (-s["plays"], s["canonical"].lower()))
     return songs, cols
 
+_SONG_INDEX = None
+
+def song_index():
+    """{track_id: {"url", "plays", "canonical"}} for every curated track.
+
+    The row overflow menu's "All N recordings of this song" item needs a song
+    slug and a play count PER TRACK, and neither is derivable in the browser:
+    song_slug() normalises away parentheticals and a leading "the", the
+    canonical title comes from SONG_MANUAL_MERGE/SONG_CANONICAL_OVERRIDE, and a
+    slug collision gets "-x" appended. Re-deriving that in JS is exactly the
+    kind of duplicated rule this repo has watched drift before, so the build
+    emits the answer instead.
+
+    Memoized: collect_songs() loads every show's processing and variant JSON,
+    so calling it once per row would be quadratic in the size of the archive.
+    """
+    global _SONG_INDEX
+    if _SONG_INDEX is None:
+        songs, _ = collect_songs()
+        idx = {}
+        for s in songs:
+            for o in s["occ"]:
+                idx[track_id(o["slug"], o["num"])] = {
+                    "url": f'/songs/{s["slug"]}/',
+                    "plays": s["plays"],
+                    "canonical": s["canonical"],
+                }
+        _SONG_INDEX = idx
+    return _SONG_INDEX
+
 def iso_duration(mmss):
     """'3:27' -> 'PT3M27S' (ISO-8601 duration); None if unparseable."""
     if not mmss or ":" not in mmss:
@@ -622,4 +652,4 @@ def check_hidden_show_boundary():
     return errors
 
 
-__all__ = ['write', 'ARTIST_SHORT', 'check_hidden_show_boundary', 'TRACK_CODES', 'track_id', 'track_share_url', 'track_link_target', 'build_track_links', 'DURATION_RE', 'LEGACY_KEY_NAMING', 'M', 'PUBLIC_SHOWS', 'ROOT', 'SONG_CANONICAL_OVERRIDE', 'SONG_MANUAL_MERGE', 'SOURCE_LABEL', 'TAG_VOCAB', 'WORKER', '_ARTIST_ORDER', '_duration_sec', 'added_sort_key', 'artist_name', 'check_orphan_song_dirs', 'check_rarity_drift', 'check_source_title_drift', 'check_variant_derivation', 'collect_songs', 'has_variant', 'date_with_subtitle', 'esc', 'iso_duration', 'load_processing', 'load_variant', 'variant_key', 'VARIANTS', 'sanitize_filename', 'show_city', 'show_title', 'show_url', 'show_zip_entries', 'show_zip_folder', 'singles_for_show', 'song_norm', 'song_slug', 'sort_key', 'stamp_added_dates', 'stream_url', 'track_total', 'validate']
+__all__ = ['write', 'ARTIST_SHORT', 'check_hidden_show_boundary', 'TRACK_CODES', 'track_id', 'track_share_url', 'track_link_target', 'build_track_links', 'DURATION_RE', 'LEGACY_KEY_NAMING', 'M', 'PUBLIC_SHOWS', 'ROOT', 'SONG_CANONICAL_OVERRIDE', 'SONG_MANUAL_MERGE', 'SOURCE_LABEL', 'TAG_VOCAB', 'WORKER', '_ARTIST_ORDER', '_duration_sec', 'added_sort_key', 'artist_name', 'check_orphan_song_dirs', 'check_rarity_drift', 'check_source_title_drift', 'check_variant_derivation', 'collect_songs', 'song_index', 'has_variant', 'date_with_subtitle', 'esc', 'iso_duration', 'load_processing', 'load_variant', 'variant_key', 'VARIANTS', 'sanitize_filename', 'show_city', 'show_title', 'show_url', 'show_zip_entries', 'show_zip_folder', 'singles_for_show', 'song_norm', 'song_slug', 'sort_key', 'stamp_added_dates', 'stream_url', 'track_total', 'validate']
