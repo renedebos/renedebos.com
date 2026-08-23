@@ -32,7 +32,12 @@ const COMPOUND = /^[a-zA-Z][\w-]*|#[\w-]+|\.[\w-]+|\[[^\]]+\]/g;
 // side needs faking.
 function addListener(listeners, type, fn, opts) {
   const list = (listeners[type] ||= []);
-  const entry = { fn };
+  // `capture` is recorded, not ignored: propagation below runs capture
+  // listeners root-first and bubble listeners target-first, and the ordering
+  // is load-bearing for at least one production handler (PlayerView's
+  // _onRowClick, which registers with capture precisely so it sees the click
+  // target before a sibling handler can mutate it out of the DOM).
+  const entry = { fn, capture: !!(opts === true || (opts && opts.capture)) };
   const signal = opts && opts.signal;
   if (signal) {
     if (signal.aborted) return;          // never registered, matching real DOM
@@ -43,10 +48,38 @@ function addListener(listeners, type, fn, opts) {
   }
   list.push(entry);
 }
-function dispatchListeners(listeners, type, evt) {
+function dispatchListeners(listeners, type, evt, phase) {
   // Snapshot before iterating: a handler that unmounts/removes another
   // listener for the same event must not skip or double-fire a sibling.
-  (listeners[type] || []).slice().forEach(({ fn }) => fn(evt));
+  (listeners[type] || []).slice().forEach((entry) => {
+    if (phase === 'capture' && !entry.capture) return;
+    if (phase === 'bubble' && entry.capture) return;
+    entry.fn(evt);
+  });
+}
+
+// Real propagation: capture from the root down to the target, then bubble
+// from the target back up. Added 2026-08-22 -- before this, dispatch() fired
+// only the listeners on the element it was called on, so a delegated handler
+// on an ancestor was invisible to every test. That is not a small gap: it is
+// how a play button that fired _onPlayClick TWICE per click (start, then
+// toggle straight back to paused, i.e. rows that would not play) passed the
+// whole suite and was caught by the browser harness instead. A fake that does
+// not propagate cannot test delegation, and this codebase delegates a lot.
+function propagate(target, type, evt) {
+  const path = [];
+  for (let n = target; n; n = n._parent) path.push(n);
+  evt.target = evt.target || target;
+  let stopped = false;
+  evt.stopPropagation = () => { stopped = true; };
+  for (let i = path.length - 1; i >= 0 && !stopped; i--) {
+    evt.currentTarget = path[i];
+    dispatchListeners(path[i]._listeners, type, evt, 'capture');
+  }
+  for (let i = 0; i < path.length && !stopped; i++) {
+    evt.currentTarget = path[i];
+    dispatchListeners(path[i]._listeners, type, evt, 'bubble');
+  }
 }
 
 // Direct property assignment (`style.backgroundImage = ...`) is what the
@@ -103,6 +136,14 @@ export class FakeElement {
   get innerHTML() { return this._rawHTML || ''; }
   set innerHTML(html) {
     this._rawHTML = html;
+    // DETACH the outgoing subtree, as a real browser does. Not bookkeeping:
+    // a node that has been replaced has no parent chain, so closest() from it
+    // returns null. That is the entire mechanism behind the 2026-08-22
+    // row-click double-fire -- the play button's handler replaced its own
+    // innerHTML, orphaning the <svg> that was the click target, and the row's
+    // handler then could not tell the button from empty row space. Without
+    // this line the fake keeps the stale _parent and the bug is untestable.
+    (this.children || []).forEach((c) => { if (c._parent === this) c._parent = null; });
     this.children = parseHTMLFragment(html);
     this.children.forEach((c) => { c._parent = this; });
   }
@@ -122,7 +163,22 @@ export class FakeElement {
   getAttribute(k) { return this.attributes[k]; }
   removeAttribute(k) { delete this.attributes[k]; }
   addEventListener(type, fn, opts) { addListener(this._listeners, type, fn, opts); }
-  dispatch(type, evt = {}) { dispatchListeners(this._listeners, type, evt); }
+  // Propagates for real (see propagate()): capture down, then bubble up.
+  // A test that wants only this element's own listeners can still say
+  // dispatchSelf().
+  dispatch(type, evt = {}) { propagate(this, type, evt); }
+  dispatchSelf(type, evt = {}) {
+    evt.target = evt.target || this;
+    evt.currentTarget = this;
+    dispatchListeners(this._listeners, type, evt, 'capture');
+    dispatchListeners(this._listeners, type, evt, 'bubble');
+  }
+  // Real DOM contains() is inclusive of the node itself, and false for a
+  // detached node -- both properties the row-click guard depends on.
+  contains(el) {
+    for (let n = el; n; n = n._parent) if (n === this) return true;
+    return false;
+  }
   querySelector(sel) { return this.querySelectorAll(sel)[0] || null; }
   querySelectorAll(sel) {
     // Descendant combinators only — that's all these modules use
@@ -141,7 +197,20 @@ export class FakeElement {
     }
     return name === 'id' ? this.id : this.attributes[name];
   }
+  // A selector LIST ("a, button, .ws-wave") matches if ANY branch does --
+  // ordinary CSS, and CompactPlayerView's ROW_CLICK_EXEMPT is one. Added
+  // 2026-08-22: before this, a list was fed to _matchesCompound() whole and
+  // AND-ed, so it could never match anything and closest() silently returned
+  // null. A fake that quietly disagrees with the browser is worse than one
+  // that throws -- see HANDOFF's note on the assets-binding fake.
+  //
+  // Split on plain commas: no selector in this repo has a comma inside an
+  // attribute value, and pretending to parse that properly would be more
+  // fiction than the rest of this file already is.
   _matches(sel) {
+    return String(sel).split(',').some(part => this._matchesCompound(part.trim()));
+  }
+  _matchesCompound(sel) {
     const parts = String(sel).match(COMPOUND) || [];
     if (!parts.length) return false;
     return parts.every(p => {

@@ -793,6 +793,46 @@ async function checkSharePage(context) {
   record(`${url}: no console errors`, consoleErrors.length === 0, consoleErrors.join(' | '));
   await page.close();
 
+  // Tapping the row plays it (2026-08-22). Asserted with a real touch tap on
+  // a phone-sized context, on BOTH row shapes, because the first version of
+  // this behaviour lived on the wrong class and did nothing on song pages
+  // while every unit test stayed green.
+  const touch = await context.browser().newContext({
+    viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true,
+  });
+  try {
+    for (const [label, path, boot, rowSel, tapSel] of [
+      ['show page', '/shows/jerry-cafe-java-1999-05-27/', 'PLAYER_BOOT', '.track-row', '.track-title'],
+      ['song page', '/songs/truck/', 'SONG_BOOT', '.song-occ', '.song-occ-where'],
+    ]) {
+      const tp = await touch.newPage();
+      await tp.goto(BASE + path, { waitUntil: 'load' });
+      await tp.waitForFunction(() => window.PLAYER_ENGINE_MOUNTED === true, null, { timeout: 15000 });
+      await tp.locator(rowSel).nth(2).locator(tapSel).tap();
+      await tp.waitForTimeout(2500);
+      const st = await tp.evaluate((b) => ({ state: window[b].controller.state }), boot);
+      record(`${label}: a touch tap on the row's text plays it`,
+        st.state === 'playing', JSON.stringify(st));
+      await tp.close();
+    }
+
+    // ...and the whole-show card is deliberately NOT one.
+    const hp = await touch.newPage();
+    await hp.goto(BASE + '/shows/jerry-cafe-java-1999-05-27/', { waitUntil: 'load' });
+    await hp.waitForFunction(() => window.PLAYER_ENGINE_MOUNTED === true, null, { timeout: 15000 });
+    const heroTitle = hp.locator('.recording-item').first().locator('.rec-title, h3').first();
+    if (await heroTitle.count()) {
+      await heroTitle.tap();
+      await hp.waitForTimeout(1200);
+    }
+    const heroState = await hp.evaluate(() => window.PLAYER_BOOT.controller.state);
+    record('a whole-show recording card does NOT play on a body tap',
+      heroState === 'idle', `state=${heroState}`);
+    await hp.close();
+  } finally {
+    await touch.close();
+  }
+
   // An unknown code must fail visibly rather than land on a plausible song.
   // Followed to the END, not checked one hop in: in production the Worker
   // normalises /t/abcdef to /t/abcdef/ before anything knows whether that

@@ -31,7 +31,7 @@ globalThis.document = {
 globalThis.getComputedStyle = () => ({ getPropertyValue: () => '' });
 globalThis.window = { devicePixelRatio: 1 };
 
-const { CompactPlayerView, HeroPlayerView, itemFromRowElement } = await loadPlayerViews();
+const { PlayerView, CompactPlayerView, HeroPlayerView, itemFromRowElement } = await loadPlayerViews();
 
 // ── fixtures mirroring the real generated markup ───────────────────────────
 function trackRow({ waveform = false, num = 1, duration = '3:42' } = {}) {
@@ -44,6 +44,10 @@ function trackRow({ waveform = false, num = 1, duration = '3:42' } = {}) {
   // set it — which is exactly why _render()'s early-return-when-never-active
   // (Finding #1) is safe to skip that redundant initial write.
   btn.setAttribute('aria-label', `Play ${btn.dataset.playLabel}`);
+  // The real button ships with an <svg> icon inside it, and that svg -- not
+  // the button -- is what a click actually targets. It matters: _render()
+  // swaps the button's innerHTML, orphaning it mid-dispatch.
+  btn.innerHTML = '<svg><polygon/></svg>';
   row.appendChild(btn);
   row.appendChild(new FakeElement('span', ['track-num']));
   if (waveform) row.appendChild(new FakeElement('div', ['ws-wave']));
@@ -56,6 +60,14 @@ function trackRow({ waveform = false, num = 1, duration = '3:42' } = {}) {
     range.max = 1000;
     row.appendChild(range);
   }
+  // The inert parts a tap should now play from, plus the interactive ones it
+  // must not (CompactPlayerView.ROW_CLICK_EXEMPT).
+  const title = new FakeElement('span', ['track-title']);
+  title.textContent = `Song ${num}`;
+  row.appendChild(title);
+  row.appendChild(new FakeElement('a', ['download-btn']));
+  row.appendChild(new FakeElement('a', ['track-share']));
+  row.appendChild(new FakeElement('button', ['track-add']));
   return row;
 }
 
@@ -122,6 +134,198 @@ test('a compact row renders play/pause/loading icons with track-specific aria-la
     assert.equal(c.state, 'playing');
     assert.match(btn.getAttribute('aria-label'), /^Pause Song 1,/);
     assert.equal(row.classList.contains('playing'), true);
+  } finally { c.destroy(); }
+});
+
+// ── tapping the row itself plays it ───────────────────────────────────────
+// Rene, 2026-08-22, on a phone: the 36px play button was the only target, and
+// the title -- the largest thing in the row -- did nothing at all, its info
+// card being bound to mouseover in player.js. See CompactPlayerView's
+// _onRowClick.
+
+test('tapping the title plays the row', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    const row = trackRow();
+    const it = item('t1');
+    c.mount(new CompactPlayerView(row, it, { queueItems: [it], queueIndex: 0 }));
+    const title = row.querySelector('.track-title');
+    row.dispatch('click', { target: title });
+    await tick();
+    assert.equal(c.state, 'playing');
+    assert.equal(c.currentIndex, 0);
+  } finally { c.destroy(); }
+});
+
+test('tapping the time label and the track number play it too', async () => {
+  for (const sel of ['.time-label', '.track-num']) {
+    const audio = new FakeAudio();
+    const c = new PlaybackController({ audio, mediaSession: false });
+    try {
+      const row = trackRow();
+      const it = item('t1');
+      c.mount(new CompactPlayerView(row, it, { queueItems: [it], queueIndex: 0 }));
+      row.dispatch('click', { target: row.querySelector(sel) });
+      await tick();
+      assert.equal(c.state, 'playing', `${sel} starts playback`);
+    } finally { c.destroy(); }
+  }
+});
+
+test('tapping a playing row pauses it, exactly as its play button does', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    const row = trackRow();
+    const it = item('t1');
+    c.mount(new CompactPlayerView(row, it, { queueItems: [it], queueIndex: 0 }));
+    row.dispatch('click', { target: row.querySelector('.track-title') });
+    await tick();
+    assert.equal(c.state, 'playing');
+    row.dispatch('click', { target: row.querySelector('.track-title') });
+    await tick();
+    assert.equal(c.state, 'paused', 'a second tap toggles, rather than doing nothing');
+  } finally { c.destroy(); }
+});
+
+test('the row handler never double-fires with the play button', async () => {
+  // The button has its own listener AND the click propagates through the row.
+  // Without the exemption that is start-then-toggle: one tap that leaves the
+  // track paused, i.e. a play button that does not play.
+  //
+  // Dispatched on the BUTTON and allowed to propagate for real -- the whole
+  // point. An earlier version of this test fired on the button and the row
+  // separately, which modelled propagation as two independent events and so
+  // could not see the ordering bug at all. It passed while production was
+  // firing _onPlayClick twice per click.
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    const row = trackRow();
+    const it = item('t1');
+    const view = new CompactPlayerView(row, it, { queueItems: [it], queueIndex: 0 });
+    c.mount(view);
+    let calls = 0;
+    const orig = view._onPlayClick.bind(view);
+    view._onPlayClick = () => { calls++; return orig(); };
+    const btn = row.querySelector('.play-btn');
+    // Target the ICON inside the button, as a real click does -- _render()
+    // replaces the button's innerHTML and orphans it before the event
+    // reaches the row, which is what defeats a bubble-phase exemption.
+    const icon = btn.children[0];
+    icon.dispatch('click');
+    await tick();
+    assert.equal(calls, 1, 'exactly ONE _onPlayClick per button press');
+    assert.equal(c.state, 'playing', 'one tap on the button leaves it PLAYING');
+  } finally { c.destroy(); }
+});
+
+test('a click whose target was removed mid-dispatch does not play the row', async () => {
+  // The real mechanism behind the double-fire, kept as its own test because
+  // it is subtle and entirely invisible in source: the play button's handler
+  // calls _render(), which replaces the button's innerHTML, so the <svg> that
+  // WAS the click target is detached before the event reaches the row. A
+  // detached node has no parent chain, so closest() finds nothing and the
+  // button reads as inert row space. Capture-phase registration prevents it;
+  // this asserts the guard behind it too.
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    const row = trackRow();
+    const it = item('t1');
+    const view = new CompactPlayerView(row, it, { queueItems: [it], queueIndex: 0 });
+    c.mount(view);
+    const orphan = new FakeElement('svg');   // never attached to the row
+    row.dispatch('click', { target: orphan });
+    await tick();
+    assert.equal(c.state, 'idle',
+      'a target we cannot place in the row must not be treated as inert space');
+  } finally { c.destroy(); }
+});
+
+test("the row's own controls and links are not play targets", async () => {
+  for (const sel of ['.download-btn', '.track-share', '.track-add', '.progress-range']) {
+    const audio = new FakeAudio();
+    const c = new PlaybackController({ audio, mediaSession: false });
+    try {
+      const row = trackRow();
+      const it = item('t1');
+      c.mount(new CompactPlayerView(row, it, { queueItems: [it], queueIndex: 0 }));
+      row.dispatch('click', { target: row.querySelector(sel) });
+      await tick();
+      assert.equal(c.state, 'idle', `${sel} must not start playback`);
+    } finally { c.destroy(); }
+  }
+});
+
+test('the waveform stays a seek surface, not a play target', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    const row = trackRow({ waveform: true });
+    const it = item('t1');
+    c.mount(new CompactPlayerView(row, it, { queueItems: [it], queueIndex: 0 }));
+    const wave = row.querySelector('.ws-wave');
+    // Its own handler owns this click; the row handler must keep out of it or
+    // a seek would also be a play-from-the-start.
+    row.dispatch('click', { target: wave });
+    await tick();
+    assert.equal(c.state, 'idle', 'the row handler ignores the waveform');
+  } finally { c.destroy(); }
+});
+
+test('finishing a text selection does not play the row', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    const row = trackRow();
+    const it = item('t1');
+    c.mount(new CompactPlayerView(row, it, { queueItems: [it], queueIndex: 0 }));
+    // A long-press select on a phone, or a click-drag on desktop, ends with a
+    // click on the row.
+    const doc = row.ownerDocument || (row.ownerDocument = {});
+    doc.defaultView = { getSelection: () => ({ isCollapsed: false, toString: () => 'Song 1' }) };
+    row.dispatch('click', { target: row.querySelector('.track-title') });
+    await tick();
+    assert.equal(c.state, 'idle', 'selecting a title is not a request to play it');
+  } finally { c.destroy(); }
+});
+
+test('a bare PlayerView row is a play target too — song pages mount one', async () => {
+  // The gap this test exists for: the first version of _onRowClick lived on
+  // CompactPlayerView, every test here mounted a CompactPlayerView, and the
+  // suite was green while song pages and /songs/ did nothing at all -- they
+  // mount `new PlayerView(el, item)` (song-boot.js), which is a row by
+  // default. Found by tapping a real song page, not by any assertion.
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    const row = trackRow();
+    const view = new PlayerView(row, item('t1'));
+    assert.equal(view.density, 'compact', 'a bare PlayerView IS a row -- that default is the point');
+    c.mount(view);
+    row.dispatch('click', { target: row.querySelector('.track-title') });
+    await tick();
+    assert.equal(c.state, 'playing');
+  } finally { c.destroy(); }
+});
+
+test('a whole-show recording card is NOT a play target (hero, not a row)', async () => {
+  const audio = new FakeAudio();
+  const c = new PlaybackController({ audio, mediaSession: false });
+  try {
+    const card = heroCard();
+    const it = item('r1');
+    c.mount(new HeroPlayerView(card, it));
+    // Several inches of title, badges and description; turning all of it into
+    // one button would start a 90-minute file on a stray tap.
+    const title = card.querySelector('.rec-title') || card.querySelector('.time-label');
+    if (title) {
+      card.dispatch('click', { target: title });
+      await tick();
+    }
+    assert.equal(c.state, 'idle');
   } finally { c.destroy(); }
 });
 

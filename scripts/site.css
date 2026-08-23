@@ -475,6 +475,12 @@ main {
 }
 .track-group-head:first-child { border-top: none; }
 .track-group-head .group-label-bare { margin: 0; }
+/* The whole row is a play target (CompactPlayerView's _onRowClick, 2026-08-22)
+   -- the hover tint already implied it, this states it. The row's real
+   controls carry their own cursors and are excluded from the handler; the
+   waveform keeps `cursor: pointer` for seeking, which happens to read the
+   same. */
+.track-row { cursor: pointer; }
 .track-row:hover { background: var(--accent-light); }
 .track-row:hover .track-title { color: var(--accent); }
 /* The active row. `.is-active` means "this is the current item" (playing OR

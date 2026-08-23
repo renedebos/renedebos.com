@@ -78,6 +78,43 @@ export class PlayerView {
       this.btn.addEventListener('click', () => this._onPlayClick(), { signal });
     }
 
+    // The ROW is a play target, not just its 36px button (2026-08-22, Rene:
+    // "the only way to play the song is to press the play button ... likely
+    // easier for the user that pressing on the title and/or the time will
+    // execute a play command as well").
+    //
+    // Wider than asked, deliberately: one rule -- "tapping the row plays it,
+    // except where something else already happens" -- beats special cases for
+    // the title and the time, and it is what every music app trains a thumb
+    // to expect. The title was the worst offender, being both the largest
+    // thing in the row and completely inert on touch: its info card is bound
+    // to mouseover/mouseout in player.js, so a tap did nothing at all.
+    //
+    // Gated on `density`, which is exactly the row-versus-card distinction
+    // this needs and already exists: 'compact' covers a show page's track row
+    // (CompactPlayerView), a song page's occurrence row and /songs/'s lazily
+    // inserted ones (song-boot.js mounts a bare PlayerView, which defaults to
+    // compact -- that default is why this must live here and not on
+    // CompactPlayerView, where the first version of it missed song pages
+    // entirely). 'hero' is a "Full Recording" card: several inches of title,
+    // badges and description, where turning the whole surface into one button
+    // would start a 90-minute file on a stray tap.
+    //
+    // Delegated from the root rather than bound to each part, so a row whose
+    // markup grows a new inert element gets the behaviour for free.
+    if (this.density === 'compact') {
+      // CAPTURE, not bubble. On the way up, the exemption below cannot see
+      // what was clicked: the play button's own handler has already run,
+      // _render() has replaced its innerHTML with the pause icon, and the
+      // <svg> that WAS e.target is detached — so closest() walks a parentless
+      // node and returns null, the button looks like inert row space, and one
+      // tap becomes start-then-toggle, i.e. a row that refuses to play.
+      // Capture runs root-first, before anything can mutate the target out of
+      // the DOM. (Measured 2026-08-22: _onPlayClick fired twice per click on
+      // bubble, once on capture.)
+      this.root.addEventListener('click', (e) => this._onRowClick(e), { signal, capture: true });
+    }
+
     if (this.range) {
       // A native range fires 'input' for drag, click, and arrow keys alike, so
       // one handler covers mouse, touch, and keyboard seeking.
@@ -133,6 +170,34 @@ export class PlayerView {
   }
 
   // ── input ──
+  // Everything in a row that already means something on click. What is left --
+  // title, track number, time label, the artist chip's surroundings, the gaps
+  // between them -- plays. `.play-btn` is covered by `button` but named anyway,
+  // because the reason it must be excluded is a different one: it has its OWN
+  // handler, and letting the click bubble here as well would call
+  // _onPlayClick twice (start, then immediately toggle straight back to
+  // paused).
+  static ROW_CLICK_EXEMPT = '.play-btn, button, a, input, select, textarea, .ws-wave';
+
+  _onRowClick(e) {
+    if (!e || !e.target || !e.target.closest) return;
+    // Defence in depth behind the capture-phase registration above: if the
+    // target is not in this row's tree we cannot tell what was clicked, so
+    // the safe answer is to do nothing rather than to play. A detached node
+    // (see the comment at the listener) reads exactly like inert row space.
+    if (!this.root.contains || !this.root.contains(e.target)) return;
+    if (e.target.closest(PlayerView.ROW_CLICK_EXEMPT)) return;
+    // Finishing a text selection is not a request to play. A long-press select
+    // on a phone and a click-drag across a title on desktop both end with a
+    // click event on the row.
+    try {
+      const win = this.root.ownerDocument && this.root.ownerDocument.defaultView;
+      const sel = win && win.getSelection && win.getSelection();
+      if (sel && !sel.isCollapsed && String(sel).length) return;
+    } catch (err) { /* no Selection API here -- fall through and play */ }
+    this._onPlayClick();
+  }
+
   _onPlayClick() {
     const c = this.controller;
     if (!c) return;
