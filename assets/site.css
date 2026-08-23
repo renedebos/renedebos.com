@@ -2326,21 +2326,22 @@ a.artist-chip:hover { filter: brightness(1.08); }
 }
 .mp-btn:hover { background: var(--player-accent); color: var(--player-surface); }
 .mp-btn svg { width: 14px; height: 14px; }
-/* Prev/next/close are secondary to play: same outline shape, hairline border,
-   and they tint rather than fill on hover so the play button stays the one
-   emphatic control. */
-.mp-shuffle, .mp-prev, .mp-next, .mp-share, .mp-close {
+/* Prev/next/menu/close are secondary to play: same outline shape, hairline
+   border, and they tint rather than fill on hover so the play button stays the
+   one emphatic control. .mp-menu joined this group on 2026-08-23 -- it was
+   added to the bar outside it and drew 2px larger than its neighbours. */
+.mp-shuffle, .mp-prev, .mp-next, .mp-menu, .mp-close {
   width: 30px;
   height: 30px;
   border-color: var(--player-border);
   color: var(--player-muted);
 }
-.mp-shuffle:hover, .mp-prev:hover, .mp-next:hover, .mp-share:hover, .mp-close:hover {
+.mp-shuffle:hover, .mp-prev:hover, .mp-next:hover, .mp-menu:hover, .mp-close:hover {
   background: transparent;
   border-color: var(--player-accent);
   color: var(--player-accent);
 }
-.mp-shuffle svg, .mp-prev svg, .mp-next svg, .mp-share svg, .mp-close svg { width: 12px; height: 12px; }
+.mp-shuffle svg, .mp-prev svg, .mp-next svg, .mp-menu svg, .mp-close svg { width: 12px; height: 12px; }
 /* Shuffle on — the same filled-solid language as the playlist card's
    .pl-btn[aria-pressed] and the track-add toggle, in --player-* terms. */
 .mp-shuffle[aria-pressed="true"],
@@ -2414,8 +2415,8 @@ a.artist-chip:hover { filter: brightness(1.08); }
      .ws-track rows at this breakpoint. */
   .mp-btn { width: 44px; height: 44px; }
   .mp-btn svg { width: 15px; height: 15px; }
-  .mp-shuffle, .mp-prev, .mp-next, .mp-share, .mp-close { width: 38px; height: 38px; }
-  .mp-shuffle svg, .mp-prev svg, .mp-next svg, .mp-share svg, .mp-close svg { width: 14px; height: 14px; }
+  .mp-shuffle, .mp-prev, .mp-next, .mp-menu, .mp-close { width: 38px; height: 38px; }
+  .mp-shuffle svg, .mp-prev svg, .mp-next svg, .mp-menu svg, .mp-close svg { width: 14px; height: 14px; }
   /* Tighter padding and gaps buy the title back roughly 16px of a 320px
      viewport, where four buttons and two fixed gaps otherwise leave it around
      eleven characters before the ellipsis. Measured, not guessed. */

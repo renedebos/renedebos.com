@@ -785,48 +785,15 @@ test('FakeAudio models the two rules the real bugs depended on', async () => {
 // ── runner ─────────────────────────────────────────────────────────────
 let failed = 0;
 // ── share ──────────────────────────────────────────────────────────────────
-// The bar only hands the current item and the pressed button to opts.onShare;
-// share.js (lazily imported by attachMiniPlayerBar) owns the sheet/popover.
-test('the share button renders in the controls and hands the CURRENT item to onShare', () => {
+// Sharing is no longer a button on the bar -- it is an item inside the
+// overflow menu (2026-08-23). The bar carrying a share button AND a menu
+// containing "Share this song" was the duplication the menu exists to remove.
+test('the bar has no share button of its own any more', () => {
   const c = makeController();
-  const calls = [];
-  const { root } = mount(c, { onShare: (item, btn) => calls.push([item, btn]) });
-  c.setQueue([item('a', { shareUrl: 'https://renedebos.com/t/abc123' }), item('b')], { startIndex: 0 });
-  const btn = root.querySelector('.mp-share');
-  assert.ok(btn, 'a .mp-share button is part of the bar');
-  assert.equal(btn.getAttribute('aria-label'), 'Share this song');
-  root.dispatch('click', { target: btn });
-  assert.equal(calls.length, 1);
-  assert.equal(calls[0][0].id, 'a');
-  assert.equal(calls[0][0].shareUrl, 'https://renedebos.com/t/abc123', 'shareUrl survives normalizeItem');
-  assert.equal(calls[0][1], btn);
-  // After advancing, the handler sees the NEW current item, not the first.
-  c.next();
-  root.dispatch('click', { target: root.querySelector('.mp-share') });
-  assert.equal(calls.length, 2);
-  assert.equal(calls[1][0].id, 'b');
-  c.destroy();
-});
-
-test('without an onShare handler the share button is inert, never a throw', () => {
-  const c = makeController();
-  const { root } = mount(c);
+  const { root } = mount(c, {});
   c.setQueue([item('a')], { startIndex: 0 });
-  assert.doesNotThrow(() => root.dispatch('click', { target: root.querySelector('.mp-share') }));
-  c.destroy();
-});
-
-// This file ships on nearly every page, so what it pulls in at LOAD is a
-// budget question, not a style one. The assertion used to check only that the
-// dynamic import was present -- which the name already promised more than, so
-// it now also checks that neither module is reached statically.
-test('share.js and row-menu.js are reached only by dynamic imports on press, never static ones', () => {
-  const src = readFileSync(new URL('./miniplayer-views.js', import.meta.url), 'utf8');
-  assert.ok(src.includes("import('/assets/share.js')"), 'share.js is imported lazily');
-  assert.ok(src.includes("import('/assets/row-menu.js')"), 'row-menu.js is imported lazily');
-  const staticImports = src.match(/^\s*import\s[^(]*from\s+['"][^'"]+['"]/gm) || [];
-  const leaked = staticImports.filter((l) => /share\.js|row-menu\.js/.test(l));
-  assert.deepEqual(leaked, [], 'neither may be a static import');
+  assert.equal(root.querySelectorAll('.mp-share').length, 0);
+  assert.ok(root.querySelector('.mp-menu'), 'the menu is what carries sharing now');
 });
 
 test('the overflow trigger renders in the controls and hands the CURRENT item to onMenu', () => {

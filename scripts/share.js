@@ -133,7 +133,7 @@ function ensurePop(doc, win) {
     // popover from inside itself: without it, the very click that opened the
     // popover would reach this dismiss handler, see a target outside
     // '.share-pop', and close it again in the same tick.
-    within: ['.share-pop', '.mp-share', '.row-menu'],
+    within: ['.share-pop', '.row-menu'],
     onDismiss: closePopover,
   });
   return pop;

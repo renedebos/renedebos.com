@@ -30,14 +30,18 @@ const RANGE_MAX = 1000;
 export function attachMiniPlayerBar(controller, root, signal) {
   const bar = new MiniPlayerView(root, {
     onClose() { controller.pause(); controller.unmount(bar); },
-    // Share is answered by share.js, imported on the FIRST press rather than
-    // up front: this module ships on nearly every page and must not put one
-    // more asset on all of them (see the import-boundary test) for a control
-    // most visits never touch. A failed import leaves the press a no-op.
-    onShare(item, btn) {
-      import('/assets/share.js').then(({ shareItem }) => shareItem(item, btn)).catch(() => {});
-    },
-    // The overflow menu, on the same lazy terms as share above. specsForItem()
+    // The overflow menu, imported on the FIRST press rather than up front:
+    // this module ships on nearly every page and must not put one more asset
+    // on all of them (see the import-boundary test) for a control most visits
+    // never touch. A failed import leaves the press a no-op.
+    //
+    // Sharing used to be its own button here. It moved INSIDE this menu on
+    // 2026-08-23, for the same reason the rows lost their three controls: a
+    // bar carrying a share button and a menu containing "Share this song" is
+    // the duplication the menu exists to remove. share.js is still reached on
+    // first press, now through row-menu.js's own import of it.
+    //
+    // specsForItem()
     // rather than specsForRow(): the bar paints an item and has no row -- and
     // on a /t/ share page or /playlist/ there may be no row for it anywhere on
     // the page, which that function handles by deriving the provenance from
@@ -74,12 +78,6 @@ const X_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke
 const MORE_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">'
   + '<circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/>'
   + '<circle cx="19" cy="12" r="1.9"/></svg>';
-// The three-dots-and-lines share glyph the per-row share button used before
-// the waveform rows retired it (3dc47fb9, 2026-06-13).
-const SHARE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" '
-  + 'stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.6"/>'
-  + '<circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/>'
-  + '<path d="M8.2 13.3l7.6 4.4M15.8 6.3l-7.6 4.4"/></svg>';
 // Identical to playlist-views.js's SHUFFLE_ICON — the same control in two
 // engines-worth of chrome should not draw two different glyphs.
 const SHUFFLE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
@@ -179,7 +177,6 @@ export class MiniPlayerView extends QueueView {
     // what is playing. Absent handler: the button still renders and does
     // nothing -- a dead control is better than a bar missing a slot on one
     // surface and not another.
-    this.onShare = typeof opts.onShare === 'function' ? opts.onShare : () => {};
     this.onMenu = typeof opts.onMenu === 'function' ? opts.onMenu : () => {};
     this._currentId = null;
     this._currentItem = null;
@@ -200,14 +197,9 @@ export class MiniPlayerView extends QueueView {
       // Close is answered even with no controller attached — it's the one
       // control that must never appear dead.
       if (act === 'close') { this.onClose(); return; }
-      if (act === 'share') {
-        // The item the bar is currently painting (set in _patch), not a fresh
-        // controller read: what the visitor sees is what they mean to share.
-        if (this._currentItem) this.onShare(this._currentItem, b);
-        return;
-      }
       if (act === 'menu') {
-        // Same rule as share: the painted item, not a fresh controller read.
+        // The item the bar is currently painting (set in _patch), not a fresh
+        // controller read: what the visitor sees is what the menu acts on.
         if (this._currentItem) this.onMenu(this._currentItem, b);
         return;
       }
@@ -353,7 +345,6 @@ export class MiniPlayerView extends QueueView {
       + '<button type="button" class="mp-btn mp-shuffle" data-act="shuffle" aria-pressed="false" aria-label="Shuffle">' + SHUFFLE_ICON + '</button>'
       + '<button type="button" class="mp-btn mp-prev" data-act="prev" aria-label="Previous track">' + PREV_ICON + '</button>'
       + '<button type="button" class="mp-btn mp-next" data-act="next" aria-label="Next track">' + NEXT_ICON + '</button>'
-      + '<button type="button" class="mp-btn mp-share" data-act="share" aria-label="Share this song" title="Share this song">' + SHARE_ICON + '</button>'
       + '<button type="button" class="mp-btn mp-menu" data-act="menu" aria-haspopup="menu" aria-expanded="false" aria-label="More options" title="More options">' + MORE_ICON + '</button>'
       + '<button type="button" class="mp-btn mp-close" data-act="close" aria-label="Close player">' + X_SVG + '</button>'
       + '</div>';
