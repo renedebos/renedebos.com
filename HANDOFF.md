@@ -1,71 +1,216 @@
 # Session Handoff — The Hannan Tapes (renedebos.com)
-**Date:** 2026-08-22 (sixth pass) · **Branch:** `main` — everything merged, deployed, verified live
+**Date:** 2026-08-23 (seventh pass) · **Branch:** `main` — everything merged, deployed, verified live
 
 ## ⛔ READ THIS FIRST
 
-**Nothing is open.** No PRs, no unmerged branches, no stale worktrees. The
-fourth pass's warnings are all resolved: **#48 merged** (the iPhone autoplay
-cue is live), the branch sweep is done, and `main` = `origin/main` =
-`7ae6da46` (2026-08-22, sixth pass; this HANDOFF commit sits on top of it). Local branches are `main` plus the deliberate `miniplayer-parked`
-archive — the target state. (Two stray remote branches predate this pass and
-were left alone: `claude/hannan-chromebook-droplet-sync-jq0hfb`,
-`cloudflare/workers-autoconfig`.)
+**Nothing is open.** `main` = `origin/main` = `ecaac95d`. Nine commits shipped
+this pass, all deployed and each verified against production. The working
+branch `row-menu` is fully contained in `main` and can be deleted whenever;
+`codex-notes.md` stays untracked and is not ours.
+
+**`miniplayer-parked` (`6bdecc6b`) is still never-merge, never-delete.** It
+holds the coordinator work (tab identity, fenced lease, cross-page restore,
+Tasks 4–9). Nothing this pass touched it. Lift files from it if that work ever
+resumes; do not merge it, and do not resume it without Rene asking.
+
+**The row overflow menu shipped, and the four controls it replaced are GONE.**
+Every track row on show pages, song pages and `/songs/` now carries one `…`
+instead of a download button, a share control, an add button and a `↗`. The
+mini-player bar carries the same `…`, and sharing lives inside it rather than
+as its own button. Do not re-add a per-row control "for convenience" — the
+whole point was one object per row. Plan and the reasoning:
+`plans/row-menu/row-menu-plan.md`, whose §2a records what was settled with
+Rene against an Amazon Music reference and, more importantly, what was
+deliberately NOT built.
+
+**Carried forward from earlier passes, still binding:**
 
 **The `/player/` continuous-player popup is GONE** (fifth pass, Rene's call).
 `/player/` 301s to `/playlist/`; since the hash never reaches the server, an
 old `/player/#p=<ids>` bookmark still lands on exactly that queue. Do not
 rebuild a popup — the reasoning is in "The continuous player retired" below.
 
-**Phase 3 is now HALF-unparked, and the halves must not be confused.** The
+**Phase 3 is HALF-unparked, and the halves must not be confused.** The
 mini-player **bar** (view + CSS) shipped from the parked branch as an on-page
-control and is live on every player surface. The **coordinator** — tab
-identity, fenced lease, cross-page session restore, Stage 3a-canary Tasks 4–9
-— stays parked on `miniplayer-parked` (`6bdecc6`). Never merge that branch
-(it is stale against main — lift files from it, don't merge); never delete
-it; don't resume the coordinator or run `/apply-review` on its findings
-without Rene asking. The plan doc is
-`~/.claude/plans/imperative-frolicking-widget.md`.
+control and is live on every player surface — this pass added the overflow
+menu to it. The **coordinator** — tab identity, fenced lease, cross-page
+session restore, Stage 3a-canary Tasks 4–9 — stays parked on
+`miniplayer-parked`, as does its persistence codec `miniplayer-state.js`
+(deleted from `main` on 2026-08-22, byte-identical copy confirmed on the
+branch first). Plan doc: `~/.claude/plans/imperative-frolicking-widget.md`.
 
-**2026-08-22: the coordinator's persistence codec (`miniplayer-state.js`) no
-longer has a copy on `main`** — deleted per Codex review finding 7 (no
-production consumer) and Rene's explicit go-ahead, confirmed byte-identical
-to the `miniplayer-parked` copy first. This does not change anything above:
-the branch itself is untouched, still never-merge/never-delete, and resuming
-the coordinator still means going there — it just now means going there for
-this file too, not only for Tasks 4–9.
+**Playback UX is settled. Don't re-litigate it:** the bottom bar is the
+persistent control everywhere; nothing else sticks. The show pages' sticky
+active row and `/playlist/`'s sticky now-playing card were both tried and both
+deliberately removed once the bar superseded them — the same song pinned twice
+reads as a bug. `codex-notes.md` (untracked, external review doc) still
+proposes popup/continuous-player ideas; they are superseded by this.
 
-**Playback UX settled into one shape this pass. Don't re-litigate it:** the
-bottom bar is the persistent control everywhere; nothing else sticks. The
-show pages' sticky active row and `/playlist/`'s sticky now-playing card were
-both tried and both deliberately removed/unstuck once the bar superseded them
-— the same song pinned twice reads as a bug. `codex-notes.md` (untracked,
-external review doc) still proposes popup/continuous-player ideas; they are
-superseded by this.
+**Two things are parked, both deliberately, neither rejected:**
+- **Play next / Add to queue.** `PlaybackController` already has
+  `appendQueue()`, `reorder()`, `removeAt()`, so both compose from existing
+  primitives. The blocker is that `QueueView` mounts only on `/playlist/` and
+  the bar, so **a show page has no visible queue** — both items would silently
+  mutate something the visitor cannot see or reorder. That is a bigger UX
+  decision than the menu and needs taking on its own terms.
+- **The archive-wide hum/hiss detector.** Designed and benchmarked, no code
+  written: `plans/hum-detect/hum-detect-plan.md`. It carries measured numbers,
+  not estimates — read it rather than re-deriving. The whole run is 30–60
+  minutes, not the overnight job it was assumed to be.
+
+**Like was dropped, on Rene's call.** No user accounts exist, so it is either
+localStorage (private, invisible, gone with site data) or KV with an anonymous
+id (rate limiting, abuse, moderation). Either way it needs a "your likes"
+surface or it is a button with no perceptible effect. Do not add a heart.
+
+## ⚠️ THE LESSON OF THIS PASS: `--skip-webkit` hid a shipped bug
+
+**Rene found the row menu's `…` missing on his iPhone, after every check
+passed and after I had shown him three Chromium screenshots of it.**
+
+An `<svg>` with a `viewBox` and no width/height **collapses to 0×0 inside a
+flex container in WebKit**, while Chromium stretches it to the box. The button
+was present, correctly sized and tappable — it simply painted nothing.
+
+```
+WebKit     button 40x40, svg 0x0
+Chromium   button 40x40, svg 40x40
+```
+
+Every other icon in `site.css` carries explicit dimensions. That one did not,
+and **every run of `browser_check.mjs` in this work was given
+`--skip-webkit`** — including the production verification.
+
+**So: do not pass `--skip-webkit` before calling something shipped.** The
+WebKit smoke pass now MEASURES icon layout rather than trusting the
+stylesheet, on the row and again inside the open menu. It skips elements whose
+computed display is `none` — an idle row's `.play-btn > svg` is hidden by
+design — because a check that cannot tell "hidden on purpose" from "collapsed
+by accident" gets switched off within a week.
+
+**A second one Rene also found first:** the menu's Download row rendered
+shorter than every row beside it. Cause was a CSS collision, not a design
+choice — the row carries `.download-btn` so player.js's delegated handler can
+match it, and that class ALSO styles the recording card's circular icon button
+(`width:24px; height:24px`). Under border-box that made the row 32px tall with
+zero content height against its 58.4px siblings. Scoped away with
+`:not(.row-menu-item)`; `browser_check` now has an equal-height guard.
+
+**The pattern across both: the tests were green and the user was right.**
+Rendering it and looking is not optional.
 
 ## ▶️ Next session — start here
 
-**The row overflow menu, task 1.** Plan:
-`plans/row-menu/row-menu-plan.md`, agreed with Rene 2026-08-22, deferred to
-the next day. Read §4 before touching anything.
+**Nothing is required.** The menu is complete (plan tasks 1–7 done) and the
+dead code from the controls it replaced is swept. Pick from:
 
-**Task 1 is: delegate the download binding in `player.js`.** No markup
-change, no new component, independently verifiable, ~30 minutes. Today it is
+1. **The visible-queue decision**, which unblocks Play next / Add to queue.
+   The bar is the natural home for a queue list. Design question first, code
+   second.
+2. **The hum/hiss detector** — a self-contained afternoon, read
+   `plans/hum-detect/` first.
+3. **`/playlist/` rows** still use the old `.track-add` button and were
+   explicitly scoped out of the menu work. Whether they get the same menu is
+   an open, separate question (plan §7).
 
-```js
-document.querySelectorAll('a.download-btn').forEach(btn => { … })
-```
+## ✅ Done this session (2026-08-23, seventh pass)
 
-— a **one-time snapshot at load**. Once the download moves inside a menu
-created on first press it gets no listener, the click follows its `href`, and
-the wav-download Worker **403s every `.flac` on `/stream` by design**. The
-visitor would get a 403 instead of the password modal, with nothing thrown
-and every test green. Defuse it before any markup moves.
+Nine commits. One feature — **the row overflow menu** — plus two bugs Rene
+found on his phone after the checks went green, and a dead-code sweep.
 
-Verify with a real click reaching the password modal from both routes (a
-row's FLAC and a show's ZIP). No such assertion exists today, so the current
-binding is unprotected either way — add one.
+### The menu itself (`9923cff2`, `e03f5ee1`, `75df56ea`)
 
-Then tasks 2–7 in the plan's order. Do not start at task 4.
+Built in the plan's task order, except that **4 and 6 were done together**:
+separately neither leaves the site working, since 4 alone strips the controls
+and renders an unstyled menu.
+
+**Task 1 — the trap, defused first.** `player.js` bound the password modal
+with a load-time `querySelectorAll().forEach()` snapshot. A download rendered
+inside a menu built on first press would get no listener, the click would
+follow its href to `/stream`, and the wav-download Worker **403s every `.flac`
+there by design** — a 403 instead of the modal, nothing thrown, every test
+green. Both bindings are now one delegated `document` listener. The new
+assertion was proved to have teeth by patching a throwaway copy back to
+snapshot semantics and watching the injected-button case fail exactly as
+predicted.
+
+**Task 2 — `scripts/row-menu.js`.** Sheet on a coarse pointer, popover on a
+fine one. Built ON `share.js`'s popover as the plan required: `placeNear()`
+and `attachDismiss()` are extracted there and exported, with `closeOnScroll` a
+parameter because an anchored popover must die when its anchor scrolls and a
+viewport-pinned sheet must not.
+
+**Task 3 — the plan's "no new plumbing needed" guess was wrong, in two
+places,** and confirming that was the whole value of the task:
+- the -14 download's key/name/size lived ONLY on the `.download-btn`'s
+  `data-lossy-*` attributes — the element task 4 deletes;
+- "All N recordings" needs a song slug and play count that cannot be derived
+  in the browser (`song_slug()` normalises parentheticals and a leading "the",
+  canonical titles come from override tables, colliding slugs get `-x`).
+
+Both now ride in `data-item`, the latter from a new memoized
+`core.song_index()`. **Do not re-derive song slugs in JS.**
+
+### Two bugs found by rendering it, not by testing it
+
+- **A synchronous pane swap orphaned the clicked row**, so the dismiss
+  handler's `closest()` walked a parentless node, decided the click was
+  outside, and closed everything in the same tick — the pane opened and
+  vanished. Same mechanism as the 2026-08-22 row-click double-fire. Every DOM
+  change now waits for the event to finish (`defer()`).
+- **`placeNear()` only clamped downwards.** Fine for the mini-player's two-row
+  popover anchored to a bar at the foot of the viewport; wrong for a six-row
+  menu anchored anywhere in a long list. Clamped both ways now. A menu taller
+  than the viewport scrolls inside itself.
+
+### The bar got the same menu (`17530497`, `6df65ae1`)
+
+`specsForItem()` prefers the page's OWN row for the playing item, so bar and
+row show byte-identical provenance, and falls back to `infoFromItem()` where
+no such row exists (`/t/{code}`, `/playlist/`). That fallback is deliberately
+SHORTER — "Process version" lives only in the build's tables and is absent
+rather than guessed.
+
+**One real bug: the bar's menu came up one item short.** `normalizeItem()` in
+`player-controller.js` is a whitelist and `song` was not on it — a field the
+build emits, the markup carries, and the controller silently dropped. **The
+whitelist IS the schema**; the next field to go missing will fail just as
+quietly.
+
+Sharing was then folded into the menu and its bar button removed: a bar
+carrying a share button AND a menu containing "Share this song" is exactly the
+duplication the menu exists to remove. `.mp-menu` also joined the bar's shared
+sizing group, having been added outside it and drawn 2px larger than every
+button beside it.
+
+### The sweep (`75df56ea`)
+
+373 deletions, 42 insertions. Every removal was a definition with **no
+remaining caller, verified by grep before cutting**. Gone: `track_share_button`,
+`track_add_button`, `OPEN_SVG`, `PLUS_SVG`, `SHARE_SVG` from `fragments.py`;
+`window.trackShareButtonHtml`, its `SHARE_SVG`, the `.track-share` click
+branch and `shareRow()` from `track-select.js`; and the in-row
+`.download-btn`/`.track-add` rules, `.ws-dl`, the whole `.track-share` block
+and `.track-row .track-open` from `site.css`.
+
+**Kept deliberately, so a later sweep does not "finish the job":**
+`trackAddButtonHtml` and the base `.track-add` rules (`playlist-views.js`
+still renders that button on `/playlist/` rows), the base `.download-btn`
+rules (recording cards still carry one), and `.zip-download-btn`.
+
+### Housekeeping
+
+`drive_names.txt` and `r2_names.txt` are now gitignored — `make refresh`
+output that had never been ignored, so anyone who ran the target carried two
+permanently untracked files.
+
+**Disk:** Rene reclaimed 17 GB (`~/gdrive-mount`'s duplicate `.aup3`, the
+seven staged show folders, and `~/work/variants`), all verified redundant
+first — the `.aup3` MD5-identical to Drive, the staged tracks hash-matched
+against Drive including seven pure renames, the variants present in R2 as 680
+objects. Free space went 19 GB → 36 GB. **`~/gdrive-mount` is NOT a mount** —
+it is an ordinary local directory; `mount`, `findmnt` and the device id all
+agree.
 
 ## ✅ Done this session (2026-08-22, sixth pass)
 
@@ -116,6 +261,12 @@ the wild. Full reasoning: §9 and §10 of the plan.
   prints its own `git rm`, exactly as `check_orphan_song_dirs()` does.
 
 ### Share without playing: the per-row button (same commit)
+
+> **Superseded 2026-08-23.** The per-row `.track-share` control no longer
+> exists — sharing moved inside the row overflow menu, and the class and its
+> handler were swept. The phone measurements below are still the reason the
+> menu was measured the same way; the control they describe is gone.
+
 
 `track-share-plan.md` §5's deferred item, built the same day at Rene's
 request, in the shape §5 recommended: **a share icon on the ACTIVE row only**,
