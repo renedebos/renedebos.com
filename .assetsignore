@@ -1,5 +1,6 @@
 .git
 .wrangler
+.claude
 .assetsignore
 worker
 Makefile
