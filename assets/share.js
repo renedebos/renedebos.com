@@ -7,7 +7,10 @@
 //
 // Two deliveries, chosen by the device rather than by the browser:
 //   - a touch device with the Web Share API gets the system sheet (Messages,
-//     WhatsApp, Mail, copy -- whatever the phone offers);
+//     WhatsApp, Mail, copy -- whatever the phone offers). It is handed the
+//     URL alone: the receiving app renders the song, artist, venue and date
+//     from the share page's own og: tags, so anything sent alongside the
+//     link only duplicates the preview;
 //   - everything else gets a two-row popover anchored to the button: Copy
 //     link, then Email. Desktop Chrome and Safari also expose navigator.share,
 //     but their OS share dialogs bury "copy", which is the thing a desktop
@@ -29,6 +32,10 @@ export function shareUrlFor(item) {
 }
 
 // "Truck — Jerry Hannan, 19 Broadway, 1999-02-01 · The Hannan Tapes"
+//
+// A LABEL, not body content. It is the share sheet's title and the email
+// subject; it is deliberately never sent as text a target will paste beside
+// the link. See shareItem() for why.
 export function shareText(item) {
   const who = [item && item.artist, item && item.venue, item && (item.dateDisplay || item.date)]
     .filter(Boolean).join(', ');
@@ -54,8 +61,24 @@ export function shareItem(item, anchorEl, deps = {}) {
   const url = shareUrlFor(item);
   const text = shareText(item);
   if (wantsSheet(nav, win)) {
+    // `url` and `title` only -- NO `text` field (removed 2026-08-22, Rene:
+    // "possible to not have that text and only paste the link?"). Most
+    // targets paste `text` and `url` together, so passing both put the song,
+    // artist, venue and date in the message body ahead of the link.
+    //
+    // That was defensible when a shared link was a bare URL with nothing
+    // behind it. It stopped being defensible once the share page carried its
+    // own og: tags: Facebook, Messages and the rest now render exactly that
+    // information themselves, from the page, so the text was duplicating the
+    // preview immediately below it.
+    //
+    // `title` stays because targets use it as a label or subject rather than
+    // as body content -- and most ignore it entirely.
+    //
+    // The cost, accepted: on a target that does NOT unfurl (plain SMS, some
+    // mail clients) the recipient now gets a bare link with no context.
     // A rejected share (the user dismissed the sheet) is not an error.
-    Promise.resolve().then(() => nav.share({ title: text, text, url })).catch(() => {});
+    Promise.resolve().then(() => nav.share({ title: text, url })).catch(() => {});
     return 'sheet';
   }
   openPopover(doc, win, nav, anchorEl, url, text);
@@ -99,7 +122,10 @@ function openPopover(doc, win, nav, anchorEl, url, text) {
   el.dataset.url = url;
   el.innerHTML =
     '<button type="button" class="share-copy" data-copy="' + escapeHtml(url) + '">Copy link</button>'
-    + '<a class="share-mail" href="mailto:?subject=' + enc(text) + '&amp;body=' + enc(text + '\n\n' + url) + '">Email</a>';
+    // Subject carries the context; the BODY is the link alone. The body used
+    // to repeat the subject above the URL, which is the same duplication the
+    // share sheet had (2026-08-22).
+    + '<a class="share-mail" href="mailto:?subject=' + enc(text) + '&amp;body=' + enc(url) + '">Email</a>';
   el.querySelector('.share-copy').addEventListener('click', () => copyLink(nav, win, url, el));
   el.classList.add('open');
   place(el, anchorEl, win);
