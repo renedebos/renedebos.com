@@ -6,7 +6,7 @@
 **Nothing is open.** No PRs, no unmerged branches, no stale worktrees. The
 fourth pass's warnings are all resolved: **#48 merged** (the iPhone autoplay
 cue is live), the branch sweep is done, and `main` = `origin/main` =
-`3bc27015` (2026-08-22, sixth pass; this HANDOFF commit sits on top of it). Local branches are `main` plus the deliberate `miniplayer-parked`
+`7ae6da46` (2026-08-22, sixth pass; this HANDOFF commit sits on top of it). Local branches are `main` plus the deliberate `miniplayer-parked`
 archive — the target state. (Two stray remote branches predate this pass and
 were left alone: `claude/hannan-chromebook-droplet-sync-jq0hfb`,
 `cloudflare/workers-autoconfig`.)
@@ -420,6 +420,17 @@ the mockup omitted the waveform row and the share control.
 
 **`plans/row-menu/row-menu-plan.md` (`536e1579`) — planned, NOT started.**
 See "Next session" at the top of this file.
+
+**A stray ♪"> on all 846 pages, for two hours (`7ae6da46`).** The favicon
+replacement in `e228b638` used a non-greedy `.*?>`, which stops at the first
+`>` — the one closing `<svg …>` INSIDE the attribute value, not the one
+closing the `<link>` tag. Half the line survived in both page shells, and a
+browser relocates orphaned `<head>` markup into `<body>` and renders it.
+Rene found it on his phone; `build.py`, `verify_markup.py`, 238 unit tests
+and a 207-check harness were all green over it. `verify_markup.py` now has
+`check_head_is_clean()` — no orphaned SVG innards, no loose text between head
+elements — swept over **every** generated page. Swept afterwards for the same
+debris elsewhere: 866 pages, none.
 
 **`archive-notes.md` came and went** (`0bc24022`, `0edc19bf`, `3bc27015`). A
 full description of the ffmpeg/loudnorm commands behind a published −20 LUFS
@@ -1431,6 +1442,17 @@ Added 2026-08-22 (sixth pass):
   all, for weeks, which is indistinguishable from "nobody ran it". Wrap
   optional/environment-specific blocks so they record a failure instead of
   taking the run down.
+- **A regex over an HTML attribute holding a data: URI must not end at `>`.**
+  A `data:image/svg+xml,<svg …>` value contains its own `>`, so `.*?>` stops
+  inside the attribute and leaves the remainder as orphaned markup — which the
+  browser relocates out of `<head>` and RENDERS. Two hours of a stray ♪"> on
+  846 pages. Match to the end of the tag deliberately, and check the built
+  output, not just that the replacement "ran".
+- **A whole-site invariant needs a whole-site sweep.** The check written to
+  catch the above was wired into the show/song/share page loops and passed
+  against a deliberately re-broken `index.html` — which is in none of them,
+  and was the page in the bug report. If a rule is meant to hold everywhere,
+  enumerate everywhere.
 - **Don't measure a mockup and quote it as the page.** The merged
   track-number change was sold on a static reproduction that promised the
   active row's title would stop wrapping on a phone. On the live page it
