@@ -642,8 +642,12 @@ async function checkPlaylistPage(context) {
 // listener, its click would follow the href to /stream, and the wav-download
 // Worker 403s every .flac there by design -- so the visitor gets a 403 instead
 // of the password modal, nothing throws, and every deterministic suite stays
-// green. Only a real click in a real browser can see it, which is why this
-// lives here and not in test-player-views.mjs.
+// green.
+//
+// Since task 4 there is no download button in a row at all: the real one is
+// built by the menu on first press, and checkRowMenu asserts that route. What
+// stays here is the ZIP route plus a SYNTHETIC after-load button, so the
+// delegation is pinned independently of whether the menu still works.
 async function checkDownloadDelegation(context) {
   const SHOW = '/shows/jerry-cafe-java-1999-05-27/';
   const page = await context.newPage();
@@ -657,22 +661,11 @@ async function checkDownloadDelegation(context) {
   const modalOpen = () => page.locator('#pwOverlay.open').count();
   const onShow = () => new URL(page.url()).pathname === SHOW;
   const dismiss = async () => {
-    if (await modalOpen()) {
-      await page.locator('#pwCancel').click();
-      await page.waitForTimeout(200);
-    }
+    if (await modalOpen()) { await page.locator('#pwCancel').click(); await page.waitForTimeout(200); }
   };
 
-  // 1. A row's FLAC -- the ordinary route.
-  await page.locator('.track-row a.download-btn').first().click();
-  await page.waitForTimeout(400);
-  const rowOpen = await modalOpen();
-  record(`${SHOW} a row's download button reaches the password modal`,
-    rowOpen === 1 && onShow(), `open=${rowOpen} url=${page.url()}`);
-  await dismiss();
-
-  // 2. The whole-show ZIP -- a different target type ('batch') through the
-  //    same listener, and a <button> rather than an <a>.
+  // 1. The whole-show ZIP -- a different target type ('batch') through the same
+  //    listener, and a <button> rather than an <a>. Still rendered in markup.
   await page.locator('.zip-download-btn').first().click();
   await page.waitForTimeout(400);
   const zipOpen = await modalOpen();
@@ -680,22 +673,31 @@ async function checkDownloadDelegation(context) {
     zipOpen === 1 && onShow(), `open=${zipOpen} url=${page.url()}`);
   await dismiss();
 
-  // 3. THE GUARD. A download button created after load is exactly what the row
-  //    overflow menu will be. Revert player.js to a per-element binding and
-  //    this is the only assertion here that fails.
-  await page.evaluate(() => {
-    const src = document.querySelector('.track-row a.download-btn');
+  // 2. THE GUARD, synthesised rather than borrowed from a row: an anchor that
+  //    did not exist at load must still be intercepted. Revert player.js to a
+  //    per-element binding and this is the assertion that fails.
+  const built = await page.evaluate(() => {
+    const row = document.querySelector('.track-row[data-item]');
+    const item = JSON.parse(row.dataset.item);
+    const key = item.downloads && item.downloads.lossless && item.downloads.lossless.key;
+    if (!key) return false;
+    const a = document.createElement('a');
+    a.className = 'download-btn';
+    a.id = 'injectedDownloadBtn';
+    a.href = new URL(item.streamUrl).origin + '/stream?file=' + encodeURIComponent(key);
+    a.setAttribute('download', item.downloads.lossless.title);
+    a.textContent = 'synthetic';
     const host = document.createElement('div');
     host.style.cssText = 'position:fixed;left:0;bottom:0;z-index:99999;background:#fff;padding:8px';
-    const clone = src.cloneNode(true);
-    clone.id = 'injectedDownloadBtn';
-    host.appendChild(clone);
+    host.appendChild(a);
     document.body.appendChild(host);
+    return true;
   });
+  record(`${SHOW} a download key is reachable from the row's data-item`, built === true, `built=${built}`);
   await page.locator('#injectedDownloadBtn').click();
   await page.waitForTimeout(400);
   const injOpen = await modalOpen();
-  record(`${SHOW} a download button added AFTER load also reaches the modal (delegation guard)`,
+  record(`${SHOW} a download button added AFTER load reaches the modal (delegation guard)`,
     injOpen === 1 && onShow(),
     injOpen === 1 ? `url=${page.url()}`
                   : `modal did not open -- the click followed its href instead (url=${page.url()})`);
@@ -706,7 +708,7 @@ async function checkDownloadDelegation(context) {
   await page.close();
 }
 
-async function checkRowShare(context) {
+async function checkRowMenu(context) {
   const SHOW = '/shows/jerry-cafe-java-1999-05-27/';
   {
     const page = await context.newPage();
@@ -717,52 +719,134 @@ async function checkRowShare(context) {
     await page.goto(BASE + SHOW, { waitUntil: 'load' });
     await page.waitForFunction(() => window.PLAYER_ENGINE_MOUNTED === true, null, { timeout: 15000 });
 
-    const rendered = await page.locator('.track-row .track-share').count();
-    const visibleIdle = await page.locator('.track-row .track-share:visible').count();
-    record(`${SHOW} share buttons are rendered on every row but hidden while none is active`,
-      rendered > 1 && visibleIdle === 0, `rendered=${rendered} visible=${visibleIdle}`);
+    // The swap itself: one trigger per row, and none of the four controls it
+    // replaced still rendered anywhere in a row.
+    const counts = await page.evaluate(() => ({
+      rows: document.querySelectorAll('.track-row').length,
+      triggers: document.querySelectorAll('.track-row .row-menu-trigger').length,
+      old: document.querySelectorAll('.track-row .track-share, .track-row .track-add, '
+        + '.track-row .download-btn, .track-row .track-open').length,
+    }));
+    record(`${SHOW} every row carries exactly one trigger and none of the old controls`,
+      counts.rows > 1 && counts.triggers === counts.rows && counts.old === 0, JSON.stringify(counts));
 
-    await page.locator('.track-row .play-btn').nth(2).click();
-    await page.waitForTimeout(2000);
-    const visibleActive = await page.locator('.track-row .track-share:visible').count();
-    const onActive = await page.locator('.track-row.is-active .track-share:visible').count();
-    record(`${SHOW} exactly one share button appears, on the active row`,
-      visibleActive === 1 && onActive === 1, `visible=${visibleActive} onActive=${onActive}`);
+    // Labelled per row -- thirty identical "More" entries is not an element
+    // list anyone can navigate.
+    const labels = await page.evaluate(() => Array.from(
+      document.querySelectorAll('.track-row .row-menu-trigger')).map((b) => b.getAttribute('aria-label')));
+    record(`${SHOW} each trigger is labelled with its own track`,
+      new Set(labels).size === labels.length && /^Options for /.test(labels[0]), labels[0]);
 
-    // The <a>'s own href is the no-JavaScript answer, so it has to be the
-    // real share link and not a placeholder the handler quietly replaces.
-    const [href, itemShare] = await page.evaluate(() => {
-      const row = document.querySelector('.track-row.is-active');
-      return [row.querySelector('.track-share').getAttribute('href'),
-              JSON.parse(row.dataset.item).shareUrl];
+    // The component is fetched on FIRST PRESS, not at load.
+    const loadedBefore = await page.evaluate(() => performance.getEntriesByType('resource')
+      .some((r) => r.name.includes('row-menu.js')));
+    await page.locator('.track-row .row-menu-trigger').first().click();
+    await page.waitForTimeout(900);
+    const loadedAfter = await page.evaluate(() => performance.getEntriesByType('resource')
+      .some((r) => r.name.includes('row-menu.js')));
+    record(`${SHOW} row-menu.js is lazily imported on the first press`,
+      !loadedBefore && loadedAfter, `before=${loadedBefore} after=${loadedAfter}`);
+
+    const menu = await page.evaluate(() => {
+      const m = document.querySelector('.row-menu.open');
+      if (!m) return null;
+      return {
+        items: Array.from(m.querySelectorAll('[role="menuitem"] .row-menu-label')).map((n) => n.textContent),
+        chevrons: m.querySelectorAll('.row-menu-chevron').length,
+        icons: m.querySelectorAll('.row-menu-icon').length,
+        expanded: document.querySelector('.track-row .row-menu-trigger').getAttribute('aria-expanded'),
+      };
     });
-    record(`${SHOW} the button's href IS the share link (works with no JS)`,
-      href === itemShare && /\/t\/[a-f0-9]{5,}\/$/.test(href), `${href} vs ${itemShare}`);
+    record(`${SHOW} pressing it opens the menu with its items, icons and chevrons`,
+      !!menu && menu.items.length >= 4 && menu.icons === menu.items.length
+        && menu.chevrons > 0 && menu.chevrons < menu.items.length && menu.expanded === 'true',
+      JSON.stringify(menu));
 
-    await page.locator('.track-row.is-active .track-share').click();
+    // THE point of task 1: the download now lives inside a menu built on first
+    // press, so its click must still reach the password modal rather than
+    // following its href to /stream, which the Worker 403s for every .flac.
+    await page.locator('.row-menu.open .download-btn').click();
     await page.waitForTimeout(600);
-    const popOpen = await page.locator('.share-pop.open').count();
-    const popText = await page.locator('.share-pop.open').first().innerText().catch(() => '');
-    record(`${SHOW} pressing it opens the Copy link / Email popover`,
-      popOpen === 1 && /Copy link/i.test(popText), `open=${popOpen} text=${popText.replace(/\n/g, ' / ')}`);
+    const pwOpen = await page.locator('#pwOverlay.open').count();
+    record(`${SHOW} Download from INSIDE the menu reaches the password modal`,
+      pwOpen === 1 && new URL(page.url()).pathname === SHOW, `open=${pwOpen} url=${page.url()}`);
+    if (pwOpen) { await page.locator('#pwCancel').click(); await page.waitForTimeout(200); }
 
-    record(`${SHOW} no console errors with the row share control`,
+    // Recording details is a second pane, not an inline block -- the change
+    // that stopped the popover running off the bottom of the viewport.
+    await page.locator('.track-row .row-menu-trigger').first().click();
+    await page.waitForTimeout(400);
+    await page.locator('.row-menu.open [role="menuitem"]').last().click();
+    await page.waitForTimeout(400);
+    const pane = await page.evaluate(() => {
+      const m = document.querySelector('.row-menu.open');
+      return m ? { open: true, rows: m.querySelectorAll('.row-menu-info-row').length,
+                   back: (m.querySelector('.row-menu-label') || {}).textContent } : { open: false };
+    });
+    record(`${SHOW} Recording details opens a pane in place, with the provenance rows`,
+      pane.open && pane.rows >= 5 && pane.back === 'Back', JSON.stringify(pane));
+
+    // The popover must not hang off the bottom -- placeNear() clamps both ways
+    // now, and this is the measurement that caught it not doing so.
+    const fits = await page.evaluate(() => {
+      const r = document.querySelector('.row-menu.open').getBoundingClientRect();
+      return { bottom: Math.round(r.bottom), vh: window.innerHeight, top: Math.round(r.top) };
+    });
+    record(`${SHOW} the anchored popover stays inside the viewport`,
+      fits.top >= 0 && fits.bottom <= fits.vh, JSON.stringify(fits));
+
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
+    const afterEsc = await page.evaluate(() => ({
+      open: document.querySelectorAll('.row-menu.open').length,
+      focused: document.activeElement && document.activeElement.className,
+      expanded: document.querySelector('.track-row .row-menu-trigger').getAttribute('aria-expanded'),
+    }));
+    record(`${SHOW} Escape closes the menu and returns focus to the trigger`,
+      afterEsc.open === 0 && /row-menu-trigger/.test(afterEsc.focused || '') && afterEsc.expanded === 'false',
+      JSON.stringify(afterEsc));
+
+    record(`${SHOW} no console errors through the row menu`,
       consoleErrors.length === 0, consoleErrors.join(' | '));
     await page.close();
   }
 
-  // Phone layout regression guard. Adding a third trailing control to the
-  // active row cut its title from 74px to 40px at 390px wide ("Smoke in
-  // Heaven" -> "Smo... in..."); the fix moves the button onto the waveform's
-  // line, restoring the first line exactly. Asserted as "no worse than with
-  // the button hidden", not against a hardcoded pixel count, so a future
-  // type-scale change doesn't make this fail for an unrelated reason.
+  // Touch delivery: a bottom sheet, not an anchored popover.
+  {
+    const ctx = await context.browser().newContext({
+      viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+    const page = await ctx.newPage();
+    await page.goto(BASE + SHOW, { waitUntil: 'load' });
+    await page.waitForFunction(() => window.PLAYER_ENGINE_MOUNTED === true, null, { timeout: 15000 });
+    await page.locator('.track-row .row-menu-trigger').first().click();
+    await page.waitForTimeout(900);
+    const sheet = await page.evaluate(() => {
+      const m = document.querySelector('.row-menu.open');
+      if (!m) return null;
+      const r = m.getBoundingClientRect();
+      return { sheet: m.classList.contains('row-menu-sheet'), fullWidth: Math.round(r.width),
+               vw: window.innerWidth, atBottom: Math.round(window.innerHeight - r.bottom),
+               dismiss: (m.querySelector('.row-menu-dismiss') || {}).textContent };
+    });
+    record(`${SHOW} a coarse pointer gets a full-width bottom sheet with a Dismiss`,
+      !!sheet && sheet.sheet && sheet.fullWidth === sheet.vw && sheet.atBottom <= 1
+        && sheet.dismiss === 'Dismiss', JSON.stringify(sheet));
+    await page.close();
+    await ctx.close();
+  }
+
+  // Phone layout regression guard. A third trailing control once cut the active
+  // row's title from 74px to 40px at 390px wide ("Smoke in Heaven" -> "Smo...
+  // in..."). The overflow menu REMOVES three controls and adds one, so this
+  // should be no worse -- but the last change sold on a mockup did not do what
+  // the mockup promised, so it is measured rather than assumed. Asserted
+  // against "with the trigger hidden", not a hardcoded pixel count.
   {
     const page = await context.newPage();
     await page.setViewportSize({ width: 390, height: 844 });
     const widthOf = async (hideShare) => {
       await page.goto(BASE + SHOW, { waitUntil: 'load' });
-      if (hideShare) await page.addStyleTag({ content: '.track-share{display:none !important}' });
+      if (hideShare) await page.addStyleTag({ content: '.row-menu-trigger{display:none !important}' });
       await page.waitForFunction(() => window.PLAYER_ENGINE_MOUNTED === true, null, { timeout: 15000 });
       await page.locator('.track-row .play-btn').nth(2).click();
       await page.waitForTimeout(1800);
@@ -771,7 +855,7 @@ async function checkRowShare(context) {
     };
     const without = await widthOf(true);
     const with_ = await widthOf(false);
-    record('phone: the share control costs the active row no title width',
+    record('phone: the overflow trigger costs the active row no title width',
       with_ >= without && without > 0, `title ${without}px without -> ${with_}px with`);
 
     await page.goto(BASE + '/songs/truck/', { waitUntil: 'load' });
@@ -1626,7 +1710,7 @@ try {
   {
     const shareCtx = await browser.newContext();
     await checkSharePage(shareCtx);
-    await checkRowShare(shareCtx);
+    await checkRowMenu(shareCtx);
     await shareCtx.close();
   }
 

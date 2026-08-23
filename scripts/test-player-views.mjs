@@ -67,9 +67,18 @@ function trackRow({ waveform = false, num = 1, duration = '3:42' } = {}) {
   const title = new FakeElement('span', ['track-title']);
   title.textContent = `Song ${num}`;
   row.appendChild(title);
+  // The three controls a row carried until 2026-08-23. Kept in the fixture on
+  // purpose even though no page renders them any more: what is under test is
+  // ROW_CLICK_EXEMPT, and a selector that stops matching would otherwise make
+  // its assertion pass vacuously rather than fail.
   row.appendChild(new FakeElement('a', ['download-btn']));
   row.appendChild(new FakeElement('a', ['track-share']));
   row.appendChild(new FakeElement('button', ['track-add']));
+  // What a real row carries now: one overflow trigger, with its icon inside,
+  // because the <svg> is what a press actually targets.
+  const more = new FakeElement('button', ['row-menu-trigger']);
+  more.innerHTML = '<svg><circle/></svg>';
+  row.appendChild(more);
   return row;
 }
 
@@ -251,7 +260,11 @@ test('a click whose target was removed mid-dispatch does not play the row', asyn
 });
 
 test("the row's own controls and links are not play targets", async () => {
-  for (const sel of ['.download-btn', '.track-share', '.track-add', '.progress-range']) {
+  // .row-menu-trigger is the one that matters now -- it is the only control
+  // left on a real row, and a press that also started the track would be an
+  // obvious bug. It is exempt via the generic `button` in ROW_CLICK_EXEMPT;
+  // pinned here so a future narrowing of that selector fails loudly.
+  for (const sel of ['.download-btn', '.track-share', '.track-add', '.progress-range', '.row-menu-trigger']) {
     const audio = new FakeAudio();
     const c = new PlaybackController({ audio, mediaSession: false });
     try {

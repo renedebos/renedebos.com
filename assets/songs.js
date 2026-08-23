@@ -83,9 +83,15 @@
     });
   }
 
-  // Up-right arrow for the row's "open on show page" link -- the JS twin of
-  // fragments.py's OPEN_SVG.
-  var openIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>';
+  // The row's overflow trigger -- the JS twin of fragments.py's MORE_SVG and
+  // row_menu_trigger(). Labelled per row for the same reason the server one is:
+  // thirty identical "More" entries is not an element list anyone can use.
+  var moreIcon = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/></svg>';
+  function rowMenuTriggerHtml(title) {
+    var label = "Options for " + escOcc(title);
+    return '<button type="button" class="row-menu-trigger" aria-haspopup="menu" aria-expanded="false"'
+      + ' aria-label="' + label + '" title="' + label + '">' + moreIcon + "</button>";
+  }
 
   // The show page's own no-waveform track row, byte-for-byte the shape
   // _song_occ_html() (sitegen/fragments.py) renders on a song detail page:
@@ -124,14 +130,13 @@
       + '<span class="occ-venue">' + escOcc(o.venue) + '</span><span class="occ-date">' + escOcc(o.date) + "</span></span>"
       + "</div>"
       + '<span class="time-label current" data-duration="' + escOcc(dur) + '">0:00' + (dur ? " / " + escOcc(dur) : "") + "</span>"
-      + '<a class="track-open" href="' + escOcc(anchor) + '" title="Open on show page" aria-label="Open ' + escOcc(label) + ' on its show page">' + openIcon + "</a>"
       + '<input type="range" class="progress-range" min="0" max="' + RANGE_MAX + '" value="0" step="1" aria-label="Seek ' + escOcc(label) + '" aria-valuetext="0:00' + (dur ? " of " + escOcc(dur) : "") + '">'
-      // Per-row share, on the active row only (track-select.js owns the
-      // control and the click; fragments.py's track_share_button() is the
-      // server-side twin these rows are meant to match byte-for-byte).
-      // Empty string when this performance has no code, same as the server.
-      + trackShareButtonHtml(o.code ? "https://renedebos.com/t/" + o.code + "/" : null, songTitle)
-      + trackAddButtonHtml(trackId)
+      // One "…" where the ↗, the share control and the add button used to be.
+      // Byte-for-byte the trigger row_menu_trigger() emits server-side
+      // (sitegen/fragments.py) -- these rows are meant to match it exactly, and
+      // player.js's delegated handler binds to both without knowing which
+      // renderer produced them.
+      + rowMenuTriggerHtml(songTitle)
       + "</div>";
   }
 

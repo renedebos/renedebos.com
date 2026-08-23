@@ -2530,3 +2530,82 @@ a.artist-chip:hover { filter: brightness(1.08); }
   .mini-player { padding-left: 0.75rem; padding-right: 0.75rem; gap: 0.55rem; }
   .mp-controls { gap: 0.3rem; }
 }
+
+/* ── the row overflow menu ─────────────────────────────────────────────────
+   One "…" per track row, replacing the four controls a row used to carry
+   (plans/row-menu/row-menu-plan.md). Two deliveries, chosen by pointer type
+   in row-menu.js rather than by width here: a bottom sheet on touch, an
+   anchored popover on a mouse. Only the sheet's geometry is CSS's business —
+   the popover's left/top come from placeNear() in share.js, because they
+   depend on where the trigger actually is.
+
+   Colours come from this file's tokens, so the dark-theme block below governs
+   the menu for free. */
+.row-menu-trigger {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; padding: 0; flex-shrink: 0;
+  border: 0; border-radius: 50%; background: none; cursor: pointer;
+  color: var(--muted); font-size: 17px; line-height: 1;
+}
+.row-menu-trigger:hover, .row-menu-trigger[aria-expanded="true"] {
+  background: var(--accent-light); color: var(--accent);
+}
+/* 40px is the touch target the row's other controls already use. */
+@media (pointer: coarse) { .row-menu-trigger { width: 40px; height: 40px; font-size: 20px; } }
+
+.row-menu {
+  position: fixed; display: none; z-index: 60;
+  min-width: 288px; max-width: 340px;
+  /* A menu taller than the viewport scrolls inside itself rather than running
+     off the bottom — placeNear() clamps the box, it cannot shrink it. */
+  max-height: calc(100vh - 24px); overflow-y: auto;
+  padding: 4px; background: var(--player-bg);
+  border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: 0 14px 38px rgb(0 0 0 / 18%);
+  font-family: var(--sans);
+}
+.row-menu.open { display: block; }
+.row-menu-item {
+  display: flex; align-items: center; gap: 13px; width: 100%;
+  padding: 11px 13px; border: 0; border-radius: 8px;
+  background: none; text-align: left; text-decoration: none;
+  color: var(--text); font: inherit; font-size: 14.5px; cursor: pointer;
+}
+/* A hairline between rows, drawn as an inset shadow so it never adds height
+   and disappears cleanly under the hover fill. */
+.row-menu-item + .row-menu-item { box-shadow: inset 0 1px 0 var(--border); }
+.row-menu-item:hover, .row-menu-item:focus { background: var(--accent-light); outline: none; box-shadow: none; }
+.row-menu-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.row-menu-icon { flex: 0 0 20px; height: 20px; display: flex; color: var(--muted); }
+.row-menu-icon svg { width: 20px; height: 20px; }
+.row-menu-text { display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto; min-width: 0; }
+.row-menu-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row-menu-sub { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+/* Present only on rows that NAVIGATE, never on rows that act — the one
+   convention worth taking wholesale from the Amazon Music sheet. */
+.row-menu-chevron { flex: 0 0 16px; display: flex; color: var(--border); }
+.row-menu-chevron svg { width: 16px; height: 16px; }
+.row-menu-sep { height: 1px; margin: 5px 10px; background: var(--border); }
+.row-menu-info { padding: 4px 13px 8px; }
+.row-menu-info-row {
+  display: flex; justify-content: space-between; gap: 16px;
+  padding: 5px 0; font-size: 12px; box-shadow: inset 0 -1px 0 var(--border);
+}
+.row-menu-info-key { color: var(--muted); }
+.row-menu-info-val { color: var(--text); text-align: right; }
+
+.row-menu-sheet {
+  left: 0; right: 0; bottom: 0; top: auto;
+  width: 100%; max-width: none; max-height: 88vh;
+  padding: 8px 8px calc(14px + env(safe-area-inset-bottom, 0px));
+  border-radius: 18px 18px 0 0;
+}
+.row-menu-sheet .row-menu-item { padding: 16px; gap: 16px; font-size: 16.5px; }
+.row-menu-sheet .row-menu-icon { flex-basis: 24px; height: 24px; }
+.row-menu-sheet .row-menu-icon svg { width: 24px; height: 24px; }
+/* Plain centred text, not a bordered button: a way out, not a further action
+   competing for the eye. */
+.row-menu-dismiss {
+  width: 100%; margin-top: 6px; padding: 16px; border: 0; background: none;
+  color: var(--muted); font: inherit; font-size: 16.5px; text-align: center; cursor: pointer;
+}

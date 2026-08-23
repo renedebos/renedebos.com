@@ -265,6 +265,15 @@
   // because this is a classic script and that one is a module -- the same
   // route trackAddButtonHtml takes.
   window.syncTrackSelection = syncAllButtons;
+  // The row overflow menu builds its "Add to playlist" item on first press,
+  // long after syncAllButtons() has painted the row buttons that existed at
+  // load. It therefore has to ASK for the state rather than be given it --
+  // see plans/row-menu/row-menu-plan.md §7, where missing this would have left
+  // the item reading "Add" for an already-selected track, silently.
+  window.trackSelection = {
+    has: function (id) { return loadSelection().indexOf(id) !== -1; },
+    toggle: toggle,
+  };
 
   // Keep this tab's buttons/bar in sync if the selection changes in another
   // tab while this page stays open — `storage` only fires in other same-

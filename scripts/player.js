@@ -721,6 +721,37 @@ document.addEventListener('click', e => {
   }
 });
 
+// ── the row overflow menu ────────────────────────────────────────────────────
+// One "…" per track row (plans/row-menu/row-menu-plan.md). Delegated, and the
+// component is fetched on the FIRST press rather than at load, exactly as the
+// ZIP writer above is -- a visitor who never opens a menu never pays for it.
+//
+// Lives in player.js because this is the one script on every page that has
+// rows: shows, song pages, /songs/, /playlist/. The controller engine and the
+// legacy fallback both leave `button` clicks alone (PlayerView's
+// ROW_CLICK_EXEMPT), so pressing the trigger cannot also start the track.
+let rowMenuPromise = null;
+document.addEventListener('click', async e => {
+  const trigger = e.target.closest('.row-menu-trigger');
+  if (!trigger) return;
+  e.preventDefault();
+  const row = trigger.closest('.track-row');
+  if (!row) return;
+  // Cache the PROMISE, not the module: two fast presses before the first
+  // fetch resolves would otherwise start two imports.
+  if (!rowMenuPromise) rowMenuPromise = import('/assets/row-menu.js');
+  let mod;
+  try { mod = await rowMenuPromise; }
+  catch (err) { rowMenuPromise = null; return; }   // let a later press retry
+  const store = window.trackSelection;
+  mod.openRowMenu(mod.specsForRow(row, {
+    currentPath: location.pathname,
+    isSelected: store ? id => store.has(id) : null,
+    onToggleAdd: store ? id => store.toggle(id) : null,
+    anchor: trigger,
+  }), trigger, {});
+});
+
 // ── hover info tooltip ───────────────────────────────────────────────────────
 // Any element with data-info='[["Label","Value"], ...]' shows a small card.
 

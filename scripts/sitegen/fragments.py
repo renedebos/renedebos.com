@@ -195,6 +195,23 @@ def fmt_size_mb(mb):
     tenths = (int(mb) + 50) // 100
     return f"{tenths // 10}.{tenths % 10} GB"
 
+MORE_SVG = ('<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">'
+            '<circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/>'
+            '<circle cx="19" cy="12" r="1.9"/></svg>')
+
+def row_menu_trigger(title):
+    """The row's one "…" — everything except play lives behind it.
+
+    Labelled per row. A bare "More" would be thirty identical entries in a
+    screen reader's element list on a show page, which is why the plan
+    (§5) calls it out specifically. aria-expanded starts "false" and
+    row-menu.js owns it from the first press onward; aria-haspopup tells
+    assistive tech a menu is coming rather than a navigation.
+    """
+    label = f"Options for {esc(title)}"
+    return (f'<button type="button" class="row-menu-trigger" aria-haspopup="menu" '
+            f'aria-expanded="false" aria-label="{label}" title="{label}">{MORE_SVG}</button>')
+
 def dl_button(file, *, title="Download", loud_file=None, mp3_file=None,
               size=None, lossy_size=None):
     # Icon-only (no text label): with only the password-protected lossless
@@ -1080,8 +1097,7 @@ def _song_occ_html(o, song_title):
         share_url=track_share_url(track_id),
     )
     stream = stream_url(o["file"], o["ver"])
-    add_btn = track_add_button(track_id)
-    share_btn = track_share_button(track_share_url(track_id), song_title)
+    menu_btn = row_menu_trigger(song_title)
     sizes = []
     if o.get("flac_size_mb"):
         sizes.append(f'FLAC {o["flac_size_mb"]} MB')
@@ -1105,8 +1121,9 @@ def _song_occ_html(o, song_title):
     # desktop against the 100px the old two-band card cost (2026-08-21). The
     # data-src/data-item pair sits on the row itself, exactly as it does on a
     # show page, so song-boot.js's PlayerView and the legacy initCustomPlayers()
-    # fallback bind to it unchanged. "Open on show page" is the ↗ icon in the
-    # slot a show row gives its download button; the chip links there too.
+    # fallback bind to it unchanged. "Open on show page" was a ↗ icon here until
+    # 2026-08-23; it is now "View show" inside the row's overflow menu, and the
+    # artist chip still links there directly.
     # Venue and date are separate spans: one "Venue · date" line on desktop
     # (the dot is CSS), and on a phone the date moves up beside the chip so
     # the venue has the second line to itself (.occ-venue/.occ-date).
@@ -1117,10 +1134,8 @@ def _song_occ_html(o, song_title):
           <span class="track-title song-occ-where" data-info="{info}"><span class="occ-venue">{esc(o['venue'])}</span><span class="occ-date">{esc(o['date'])}</span></span>
         </div>
         <span class="time-label current" data-duration="{esc(dur)}">0:00{f' / {esc(dur)}' if dur else ''}</span>
-        <a class="track-open" href="{anchor}" title="Open on show page" aria-label="Open {esc(label)} on its show page">{OPEN_SVG}</a>
         <input type="range" class="progress-range" min="0" max="1000" value="0" step="1" aria-label="Seek {esc(label)}" aria-valuetext="0:00{f' of {esc(dur)}' if dur else ''}">
-        {share_btn}
-        {add_btn}
+        {menu_btn}
       </div>'''
 
 def song_zip_button_html(s):
@@ -1293,29 +1308,15 @@ def show_track_row(show, t, *, artist, proc_tracks, var_tracks, has_waves):
     play_label = esc(f'{t["title"]}, {track_artist}, {date_with_subtitle(show)}')
     # Password-protected lossless FLAC download when a FLAC exists;
     # otherwise the track is stream-only.
-    dl_btns = []
-    # Hoisted out of the dl_button() call so the row's button and the row's
-    # data-item cannot disagree about whether a -14 render exists -- the same
-    # reasoning that already ties both to `vt`.
+    # The download button used to be rendered here. It now lives in the row's
+    # overflow menu, built client-side from data-item's `downloads` -- which is
+    # why the -14 key and both size labels were moved into that item first
+    # (plans/row-menu/row-menu-plan.md task 3). `vt` still decides whether a
+    # variant exists, so the menu and the player cannot disagree.
     loud_key = variant_key(t["file"]) if vt else None
-    if t.get("flac"):
-        flac_title = "Download FLAC (password protected)" + (f" · {t['flac_size_mb']} MB" if t.get("flac_size_mb") else "")
-        # The -14 key rides along when this track has a variant; the
-        # password modal turns it into the Archive/Loud choice. Reuses
-        # `vt` (already resolved above for the stream URL) so the
-        # download and the player can never disagree about whether a
-        # variant exists for this track.
-        dl_btns.append(dl_button(t["flac"], title=flac_title,
-                                 loud_file=loud_key,
-                                 size=fmt_size_mb(t.get("flac_size_mb")),
-                                 # size_mb is the -14 render's size too
-                                 # (320 kbps CBR, same audio length);
-                                 # see _loud_zip() for the measurement.
-                                 lossy_size=fmt_size_mb(t.get("size_mb")) if vt else None))
     # Playlist-selection id: {show-slug}-{tracknum:02d}, matching assets/tracks.json.
     track_id = f'{show["slug"]}-{t["num"]:02d}'
-    add_btn = track_add_button(track_id)
-    share_btn = track_share_button(track_share_url(track_id), t["title"])
+    menu_btn = row_menu_trigger(t["title"])
     # The shared player reads this; nothing consumes it until the
     # controller is switched on for a page (see the plan's Step 4).
     # play_label is rebuilt unescaped here on purpose — playable_item_attr
@@ -1350,31 +1351,23 @@ def show_track_row(show, t, *, artist, proc_tracks, var_tracks, has_waves):
         share_url=track_share_url(track_id),
     )
     if has_waves:
-        # waveform replaces the progress bar; the download (if any) keeps the
-        # .ws-dl wrapper so the mobile grouping styles apply.
-        dl = ('\n        <div class="ws-dl">' +
-              "".join("\n          " + b for b in dl_btns) +
-              "\n        </div>") if dl_btns else ""
         return (f'''      <div class="track-row ws-track" id="track-{t["num"]}" data-trackid="{t["num"]}" data-src="{esc(stream)}" {item_attr}>
         <button class="play-btn" data-num="{t["num"]:02d}" aria-label="Play {play_label}" data-play-label="{play_label}">{PLAY_SVG}</button>
         {title_html}
         <div class="ws-wave"></div>
-        <span class="time-label current" data-duration="{esc(t["duration"])}">0:00 / {esc(t["duration"])}</span>{dl}
-        {share_btn}
-        {add_btn}
+        <span class="time-label current" data-duration="{esc(t["duration"])}">0:00 / {esc(t["duration"])}</span>
+        {menu_btn}
       </div>''')
     else:
-        dl = "".join("\n        " + b for b in dl_btns)
         return (f'''      <div class="track-row custom-player" id="track-{t["num"]}" data-src="{esc(stream)}" {item_attr}>
         <button class="play-btn" data-num="{t["num"]:02d}" aria-label="Play {play_label}" data-play-label="{play_label}">{PLAY_SVG}</button>
         {title_html}
-        <span class="time-label current" data-duration="{esc(t["duration"])}">0:00 / {esc(t["duration"])}</span>{dl}
+        <span class="time-label current" data-duration="{esc(t["duration"])}">0:00 / {esc(t["duration"])}</span>
         <input type="range" class="progress-range" min="0" max="1000" value="0" step="1" aria-label="Seek {play_label}" aria-valuetext="0:00 of {esc(t["duration"])}">
-        {share_btn}
-        {add_btn}
+        {menu_btn}
       </div>''')
 
-__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'OPEN_SVG', 'PLAYBACK_READY_ARM', 'PLAYBACK_READY_SNIPPETS', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', '_pre_edit_class', '_pre_edit_label', '_show_label', '_song_occ_html', '_src_tag', 'contact_block', 'content', 'dl_button', 'fmt_size_mb', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'playable_item_attr', 'playback_ready_onerror', 'player', 'recording_card', 'recording_item_id', 'show_jsonld', 'show_track_row', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'track_add_button', 'track_share_button', 'updates_list', 'variant_toggle']
+__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'OPEN_SVG', 'PLAYBACK_READY_ARM', 'PLAYBACK_READY_SNIPPETS', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', '_pre_edit_class', '_pre_edit_label', '_show_label', '_song_occ_html', '_src_tag', 'contact_block', 'content', 'dl_button', 'row_menu_trigger', 'MORE_SVG', 'fmt_size_mb', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'playable_item_attr', 'playback_ready_onerror', 'player', 'recording_card', 'recording_item_id', 'show_jsonld', 'show_track_row', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'track_add_button', 'track_share_button', 'updates_list', 'variant_toggle']
 
 
 def variant_toggle(any_loud=True, deferred=False):
