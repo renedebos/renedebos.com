@@ -528,6 +528,67 @@ main {
 .track-row .play-btn { width: 30px; height: 30px; }
 .track-row .play-btn svg { width: 12px; height: 12px; }
 
+/* On a TRACK ROW the play button recedes to a bare glyph (2026-08-22). The
+   row itself is the play target now (PlayerView's _onRowClick), so thirty
+   bordered circles down a page were competing with the titles for attention
+   to offer a second route to the same thing.
+
+   Rene asked whether the button could go entirely. It cannot, and the reasons
+   are not cosmetic: no .track-row is focusable (no tabindex, no role), and
+   Space only toggles what is ALREADY playing (player-boot.js's wireKeyboard),
+   so this button is the only keyboard route into playback at all. It is also
+   the state display -- play / pause / loading spinner / **Retry** on a failed
+   row, which is that row's only recovery affordance -- and the only visible
+   sign to a first-time visitor that a row is playable. So: quieter, not gone.
+
+   Everything that mattered survives. It is still a real <button> with its
+   aria-label; the global :focus-visible outline is drawn outside the border
+   box, so a transparent border does not hide keyboard focus. The accent
+   returns whenever the control is actually in play: on row hover, on its own
+   hover or focus, on the active row (which fills solid, below), and on a
+   FAILED row, where Retry has to be findable.
+
+   No separate treatment for a FAILED row, and that is not an oversight: in
+   player-views.js `failed` requires `active` (line ~289), so .player-error
+   only ever lands on the active row, which already draws the button solid.
+   A rule for an errored-but-inactive row would be dead CSS implying a state
+   that cannot happen -- one was written here and removed the same minute,
+   after a test invented the state to check it.
+
+   Scoped to .track-row deliberately -- a "Full Recording" card's button keeps
+   its ring, because a card has no row-click behind it and that button is its
+   only play control. And gated on :not(.is-active):not(.playing) so it cannot
+   override the active row's solid fill: same specificity, later in the file,
+   it would otherwise paint accent-on-accent and vanish. */
+.track-row:not(.is-active):not(.playing) .play-btn {
+  border-color: transparent;
+  color: var(--muted);
+}
+/* Row hover: the control surfaces as an outline, so approaching the row
+   answers "is this playable?" before you commit to a click. */
+.track-row:not(.is-active):not(.playing):hover .play-btn {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+/* Hovering the BUTTON itself keeps the base treatment -- accent ground, white
+   glyph -- so only the ring needs restoring. Do NOT set color here: the base
+   .play-btn:hover already fills the background with accent, and an accent
+   glyph on it is an invisible icon inside a solid disc. Measured, after
+   shipping exactly that for about a minute. Must also come after the
+   row-hover rule above: same specificity, and hovering the button hovers the
+   row too, so source order is what decides. */
+.track-row:not(.is-active):not(.playing) .play-btn:hover {
+  border-color: var(--accent);
+  color: #fff;
+}
+/* Keyboard focus gets the outline treatment, on top of the global
+   :focus-visible ring (which is drawn outside the border box, so the
+   transparent border never hides it). */
+.track-row:not(.is-active):not(.playing) .play-btn:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .track-row .track-num {
   min-width: 1.8em;
   text-align: right;
