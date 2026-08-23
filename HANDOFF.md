@@ -6,7 +6,7 @@
 **Nothing is open.** No PRs, no unmerged branches, no stale worktrees. The
 fourth pass's warnings are all resolved: **#48 merged** (the iPhone autoplay
 cue is live), the branch sweep is done, and `main` = `origin/main` =
-`86cd45df` (2026-08-22, sixth pass; this HANDOFF commit sits on top of it). Local branches are `main` plus the deliberate `miniplayer-parked`
+`8bb43402` (2026-08-22, sixth pass; this HANDOFF commit sits on top of it). Local branches are `main` plus the deliberate `miniplayer-parked`
 archive — the target state. (Two stray remote branches predate this pass and
 were left alone: `claude/hannan-chromebook-droplet-sync-jq0hfb`,
 `cloudflare/workers-autoconfig`.)
@@ -222,6 +222,97 @@ some mail clients) the recipient gets a bare link with no context.
 how a product decision this visible had nothing holding it in place. 7 tests
 pinning the payload in both directions; verified by reverting share.js, which
 fails 2 of 7.
+
+### The preview card, rewritten and made regenerable (`d0462e67`)
+
+Rene, looking at a real Facebook post: the subtitle should read *"Live
+recordings of Jerry, Sean and the Mad Hannans"* — the two solo performers,
+then the band with its article. The old wording, "Jerry, Mad and Sean
+Hannan", read as three people; **Mad Hannans** is a group name.
+
+**Also changed, and flagged rather than assumed:** the headline said "The
+Hannan **Recordings**". The site has been "The Hannan **Tapes**" for a long
+time — 22 occurrences across the templates, every page's `<title>`, the
+footer, `share.js`'s `SITE_NAME` — so every link shared to Facebook was
+showing a name the site does not use. One line in the script reverts it if
+the old name was deliberate.
+
+The real fix is **`scripts/make_og_image.mjs`**. The image went stale for
+months because changing it meant opening an image editor, so nobody did.
+Text that ships to every social preview should be editable the way the rest
+of the site's text is. It renders 1200×630 from the site's own dark-theme
+tokens and real fonts, so the card cannot drift from the site's palette
+either. Manual, like `build_archive_zip.py` — Playwright is not a project
+dependency, so `build.py` neither runs nor needs it.
+
+Two things it had to get right, both of which fail *silently*:
+
+- **Fonts inline as `data:` URIs.** `fonts.css` addresses woff2 by absolute
+  path, and `file://` URLs are blocked as subresources of a `setContent()`
+  page's opaque origin.
+- **`document.fonts.load()`/`check()` need the ACTUAL text.** `fonts.css` is
+  unicode-range subsetted, so a bare `check()` consults a default character
+  set the card never uses and reports false on a font that rendered fine.
+
+It **refuses to write the PNG if the real faces did not load**, rather than
+producing a plausible card in a system fallback — the failure mode a binary
+nobody opens is built to hide.
+
+**Unfinished business it exposed:** two internal spots still say "Hannan
+Recordings" — `scripts/metadata_editor.html`'s tab title and this file's own
+heading. Neither is public; both say the rename was never completed.
+
+### Tapping a track row plays it (`8bb43402`)
+
+Rene, on a phone: *"the only way to play the song is to press the play button
+on the song track ... likely easier for the user that pressing on the title
+and/or the time will execute a play command as well."*
+
+Wider than asked, deliberately: one rule — **tapping the row plays it, except
+where something else already happens** — beats special cases for the title
+and the time, and it is what every music app trains a thumb to expect. The
+title was the worst offender: the largest thing in the row and **completely
+inert on touch**, because its info card is bound to `mouseover`/`mouseout` in
+`player.js`. Exempt: the play button, the waveform (a seek surface), and
+every link, button and input. Tapping a playing row pauses it.
+
+On **`PlayerView`, gated on `density`** — already exactly the row-versus-card
+distinction needed. The first version lived on `CompactPlayerView` and so did
+nothing on song pages or `/songs/`, which mount a bare `PlayerView`; every
+unit test stayed green because every test mounted a `CompactPlayerView`.
+Hero cards (`'hero'`) stay excluded: inches of title, badges and description,
+where one stray tap starts a 90-minute file.
+
+**Registered in the CAPTURE phase, and that is not decoration.** On bubble the
+exemption cannot see what was clicked: the play button's own handler has
+already run, `_render()` has replaced its `innerHTML` with the pause icon, and
+the `<svg>` that *was* `e.target` is detached — so `closest()` walks a
+parentless node, returns null, the button reads as inert row space, and one
+tap becomes start-then-toggle. **A play button that does not play.** Measured:
+two `_onPlayClick` calls per click on bubble, one on capture. Plus a guard
+that refuses to act on a target it cannot place inside the row.
+
+### The fake DOM could not have caught it — four fidelity fixes (same commit)
+
+`browser_check.mjs` found the double-fire; the unit suites were green. They
+could not have found it, and the reasons generalise well beyond this feature:
+
+- **`dispatch()` did not propagate** — it fired only the listeners on the
+  element it was called on. *A fake that cannot propagate cannot test
+  delegation, and this codebase delegates heavily.* It now runs capture
+  root-first, then bubble target-first; `dispatchSelf()` is there for a test
+  that genuinely wants one element's own listeners.
+- **`innerHTML` did not detach the outgoing subtree.** The orphan kept a stale
+  `_parent`, so `closest()` still worked and this entire class of
+  mutated-mid-dispatch bug was untestable.
+- **`capture` was accepted and ignored** by `addEventListener`.
+- **`_matches()` AND-ed every branch of a selector LIST**, so
+  `'a, button, .ws-wave'` could never match and `closest()` silently returned
+  null — the exemption list would have been inert in tests.
+
+Proof it matters: reverting `player-views.js` to exactly what shipped now
+fails **2 of 30**, including the double-fire. Before these fixes it passed
+30/30.
 
 ### Two things that were already broken, found by finally running `--prod`
 
@@ -1238,6 +1329,25 @@ Added 2026-08-22 (sixth pass):
   platform's own debugger (`developers.facebook.com/tools/debug/`) — it states
   the reason instead of leaving you to infer it, and forces a re-scrape past
   the preview cache that otherwise keeps showing the old, broken result.
+- **A fake that cannot propagate events cannot test delegation.**
+  `test-fake-dom.mjs`'s `dispatch()` fired only the listeners on the element
+  it was called on, for its whole life. Every delegated handler in this
+  codebase — and there are many — was therefore untested, and a play button
+  that fired twice per click passed the entire suite. Fixed in the sixth
+  pass, along with three sibling infidelities (`innerHTML` not detaching the
+  old subtree, `capture` ignored, selector LISTS AND-ed instead of OR-ed).
+  When a fake stands in for the platform, model the behaviour you actually
+  depend on, and assert the SHAPE of what the code does, not only its result.
+- **A handler that inspects `e.target` must run before anything can mutate
+  it.** A sibling handler earlier in the same dispatch can remove the clicked
+  node from the DOM — `_render()` replacing a button's `innerHTML` is enough —
+  and a detached node's `closest()` returns null, so it reads as "not a
+  control". Register on capture, and refuse to act on a target you cannot
+  place inside your own root.
+- **Text baked into a binary rots, because fixing it needs a different tool.**
+  `assets/og.png` carried the wrong site name for months. Nobody was lazy;
+  changing it meant opening an image editor. Anything shipping user-visible
+  words should be generated from a script with the words in a named constant.
 - **When metadata is derived in two places, changing one is a silent bug.**
   Making `/t/{code}/` canonical updated `track_share_url()` and missed
   `build_track_page()`'s own `url=`. Nothing failed; the page just advertised
@@ -1496,13 +1606,14 @@ instructions.
 - `plans/player-consolidation/` — closed; `-codex.md` logs every review round.
 
 **Tests:** `node scripts/test-*.mjs` — 9 suites plus `test-fake-dom.mjs`
-(a helper). **228/228 passing** as of 2026-08-22, sixth pass
+(a helper, and as of the sixth pass a much more faithful one — see "four
+fidelity fixes"). **238/238 passing** as of 2026-08-22, sixth pass
 (`test-share.mjs` is new — the share payload)
 (`test-miniplayer-state.mjs` retired with the file it tested;
 `test-site-worker.mjs` covers the share-a-song `/t/{code}/` route — see both
 above). The real-browser harness is separate and manual:
 `NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs --skip-webkit`
-(**204/204**), and **`--prod` against the live deploy (213/213)** — run that
+(**207/207**), and **`--prod` against the live deploy (213/213)** — run that
 one before calling anything Worker- or routing-shaped shipped:
 
 | suite | tests |
