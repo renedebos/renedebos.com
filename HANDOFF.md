@@ -6,7 +6,7 @@
 **Nothing is open.** No PRs, no unmerged branches, no stale worktrees. The
 fourth pass's warnings are all resolved: **#48 merged** (the iPhone autoplay
 cue is live), the branch sweep is done, and `main` = `origin/main` =
-`8bb43402` (2026-08-22, sixth pass; this HANDOFF commit sits on top of it). Local branches are `main` plus the deliberate `miniplayer-parked`
+`3bc27015` (2026-08-22, sixth pass; this HANDOFF commit sits on top of it). Local branches are `main` plus the deliberate `miniplayer-parked`
 archive — the target state. (Two stray remote branches predate this pass and
 were left alone: `claude/hannan-chromebook-droplet-sync-jq0hfb`,
 `cloudflare/workers-autoconfig`.)
@@ -41,6 +41,31 @@ both tried and both deliberately removed/unstuck once the bar superseded them
 — the same song pinned twice reads as a bug. `codex-notes.md` (untracked,
 external review doc) still proposes popup/continuous-player ideas; they are
 superseded by this.
+
+## ▶️ Next session — start here
+
+**The row overflow menu, task 1.** Plan:
+`plans/row-menu/row-menu-plan.md`, agreed with Rene 2026-08-22, deferred to
+the next day. Read §4 before touching anything.
+
+**Task 1 is: delegate the download binding in `player.js`.** No markup
+change, no new component, independently verifiable, ~30 minutes. Today it is
+
+```js
+document.querySelectorAll('a.download-btn').forEach(btn => { … })
+```
+
+— a **one-time snapshot at load**. Once the download moves inside a menu
+created on first press it gets no listener, the click follows its `href`, and
+the wav-download Worker **403s every `.flac` on `/stream` by design**. The
+visitor would get a 403 instead of the password modal, with nothing thrown
+and every test green. Defuse it before any markup moves.
+
+Verify with a real click reaching the password modal from both routes (a
+row's FLAC and a show's ZIP). No such assertion exists today, so the current
+binding is unprotected either way — add one.
+
+Then tasks 2–7 in the plan's order. Do not start at task 4.
 
 ## ✅ Done this session (2026-08-22, sixth pass)
 
@@ -313,6 +338,99 @@ could not have found it, and the reasons generalise well beyond this feature:
 Proof it matters: reverting `player-views.js` to exactly what shipped now
 fails **2 of 30**, including the double-fire. Before these fixes it passed
 30/30.
+
+### Later the same evening: identity, the row, and two deploy leaks
+
+Everything below followed from one question — *"why is CNN showing as the
+logo for the site?"* — and none of it was planned.
+
+**The rename finished (`03a31d9c`).** Two internal leftovers still said
+"Hannan Recordings": the local metadata editor's tab title and this file's own
+heading. Zero occurrences remain in text.
+
+**`.claude/` was being published (`f95412fe`).** Not a theory —
+`https://renedebos.com/.claude/settings.json` returned **200**. Eight tracked
+files were publicly readable: a 60-entry permission allowlist, two
+`additionalDirectories` holding local filesystem paths, a `PreToolUse` hook
+definition, four agent definitions, two slash-commands and a hook shell
+script. Inspected before claiming severity: **no credentials** — the UUIDs in
+it are Claude Code session ids in `/tmp` paths, and the "password" hits are
+feature descriptions. Information disclosure, not a breach.
+
+The half that would have hurt: agent worktrees live under
+`.claude/worktrees/`, gitignored so CI never sees them, but a **local**
+`npx wrangler deploy` uploads whatever is in the directory. The worktree
+removed minutes earlier held **1.8 GB** of WAV/FLAC verification renders. One
+line in `.assetsignore` closes both, permanently.
+
+`64069462` then removed `.gitignore` and `.pagesignore` (both live at 200) and
+`codex-notes.md` (404 only because it is untracked, so CI never had it — a
+local deploy would have published all 108 KB). **`_headers` and `_redirects`
+are deliberately NOT excluded**: Cloudflare *consumes* those rather than
+serving them, so ignoring them would silently drop the site's security headers
+and cache rules. The root now publishes exactly the site.
+
+**A stale agent worktree was removed** — 1.8 GB, branch `worktree-agent-*`,
+nine "uncommitted" files all byte-identical to `main` (the `audio_process.py`
+split that shipped as `d51ffe96`), plus a `.verify_scratch/` whose own Codex
+review flagged the deploy hazard above and had sat unread since 01:24.
+
+**The play button receded (`7091e426`).** Rene asked whether it could go
+entirely now the row is a play target. It cannot, and the reasons are not
+cosmetic: no `.track-row` is focusable, and Space only toggles what is
+*already* playing, so that button is **the only keyboard route into playback
+that exists**. It is also the state display — play / pause / loading / Retry
+on a failed row — and the only visible sign a row is playable. So it lost its
+ring instead of its existence.
+
+Two things measured rather than assumed: `:not()` contributes specificity, so
+the base rule lands at (0,4,0) and outranks selectors that *look* more
+specific; and the button's own `:hover` must not set `color`, because the base
+rule already fills the background with accent and an accent glyph on it is an
+invisible icon inside a solid disc. That shipped for about a minute.
+
+**The brand images became one script (`95f0d09c`).** `assets/artwork.png` —
+the MediaSession image a phone lock screen and a car dashboard show — still
+read "The Hannan Recordings". It survived a grep for the old name because its
+words are **painted, not text**. Both it and `og.png` now render from one pair
+of constants in `scripts/make_brand_images.mjs`.
+
+**A real favicon set (`e228b638`).** The only icon was an inline `data:` URI
+SVG, which iOS Safari has never handled, and `/favicon.ico` and
+`/apple-touch-icon.png` both 404'd — so Safari fell back to its own cache and
+showed CNN's logo. Four real files now exist at the root, marked **HT** (the
+walking figure from Jerry's *Cheers, Beers, Bucket of Fears* EP could not be
+found in digital form anywhere: no image files at all under `DAT Tapes`,
+nothing on jerryhannan.com, nothing on the web). Dark letters on a solid green
+tile, chosen after rendering four treatments at 180/32/16 and comparing at
+actual size. `favicon.ico` is a hand-built ICO wrapping the 32px PNG — this
+project has no image library at all and the container is 22 bytes — validated
+after writing.
+
+**The track number IS the play button (`051db771`).** Done entirely in CSS via
+a `::before` carrying `data-num`, *not* by rendering a child element:
+`_setPlayState()` assigns `btn.innerHTML` on every state change, so a child
+would be destroyed the first time the row played. A pseudo-element survives
+that, so no JavaScript changed at all.
+
+**Measured, and less than the mockup promised:** the active row's title on a
+390px phone goes 74px → 104px. I said it would stop the title wrapping. It
+does not — "Smoke in Heaven" still takes two lines on the live page, because
+the mockup omitted the waveform row and the share control.
+
+**`plans/row-menu/row-menu-plan.md` (`536e1579`) — planned, NOT started.**
+See "Next session" at the top of this file.
+
+**`archive-notes.md` came and went** (`0bc24022`, `0edc19bf`, `3bc27015`). A
+full description of the ffmpeg/loudnorm commands behind a published −20 LUFS
+track, written for Codex, then deleted at Rene's request once handed over.
+**Recoverable: `git show 0edc19bf:archive-notes.md`.** Two corrections made
+while writing it are worth carrying even though the file is gone: there is no
+`mp3_trim_db` field (the MP3-only trim is applied and never recorded — read
+`mp3_tp` instead), and the transient cap is **not rare** — the census says
+215 of 680 tracks are `sparse-transient-cap` and 42 `applause-limiter`, so
+**38% of the archive has been peak-limited**. Its `.assetsignore` entry was
+deliberately left in place as a standing rule.
 
 ### Two things that were already broken, found by finally running `--prod`
 
@@ -1313,6 +1431,35 @@ Added 2026-08-22 (sixth pass):
   all, for weeks, which is indistinguishable from "nobody ran it". Wrap
   optional/environment-specific blocks so they record a failure instead of
   taking the run down.
+- **Don't measure a mockup and quote it as the page.** The merged
+  track-number change was sold on a static reproduction that promised the
+  active row's title would stop wrapping on a phone. On the live page it
+  still wraps — the mockup had omitted the waveform row and the share
+  control. The gain was real (74px → 104px) and the specific promise was
+  wrong. Build it, then measure the real thing.
+- **A pseudo-element survives `innerHTML` replacement; a child does not.**
+  Used deliberately for the merged track number (`::before` + `data-num`),
+  because `_setPlayState()` rewrites the button's `innerHTML` on every state
+  change. The same mechanism, undetected, is what caused the row-click
+  double-fire earlier the same day. Know which side of it you are on.
+- **`:not()` contributes specificity.** `.track-row:not(.is-active):not(.playing) .play-btn`
+  is (0,4,0) and quietly outranks `.track-row.player-error .play-btn`, which
+  looks more specific and is not.
+- **Safari needs a real favicon FILE.** An inline `data:` URI SVG is ignored
+  by iOS Safari; with `/favicon.ico` and `/apple-touch-icon.png` both 404ing
+  it falls back to its own cache and can show a completely unrelated site's
+  logo. Its cache also survives a fix — a Private tab or cleared site data is
+  needed to see the new one.
+- **Anything under `.claude/` is deployable.** It is gitignored only for
+  `settings.local.json`, so its tracked files were being published, and agent
+  worktrees under it can be gigabytes. Excluded in `.assetsignore` now; do not
+  remove that line.
+- **Don't generalise the engine's design to a specific audio file.** 38% of
+  the archive has been through a peak limiter (215 `sparse-transient-cap`, 42
+  `applause-limiter` of 680). Only `mode` and `chain` in
+  `data/processing/<slug>.json` say what happened to one track — `chain` is
+  the literal `-af` string. A flat ceiling at exactly −1.50 dBFS on a v8 track
+  is `TCAP_LIMIT_DB`, the engine's internal limiter threshold, not the tape.
 - **Facebook honours `noindex` and will not scrape a page carrying it.** The
   belief that "unfurlers read `og:` tags and ignore `robots`" is false, and it
   was written into a code comment as justification. `noindex` on a page whose
@@ -1607,7 +1754,8 @@ instructions.
 
 **Tests:** `node scripts/test-*.mjs` — 9 suites plus `test-fake-dom.mjs`
 (a helper, and as of the sixth pass a much more faithful one — see "four
-fidelity fixes"). **238/238 passing** as of 2026-08-22, sixth pass
+fidelity fixes"). **238/238 passing** as of 2026-08-22, sixth pass, end of
+day
 (`test-share.mjs` is new — the share payload)
 (`test-miniplayer-state.mjs` retired with the file it tested;
 `test-site-worker.mjs` covers the share-a-song `/t/{code}/` route — see both
