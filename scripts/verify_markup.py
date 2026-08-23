@@ -294,6 +294,45 @@ SRC_RE = re.compile(r'src="(/assets/[^"]+)"')
 IMPORT_RE = re.compile(r"""(?:from\s+|import\s*\(\s*|import\s+)['"](/assets/[^'"]+)['"]""")
 
 
+# A data: URI holding SVG cannot live in an HTML attribute unescaped: the
+# first ">" inside the SVG closes the tag, and everything after it becomes
+# literal text the browser relocates into <body> and RENDERS. That is exactly
+# what shipped on 2026-08-22 -- a favicon replacement whose regex stopped at
+# that same ">" left `<text y='.9em' …>♪</text></svg>">` behind, and a stray
+# ♪"> appeared at the top left of all 846 pages for about two hours.
+#
+# Nothing caught it: it is valid-enough HTML, throws nothing, logs nothing,
+# and no assertion covered the <head>'s shape. These two do now.
+HEAD_RE = re.compile(r"<head>(.*?)</head>", re.S)
+STRAY_MARKUP_RE = re.compile(r"</svg>|</text>|<text\b|<svg\b")
+
+def check_head_is_clean(rel, src):
+    """The <head> may contain only head elements -- no orphaned SVG innards,
+    and no bare text between the tags."""
+    m = HEAD_RE.search(src)
+    if not m:
+        return [f"{rel}: no <head> found"]
+    head = m.group(1)
+    errors = []
+    bad = STRAY_MARKUP_RE.search(head)
+    if bad:
+        errors.append(f"{rel}: stray {bad.group(0)!r} in <head> -- an unescaped data: URI "
+                      f"almost certainly terminated its attribute early; the remainder "
+                      f"renders as visible text on the page")
+    # Text sitting directly BETWEEN head elements, rather than inside one.
+    # <title>, <script>, <style> and <noscript> legitimately hold text, so
+    # their bodies are removed before looking -- otherwise every page's own
+    # title reads as a violation (it did, on the first attempt at this check).
+    stripped = re.sub(r"<(title|script|style|noscript)\b[^>]*>.*?</\1>", "", head, flags=re.S | re.I)
+    for chunk in re.split(r"<[^>]*>", stripped):
+        t = chunk.strip()
+        if t:
+            errors.append(f"{rel}: loose text in <head>: {t[:60]!r} -- it will be "
+                          f"relocated into <body> and rendered")
+            break
+    return errors
+
+
 def check_assets_exist(rel, src):
     """Every /assets/ script a page loads — and everything those scripts
     import — has to actually be written by build.py.
@@ -464,6 +503,17 @@ def check():
         dupes = sorted({i for i in ids if ids.count(i) > 1})
         if dupes:
             errors.append(f"{rel}: DUPLICATE item ids on one page: {dupes}")
+
+    # EVERY generated page, not just the ones the loops above cover. The first
+    # version of this check was wired into those loops and therefore skipped
+    # index.html -- which was the one page in the screenshot that reported the
+    # bug. A whole-site invariant needs a whole-site sweep.
+    for path in sorted(glob.glob(os.path.join(ROOT, "*.html"))
+                       + glob.glob(os.path.join(ROOT, "*", "index.html"))
+                       + glob.glob(os.path.join(ROOT, "*", "*", "index.html"))):
+        if os.sep + ".claude" + os.sep in path:
+            continue
+        errors += check_head_is_clean(os.path.relpath(path, ROOT), open(path).read())
 
     t_errors, t_track, t_pages = check_track_pages(track_links)
     errors += t_errors
