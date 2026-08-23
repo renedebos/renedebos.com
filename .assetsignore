@@ -1,7 +1,9 @@
 .git
+.gitignore
 .wrangler
 .claude
 .assetsignore
+.pagesignore
 worker
 Makefile
 drive_names.txt
@@ -19,3 +21,4 @@ SETUP.md
 plans
 HANDOFF.md
 CLAUDE.md
+codex-notes.md
