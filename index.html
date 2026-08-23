@@ -71,7 +71,10 @@
     </div>
   </div>
 
-  <div id="sections"></div>
+  <div id="sections"><p class="grid-status">Loading shows&hellip;</p></div>
+  <noscript><p class="grid-status">This list is built by JavaScript. Without it,
+    browse every song and the shows it was played at from the
+    <a href="/songs/">Songs index</a> instead.</p></noscript>
 
 
   <section class="home-about-grid">
@@ -143,14 +146,16 @@
   if (!btn) return;
   btn.addEventListener('click', function (e) {
     e.preventDefault();
-    fetch('/assets/tracks.json').then(function (r) { return r.json(); }).then(function (rows) {
+    // home-shows.json, not tracks.json: the button promises a TAPE, and
+    // picking uniformly from the 680-track catalog (found 2026-08-23) both
+    // starts mid-show and favours shows with more tracks. One row per show
+    // here, so every show is equally likely, and #track-1 + ?autoplay=1 is
+    // the show page's own deep-link contract (player-boot.js) for landing on
+    // track one and playing it, same as clicking track 1 straight from cold.
+    fetch('/assets/home-shows.json').then(function (r) { return r.json(); }).then(function (rows) {
       if (!rows.length) { location.href = '/'; return; }
-      var url = rows[Math.floor(Math.random() * rows.length)].url;
-      var i = url.indexOf('#');
-      // Autoplay marker for the destination page's focusHashTrack (player.js /
-      // wavesurfer.js) — kept out of tracks.json's shared `url` field since other
-      // consumers (song-page occurrence links) should only deep-link, not autoplay.
-      location.href = i === -1 ? url : url.slice(0, i) + '?autoplay=1' + url.slice(i);
+      var show = rows[Math.floor(Math.random() * rows.length)];
+      location.href = show.url + '?autoplay=1#track-1';
     }).catch(function () { location.href = '/'; });
   });
 })();

@@ -154,7 +154,7 @@ h1 em { font-style: italic; color: var(--accent); }
 .seg.active { background: var(--accent); color: var(--on-accent); }
 .seg:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.grid-error { color: var(--ink-dim); font-size: 0.9rem; padding: 8px 0 24px; }
+.grid-status { color: var(--ink-dim); font-size: 0.9rem; padding: 8px 0 24px; }
 
 /* ── grouped sections ────────────────────────────────────────────────── */
 .section-head {
@@ -280,6 +280,13 @@ h1 em { font-style: italic; color: var(--accent); }
   align-items: center; justify-content: center;
 }
 .pw-overlay.open { display: flex; }
+
+/* Mirrors site.css's .sr-only -- player.js's modal markup is shared sitewide
+   and this page has no site.css to inherit it from. */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
 
 .pw-modal {
   background: var(--panel); border: 1px solid var(--hairline); border-radius: 6px;

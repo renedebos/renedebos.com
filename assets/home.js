@@ -20,7 +20,8 @@
   }
 
   function cardHTML(s) {
-    var star = s.highlight ? '<span class="star" title="Highlight show">&#9733;</span>' : "";
+    var star = s.highlight
+      ? '<span class="star" title="Highlight show" aria-label="Highlight show">&#9733;</span>' : "";
     var preEdit = s.preEdit
       ? '<span class="pre-edit-badge" title="' + esc(s.preEditTitle) + '">' + esc(s.preEdit) + "</span>"
       : "";
@@ -155,6 +156,6 @@
       render(initialMode);
     })
     .catch(function (e) {
-      sectionsEl.innerHTML = '<p class="grid-error">Could not load the show list: ' + esc(String(e)) + "</p>";
+      sectionsEl.innerHTML = '<p class="grid-status">Could not load the show list: ' + esc(String(e)) + "</p>";
     });
 })();

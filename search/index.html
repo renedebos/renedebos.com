@@ -56,19 +56,23 @@
       <style>#search-live { display: none; }</style>
       <p class="search-status">Search runs in your browser, so it needs JavaScript.</p>
       <p class="pl-intro">Without it you can still browse the whole archive: the
-        <a href="/songs/">Songs index</a> lists every song and each show it was played at,
-        and the <a href="/">home page</a> lists every show by date, artist, and venue.</p>
+        <a href="/songs/">Songs index</a> lists every song and each show it was played at.
+        (The home page's show grid is built by the same JavaScript this page needs, so
+        it won't help here either.)</p>
     </noscript>
     <div id="search-live">
-      <input id="q" class="search-input" type="search" autocomplete="off" autofocus
-             placeholder="Search songs, shows, venues, dates, covers…">
+      <input id="q" class="search-input" type="search" autocomplete="off"
+             placeholder="Search songs, shows, venues, dates, covers…" aria-label="Search the archive">
       <div id="filters" class="search-filters"></div>
-      <p id="status" class="search-status">Loading…</p>
+      <p id="status" class="search-status" aria-live="polite">Loading…</p>
       <div id="results" class="search-results">
         <div class="sr-skeleton" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
       </div>
     </div>
-    <p class="pl-intro">Looking for loudness, true peak, workflow version, or damage flags instead? See <a href="/archive-data/">Archive Data</a>.</p>
+    <p class="pl-intro">Not a second search: <a href="/archive-data/">Archive Data</a> is the
+      audio-engineering table behind this archive (loudness, true peak, workflow version,
+      damage flags) — for anyone curious about how the recordings were processed, not
+      needed for listening.</p>
   </section>
 </main>
 

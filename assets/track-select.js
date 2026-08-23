@@ -91,14 +91,26 @@
   // used instead of touching just the clicked button, since `selected` can
   // change out from under a page (another tab, or a fresh localStorage read)
   // in ways a single button's before/after state doesn't capture.
-  // The ids a "Select all" button governs: every "+" button inside its
-  // data-target (the show page's .track-list, the song page's .song-occs,
-  // /playlist/'s #pl-queue), read from the DOM at click/sync time.
+  // The ids a "Select all" button governs, read from the DOM at click/sync
+  // time. Two sources, because the row-menu sweep (2026-08-23) removed the
+  // "+" button from show/song rows in favour of the row overflow menu's "Add
+  // to playlist" item, which reads/writes window.trackSelection directly and
+  // renders no DOM button at all -- so those rows now have to be found by
+  // their data-item id instead. /playlist/'s #pl-queue rows still render a
+  // real "+" button (playlist-views.js), so that source stays.
   function selectAllIds(btn) {
     var root = (btn.dataset.target && document.querySelector(btn.dataset.target)) || document;
-    return Array.prototype.map.call(root.querySelectorAll('.track-add[data-id]'), function (b) {
+    var ids = Array.prototype.map.call(root.querySelectorAll('.track-add[data-id]'), function (b) {
       return b.dataset.id;
     });
+    Array.prototype.forEach.call(root.querySelectorAll('.track-row[data-item]'), function (row) {
+      var item;
+      try { item = JSON.parse(row.dataset.item); } catch (e) { return; }
+      // Whole-show recordings aren't playlist material (row-menu.js's own
+      // "Add to playlist" gate) -- kind is checked here for the same reason.
+      if (item && item.kind === 'track' && item.id) ids.push(item.id);
+    });
+    return ids;
   }
   function allSelected(ids) {
     return ids.length > 0 && ids.every(function (id) { return selected.indexOf(id) !== -1; });

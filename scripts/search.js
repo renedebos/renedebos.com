@@ -16,6 +16,13 @@
   var statusEl = document.getElementById("status");
   var resultsEl = document.getElementById("results");
 
+  // Focus the box on arrival, but only where that can't pop a virtual
+  // keyboard uninvited: a static `autofocus` attribute did this unconditionally,
+  // including on a phone landing here to browse by filter chip, not to type.
+  try {
+    if (window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches) qEl.focus();
+  } catch (e) {}
+
   var INDEX = [];
   var filters = { type: "all", artist: "all", source: "all" };
   var FILTER_KEYS = ["type", "artist", "source"];
@@ -99,9 +106,14 @@
     var q = qEl.value.trim();
     var tokens = norm(q).split(/\s+/).filter(Boolean);
     var pool = INDEX.filter(passFilters);
-    var nSongs = pool.filter(function (r) { return r.type === "track"; }).length;
+    // "performance", not "song" -- a type==="track" row is one recording of
+    // one show, and the archive has ~5x more of those than distinct songs
+    // (the homepage's own "N songs" count is the unique-title one). Calling
+    // this count "songs" quoted a bigger number than the site quotes for the
+    // same word one click away.
+    var nPerformances = pool.filter(function (r) { return r.type === "track"; }).length;
     var nShows = pool.filter(function (r) { return r.type === "show"; }).length;
-    var counts = plural(nSongs, "song") + " and " + plural(nShows, "show");
+    var counts = plural(nPerformances, "performance") + " and " + plural(nShows, "show");
     var browsing = !tokens.length;
 
     if (browsing && !anyFilter()) {
@@ -115,10 +127,14 @@
       var sc = browsing ? 0 : score(r, tokens);
       if (sc >= 0) hits.push([sc, r]);
     });
-    // Sorted for browsing, not by match relevance: title, then date, then
-    // track number — so every performance of the same song lands together
-    // in chronological order (e.g. searching a songwriter's name).
+    // Relevance first (score() was being computed and then silently
+    // discarded -- every real search was sorted the same way as a filter
+    // browse, found 2026-08-23). Ties -- and every row during a browse,
+    // where score is forced to 0 above -- fall through to title, then date,
+    // then track number, so every performance of the same song still lands
+    // together in chronological order (e.g. searching a songwriter's name).
     hits.sort(function (a, b) {
+      if (a[0] !== b[0]) return b[0] - a[0];
       var ra = a[1], rb = b[1];
       var ta = norm(ra.song || ra.artist || ""), tb = norm(rb.song || rb.artist || "");
       if (ta !== tb) return ta < tb ? -1 : 1;
@@ -174,7 +190,7 @@
       if (r.showArtist && artists.indexOf(r.showArtist) === -1) artists.push(r.showArtist);
     });
     var groups = [
-      ["type", [["all", "All"], ["track", "Songs"], ["show", "Shows"]]],
+      ["type", [["all", "All"], ["track", "Performances"], ["show", "Shows"]]],
       ["artist", [["all", "All artists"]].concat(artists.map(function (a) { return [a, a]; }))],
       ["source", [["all", "All sources"], ["AUD", "AUD"], ["SBD", "SBD"]]],
     ];

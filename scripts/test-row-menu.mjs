@@ -42,7 +42,7 @@ const SPECS = () => ([
   { label: 'Download', href: 'https://w.example/stream?file=FLAC/x.flac',
     download: '01 Truck.flac', className: 'download-btn',
     dataset: { lossyFile: 'MP3-14/x.mp3', size: '33 MB' } },
-  { label: 'Share this song', onSelect: () => {} },
+  { label: 'Share this performance', onSelect: () => {} },
   { label: 'Add to playlist', pressed: true, onSelect: () => {} },
   { kind: 'separator' },
   { kind: 'info', label: 'Track info',
@@ -347,13 +347,13 @@ test('a row with unparseable data-item still yields a usable menu', () => {
   const row = new FakeElement('div', ['track-row']);
   row.dataset.item = '{not json';
   const specs = menu.specsForRow(row, {});
-  assert.ok(labels(specs).includes('Share this song'), 'never throws mid-render');
+  assert.ok(labels(specs).includes('Share this performance'), 'never throws mid-render');
 });
 
 test('Share hands the item to share.js, anchored to the trigger', () => {
   const seen = [];
   const spec = menu.buildRowMenuSpecs(ITEM, null, { onShare: (i) => seen.push(i) })
-    .find((x) => x.label === 'Share this song');
+    .find((x) => x.label === 'Share this performance');
   spec.onSelect();
   assert.equal(seen.length, 1);
   assert.equal(seen[0].shareUrl, ITEM.shareUrl);

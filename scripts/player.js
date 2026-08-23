@@ -286,8 +286,8 @@ const modal = document.createElement('div');
 modal.className = 'pw-overlay';
 modal.id = 'pwOverlay';
 modal.innerHTML = `
-  <div class="pw-modal">
-    <h3>Protected Download</h3>
+  <div class="pw-modal" role="dialog" aria-modal="true" aria-labelledby="pwTitle">
+    <h3 id="pwTitle">Protected Download</h3>
     <p>This recording is password protected. Enter the password to download.</p>
     <p class="pw-size" id="pwSize" hidden></p>
     <fieldset class="pw-variant" id="pwVariant" hidden>
@@ -299,6 +299,7 @@ modal.innerHTML = `
         <span class="pw-variant-name" id="pwLossyName"></span>
         <span class="pw-variant-sub" id="pwLossySub"></span></label>
     </fieldset>
+    <label for="pwInput" class="sr-only">Password</label>
     <input type="password" id="pwInput" placeholder="Password" autocomplete="off">
     <div class="pw-modal-error" id="pwError"></div>
     <div class="pw-modal-actions">
@@ -307,6 +308,28 @@ modal.innerHTML = `
     </div>
   </div>`;
 document.body.appendChild(modal);
+
+// Focus trap: Tab/Shift+Tab cycle within the modal rather than escaping to
+// the page underneath the overlay. Computed fresh on every keypress rather
+// than cached, since which fields are hidden/disabled changes per target
+// (pwVariant, pwSize).
+modal.addEventListener('keydown', (e) => {
+  if (e.key !== 'Tab') return;
+  const focusable = Array.prototype.filter.call(
+    modal.querySelectorAll('input, button, [href]'),
+    (el) => !el.disabled && el.offsetParent !== null,
+  );
+  if (!focusable.length) return;
+  const first = focusable[0], last = focusable[focusable.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
+
+// Whatever had focus before the modal opened -- a row-menu Download item, a
+// ZIP button, a delegated .download-btn -- gets it back on close, rather than
+// leaving focus on a trigger the modal may have detached from (row-menu.js
+// rebuilds its menu per open) or dropping it to <body>.
+let lastFocused = null;
 
 // Non-blocking progress toast — once a batch ZIP's password is confirmed,
 // the modal hands off to this so the visitor can keep browsing/playing
@@ -431,6 +454,7 @@ function formatSizeMb(mb) {
 
 function openPasswordModal(target) {
   pendingTarget = target;
+  lastFocused = document.activeElement;
   document.getElementById('pwInput').value = '';
   document.getElementById('pwError').textContent = '';
   // Reset to Archive on every open, never carrying the last choice forward:
@@ -477,10 +501,19 @@ function resolveTarget(target) {
   return { type: 'single', file: target.lossyFile, filename: target.lossyName || target.filename };
 }
 
+// Restores focus to whatever opened the modal -- guarded on still being in
+// the document, since row-menu.js rebuilds its menu (and so its trigger's own
+// DOM node) between one open and the next.
+function restoreFocus() {
+  if (lastFocused && document.body.contains(lastFocused)) lastFocused.focus();
+  lastFocused = null;
+}
+
 function closeModal() {
   if (batchAbort) batchAbort.abort();
   modal.classList.remove('open');
   pendingTarget = null;
+  restoreFocus();
 }
 
 // Hides the modal WITHOUT aborting — used only when handing a validated
@@ -488,6 +521,7 @@ function closeModal() {
 function hideModalKeepBatch() {
   modal.classList.remove('open');
   pendingTarget = null;
+  restoreFocus();
 }
 
 function triggerDownload(url, filename) {

@@ -41,14 +41,16 @@ RANDOM_TAPE_SCRIPT = '''
   if (!btn) return;
   btn.addEventListener('click', function (e) {
     e.preventDefault();
-    fetch('/assets/tracks.json').then(function (r) { return r.json(); }).then(function (rows) {
+    // home-shows.json, not tracks.json: the button promises a TAPE, and
+    // picking uniformly from the 680-track catalog (found 2026-08-23) both
+    // starts mid-show and favours shows with more tracks. One row per show
+    // here, so every show is equally likely, and #track-1 + ?autoplay=1 is
+    // the show page's own deep-link contract (player-boot.js) for landing on
+    // track one and playing it, same as clicking track 1 straight from cold.
+    fetch('/assets/home-shows.json').then(function (r) { return r.json(); }).then(function (rows) {
       if (!rows.length) { location.href = '/'; return; }
-      var url = rows[Math.floor(Math.random() * rows.length)].url;
-      var i = url.indexOf('#');
-      // Autoplay marker for the destination page's focusHashTrack (player.js /
-      // wavesurfer.js) — kept out of tracks.json's shared `url` field since other
-      // consumers (song-page occurrence links) should only deep-link, not autoplay.
-      location.href = i === -1 ? url : url.slice(0, i) + '?autoplay=1' + url.slice(i);
+      var show = rows[Math.floor(Math.random() * rows.length)];
+      location.href = show.url + '?autoplay=1#track-1';
     }).catch(function () { location.href = '/'; });
   });
 })();
@@ -159,7 +161,10 @@ HOME_SHELL = '''<!DOCTYPE html>
     </div>
   </div>
 
-  <div id="sections"></div>
+  <div id="sections"><p class="grid-status">Loading shows&hellip;</p></div>
+  <noscript><p class="grid-status">This list is built by JavaScript. Without it,
+    browse every song and the shows it was played at from the
+    <a href="/songs/">Songs index</a> instead.</p></noscript>
 {archive_zip_html}
 
   <section class="home-about-grid">
@@ -227,19 +232,23 @@ def build_search():
       <style>#search-live { display: none; }</style>
       <p class="search-status">Search runs in your browser, so it needs JavaScript.</p>
       <p class="pl-intro">Without it you can still browse the whole archive: the
-        <a href="/songs/">Songs index</a> lists every song and each show it was played at,
-        and the <a href="/">home page</a> lists every show by date, artist, and venue.</p>
+        <a href="/songs/">Songs index</a> lists every song and each show it was played at.
+        (The home page's show grid is built by the same JavaScript this page needs, so
+        it won't help here either.)</p>
     </noscript>
     <div id="search-live">
-      <input id="q" class="search-input" type="search" autocomplete="off" autofocus
-             placeholder="Search songs, shows, venues, dates, covers…">
+      <input id="q" class="search-input" type="search" autocomplete="off"
+             placeholder="Search songs, shows, venues, dates, covers…" aria-label="Search the archive">
       <div id="filters" class="search-filters"></div>
-      <p id="status" class="search-status">Loading…</p>
+      <p id="status" class="search-status" aria-live="polite">Loading…</p>
       <div id="results" class="search-results">
         <div class="sr-skeleton" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
       </div>
     </div>
-    <p class="pl-intro">Looking for loudness, true peak, workflow version, or damage flags instead? See <a href="/archive-data/">Archive Data</a>.</p>
+    <p class="pl-intro">Not a second search: <a href="/archive-data/">Archive Data</a> is the
+      audio-engineering table behind this archive (loudness, true peak, workflow version,
+      damage flags) — for anyone curious about how the recordings were processed, not
+      needed for listening.</p>
   </section>''',
         extra_scripts='\n<script src="/assets/search.js"></script>',
     )
@@ -628,12 +637,12 @@ def build_archive_data():
         main='''
   <section class="archive-data">
     <p class="pl-intro">Every track in the archive with the spec data collected for it — loudness, true peak, LRA, workflow version, treatment, tags, and damage flags. The tinted <strong>Loud</strong> columns describe the separate −14 LUFS streaming variant, including what it cost in loudness range (ΔLRA); everything else describes the −20 archive master. Click a treatment cell for the full limiter breakdown of either render. Filter or search, click a column to sort, click a song to jump to its show page.</p>
-    <input id="ad-q" class="search-input" type="search" autocomplete="off" placeholder="Search song, show, venue, songwriter…">
+    <input id="ad-q" class="search-input" type="search" autocomplete="off" placeholder="Search song, show, venue, songwriter…" aria-label="Search the archive data table">
     <div class="pl-panel">
       <div class="pl-panel-head"><span class="pl-filter-label">Filters</span><button type="button" id="ad-clear" class="pl-clear" hidden>Clear filters</button></div>
       <div id="ad-filters" class="pl-filter-groups"></div>
     </div>
-    <p id="ad-status" class="search-status">Loading…</p>
+    <p id="ad-status" class="search-status" aria-live="polite">Loading…</p>
     <div class="tech-scroll">
       <table class="tech-table" id="ad-table">
         <thead><tr id="ad-head"></tr></thead>

@@ -729,8 +729,11 @@ def highlight_badge(show):
     be a highlight and vice versa."""
     if not show.get("highlight"):
         return ""
-    return (f' <span class="h-badge" title="A particularly good performance">'
-            f'{HIGHLIGHT_STAR_SVG}</span>')
+    # aria-label, not just title: title is unreliably announced and never
+    # surfaces on touch at all (no hover state to trigger it) -- the same gap
+    # the artist-dot chips on /songs/ were already fixed for.
+    return (f' <span class="h-badge" title="A particularly good performance" '
+            f'aria-label="A particularly good performance">{HIGHLIGHT_STAR_SVG}</span>')
 
 def status_line(show):
     """The show page's hand-work pills: "noise-reduced" / "pre-edited", plus

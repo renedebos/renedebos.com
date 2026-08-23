@@ -617,6 +617,14 @@ main {
 }
 .track-row .play-btn > svg { display: none; }
 
+/* A song-occurrence row (a song page's/list's "every performance" rows) has
+   no set position to show as data-num -- it's a cross-show list, not one
+   show's tracklist -- so the rule above leaves it with an empty ::before AND
+   a hidden glyph: a play button that paints nothing at all on an idle touch
+   row, found 2026-08-23 by a UX pass, not by any test. Higher specificity
+   than the hide rule above, so it wins regardless of source order. */
+.track-row .play-btn:not([data-num]) > svg { display: block; }
+
 /* The glyph replaces the number exactly when the control is in play: the row
    is hovered, the button is hovered or focused, or the track is current. On
    touch there is no hover, so an idle row shows only its number -- accepted
@@ -1310,6 +1318,13 @@ tr:has(+ .ad-detail-row) .treat-toggle { transform: rotate(-135deg); }
 .proc-status.eq-badge { color: #5cc9c2; }
 .tech-table td.tver { font-family: var(--mono); text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
 
+/* Visually hidden but still announced -- for a real <label> that a sighted
+   visitor doesn't need because a placeholder already reads clearly enough. */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
 /* highlight badge — Rene's editorial call on the performance itself,
    independent of recording quality (the pre-edit/NR/PE badges above) */
 .h-badge {
@@ -1803,11 +1818,17 @@ a.artist-chip:hover { filter: brightness(1.08); }
   font-variant-numeric: tabular-nums; color: var(--muted);
   font-size: 13px; min-width: 2.4em; text-align: right;
 }
+/* Underlined always, not just on :hover -- the whole row (a <summary>) shares
+   one pointer cursor and one accent-tinted title, so color alone was the only
+   signal that this specific span navigates away while the rest of the row
+   toggles the occurrence list. Hover never fires on touch, where every tap
+   looks identical until it lands (Codex UX pass, 2026-08-23). */
 .song-name {
   font-family: var(--serif); font-size: .92rem; color: var(--accent);
-  text-decoration: none; line-height: 1.25;
+  text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  line-height: 1.25;
 }
-.song-name:hover { text-decoration: underline; }
+.song-name:hover { text-decoration-color: currentColor; }
 .song-chips { margin-left: auto; display: flex; align-items: center; gap: .4rem; flex-shrink: 0; }
 /* A song's performances are the show page's own track rows (.track-row,
    above; .song-occs carries .track-list for the box) -- one line each, the

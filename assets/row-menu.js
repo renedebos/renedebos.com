@@ -133,7 +133,11 @@ export function buildRowMenuSpecs(item, info, opts = {}) {
   }
 
   specs.push({
-    label: 'Share this song',
+    // "performance", not "song" -- this shares the exact recording (one
+    // artist, one date, one venue) via /t/{code}, not the song's own
+    // all-performances page. Calling it "song" reads as a promise to the
+    // sender's recipient that isn't what they'll get.
+    label: 'Share this performance',
     icon: 'share',
     // Anchored to the TRIGGER, not to this item: the menu is on its way out by
     // the time the popover paints, and a popover pinned to something hidden
