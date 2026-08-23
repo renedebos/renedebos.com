@@ -16,3 +16,9 @@ data/*.draft.json
 !.dev.vars.example
 .env*
 !.env.example
+
+# `make refresh` output — a snapshot of Drive and R2 filenames used by
+# `make diff`/`make status`. Regenerated on demand, meaningless once stale,
+# and noisy in `git status` for anyone who has ever run the target.
+drive_names.txt
+r2_names.txt
