@@ -1312,8 +1312,7 @@ def show_track_row(show, t, *, artist, proc_tracks, var_tracks, has_waves):
               "".join("\n          " + b for b in dl_btns) +
               "\n        </div>") if dl_btns else ""
         return (f'''      <div class="track-row ws-track" id="track-{t["num"]}" data-trackid="{t["num"]}" data-src="{esc(stream)}" {item_attr}>
-        <button class="play-btn" aria-label="Play {play_label}" data-play-label="{play_label}">{PLAY_SVG}</button>
-        <span class="track-num">{t["num"]:02d}</span>
+        <button class="play-btn" data-num="{t["num"]:02d}" aria-label="Play {play_label}" data-play-label="{play_label}">{PLAY_SVG}</button>
         {title_html}
         <div class="ws-wave"></div>
         <span class="time-label current" data-duration="{esc(t["duration"])}">0:00 / {esc(t["duration"])}</span>{dl}
@@ -1323,8 +1322,7 @@ def show_track_row(show, t, *, artist, proc_tracks, var_tracks, has_waves):
     else:
         dl = "".join("\n        " + b for b in dl_btns)
         return (f'''      <div class="track-row custom-player" id="track-{t["num"]}" data-src="{esc(stream)}" {item_attr}>
-        <button class="play-btn" aria-label="Play {play_label}" data-play-label="{play_label}">{PLAY_SVG}</button>
-        <span class="track-num">{t["num"]:02d}</span>
+        <button class="play-btn" data-num="{t["num"]:02d}" aria-label="Play {play_label}" data-play-label="{play_label}">{PLAY_SVG}</button>
         {title_html}
         <span class="time-label current" data-duration="{esc(t["duration"])}">0:00 / {esc(t["duration"])}</span>{dl}
         <input type="range" class="progress-range" min="0" max="1000" value="0" step="1" aria-label="Seek {play_label}" aria-valuetext="0:00 of {esc(t["duration"])}">

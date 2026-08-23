@@ -44,7 +44,9 @@ function trackRow(num, itemOverride) {
   const btn = new FakeElement('button', ['play-btn']);
   btn.dataset.playLabel = `Song ${num}, Jerry Hannan, 1999-05-27`;
   row.appendChild(btn);
-  row.appendChild(new FakeElement('span', ['track-num']));
+  // The number is the button's ::before now (site.css), not a sibling
+  // span -- data-num is the whole of it in the markup.
+  btn.setAttribute('data-num', String(num).padStart(2, '0'));
   row.appendChild(new FakeElement('div', ['ws-wave']));
   const time = new FakeElement('span', ['time-label', 'current']);
   time.dataset.duration = '3:42';

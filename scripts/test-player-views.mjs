@@ -49,7 +49,9 @@ function trackRow({ waveform = false, num = 1, duration = '3:42' } = {}) {
   // swaps the button's innerHTML, orphaning it mid-dispatch.
   btn.innerHTML = '<svg><polygon/></svg>';
   row.appendChild(btn);
-  row.appendChild(new FakeElement('span', ['track-num']));
+  // The number is the button's ::before now (site.css), not a sibling
+  // span -- data-num is the whole of it in the markup.
+  btn.setAttribute('data-num', String(num).padStart(2, '0'));
   if (waveform) row.appendChild(new FakeElement('div', ['ws-wave']));
   const time = new FakeElement('span', ['time-label', 'current']);
   time.dataset.duration = duration;          // compact rows carry the total here
@@ -158,8 +160,12 @@ test('tapping the title plays the row', async () => {
   } finally { c.destroy(); }
 });
 
-test('tapping the time label and the track number play it too', async () => {
-  for (const sel of ['.time-label', '.track-num']) {
+test('tapping the time label plays it too', async () => {
+  // The track number used to be its own element here. It is drawn by the
+  // button's ::before now (see site.css's "the number IS the play button"),
+  // so tapping it IS tapping the button -- covered by the double-fire test
+  // below rather than by the row handler.
+  for (const sel of ['.time-label']) {
     const audio = new FakeAudio();
     const c = new PlaybackController({ audio, mediaSession: false });
     try {

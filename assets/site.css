@@ -589,14 +589,50 @@ main {
   color: var(--accent);
 }
 
-.track-row .track-num {
-  min-width: 1.8em;
-  text-align: right;
-  font-size: 12px;
+/* The track number IS the play button (2026-08-22, Rene: "merge everywhere").
+   They sat adjacent doing related jobs -- position in the set, and the control
+   for that position -- so the row spent two slots on one idea. Measured on a
+   390px phone: merging returns about 65px to the title, enough that the active
+   row's title stops wrapping to two lines.
+
+   Done entirely in CSS, via a ::before on the button carrying data-num.
+   Deliberately NOT by rendering the number inside the button: _setPlayState()
+   in player-views.js assigns btn.innerHTML on every state change, so any child
+   element would be destroyed the first time the row played. A pseudo-element
+   survives innerHTML replacement, which means the JS needs to know nothing
+   about this at all.
+
+   The button keeps its aria-label ("Play <track>") whatever it displays, so
+   what a screen reader announces is unchanged -- the number is a visual
+   affordance, not the control's name.
+
+   Scoped to .track-row: a "Full Recording" card's .track-num is a different
+   thing entirely (see the base rule further down) and its play button has no
+   data-num to show. */
+.track-row .play-btn::before {
+  content: attr(data-num);
+  font: 400 12px/1 var(--mono);
   color: var(--muted);
-  font-weight: 300;
   font-variant-numeric: tabular-nums;
 }
+.track-row .play-btn > svg { display: none; }
+
+/* The glyph replaces the number exactly when the control is in play: the row
+   is hovered, the button is hovered or focused, or the track is current. On
+   touch there is no hover, so an idle row shows only its number -- accepted
+   deliberately, since the whole row is a play target now (_onRowClick) and the
+   bar, the waveform and the row highlight all report state once something is
+   playing. */
+.track-row:hover .play-btn::before,
+.track-row .play-btn:hover::before,
+.track-row .play-btn:focus-visible::before,
+.track-row.is-active .play-btn::before,
+.track-row.playing .play-btn::before { content: none; }
+.track-row:hover .play-btn > svg,
+.track-row .play-btn:hover > svg,
+.track-row .play-btn:focus-visible > svg,
+.track-row.is-active .play-btn > svg,
+.track-row.playing .play-btn > svg { display: block; }
 
 .track-row .track-main {
   flex: 1;
