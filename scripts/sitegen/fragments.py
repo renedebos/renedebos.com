@@ -25,55 +25,6 @@ ZIP_SVG = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wi
 
 PLAY_SVG = '<svg viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg>'
 
-PLUS_SVG = ('<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" '
-            'stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg>')
-# Up-right arrow: a song-page occurrence row's "open on show page" link,
-# sized and placed like a show row's download button (see .track-open).
-OPEN_SVG = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
-            'stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>')
-
-def track_add_button(track_id):
-    """The +/checkmark control that adds one track to the in-progress playlist
-    selection (see scripts/track-select.js, PLAYLIST FEATURE.md Phase 5). Server
-    always renders the unselected (+) state — selection is a client-only,
-    per-page-load concept, so there's nothing to know at build time. JS toggles
-    the class/aria-pressed/icon in place on click; keep this markup shape in
-    sync with trackAddButtonHtml() in track-select.js."""
-    return (f'<button type="button" class="track-add" data-id="{esc(track_id)}" '
-            f'aria-pressed="false" aria-label="Add to playlist selection">{PLUS_SVG}</button>')
-
-# Same glyph as miniplayer-views.js's SHARE_ICON and track-select.js's
-# SHARE_SVG -- one action, one drawing, three renderers.
-SHARE_SVG = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" '
-             'stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.6"/>'
-             '<circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/>'
-             '<path d="M8.2 13.3l7.6 4.4M15.8 6.3l-7.6 4.4"/></svg>')
-
-def track_share_button(share_url, title):
-    """The per-row share control (plans/share/track-share-plan.md §5's deferred
-    "share without playing", built 2026-08-22).
-
-    Hidden by CSS on every row but the active one -- the row has no space for a
-    third always-visible control, and site.css's own note on .track-add's size
-    is emphatic about not making it heavier. The active row is already the
-    expanded state (it is the only one carrying a waveform), so this is the
-    one place a third button fits.
-
-    An <a href>, not a <button>: with JavaScript it opens the share sheet or
-    popover, and without it navigates to the share page, where the URL can be
-    copied by hand. This is now the primary way to share a song, so it must
-    not be dead when a module fails to load. Keep in sync with
-    trackShareButtonHtml() in track-select.js and occRowHtml() in songs.js.
-
-    Returns "" for a track with no code (a hidden show's track, a whole-show
-    recording) -- there is nothing short to hand out.
-    """
-    if not share_url:
-        return ""
-    label = f"Share &ldquo;{esc(title)}&rdquo;" if title else "Share this song"
-    return (f'<a class="track-share" href="{esc(share_url)}" '
-            f'aria-label="{label}" title="{label}">{SHARE_SVG}</a>')
-
 def playable_item_attr(*, item_id, kind, stream, title, artist=None, venue=None,
                        date=None, date_display=None, duration_label=None,
                        peaks_key=None, page_url=None, play_label=None,
@@ -1367,7 +1318,7 @@ def show_track_row(show, t, *, artist, proc_tracks, var_tracks, has_waves):
         {menu_btn}
       </div>''')
 
-__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'OPEN_SVG', 'PLAYBACK_READY_ARM', 'PLAYBACK_READY_SNIPPETS', 'PLAY_SVG', 'PLUS_SVG', 'SITE_PAGES', '_pre_edit_class', '_pre_edit_label', '_show_label', '_song_occ_html', '_src_tag', 'contact_block', 'content', 'dl_button', 'row_menu_trigger', 'MORE_SVG', 'fmt_size_mb', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'playable_item_attr', 'playback_ready_onerror', 'player', 'recording_card', 'recording_item_id', 'show_jsonld', 'show_track_row', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'track_add_button', 'track_share_button', 'updates_list', 'variant_toggle']
+__all__ = ['DL_SVG', 'EXTRA_PAGES', 'HIGHLIGHT_STAR_SVG', 'PLAYBACK_READY_ARM', 'PLAYBACK_READY_SNIPPETS', 'PLAY_SVG', 'SITE_PAGES', '_pre_edit_class', '_pre_edit_label', '_show_label', '_song_occ_html', '_src_tag', 'contact_block', 'content', 'dl_button', 'row_menu_trigger', 'MORE_SVG', 'fmt_size_mb', 'highlight_badge', 'home_jsonld', 'jsonld', 'md_to_html', 'page_shell', 'playable_item_attr', 'playback_ready_onerror', 'player', 'recording_card', 'recording_item_id', 'show_jsonld', 'show_track_row', 'show_zip_button_html', 'site_nav', 'song_jsonld', 'song_zip_button_html', 'status_line', 'tech_data_section', 'updates_list', 'variant_toggle']
 
 
 def variant_toggle(any_loud=True, deferred=False):

@@ -677,15 +677,6 @@ main {
   flex-shrink: 0;
 }
 
-.track-row .download-btn {
-  width: 24px;
-  height: 24px;
-  background: transparent;
-  color: var(--muted);
-}
-.track-row .download-btn:hover { background: var(--accent-light); color: var(--accent); }
-.track-row .download-btn svg { width: 12px; height: 12px; }
-
 
 .track-row .progress-range {
   position: absolute;
@@ -724,9 +715,6 @@ main {
   /* larger touch targets for thumbs */
   .track-row.ws-track .play-btn { width: 36px; height: 36px; }
   .track-row.ws-track .play-btn svg { width: 13px; height: 13px; }
-  .track-row.ws-track .download-btn { width: 32px; height: 32px; }
-  .track-row.ws-track .download-btn svg { width: 14px; height: 14px; }
-  /* .track-add deliberately does NOT grow here -- see its rule above. */
 
   /* An idle row is now one line: with no waveform there is nothing to wrap to a
      second, and the two-band layout left a near-empty middle line holding a
@@ -754,19 +742,6 @@ main {
   .track-row.ws-track.is-active .track-main { flex: 1 1 0; }
   /* margin-left:auto here would absorb every free pixel and starve the title. */
   .track-row.ws-track .time-label { margin-left: 0; white-space: nowrap; flex-shrink: 0; }
-  /* A long title pushes the download + add pair onto their own wrapped line,
-     where flexbox leaves them hard against the LEFT edge -- directly under the
-     right-aligned pair on every idle row above and below, which reads as a
-     misalignment rather than a wrap. Nothing on that line pushes them over,
-     because the title (flex:1) absorbed the free space up on the first line.
-     An auto left margin on the first of the pair does it, on whichever line
-     they land on; when they fit beside the timestamp it is a no-op.
-     The :has() arm is for a row with no lossless download to offer -- none
-     exist today (checked: 680 of 680 carry one) but a whole-show-only future
-     entry would otherwise re-introduce exactly this bug for its add button. */
-  .track-row.ws-track.is-active .download-btn,
-  .track-row.ws-track.is-active:not(:has(.download-btn)) .track-add { margin-left: auto; }
-
   /* Two lines rather than an ellipsis. Costs nothing: the row's height is set by
      the play button, and a second line of title still fits inside it -- measured
      14 of 31 titles clipped on one line against 4 on two, at identical height. */
@@ -776,10 +751,11 @@ main {
   }
 }
 
-/* .ws-wave and .ws-dl below are production classes on real show-page track
-   rows (.track-row.ws-track), rendered by build_show() and driven by both
-   player.js and the shared controller's player-views.js — not lab-only,
-   despite the "ws-" prefix shared with the removed wavesurfer.js lab page. */
+/* .ws-wave is a production class on real show-page track rows
+   (.track-row.ws-track), rendered by build_show() and driven by both player.js
+   and the shared controller's player-views.js — not lab-only, despite the
+   "ws-" prefix shared with the removed wavesurfer.js lab page. (.ws-dl, the
+   download button's flex wrapper, went with the button itself on 2026-08-23.) */
 
 .ws-wave {
   flex: 1 1 auto;
@@ -800,7 +776,7 @@ main {
 .track-row.ws-track:not(.is-active) .ws-wave { display: none; }
 
 /* With the waveform gone, nothing absorbs the free width and the trailing
-   time/download/add collapse leftward into the middle of the row -- every idle
+   time and menu trigger collapse leftward into the middle of the row -- every idle
    row's controls landing at a different x than the active row's. The title
    takes over as the growing element so the columns stay put. */
 .track-row.ws-track:not(.is-active) .track-main { flex: 1 1 auto; }
@@ -818,9 +794,6 @@ main {
 @media (prefers-reduced-motion: reduce) {
   .track-row.ws-track.is-active .ws-wave { animation: none; }
 }
-
-/* the download link's wrapper is transparent to the flex layout */
-.ws-dl { display: contents; }
 
 /* ── recording cards & player ────────────────────────────────────────────── */
 
@@ -1071,76 +1044,7 @@ main {
    It is not a WCAG 2.5.8 problem at 19px: measured 23.1px of clearance to the
    nearest target against a 12px requirement, so the spacing exception applies
    comfortably. Don't "fix" this again without asking. */
-.track-row .track-add { width: 19px; height: 19px; }
-.track-row .track-add svg { width: 9px; height: 9px; }
-
-/* Per-row share control (plans/share/track-share-plan.md §5, built
-   2026-08-22). Hidden on every row but the ACTIVE one, which is the whole
-   reason it fits: the row has no space for a third always-visible button
-   (see .track-add's size note above, which is emphatic about not making the
-   row heavier), but the active row is already the expanded state — it is the
-   only one carrying a waveform — so one more control there costs nothing on
-   the other twenty-nine.
-
-   Keyed on .playing as well as .is-active for the same reason the row
-   highlight is: the legacy fallback engine in player.js only ever sets
-   .playing, so a page whose module never mounted still surfaces the button
-   on whatever row it is playing.
-
-   Sized to match .track-add rather than .download-btn deliberately — the row
-   already has that circular-19px language, so this introduces no new size to
-   it. An <a>, not a <button>: see track_share_button() in fragments.py. */
-.track-row .track-share {
-  display: none;
-  align-items: center; justify-content: center;
-  width: 19px; height: 19px; border-radius: 50%; flex-shrink: 0;
-  border: 1.5px solid var(--accent); background: transparent; color: var(--accent);
-  cursor: pointer; text-decoration: none;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-}
-.track-row.is-active .track-share,
-.track-row.playing .track-share { display: inline-flex; }
-.track-row .track-share:hover { background: var(--accent); color: white; }
-.track-row .track-share svg { width: 10px; height: 10px; flex-shrink: 0; }
-
 @media (max-width: 600px) {
-  /* Same bump the other row controls take on touch — 19px is fine for a
-     mouse but this is the one control on the row a phone visitor is most
-     likely to want (sharing is a phone action), so it gets a real target. */
-  .track-row .track-share { width: 26px; height: 26px; }
-  .track-row .track-share svg { width: 13px; height: 13px; }
-
-  /* ...but NOT on the first line of a waveform row. Measured on a 390px
-     viewport before shipping this: a third trailing control cut the active
-     row's title from 74px to 40px ("Smoke in Heaven" -> "Smo... in..."),
-     because that line's width budget was already spent — which is exactly
-     what site.css's .track-add note and the plan both predicted.
-
-     So on a phone the share control rides on the waveform's line instead,
-     at its right end, where the expanded state has room going spare. Line
-     one then lays out EXACTLY as it did before this button existed, which
-     is the property the block above spent several revisions getting right;
-     nothing there had to be re-tuned.
-
-     The basis on .ws-wave is what lets the two share a line: it is
-     `flex: 1 1 100%` by default precisely so it forces one of its own. */
-  .track-row.ws-track.is-active:has(.track-share) .ws-wave {
-    flex-basis: calc(100% - 34px);
-  }
-  .track-row.ws-track.is-active .track-share { order: 6; }
-
-  /* Song-occurrence rows have no waveform, so there is no second line to put
-     the share control on — and measured on /songs/truck/ at 390px, adding a
-     third trailing button pushed the active row from 56px to 88px (a long
-     venue like "Marin Brewing Co." wrapped) while every other row in the list
-     stayed at 56. A row that grows by half when you press play reads as a
-     glitch, not as emphasis.
-
-     So on a phone the active row trades its ↗ for the share control rather
-     than carrying both. Nothing is lost: ↗ and the artist chip point at the
-     SAME anchor (see _song_occ_html), so the show page is still one tap away
-     on that row via the chip. Desktop keeps both — it has the width. */
-  .track-row.song-occ.is-active:has(.track-share) .track-open { display: none; }
 }
 
 /* Controls above a tracklist — the Archive/Loud playback mode and the list
@@ -1911,18 +1815,6 @@ a.artist-chip:hover { filter: brightness(1.08); }
    between them reads as misalignment on a 25-row list. */
 .track-row.song-occ .artist-chip { flex-shrink: 0; min-width: 8em; justify-content: center; }
 .track-row.song-occ .occ-date::before { content: "\00B7"; margin: 0 .35em; }   /* margin, not spaces in content: a hex escape eats the space after it */
-
-/* "Open on show page", as an icon in the slot a show row gives its download
-   button -- same footprint, same muted-until-hover treatment. The chip links
-   there as well; this is the affordance you can see. */
-.track-row .track-open {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
-  color: var(--muted); text-decoration: none;
-  transition: background 0.15s, color 0.15s;
-}
-.track-row .track-open:hover { background: var(--accent-light); color: var(--accent); }
-.track-row .track-open svg { width: 13px; height: 13px; display: block; }
 
 /* grid view */
 .song-grid-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }

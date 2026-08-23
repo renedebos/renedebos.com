@@ -1,6 +1,8 @@
 # A row overflow menu: one "…" instead of three controls
 
-Status: **planned, not started.** Written 2026-08-22 from Rene's ask, after he
+Status: **tasks 1-7 done, 2026-08-23** (branch `row-menu`, unpushed). Play
+next / Add to queue remain parked — see §2a. Originally written as:
+**planned, not started.** Written 2026-08-22 from Rene's ask, after he
 pointed at Amazon Music and Spotify: *"they use a menu icon (…) to show a list
 of options. Would that work for our audio player?"* — and then, on the one
 point where I recommended otherwise: *"the download is part of the menu items
@@ -213,6 +215,28 @@ makes the list keyboard-operable at all (no `.track-row` is focusable — see
    focus return, the download hand-off); `browser_check.mjs` gains a real
    touch-tap opening the sheet and a real download click reaching the
    password modal.
+
+## 6a. What actually shipped, and where it differed from this plan
+
+- **Tasks 4 and 6 were done together**, not in sequence. Separately neither
+  leaves the site working: 4 alone strips the controls and renders an unstyled
+  menu, 6 alone styles something nothing shows.
+- **Task 5 folded into task 3.** Track info arrived as the details pane the
+  moment the builder existed. The sub-decision it deferred — keep or retire the
+  desktop hover tooltip — was settled as **keep**: hover is instant and free on
+  a mouse, and the menu exists because hover never worked on touch. Retiring it
+  would make desktop worse to fix a phone problem.
+- **§3 was right that the shared popover should be generalised**, and the cost
+  of not having done so earlier showed up immediately: `placeNear()` only
+  clamped downwards, which cut items off the bottom of the menu.
+- **The dead-code sweep went further than "four now-dead row rules."** Also
+  removed: `track_share_button()`, `track_add_button()`, `OPEN_SVG`,
+  `PLUS_SVG` and `SHARE_SVG` from fragments.py; `window.trackShareButtonHtml`,
+  its `SHARE_SVG`, the `.track-share` click branch and `shareRow()` from
+  track-select.js. **Kept deliberately:** `trackAddButtonHtml` and the base
+  `.track-add` rules (still rendered by playlist-views.js on `/playlist/`
+  rows, which §7 puts out of scope), the base `.download-btn` rules (whole-show
+  recording cards still carry one), and `.zip-download-btn`.
 
 ## 7. Risks and open questions
 

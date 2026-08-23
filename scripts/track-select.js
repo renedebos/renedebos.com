@@ -6,9 +6,9 @@
 // a different show or the songs matrix, pick more, then commit the whole
 // running selection to a playlist from wherever you are.
 //
-// trackAddButtonHtml() is exposed as a global so songs.js (a separate IIFE,
+// trackAddButtonHtml() is exposed as a global so playlist-views.js (a module,
 // loaded after this file) and playlist-views.js (an ES module, reads it off
-// `window` rather than importing it — see its own use of window.trackAddButtonHtml)
+// reached off `window` rather than by import — see its own use of it)
 // can build the same button markup client-side; scripts/sitegen/fragments.py's
 // track_add_button() is the server-side twin — keep all three visually
 // identical by convention.
@@ -39,12 +39,6 @@
   var PLUS_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg>';
   var CHECK_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3.2L13 4.8"/></svg>';
 
-  // Same glyph as the mini-player bar's share button (miniplayer-views.js's
-  // SHARE_ICON) — one action, one drawing.
-  var SHARE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" '
-    + 'stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.6"/>'
-    + '<circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/>'
-    + '<path d="M8.2 13.3l7.6 4.4M15.8 6.3l-7.6 4.4"/></svg>';
 
   // An <a href>, not a <button>, for the same reason .download-btn is: with
   // the handler below it opens the share sheet/popover, and with no
@@ -61,13 +55,6 @@
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
-
-  window.trackShareButtonHtml = function (shareUrl, title) {
-    if (!shareUrl) return '';
-    var label = title ? 'Share &ldquo;' + escAttr(title) + '&rdquo;' : 'Share this song';
-    return '<a class="track-share" href="' + escAttr(shareUrl) + '" aria-label="' + label
-      + '" title="' + label + '">' + SHARE_SVG + '</a>';
-  };
 
   window.trackAddButtonHtml = function (id) {
     var on = selected.indexOf(id) !== -1;
@@ -211,18 +198,6 @@
       toggleShow(showBtn.dataset.ids.split(' '));
       return;
     }
-    // Checked before .track-add for no ordering reason — the two never nest —
-    // but grouped with it because both are "row buttons that are not the
-    // player". stopPropagation as well as preventDefault: the legacy engine
-    // binds click handlers on the row itself, and sharing must not also seek
-    // or start playback.
-    var shareBtn = e.target.closest('.track-share');
-    if (shareBtn) {
-      e.preventDefault();
-      e.stopPropagation();
-      shareRow(shareBtn);
-      return;
-    }
     var btn = e.target.closest('.track-add');
     if (btn) { e.preventDefault(); toggle(btn.dataset.id); return; }
     var all = e.target.closest('.select-all');
@@ -238,26 +213,6 @@
       saveSelection(); syncAllButtons(); renderBar();
     }
   });
-
-  // The row's data-item already holds everything share.js wants (title,
-  // artist, venue, date, shareUrl) — the same normalized item the player
-  // reads — so the share control needs no second source of truth and no
-  // controller. share.js is imported on the FIRST press, exactly as
-  // miniplayer-views.js does it, so pages where nobody shares never fetch it.
-  function shareRow(btn) {
-    var row = btn.closest('[data-item]');
-    var item = null;
-    try { item = row && JSON.parse(row.dataset.item); } catch (e) { /* fall through */ }
-    // A row with unreadable data-item still has an honest link on the button
-    // itself; share.js falls back to pageUrl/origin for anything missing.
-    if (!item) item = { title: btn.getAttribute('title') || '', shareUrl: btn.getAttribute('href') };
-    import('/assets/share.js')
-      .then(function (m) { m.shareItem(item, btn); })
-      // The module failed to load: follow the link instead of doing nothing.
-      // The share page's own URL is then the thing to copy, which is a worse
-      // but real answer rather than a button that visibly does nothing.
-      .catch(function () { location.href = btn.getAttribute('href'); });
-  }
 
   // /playlist/ re-renders its queue (and the "Select all" button with it) on
   // every controller change; playlist-views.js calls this afterwards so the
