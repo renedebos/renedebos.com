@@ -1001,7 +1001,18 @@ main {
 /* Icon-only download button — a plain arrow, no text label. There's only one
    download option now (password-protected lossless), so the format doesn't
    need spelling out in the button itself; it's in the hover title. */
-.download-btn {
+/* `.download-btn` does double duty: it is the CIRCULAR ICON BUTTON on a
+   recording card, and it is the hook player.js's delegated password-modal
+   handler matches (`a.download-btn`). Those are a presentation and a
+   behaviour, and the row overflow menu needs the second without the first --
+   its Download row is a full-width menu item that happens to be a gated
+   download.
+   Excluding .row-menu-item is what keeps them apart. Without it the menu row
+   inherited width:24px/height:24px/justify-content:center, and under
+   border-box a 24px height with 32px of padding rendered the row 32px tall
+   with zero content height -- visibly shorter than every item beside it.
+   Rene spotted it on his phone, 2026-08-23. */
+.download-btn:not(.row-menu-item) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1015,8 +1026,8 @@ main {
   transition: background 0.2s, color 0.2s;
 }
 
-.download-btn:hover { background: var(--accent); color: white; }
-.download-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+.download-btn:not(.row-menu-item):hover { background: var(--accent); color: white; }
+.download-btn:not(.row-menu-item) svg { width: 14px; height: 14px; flex-shrink: 0; }
 
 /* "+" / checkmark playlist-selection toggle — same circular-icon language as
    .download-btn, filled solid once selected (aria-pressed="true"). */

@@ -762,6 +762,20 @@ async function checkRowMenu(context) {
         && menu.chevrons > 0 && menu.chevrons < menu.items.length && menu.expanded === 'true',
       JSON.stringify(menu));
 
+    // Every row in the menu must be the same height. This is a REGRESSION
+    // guard, not a style preference: the Download row carries the
+    // `.download-btn` class so player.js's delegated handler can find it, and
+    // that class also styles the circular icon button on a recording card --
+    // width:24px/height:24px/justify-content:center. Under border-box that
+    // rendered the menu row 32px tall with zero content height against its
+    // 58.4px siblings. Rene saw it on his phone before any check did.
+    const rowHeights = await page.evaluate(() => Array.from(
+      document.querySelectorAll('.row-menu.open .row-menu-item'))
+      .map((el) => Math.round(el.getBoundingClientRect().height * 10) / 10));
+    const spread = rowHeights.length ? Math.max(...rowHeights) - Math.min(...rowHeights) : -1;
+    record(`${SHOW} every menu row is the same height`,
+      rowHeights.length >= 4 && spread === 0, `heights=${rowHeights.join(',')} spread=${spread}`);
+
     // THE point of task 1: the download now lives inside a menu built on first
     // press, so its click must still reach the password modal rather than
     // following its href to /stream, which the Worker 403s for every .flac.
