@@ -1647,6 +1647,45 @@ async function runWebkitSmoke() {
   record('WebKit: real playback starts from a real click gesture', playback.t > 0.3 && !playback.paused, JSON.stringify(playback));
   const canvasCount = await page.locator('.track-list [data-item]').first().locator('.ws-wave canvas').count();
   record('WebKit: WaveSurfer canvas renders', canvasCount > 0, `canvases=${canvasCount}`);
+
+  // Every icon this project draws must have EXPLICIT svg width/height. An
+  // <svg> with a viewBox and neither collapses to 0x0 inside a flex container
+  // in WebKit while Chromium stretches it to the box -- so the control is
+  // present, focusable, tappable, and completely invisible. That shipped on
+  // 2026-08-23: the row menu's "..." trigger drew nothing on iPhone, every
+  // Chromium check passed, and every run of this script had been given
+  // --skip-webkit. Measured here rather than asserted from the stylesheet,
+  // because what matters is what the engine actually lays out.
+  const zeroIcons = await page.evaluate(() => {
+    const bad = [];
+    document.querySelectorAll('.track-row .row-menu-trigger svg, .track-row .play-btn svg')
+      .forEach((el) => {
+        // Hidden ON PURPOSE is not the failure mode this is looking for: an
+        // idle row's .play-btn > svg is display:none by design, because the
+        // triangle is drawn as the track number in ::before. What is being
+        // caught is an icon that is SUPPOSED to paint and measures zero.
+        if (getComputedStyle(el).display === 'none') return;
+        const r = el.getBoundingClientRect();
+        if (r.width < 4 || r.height < 4) bad.push((el.parentElement.className || '?') + ` ${Math.round(r.width)}x${Math.round(r.height)}`);
+      });
+    return bad;
+  });
+  record('WebKit: every row icon lays out at a real size (not 0x0)',
+    zeroIcons.length === 0, zeroIcons.slice(0, 4).join(' | ') || 'all non-zero');
+
+  // The same trap one level down, inside the menu itself.
+  await page.locator('.track-row .row-menu-trigger').first().click();
+  await page.waitForTimeout(900);
+  const menuIcons = await page.evaluate(() => {
+    const m = document.querySelector('.row-menu.open');
+    if (!m) return { open: false };
+    const sizes = Array.from(m.querySelectorAll('.row-menu-icon svg, .row-menu-chevron svg'))
+      .map((el) => { const r = el.getBoundingClientRect(); return Math.min(Math.round(r.width), Math.round(r.height)); });
+    return { open: true, n: sizes.length, smallest: sizes.length ? Math.min(...sizes) : -1 };
+  });
+  record('WebKit: the menu opens and its icons render at a real size',
+    menuIcons.open && menuIcons.n > 0 && menuIcons.smallest >= 4, JSON.stringify(menuIcons));
+
   await browser.close();
 }
 
