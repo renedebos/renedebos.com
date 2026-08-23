@@ -392,5 +392,54 @@ test('the sheet says Dismiss', () => {
   assert.equal(e.doc.body.querySelector('.row-menu-dismiss').textContent, 'Dismiss');
 });
 
+// ── the mini-player bar's entry point ─────────────────────────────────────
+test('infoFromItem derives provenance from the item alone', () => {
+  const pairs = menu.infoFromItem(ITEM);
+  const keys = pairs.map((p) => p[0]);
+  assert.ok(keys.includes('Venue') && keys.includes('Date') && keys.includes('Size'));
+  // Honest about what the item does NOT carry: process version lives only in
+  // the build's tables, so this must not invent it.
+  assert.ok(!keys.includes('Process version'));
+  assert.equal(pairs.find((p) => p[0] === 'Size')[1], 'FLAC 33 MB · MP3 7 MB');
+});
+
+test('specsForItem prefers the page\'s own row, so bar and row agree exactly', () => {
+  const doc = new FakeDocument();
+  doc.body = new FakeElement('body');
+  doc.appendChild(doc.body);
+  const row = new FakeElement('div', ['track-row']);
+  row.dataset.item = JSON.stringify(ITEM);
+  const title = new FakeElement('span');
+  title.dataset.info = JSON.stringify(INFO);
+  row.appendChild(title);
+  doc.body.appendChild(row);
+  const det = menu.specsForItem(ITEM, { document: doc }).find((x) => x.kind === 'details');
+  assert.deepEqual(det.pairs, INFO, 'the row wins over the derived list');
+});
+
+test('specsForItem falls back to the item where no row exists', () => {
+  // A /t/ share page or /playlist/: the playing track has no row anywhere.
+  const doc = new FakeDocument();
+  doc.body = new FakeElement('body');
+  doc.appendChild(doc.body);
+  const det = menu.specsForItem(ITEM, { document: doc }).find((x) => x.kind === 'details');
+  assert.ok(det && det.pairs.length > 0, 'still offers details');
+  assert.notDeepEqual(det.pairs, INFO);
+});
+
+test('specsForItem ignores a row for a DIFFERENT track', () => {
+  const doc = new FakeDocument();
+  doc.body = new FakeElement('body');
+  doc.appendChild(doc.body);
+  const row = new FakeElement('div', ['track-row']);
+  row.dataset.item = JSON.stringify({ ...ITEM, id: 'someone-else-99' });
+  const title = new FakeElement('span');
+  title.dataset.info = JSON.stringify([['Venue', 'Wrong Place']]);
+  row.appendChild(title);
+  doc.body.appendChild(row);
+  const det = menu.specsForItem(ITEM, { document: doc }).find((x) => x.kind === 'details');
+  assert.ok(!JSON.stringify(det.pairs).includes('Wrong Place'), 'matched on id, not on position');
+});
+
 console.log(`\n${passed}/${passed + failed} passed`);
 process.exit(failed ? 1 : 0);

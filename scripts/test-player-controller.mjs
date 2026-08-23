@@ -1254,6 +1254,19 @@ for (const { name, fn } of tests) {
     console.error('       ' + (err && err.message ? err.message : err));
   }
 }
+test('normalizeItem carries `song` through for the overflow menu', () => {
+  // The whitelist is the schema. A field the build emits but this drops is
+  // invisible everywhere downstream -- which is how the mini-player bar came
+  // to offer one menu item fewer than the row for the same track.
+  const withSong = normalizeItem({ id: 't1', streamUrl: 'https://x/s.mp3',
+    song: { url: '/songs/truck/', plays: 25, canonical: 'Truck' } });
+  assert.deepEqual(withSong.song, { url: '/songs/truck/', plays: 25, canonical: 'Truck' });
+  // A whole-show recording is not a song, and must normalise to null rather
+  // than undefined so consumers can test it the same way every time.
+  const without = normalizeItem({ id: 'r1', streamUrl: 'https://x/s.mp3', kind: 'recording' });
+  assert.equal(without.song, null);
+});
+
 console.log(`\n${tests.length - failed}/${tests.length} passed`);
 // player-controller.js's module-level BroadcastChannel singleton is never
 // closed (it's meant to live for the whole page lifetime in a browser), so

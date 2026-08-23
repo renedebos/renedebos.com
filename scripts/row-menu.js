@@ -180,6 +180,57 @@ export function buildRowMenuSpecs(item, info, opts = {}) {
   return specs;
 }
 
+// Provenance derived from the item itself, for callers with no row to read --
+// the mini-player bar on a /t/ share page or /playlist/, where the playing
+// track has no row on the page at all.
+//
+// Deliberately SHORTER than a row's data-info: "Process version" lives only in
+// the build's own tables and never reached the item, so this does not invent
+// it. Fewer true rows beats seven rows one of which is a guess.
+export function infoFromItem(item) {
+  if (!item) return null;
+  const dl = item.downloads || {};
+  const sizes = [];
+  if (dl.lossless && dl.lossless.sizeLabel) {
+    sizes.push(String(dl.lossless.format || '').toUpperCase() + ' ' + dl.lossless.sizeLabel);
+  }
+  if (dl.lossy && dl.lossy.sizeLabel) sizes.push('MP3 ' + dl.lossy.sizeLabel);
+  const pairs = [
+    ['Artist', item.artist],
+    ['Song', item.title],
+    ['Venue', item.venue],
+    ['Date', item.dateDisplay || item.date],
+    ['Duration', item.durationLabel],
+    ['Size', sizes.join(' \u00b7 ')],
+  ].filter((p) => p[1]);
+  return pairs.length ? pairs : null;
+}
+
+// Builds a menu from an ITEM rather than a row -- the entry point for the
+// mini-player bar, which paints one item and has no row of its own.
+//
+// Prefers the page's own row for that item when there is one, so the bar and
+// the row show byte-identical provenance rather than two nearly-alike lists,
+// and falls back to infoFromItem() where no such row exists.
+export function specsForItem(item, opts = {}) {
+  const doc = opts.document || (typeof document !== 'undefined' ? document : null);
+  let info = null;
+  if (doc && item && item.id) {
+    const rows = doc.querySelectorAll('.track-row[data-item]');
+    for (let i = 0; i < rows.length; i++) {
+      let it = null;
+      try { it = JSON.parse(rows[i].dataset.item); } catch (e) { continue; }
+      if (it && it.id === item.id) {
+        const el = rows[i].querySelector('[data-info]');
+        if (el) { try { info = JSON.parse(el.dataset.info); } catch (e) { info = null; } }
+        break;
+      }
+    }
+  }
+  if (!info) info = infoFromItem(item);
+  return buildRowMenuSpecs(item, info, opts);
+}
+
 // Reads both attributes off a row and builds its menu. The row is the unit the
 // three renderers agree on, so this is the entry point task 4 calls.
 export function specsForRow(rowEl, opts = {}) {
@@ -210,7 +261,10 @@ function ensureMenu(doc, win) {
     // The trigger is in `within` so that pressing it again reaches the toggle
     // in openRowMenu() instead of being closed here first and re-opened by
     // the same click.
-    within: ['.row-menu', '.row-menu-trigger'],
+    // '.mp-menu' is the mini-player bar's trigger. Listed for the same reason
+    // the row's is: without it the press that toggles the menu shut would be
+    // read as a click outside and close it first, so it would reopen instead.
+    within: ['.row-menu', '.row-menu-trigger', '.mp-menu'],
     // An anchored popover must die when its anchor scrolls out from under it;
     // a sheet pinned to the viewport must NOT, or it fights the finger that
     // opened it (plan §5). The delivery is decided per open, so the exemption

@@ -117,6 +117,12 @@ export function normalizeItem(raw) {
     shareUrl: raw.shareUrl ? String(raw.shareUrl) : null,
     playLabel: raw.playLabel || raw.title || '',
     downloads: raw.downloads || { flac: null },
+    // {url, plays, canonical} for a curated track, absent on a whole-show
+    // recording (which is not a song). Carried through so the mini-player
+    // bar's overflow menu can offer "All N recordings of this song" exactly as
+    // a row's does -- this whitelist dropping it made the bar show one item
+    // fewer than the row for the same track, silently (found 2026-08-23).
+    song: raw.song || null,
     dropouts: !!raw.dropouts,
   };
 }
