@@ -65,9 +65,14 @@ the wild. Full reasoning: §9 and §10 of the plan.
   used against a create-call API, one level up. Each page carries its own
   `og:` tags, which closes §6's deferred "song-specific link previews" as a
   side effect: an unfurl now shows the song, not the show.
-- **`noindex`, no sitemap entry** — share targets, not browse targets; 680
-  near-identical pages would compete with the show and song pages that are
-  designed to be found. Unfurlers read `og:` and ignore `robots`.
+- **No sitemap entry, and — after a reversal the same day — NO `noindex`.**
+  The tag went on for the obvious reason (680 near-identical pages competing
+  with the show and song pages designed to be found) and came straight back
+  off, because **Facebook honours `noindex` and refuses to scrape**: it made
+  a share page that could not be shared. See "The share page could not be
+  shared" below. Nothing links to these pages and they are not in the
+  sitemap, so a search engine has no route to them anyway — the tag was
+  buying almost nothing.
 - **`show_track_row()` was extracted out of `build_show()`** so the share
   page renders the *identical* row — same markup, same engine, same bar. The
   extraction was verified byte-identical across all 166 pre-existing pages
@@ -164,6 +169,59 @@ purpose. What is left in the Worker is string work that cannot touch the
 binding: normalise a non-canonical `/t/` URL to the canonical one, which
 covers an uppercased code and every slash-less link copied before the
 revision. Verified live: `/t/{code}/` is **200 with zero redirects**.
+
+### The share page could not be shared (`8d284ef5`)
+
+Rene, trying the feature for the thing it exists for: *"Sharing the link on
+Facebook as a reply is an issue because Facebook doesn't seem to accept it as
+a working link."* Two causes, both in the page head.
+
+1. **`og:url` and `<link rel="canonical">` pointed at the slash-less form.**
+   A plain regression: when `fb49ee5f` made `/t/{code}/` canonical it updated
+   `track_share_url()` and **not** `build_track_page()`'s own `url=`
+   argument. `og:url` is the address a crawler *adopts* for the post, so
+   Facebook was told "the real URL is X", fetched X, and was bounced straight
+   back by the redirect.
+2. **`noindex`.** The comment justifying it asserted that "unfurlers read
+   `og:` tags and ignore `robots`". That is **false** — Facebook's crawler
+   honours the tag and will not scrape a page carrying it.
+
+Three build-time guards so neither returns: canonical == `og:url`,
+canonical == the `shareUrl` the page's own track hands out, and no `noindex`
+on a share page. Each confirmed to fail on a deliberately broken page.
+
+**The lesson this route keeps teaching:** no check found it. Local suites,
+the local harness and the production sweep were all green. Rene found it by
+doing the one thing the feature is *for*. When a feature's value is "it works
+somewhere else" — a chat app, a social network, a mail client — trying it
+there is the only real test, and we do not have one.
+
+Also worth knowing when testing this: **Facebook caches what it scraped the
+first time.** A link posted while the page was broken keeps showing the
+broken result until it is re-scraped at
+`developers.facebook.com/tools/debug/`, which also prints exactly what
+Facebook thinks of the page — far better ground truth than guessing.
+
+### Share the link and nothing else (`c8a28441`)
+
+Rene: *"The share function gives me a link but also a bunch of text (name of
+the song, artist venue and date)."* The desktop popover was always clean —
+Copy link has only ever copied the URL. The phone path was not:
+`navigator.share` was passed a `text` field, and most targets paste `text`
+and `url` together.
+
+Defensible while a shared link was a bare URL with nothing behind it;
+indefensible an hour later, once `8d284ef5` made the `og:` tags work and the
+receiving app rendered that same information from the page. `title` stays
+(targets use it as a label or subject, not body content). The Email option
+had the same duplication in its body and now sends the link alone, subject
+unchanged. **Accepted cost:** on a target that does not unfurl (plain SMS,
+some mail clients) the recipient gets a bare link with no context.
+
+**`scripts/test-share.mjs` is new — share.js had no tests at all**, which is
+how a product decision this visible had nothing holding it in place. 7 tests
+pinning the payload in both directions; verified by reverting share.js, which
+fails 2 of 7.
 
 ### Two things that were already broken, found by finally running `--prod`
 
@@ -1164,6 +1222,28 @@ Added 2026-08-22 (sixth pass):
   all, for weeks, which is indistinguishable from "nobody ran it". Wrap
   optional/environment-specific blocks so they record a failure instead of
   taking the run down.
+- **Facebook honours `noindex` and will not scrape a page carrying it.** The
+  belief that "unfurlers read `og:` tags and ignore `robots`" is false, and it
+  was written into a code comment as justification. `noindex` on a page whose
+  purpose is being shared makes it unshareable.
+- **`og:url` is the address a crawler ADOPTS, not a label.** Point it at a URL
+  that redirects and the crawler fetches that URL and is bounced back. It must
+  be the page's own canonical, non-redirecting address — and it must agree
+  with `<link rel="canonical">` and with whatever link the page's own share
+  control hands out. All three are asserted at build time now.
+- **A feature whose value is "it works somewhere else" needs testing there.**
+  The Facebook failure passed every local suite, the local browser harness and
+  the production sweep. Rene found it in thirty seconds by pasting a link into
+  Facebook. For chat apps, social networks and mail clients, use the
+  platform's own debugger (`developers.facebook.com/tools/debug/`) — it states
+  the reason instead of leaving you to infer it, and forces a re-scrape past
+  the preview cache that otherwise keeps showing the old, broken result.
+- **When metadata is derived in two places, changing one is a silent bug.**
+  Making `/t/{code}/` canonical updated `track_share_url()` and missed
+  `build_track_page()`'s own `url=`. Nothing failed; the page just advertised
+  the wrong address to crawlers. If a value appears in both a builder and a
+  template, tie them together with an assertion rather than trusting the next
+  edit to remember both.
 
 Added 2026-08-21 (fifth pass):
 
@@ -1415,8 +1495,9 @@ instructions.
   the fix that actually matters and is purely local.
 - `plans/player-consolidation/` — closed; `-codex.md` logs every review round.
 
-**Tests:** `node scripts/test-*.mjs` — 8 suites plus `test-fake-dom.mjs`
-(a helper). **221/221 passing** as of 2026-08-22, sixth pass
+**Tests:** `node scripts/test-*.mjs` — 9 suites plus `test-fake-dom.mjs`
+(a helper). **228/228 passing** as of 2026-08-22, sixth pass
+(`test-share.mjs` is new — the share payload)
 (`test-miniplayer-state.mjs` retired with the file it tested;
 `test-site-worker.mjs` covers the share-a-song `/t/{code}/` route — see both
 above). The real-browser harness is separate and manual:
