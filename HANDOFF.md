@@ -1,4 +1,4 @@
-# Session Handoff — Hannan Recordings (renedebos.com)
+# Session Handoff — The Hannan Tapes (renedebos.com)
 **Date:** 2026-08-22 (sixth pass) · **Branch:** `main` — everything merged, deployed, verified live
 
 ## ⛔ READ THIS FIRST
