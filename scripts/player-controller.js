@@ -72,6 +72,20 @@ function shuffleArray(a) {
 // unbounded array no matter which caller it came through.
 const MAX_QUEUE_ITEMS = 1000;
 
+// What a phone lock screen and a car dashboard show while a track plays.
+// Versioned by content hash for the same reason og:image is (see OG_IMAGE in
+// sitegen/core.py): the browser caches this by URL on a seven-day max-age, so
+// regenerating the image cannot reach a device that already holds the old one
+// -- which is exactly how "The Hannan Recordings" stayed on lock screens for
+// months after the site was renamed. Same URL, no reason to look again.
+//
+// The hash is typed here rather than injected, because assets/*.js are copied
+// verbatim by build.py and templating them would mean the Node suites read a
+// placeholder instead of the real string. It cannot go stale unnoticed:
+// check_brand_asset_versions() in sitegen/core.py fails the build when this
+// does not match assets/artwork.png, and prints the line to paste.
+const ARTWORK_URL = 'https://renedebos.com/assets/artwork.png?v=1c220a8582d8';
+
 // ── playable-item schema ────────────────────────────────────────────────
 // Validates/defaults a raw item into the normalized shape every view and
 // the controller itself can rely on. Doesn't know or care where the raw
@@ -950,7 +964,7 @@ export class PlaybackController {
         title: item.title,
         artist: item.artist,
         album: [item.venue, item.dateDisplay].filter(Boolean).join(' '),
-        artwork: [{ src: 'https://renedebos.com/assets/artwork.png', sizes: '512x512', type: 'image/png' }],
+        artwork: [{ src: ARTWORK_URL, sizes: '512x512', type: 'image/png' }],
       });
     } catch (e) { /* metadata is a nicety; never let it break playback */ }
   }

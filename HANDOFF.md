@@ -1,5 +1,5 @@
 # Session Handoff — The Hannan Tapes (renedebos.com)
-**Date:** 2026-08-23 (eighth pass) · **Branch:** `main` — everything merged, deployed, verified live
+**Date:** 2026-08-24 (ninth pass) · **Branch:** `main` — everything merged, deployed, verified live
 
 ## ⛔ READ THIS FIRST
 
@@ -72,7 +72,42 @@ localStorage (private, invisible, gone with site data) or KV with an anonymous
 id (rate limiting, abuse, moderation). Either way it needs a "your likes"
 surface or it is a button with no perceptible effect. Do not add a heart.
 
-## ⚠️ THE LESSON OF THIS PASS: a test that manufactures what it should check
+## ⚠️ THE LESSON OF THIS PASS: shipped is not the same as arrived
+
+**Rene shared a song on 2026-08-24 and the preview card still said "The Hannan
+Recordings — Live recordings of Jerry, Mad and Sean Hannan".** That file was
+replaced on 2026-08-22 (`d0462e67`, `95f0d09c`). It had been correct on the
+server for two days.
+
+Every check available from inside this repo said the bug did not exist:
+
+- the repo's copy of `assets/og.png` was the new card;
+- `curl https://renedebos.com/assets/og.png` returned the new card, md5-identical
+  to the local file;
+- every page's `og:image` pointed at exactly that URL;
+- the build passed, the suites passed, `--prod` passed.
+
+**All of that was true and the user was still right.** A link preview is two
+independent fetches — the page's HTML, then separately the image URL that HTML
+names — and the image is cached *by URL*, on its own `max-age=604800`, across
+every page that names it. `/assets/og.png` never moved, so nothing told any
+phone or scraper to look again. A brand-new `/t/{code}/` link nobody had ever
+previewed still drew the old card out of a client-side cache.
+
+**The general form, worth carrying forward:** an asset addressed by a stable
+URL with a long max-age is a change that may never arrive. Overwriting the
+bytes ships it; only moving the URL delivers it. Verifying with `curl` proves
+what the *origin* serves and says nothing about what a client that already
+has an answer will do — and a cold `curl` is structurally incapable of
+reproducing a warm-cache bug. When a user reports a stale asset and the
+server looks correct, **believe the user and go look at the addressing**, do
+not re-verify the origin a third time.
+
+Both brand images are now content-versioned (`?v=<sha256[:12]>`), and both
+have a build-time guard so a regenerated image cannot ship behind a stale
+version. See "The preview card nobody could see" below.
+
+## ⚠️ THE LESSON OF THE EIGHTH PASS: a test that manufactures what it should check
 
 **Resizing any show page threw `v.redrawWave is not a function` on every
 resize** — and had done since the mini-player bar shipped on 2026-08-20.
@@ -164,7 +199,55 @@ Rendering it and looking is not optional.
    shipped one (bar-gating + the squeeze fix) and declined the hero. Do not
    add it without him asking again.
 
-## ✅ Done this session (2026-08-23, eighth pass)
+## ✅ Done this session (2026-08-24, ninth pass)
+
+One report from Rene — a shared song still showing the retired name — which
+turned out not to be a content bug at all. The words had been right for two
+days; the addressing was wrong. Read the lesson at the top of this file first.
+
+### The preview card nobody could see
+
+**Nothing about the card's wording changed, and nothing needed to.** Confirmed
+by pulling the actual files out of git: `d0462e67^:assets/og.png` (committed
+2026-06-28) is pixel-for-pixel what Rene described, down to the old ordering
+"Jerry, Mad and Sean Hannan". The live file has said "The Hannan Tapes — Live
+recordings of Jerry, Sean and the Mad Hannans" since 2026-08-22.
+
+The fix is the URL, not the image:
+
+- **`OG_IMAGE` in `sitegen/core.py`** — `.../assets/og.png?v=<sha256[:12] of the
+  file>`, derived from the bytes so regenerating the image moves the query by
+  itself. Nothing to remember to bump. 12 hex to match `tracks.json`'s `ver`.
+- **All 1744 references** across 857 built pages now carry it: `page_shell()`
+  (og:image + twitter:image), `HOME_SHELL`, and `show_jsonld()`'s `image`.
+- **`/process/` and `/manual/` had no `og:image` at all** — found by the new
+  check, not by looking. They are the two deliberately self-contained pages
+  (own `<style>`, blue accent, no site chrome) and had never been given a
+  share card. They have the full OG block now; their design is untouched.
+- **`check_og_image()` in `verify_markup.py`**, run over the whole-site sweep,
+  fails the build on a page whose `og:image`/`twitter:image` has drifted from
+  the file on disk — including the specific case of a page left on the plain
+  unversioned URL, which looks perfectly valid and serves the right bytes while
+  doing nothing at all. Mutation-tested three ways; a self-test covers it.
+- **`assets/artwork.png` (the lock-screen image) had the identical latent
+  bug** and got the same treatment. Its URL lives in `player-controller.js`
+  (`ARTWORK_URL`) because `assets/*.js` are copied verbatim and templating
+  them would make the Node suites read a placeholder. So the hash is typed
+  there, and **`check_brand_asset_versions()`** fails the build when it does
+  not match the file, printing the exact line to paste. Both mutations tested.
+- `make_brand_images.mjs` now says, at the top, to run `build.py` after
+  regenerating.
+
+**What this does and does not fix.** A link previewed for the *first* time now
+gets the new card, because the image URL is new. A link somebody already
+shared keeps its old preview until that app's own *page*-level cache expires —
+iMessage in particular caches per-URL and effectively forever. Nothing in this
+repo can reach that; re-sharing the link or Facebook's Sharing Debugger can.
+
+`/history/`'s week twenty-two extended to "August 23–24" with a plain-English
+bullet on it.
+
+## ✅ Done in the eighth pass (2026-08-23)
 
 Six commits, all reactive: an external UX review, then three bugs Rene or that
 review found that every green check had missed. No new features.

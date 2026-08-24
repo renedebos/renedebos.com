@@ -504,11 +504,11 @@ def page_shell(*, title, description, url, heading, tagline, nav, main, extra_sc
 <meta property="og:description" content="{esc(description)}">
 <meta property="og:type" content="website">
 <meta property="og:url" content="{esc(url)}">
-<meta property="og:image" content="https://renedebos.com/assets/og.png">
+<meta property="og:image" content="{OG_IMAGE}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{esc(title)}">
 <meta name="twitter:description" content="{esc(description)}">
-<meta name="twitter:image" content="https://renedebos.com/assets/og.png">
+<meta name="twitter:image" content="{OG_IMAGE}">
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
@@ -1174,7 +1174,7 @@ def show_jsonld(show, artist):
         "performer": {"@type": "MusicGroup", "name": artist["name"]},
         "location": {"@type": "MusicVenue", "name": show.get("venue") or show.get("venue_short")},
         "url": f"https://renedebos.com{show_url(show)}",
-        "image": "https://renedebos.com/assets/og.png",
+        "image": OG_IMAGE,
     }
     if show.get("date"):
         ev["startDate"] = show["date"]

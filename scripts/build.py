@@ -48,6 +48,18 @@ def main():
         for e in cerr:
             print("  " + e, file=sys.stderr)
         sys.exit(1)
+    # Hard failure: a brand image regenerated without its URL version moving is
+    # a change nobody receives. Caches key on the URL, so the new card/artwork
+    # sits on the server while phones keep painting the old one -- the shape of
+    # the 2026-08-24 report. og:image versions itself from the file; the
+    # lock-screen artwork's URL is typed in player-controller.js, so it needs
+    # this. The message carries the line to paste.
+    berr = check_brand_asset_versions()
+    if berr:
+        print("BRAND ASSET VERSION STALE", file=sys.stderr)
+        for e in berr:
+            print("  " + e, file=sys.stderr)
+        sys.exit(1)
     # Hard failure, not a warning: a variant that is not provably derived from
     # the published archive means the site would serve two disagreeing edits.
     verr = check_variant_derivation()

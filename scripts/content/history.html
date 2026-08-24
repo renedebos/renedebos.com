@@ -340,7 +340,7 @@
       <li>Caught and fixed a two-hour bug where an earlier edit left a stray scrap of code visible at the very top of every single page on the site.</li>
     </ul>
 
-    <h2>Week twenty-two &mdash; one button instead of four (August&nbsp;23, 2026)</h2>
+    <h2>Week twenty-two &mdash; one button instead of four (August&nbsp;23&ndash;24, 2026)</h2>
     <p>
       Every track row had been carrying four separate small controls &mdash; download, share, add to playlist, and a link back to the show &mdash; crowding the row and drifting out of alignment with each other. They&rsquo;re now one &ldquo;&hellip;&rdquo; menu: a sheet that rises from the bottom on a phone, a small pop-up next to your cursor on a computer. The mini-player bar picked up the same menu, folding in its own separate share button alongside it.
     </p>
@@ -350,6 +350,7 @@
       <li><strong>&ldquo;Play random tape,&rdquo; on the homepage, wasn&rsquo;t actually picking a random tape.</strong> It picked a random <em>track</em> out of all 680, so it would land you mid-set on a guitar solo or a between-song aside, and it quietly favored whichever shows happened to have the most songs. It now genuinely picks a random show and starts it from the first track, the way it always should have.</li>
       <li>A batch of accessibility fixes came out of the same review: the password download window now properly traps keyboard focus while it&rsquo;s open and hands focus back to whatever you clicked when it closes; pages that update their own result counts announce the change to a screen reader; and several controls that were missing real labels got them.</li>
       <li><strong>One more bug worth naming, because it took two tries to actually fix.</strong> The round handle on a track&rsquo;s progress bar was visibly sliced in half by the row&rsquo;s own rounded corner &mdash; on the very first and last row of any track list, most noticeable on song pages. The first attempt only moved the handle sideways; the clipping was happening vertically too, and it took a second pass to actually clear it.</li>
+      <li><strong>Shared songs were still showing the retired name.</strong> The preview card that appears when you paste a link into a message had been redrawn two days earlier, and the corrected version was sitting on the server the whole time &mdash; but a link preview is fetched separately from the page and then kept, and redrawing a picture gives a phone that already has the old one no reason to go and look again. The card&rsquo;s address now changes whenever the picture does, so a new one actually arrives. The image your lock screen shows during playback works the same way and got the same treatment.</li>
     </ul>
 
     <p class="about-note">The work continues &mdash; more shows, better audio, and small fixes are always in progress.</p>

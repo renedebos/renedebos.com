@@ -26,6 +26,14 @@ import os
 import re
 import sys
 
+# The one place the expected link-preview URL is derived from assets/og.png.
+# Imported rather than recomputed here on purpose: two copies of a hashing
+# recipe is how the check and the thing it checks drift apart and agree on
+# being wrong. Safe in both entry paths -- sitegen never imports this module,
+# and scripts/ is sys.path[0] when this file is run on its own.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from sitegen.core import OG_IMAGE  # noqa: E402
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ITEM_RE = re.compile(r'data-item="([^"]*)"')
 # A track row carries data-src and data-item on the same element; a recording
@@ -333,6 +341,28 @@ def check_head_is_clean(rel, src):
     return errors
 
 
+OG_IMAGE_RE = re.compile(r'<meta (?:property="og:image"|name="twitter:image") content="([^"]+)"')
+
+def check_og_image(rel, src, want):
+    """Every page's link-preview image must be the current, versioned URL.
+
+    The ?v= query is what makes a regenerated card reach a phone or a scraper
+    that already has the old bytes cached under the same URL -- see OG_IMAGE in
+    sitegen/core.py for the 2026-08-24 report that produced it. The failure this
+    catches is quiet by construction: regenerate assets/og.png, forget to
+    rebuild, and every committed page still names the PREVIOUS hash. Nothing
+    breaks -- the query is opaque, the file still serves -- except the one thing
+    the query exists to do. A build that ships a new card behind an old version
+    has silently done nothing.
+    """
+    found = set(OG_IMAGE_RE.findall(src))
+    if not found:
+        return [f"{rel}: no og:image -- every page needs a link-preview card"]
+    stale = sorted(u for u in found if u != want)
+    return [f"{rel}: og:image {u!r} is stale -- assets/og.png now hashes to "
+            f"{want.rsplit('=', 1)[1]}; rerun scripts/build.py" for u in stale]
+
+
 def check_assets_exist(rel, src):
     """Every /assets/ script a page loads — and everything those scripts
     import — has to actually be written by build.py.
@@ -513,7 +543,9 @@ def check():
                        + glob.glob(os.path.join(ROOT, "*", "*", "index.html"))):
         if os.sep + ".claude" + os.sep in path:
             continue
-        errors += check_head_is_clean(os.path.relpath(path, ROOT), open(path).read())
+        rel, src = os.path.relpath(path, ROOT), open(path).read()
+        errors += check_head_is_clean(rel, src)
+        errors += check_og_image(rel, src, OG_IMAGE)
 
     t_errors, t_track, t_pages = check_track_pages(track_links)
     errors += t_errors
@@ -689,6 +721,28 @@ def _selftest():
 
     errs = check_every_row_has_item("selftest", ok_row + ok_card)
     assert errs == [], f"expected no errors when every element has data-item, got {errs}"
+
+    # check_og_image: the three ways a link-preview card goes wrong. The middle
+    # one is the whole reason the check exists -- a page still naming the
+    # UNVERSIONED url looks perfectly valid and serves the right bytes, while
+    # doing nothing at all about the caches that made versioning necessary.
+    want = "https://renedebos.com/assets/og.png?v=abcdef012345"
+    tag = ('<meta property="og:image" content="{0}">'
+           '<meta name="twitter:image" content="{0}">')
+    assert check_og_image("selftest", tag.format(want), want) == []
+    for bad, why in (("https://renedebos.com/assets/og.png", "unversioned"),
+                     ("https://renedebos.com/assets/og.png?v=000000000000", "old hash")):
+        errs = check_og_image("selftest", tag.format(bad), want)
+        assert len(errs) == 1 and "stale" in errs[0], f"{why} not caught: {errs}"
+    errs = check_og_image("selftest", "<head><title>x</title></head>", want)
+    assert len(errs) == 1 and "no og:image" in errs[0], f"expected a missing-card error, got {errs}"
+    # og:image current, twitter:image left behind -- one error, naming the
+    # stale one, not two errors or a pass.
+    errs = check_og_image("selftest", f'<meta property="og:image" content="{want}">'
+                                      '<meta name="twitter:image" content="https://renedebos.com/assets/og.png">',
+                          want)
+    assert len(errs) == 1 and errs[0].endswith("rerun scripts/build.py") \
+        and "og.png'" in errs[0], f"expected the twitter:image alone to fail, got {errs}"
 
     # IMPORT_RE (finding #5): must catch every import shape this project's own
     # scripts might use, not just the single-quoted static `from` it started

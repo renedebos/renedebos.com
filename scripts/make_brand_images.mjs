@@ -30,6 +30,15 @@
 // so nobody did. Text that ships to every social preview should be editable
 // the same way the rest of the site's text is.
 //
+// AFTER REGENERATING, RUN scripts/build.py. Both cards are addressed with a
+// ?v=<content hash> so a redrawn image actually reaches phones and scrapers
+// that cached the last one -- see OG_IMAGE in sitegen/core.py for the incident
+// that produced that. og:image re-versions itself on every build; the
+// lock-screen artwork's URL is typed into player-controller.js, and build.py
+// refuses to build until it matches, printing the line to paste. Skipping the
+// rebuild is the failure this exists to prevent: new file on the server, old
+// picture everywhere it counts.
+//
 // Usage:
 //   NODE_PATH="$(npm root -g)" node scripts/make_brand_images.mjs
 //   NODE_PATH="$(npm root -g)" node scripts/make_brand_images.mjs --out-dir=/tmp

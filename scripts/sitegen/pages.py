@@ -90,6 +90,7 @@ def build_home():
         artist_links=artist_links,
         random_tape_script=RANDOM_TAPE_SCRIPT,
         jsonld=home_jsonld(),
+        og_image=OG_IMAGE,
         playback_ready=PLAYBACK_READY_SNIPPETS["none"],
     )
 
@@ -107,8 +108,9 @@ HOME_SHELL = '''<!DOCTYPE html>
 <meta property="og:description" content="Live recordings archive — Jerry Hannan, Sean Hannan, and Mad Hannans.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://renedebos.com">
-<meta property="og:image" content="https://renedebos.com/assets/og.png">
+<meta property="og:image" content="{og_image}">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="{og_image}">
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
@@ -382,7 +384,8 @@ def build_process():
     """Like /manual/, a standalone document — not the site's visual system.
     Grouped with the Manual as the two "how this archive works" reference
     pages, reading well in daylight, distinct from the interactive site."""
-    return PROCESS_SHELL.format(body=content("process.html"), updated=PROCESS_UPDATED)
+    return PROCESS_SHELL.format(body=content("process.html"), updated=PROCESS_UPDATED,
+                                og_image=OG_IMAGE)
 
 PROCESS_SHELL = '''<!DOCTYPE html>
 <html lang="en">
@@ -392,6 +395,13 @@ PROCESS_SHELL = '''<!DOCTYPE html>
 <title>The Process — The Hannan Tapes</title>
 <meta name="description" content="How a 25-year-old DAT tape becomes a track-listed show page — the archive's full audio pipeline, step by step.">
 <link rel="canonical" href="https://renedebos.com/process/">
+<meta property="og:title" content="The Process — The Hannan Tapes">
+<meta property="og:description" content="How a 25-year-old DAT tape becomes a track-listed show page — the archive's full audio pipeline, step by step.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://renedebos.com/process/">
+<meta property="og:image" content="{og_image}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="{og_image}">
 <style>
 *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
 :root {{
@@ -492,7 +502,7 @@ def build_manual():
         f'      <a class="t{lvl}" href="#{hid}">{txt}</a>'
         for lvl, hid, txt in re.findall(
             r'<h([23]) id="([^"]+)">(?:<[^>]+>)*([^<]+)', body))
-    return MANUAL_SHELL.format(toc=toc, body=body)
+    return MANUAL_SHELL.format(toc=toc, body=body, og_image=OG_IMAGE)
 
 MANUAL_SHELL = '''<!DOCTYPE html>
 <html lang="en">
@@ -502,6 +512,13 @@ MANUAL_SHELL = '''<!DOCTYPE html>
 <title>The Manual — The Hannan Tapes</title>
 <meta name="description" content="The owner's manual for processing and publishing a show, from Audacity to the live site.">
 <link rel="canonical" href="https://renedebos.com/manual/">
+<meta property="og:title" content="The Manual — The Hannan Tapes">
+<meta property="og:description" content="The owner's manual for processing and publishing a show, from Audacity to the live site.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://renedebos.com/manual/">
+<meta property="og:image" content="{og_image}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="{og_image}">
 <style>
 *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
 :root {{
