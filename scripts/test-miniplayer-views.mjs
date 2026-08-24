@@ -273,13 +273,42 @@ test('an in-progress drag interrupted by a track change does not freeze the new 
 });
 
 // ── Resume vs Retry (recorded restored-play rule 0.6) ──────────────────────
-test('a blocked autoplay offers Resume', async () => {
+// An autoplay blocked ON ARRIVAL shows NO bar. Every shared /t/{code} link and
+// every ?autoplay=1 deep link attempts one, and the row is already saying "Tap
+// play to start" (player-views.js's _setMessage) — a bar adding "Paused by your
+// browser" beside it was two messages for one attempt, on a page the visitor
+// had not yet interacted with at all. Reported against production 2026-08-23.
+test('an autoplay blocked before anything has played shows no bar at all', async () => {
   const c = makeController(new BlockedAudio());
   const { root } = mount(c);
   c.setQueue([item('a')], { startIndex: 0, autoplay: true });
   await tick();
 
   assert.equal(c.state, 'error', 'premise: a rejected play() lands in the error state');
+  assert.equal(root.hidden, true, 'the row owns the cue on arrival; the bar must stay out of it');
+  assert.equal(root.innerHTML, '', 'a hidden bar must not keep stale markup addressable');
+  c.destroy();
+});
+
+// The other half of the same gate, and the reason it is keyed on _hasPlayed
+// rather than on "is this a blocked error": once playback HAS happened the bar
+// is established furniture, so a later block keeps it — and keeps offering the
+// Resume that the arrival case has no use for. Mutation that fails this:
+// dropping `!this._hasPlayed` from the gate in _render().
+test('a block AFTER playback keeps the bar, and still offers Resume', async () => {
+  const c = makeController();
+  const { root, view } = mount(c);
+  c.setQueue([item('a')], { startIndex: 0, autoplay: true });
+  await tick();
+  assert.equal(root.hidden, false, 'premise: real playback revealed the bar');
+
+  view.onControllerUpdate({
+    ...c.snapshot(),
+    state: 'error',
+    lastPlayError: { name: 'NotAllowedError', message: 'blocked' },
+    lastPlayErrorItemId: 'a',
+  });
+  assert.equal(root.hidden, false, 'a bar that has earned its place does not vanish on a block');
   assert.equal(root.querySelector('.mp-play').getAttribute('aria-label'), 'Resume Song a');
   assert.equal(root.querySelector('.player-error-msg').textContent, 'Paused by your browser — tap Resume');
   c.destroy();

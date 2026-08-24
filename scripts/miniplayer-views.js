@@ -180,6 +180,9 @@ export class MiniPlayerView extends QueueView {
     this.onMenu = typeof opts.onMenu === 'function' ? opts.onMenu : () => {};
     this._currentId = null;
     this._currentItem = null;
+    // Latched true the first time real playback happens, and never cleared.
+    // Read only by the blocked-autoplay gate in _render() -- see there.
+    this._hasPlayed = false;
     this._seeking = false;
     this._lastQueueRevision = -1;
     this._lastControlsKey = null;
@@ -289,6 +292,25 @@ export class MiniPlayerView extends QueueView {
   _render(snapshot) {
     const item = snapshot.currentItem;
     if (!item) { this._hide(); return; }
+    if (snapshot.state === 'playing') this._hasPlayed = true;
+    // An autoplay that arrived blocked is not something to put a bar on screen
+    // for. Every shared /t/{code} link and every ?autoplay=1 deep link sets
+    // PLAYER_AUTOPLAY, and on any browser without a media-engagement pass for
+    // this site that play() rejects with NotAllowedError -- so the bar was
+    // appearing on arrival saying "Paused by your browser -- tap Resume"
+    // beside a row already saying "Tap play to start": two messages for one
+    // attempt, neither of them about anything the visitor had done yet.
+    //
+    // Deliberately narrower than "wait for state === 'playing'": that would
+    // also withhold the bar through 'loading', so a tap on a slow connection
+    // would sit there with no bar at all. Only the blocked-before-anything-
+    // played case hides. A hard failure still shows the bar and its Retry,
+    // and _hasPlayed means a mid-queue block (a track change while paused)
+    // keeps the bar it already earned.
+    if (!this._hasPlayed && this._failureKind(snapshot, item) === 'blocked') {
+      this._hide();
+      return;
+    }
     if (item.id !== this._currentId) {
       this._buildStructure();
       this._currentId = item.id;

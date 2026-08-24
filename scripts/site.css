@@ -770,6 +770,20 @@ main {
     white-space: normal; line-height: 1.25;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
+  /* Both row messages get a line of their own, after .ws-wave (order 5).
+     They are appended to .track-row itself (player-views.js's _setMessage) and
+     are `white-space: nowrap`, so on the first line they refused to shrink
+     while .track-main -- flex-basis 0 on the active row, just above -- gave up
+     everything it had: measured on a shared /t/{code} page, "The Wind"
+     rendered into 8px of width, one letter per line, on the one page whose
+     entire purpose is naming that song. The title is the content; a cue about
+     why playback is waiting is not allowed to crowd it out. */
+  .track-row .player-cue-msg,
+  .track-row .player-error-msg {
+    flex: 1 1 100%;
+    order: 6;
+    white-space: normal;
+  }
 }
 
 /* .ws-wave is a production class on real show-page track rows
