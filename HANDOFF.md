@@ -1,12 +1,21 @@
 # Session Handoff — The Hannan Tapes (renedebos.com)
-**Date:** 2026-08-23 (seventh pass) · **Branch:** `main` — everything merged, deployed, verified live
+**Date:** 2026-08-23 (eighth pass) · **Branch:** `main` — everything merged, deployed, verified live
 
 ## ⛔ READ THIS FIRST
 
-**Nothing is open.** `main` = `origin/main` = `ecaac95d`. Nine commits shipped
+**Nothing is open.** `main` = `origin/main` = `842180cf`. Six commits shipped
 this pass, all deployed and each verified against production. The working
 branch `row-menu` is fully contained in `main` and can be deleted whenever;
 `codex-notes.md` stays untracked and is not ours.
+
+**Python Playwright is now installed**, because the `webapp-testing` skill
+wants it: venv at `~/.venvs/playwright`, created with `uv` (Debian's system
+Python refuses a plain `pip install`, and there is **no bare `python` on this
+machine** — invoke `~/.venvs/playwright/bin/python` by full path). Browser
+binaries are the same `~/.cache/ms-playwright/` the Node harness uses, so
+nothing extra downloaded. `scripts/browser_check.mjs` is still the Node
+harness and still the gate before shipping; the Python venv is for ad-hoc
+"render it and look at it" passes.
 
 **`miniplayer-parked` (`6bdecc6b`) is still never-merge, never-delete.** It
 holds the coordinator work (tab identity, fenced lease, cross-page restore,
@@ -63,7 +72,40 @@ localStorage (private, invisible, gone with site data) or KV with an anonymous
 id (rate limiting, abuse, moderation). Either way it needs a "your likes"
 surface or it is a button with no perceptible effect. Do not add a heart.
 
-## ⚠️ THE LESSON OF THIS PASS: `--skip-webkit` hid a shipped bug
+## ⚠️ THE LESSON OF THIS PASS: a test that manufactures what it should check
+
+**Resizing any show page threw `v.redrawWave is not a function` on every
+resize** — and had done since the mini-player bar shipped on 2026-08-20.
+Found by an external review pass, not by this repo's own checks.
+
+`handle.views` is **heterogeneous**: `attachMiniPlayer()` pushes a
+`MiniPlayerView`, which descends from `QueueView`, has no waveform, and so has
+no `redrawWave()`. `attachPeaks()` already knows this and guards
+(`if (!v.waveContainer) return`). `wireResize()` did not.
+
+Two independent reasons `test-player-boot.mjs` could not see it, and the
+second is the one worth carrying forward:
+
+1. `showDoc()` renders no `#mini-player`, so **no bar is ever pushed into
+   `handle.views` in tests**. The heterogeneity the bug depends on did not
+   exist in the harness.
+2. The existing resize test did this first:
+   ```js
+   handle.views.forEach(v => { v.redrawWave = () => { redrawn++; }; });
+   ```
+   It **assigned the method onto every view before dispatching** — so it
+   manufactured the very thing whose absence was the bug. A test that installs
+   the property it is meant to be probing for can never fail.
+
+The new case models the real array instead, with a method-less view placed
+**first** so a regression both throws and visibly starves every row behind it.
+Confirmed to fail with the guard reverted before being trusted.
+
+**Generalise it:** when a test fabricates uniformity across a collection the
+production code populates from more than one source, it is testing the fixture.
+Ask what the array actually holds on a real page.
+
+## ⚠️ THE LESSON OF THE SEVENTH PASS: `--skip-webkit` hid a shipped bug
 
 **Rene found the row menu's `…` missing on his iPhone, after every check
 passed and after I had shown him three Chromium screenshots of it.**
@@ -101,8 +143,7 @@ Rendering it and looking is not optional.
 
 ## ▶️ Next session — start here
 
-**Nothing is required.** The menu is complete (plan tasks 1–7 done) and the
-dead code from the controls it replaced is swept. Pick from:
+**Nothing is required.** Pick from:
 
 1. **The visible-queue decision**, which unblocks Play next / Add to queue.
    The bar is the natural home for a queue list. Design question first, code
@@ -112,8 +153,129 @@ dead code from the controls it replaced is swept. Pick from:
 3. **`/playlist/` rows** still use the old `.track-add` button and were
    explicitly scoped out of the menu work. Whether they get the same menu is
    an open, separate question (plan §7).
+4. **Search ranking** (small, known, deliberately left): searching `wind`
+   puts "Candle in the Wind" and three "German Clockwinder" hits above the
+   literal title "The Wind", because `score()` treats a substring match
+   anywhere in a word the same as a whole-word one and ties fall to
+   alphabetical. Rene saw the finding and said leave it — this is a note, not
+   a task.
+5. **A prominent hero play button on `/t/{code}` share pages** — mocked up
+   and shown to Rene this pass beside the shipped version; he chose the
+   shipped one (bar-gating + the squeeze fix) and declined the hero. Do not
+   add it without him asking again.
 
-## ✅ Done this session (2026-08-23, seventh pass)
+## ✅ Done this session (2026-08-23, eighth pass)
+
+Six commits, all reactive: an external UX review, then three bugs Rene or that
+review found that every green check had missed. No new features.
+
+### Codex UX review, four real bugs (`77c6d7d5`)
+
+Read-only review of the live site. Of its findings, four were genuine and
+fixed; two were declined and are recorded as declined (below).
+
+- **`Select all` was dead on show and song pages.** The seventh pass's row-menu
+  sweep deleted the `.track-add` buttons those pages carried, and
+  `track-select.js`'s `selectAllIds()` scanned for exactly those buttons —
+  `.track-add[data-id]` — so it returned an empty list. It now also reads
+  `kind`/`id` straight out of `.track-row[data-item]`. `/playlist/` was
+  unaffected: it kept real `.track-add` buttons, which is why nothing looked
+  broken there.
+- **Song-occurrence rows drew a blank play button.** `.track-row .play-btn`
+  replaces the icon with `content: attr(data-num)` on idle rows — "the track
+  number IS the play button" (`051db771`). Occurrence rows have no `data-num`
+  (a cross-show performance has no fixed position), so they rendered an empty
+  circle, with no hover to reveal it on touch. Fixed with
+  `.play-btn:not([data-num]) > svg { display: block; }`.
+- **`/search/` mislabelled its own results and threw away its own ranking.**
+  It called 680 performances "songs" while the homepage calls 136 distinct
+  titles "songs" one click away; and `score()` was computed per hit and then
+  **never used** — `hits.sort()` went straight to title/date/num, so every
+  query was ordered like a filter browse. Both fixed.
+- **"Play random tape" picked a random track, not a tape.** It chose uniformly
+  from all 680 tracks, so it dropped you mid-set and statistically favoured
+  longer shows. It now picks from the show catalogue and starts at
+  `?autoplay=1#track-1`.
+
+Plus an accessibility pass from the same review: password-modal focus trap and
+focus restoration, `aria-live` on the pages that update their own counts, and
+labels on controls that had only `title`.
+
+**Declined, deliberately:** the password wall's missing explanation (needs
+Rene's policy call, not a code fix) and re-adding inline links on show-track
+titles (directly contradicts the seventh pass's one-object-per-row decision —
+Rene confirmed: "We leave 5 and 7 alone"). A larger "canonical song-level
+search result" idea was also declined as a design question, not a bug.
+
+### The scrubber thumb, fixed twice (`4484e39c`, then `976206c1`)
+
+Rene: the dot on a track's progress bar was **sliced in half**. Most visible on
+song pages, which always use the plain scrubber.
+
+**The first fix was wrong, and instructively so.** It set `left: 4px;
+right: 4px` on `.track-row .progress-range` — half the thumb's width — and
+shipped. It changed nothing, for two reasons neither of which was the one
+diagnosed:
+
+1. The base `.progress-range` rule sets `width: 100%`. **`width` + `left` +
+   `right` over-constrains the box, and ltr silently drops `right`** — so the
+   right inset had never applied at all.
+2. The clipping was **vertical**. The thumb overhangs the 2px rail by 3px on
+   every side, and on the first or last row that overhang meets
+   `.track-list`'s own `overflow: hidden` edge. No horizontal inset could have
+   helped.
+
+Now `width: auto` (so both insets bind) plus `bottom: 4px`. Verified by
+screenshotting the corner at 6× device scale, on the exact last-row case from
+Rene's report.
+
+### A blocked autoplay said it twice, and ate the title (`ab435ee4`)
+
+Found by the review, on `/t/{code}` share pages. A fresh visit with autoplay
+blocked — **which is every real recipient of a shared link**, since user
+activation cannot survive a navigation — showed two messages for one attempt:
+`Tap play to start` on the row and `Paused by your browser — tap Resume` in
+the bar.
+
+- **The bar now stays hidden for an autoplay blocked before anything has
+  played.** Gated on `_hasPlayed` plus the existing `_failureKind()`.
+  **Deliberately narrower than waiting for `state === 'playing'`**, which was
+  the first attempt and would also withhold the bar through `'loading'` —
+  leaving a tap on a slow connection with nothing on screen. A hard failure
+  still gets the bar and its Retry; once playback has happened the bar stays
+  through any later block, which is what the Resume affordance is for.
+- **`window.PLAYER_AUTOPLAY` and `?autoplay=1` were deliberately left in
+  place.** Where autoplay does succeed (desktop Chrome with a media-engagement
+  pass) it is the wanted behaviour. The defect was the failure presentation,
+  not the attempt. One gate fixed both the share page and the
+  random-tape/`?autoplay=1` path, since both flow through the same bar.
+- **The title squeeze, a second bug the screenshots exposed.** Both row
+  messages are appended to `.track-row` with `white-space: nowrap`, and on
+  mobile the active row's `.track-main` grows from `flex-basis: 0`. The nowrap
+  cue refused to shrink and the title surrendered everything: **"The Wind"
+  rendered into 8px of width, one letter per line, on the one page whose whole
+  purpose is naming that song.** The messages now take a line of their own
+  below the waveform; the title measures 63px on one line. Site-wide, not
+  share-page-only — any active row showing a cue on mobile had this.
+
+### The resize crash (`842180cf`)
+
+See the lesson at the top. `wireResize()` called `redrawWave()` on every entry
+in the heterogeneous `handle.views`, including the bar. Guarded, plus a
+regression test that was proved to fail without the guard.
+
+### `/history/` backfilled (`61779da9`)
+
+"The Story So Far" had stopped at Aug 18–19 while five days shipped. Four new
+entries (weeks nineteen–twenty-two) cover the pop-up retirement and the two
+sticky experiments that were tried and reverted, the usability run, the
+share-a-song links and the two-stage Facebook fight, and the row menu plus
+this pass's fixes. Pure internal tooling was left out on purpose — the module
+split, the Drive resync script, hook portability, the gitignore tweak.
+`/process/` and `/manual/` were checked and needed **nothing**: neither covers
+site UI, and nothing this pass touched audio or the publish runbook.
+
+## ✅ Done in the seventh pass (2026-08-23)
 
 Nine commits. One feature — **the row overflow menu** — plus two bugs Rene
 found on his phone after the checks went green, and a dead-code sweep.
@@ -1925,28 +2087,38 @@ instructions.
   the fix that actually matters and is purely local.
 - `plans/player-consolidation/` — closed; `-codex.md` logs every review round.
 
-**Tests:** `node scripts/test-*.mjs` — 9 suites plus `test-fake-dom.mjs`
+**Tests:** `node scripts/test-*.mjs` — 10 suites plus `test-fake-dom.mjs`
 (a helper, and as of the sixth pass a much more faithful one — see "four
-fidelity fixes"). **238/238 passing** as of 2026-08-22, sixth pass, end of
+fidelity fixes"). **281/281 passing** as of 2026-08-23, eighth pass, end of
 day
-(`test-share.mjs` is new — the share payload)
 (`test-miniplayer-state.mjs` retired with the file it tested;
 `test-site-worker.mjs` covers the share-a-song `/t/{code}/` route — see both
 above). The real-browser harness is separate and manual:
-`NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs --skip-webkit`
-(**207/207**), and **`--prod` against the live deploy (213/213)** — run that
-one before calling anything Worker- or routing-shaped shipped:
+
+```
+NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs          # 223/223
+NODE_PATH="$(npm root -g)" node scripts/browser_check.mjs --prod    # the live deploy
+```
+
+**Never `--skip-webkit`** before calling something shipped — that flag hid a
+shipped bug for a whole pass (see the seventh pass's lesson above). It takes
+~7 min, so background it with an end-marker rather than risking a 2-minute
+tool timeout, and **kill any local server on 8124 first**: the breakage tests
+copy the site to `PORT + 1`, and a stray server there fails ~12 checks in a
+way indistinguishable from a real regression.
 
 | suite | tests |
 |---|---|
-| `test-player-controller.mjs` | 58 |
-| `test-miniplayer-views.mjs` | 40 |
-| `test-player-boot.mjs` | 28 |
+| `test-player-controller.mjs` | 59 |
+| `test-miniplayer-views.mjs` | 41 |
+| `test-row-menu.mjs` | 39 |
+| `test-player-boot.mjs` | 33 |
+| `test-player-views.mjs` | 30 |
 | `test-playlist-state.mjs` | 29 |
-| `test-player-views.mjs` | 20 |
 | `test-playlist-views.mjs` | 16 |
+| `test-site-worker.mjs` | 13 |
 | `test-song-boot.mjs` | 13 |
-| `test-site-worker.mjs` | 8 |
+| `test-share.mjs` | 8 |
 
 (History: the fourth pass ran 164 after the two mini-player suites, 164
 tests, were deleted with the parked modules; the fifth pass lifted them back
@@ -1954,7 +2126,12 @@ UNMODIFIED and 164 → 329. `test-player-controller.mjs` went 60 → 57 in the s
 commit, then 57 → 58 with the `load()`-on-source-change contract. The three
 tests added to `test-player-views.mjs` in PR #48 cover the blocked-autoplay
 cue, that a real failure still reads as a failure, and that a stale block from
-one track cannot leak onto another.)
+one track cannot leak onto another. Eighth pass: `test-miniplayer-views.mjs`
+40 → 41, where the test pinning "a blocked autoplay offers Resume" was
+replaced by one for the arrival case (no bar at all) and one proving a block
+*after* playback keeps the bar — that second one is what gives the
+`_hasPlayed` half of the gate teeth. `test-player-boot.mjs` 32 → 33 for the
+resize guard.)
 
 Also clean: `python3 scripts/build.py --check` (integrity OK, 31 shows, 680
 curated tracks, no orphan song pages). Since 2026-08-19 that command also
