@@ -688,10 +688,23 @@ main {
 
 .track-row .progress-range {
   position: absolute;
-  left: 4px; /* half the thumb width — keeps it from clipping against .track-list's overflow:hidden edge */
-  right: 4px;
-  bottom: 0;
-  width: 100%;
+  /* Inset past .track-list's 10px border-radius, not just the thumb's own
+     half-width — a thumb near 0%/100% on the first/last row sits inside the
+     rounded-corner arc, which clips a full 10px into the corner, not 4px.
+     `width` must stay unset here: the base .progress-range rule below sets
+     width:100%, and pairing that with both `left` and `right` makes the box
+     over-constrained -- ltr silently drops `right`, so the previous version
+     of this rule (width:100% + left/right) never actually inset the right
+     edge at all. */
+  left: 12px;
+  right: 12px;
+  width: auto;
+  /* The thumb overhangs this 2px track by 3px on every side (see the
+     ::-webkit-slider-thumb rule below): on the first/last row, that overhang
+     pokes past .track-list's own overflow:hidden edge and gets clipped to a
+     flat sliver. bottom:4px keeps the whole thumb inside the list on every
+     row, not just the ones in the middle. */
+  bottom: 4px;
   height: 2px;
   border-radius: 0;
   background: transparent;
