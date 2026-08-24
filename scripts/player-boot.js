@@ -272,7 +272,19 @@ function wireResize(handle, win, signal) {
     // then, but this guards the already-scheduled callback too.
     timer = setTimeout(() => {
       if (signal.aborted) return;
-      handle.views.forEach(v => v.redrawWave());
+      // handle.views is heterogeneous: attachMiniPlayer() pushes a
+      // MiniPlayerView, which descends from QueueView and has no waveform and
+      // so no redrawWave() -- every resize threw "v.redrawWave is not a
+      // function" once the bar's dynamic import had landed. Duck-typed rather
+      // than switched to handle.rowViews, which excludes the hero view (the
+      // whole-show card) and would quietly stop redrawing its wave.
+      //
+      // The throw also aborted the forEach mid-list. The bar is pushed last
+      // today so no row actually lost its redraw, but that is an ordering
+      // accident, not a guarantee -- the guard removes the dependency.
+      handle.views.forEach(v => {
+        if (typeof v.redrawWave === 'function') v.redrawWave();
+      });
     }, 150);
   }, { signal });
 }

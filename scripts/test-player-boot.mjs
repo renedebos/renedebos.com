@@ -483,6 +483,42 @@ test('a window resize redraws inert waveforms', async () => {
   } finally { c.destroy(); }
 });
 
+// attachMiniPlayer() pushes a MiniPlayerView into handle.views, and that class
+// descends from QueueView -- no waveform, so no redrawWave(). Every resize on a
+// real show page threw "v.redrawWave is not a function" once the bar's dynamic
+// import had landed (reported 2026-08-23).
+//
+// Two reasons this suite could not see it, both worth naming: showDoc() renders
+// no #mini-player, so no bar is ever pushed here; and the test above assigns
+// redrawWave onto EVERY view before dispatching, manufacturing the very method
+// it should have been checking for. This case models the real, heterogeneous
+// array instead, and puts the method-less view FIRST so a regression both
+// throws and visibly starves every row behind it.
+test('a resize survives a view with no redrawWave (the mini-player bar)', async () => {
+  const { win, handle, c } = await boot({ peaksUrl: '/assets/peaks/x.json', peaks: { 1: { p: [1, 2], d: 9 } } });
+  const thrown = [];
+  const onUncaught = (e) => thrown.push(e);
+  // The throw happens inside wireResize's setTimeout, so it surfaces as an
+  // uncaught exception rather than anything assert could see -- without this it
+  // would take the whole run down instead of failing one case.
+  process.on('uncaughtException', onUncaught);
+  try {
+    await tick();
+    let redrawn = 0;
+    handle.views.forEach(v => { v.redrawWave = () => { redrawn++; }; });
+    handle.views.unshift({ root: {}, onControllerUpdate() {} });
+    win.dispatch('resize');
+    await new Promise(r => setTimeout(r, 200));
+    assert.deepEqual(thrown.map(e => e.message), [],
+      'a view without redrawWave must be skipped, never thrown on');
+    assert.equal(redrawn, handle.views.length - 1,
+      'every wave-bearing view still redraws, including the ones behind the bar');
+  } finally {
+    process.off('uncaughtException', onUncaught);
+    c.destroy();
+  }
+});
+
 // Step 4 review finding #1: a destroyed boot must actually stay destroyed.
 // The controller's own _destroyed guards (player-controller.js) and the boot's
 // listener teardown (the shared AbortController in player-boot.js) are two
