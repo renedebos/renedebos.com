@@ -305,5 +305,52 @@
       <li><strong>The full-show cards now name both files and both sizes</strong> &mdash; the lossless download and the streaming version, each with its own figure. There had been a single size on the card with two different files behind it, which invited reading one number as though it described both.</li>
     </ul>
 
+    <h2>Week nineteen &mdash; retiring the pop-up, and one row of controls (August&nbsp;20, 2026)</h2>
+    <p>
+      More consolidation on the playback side, following straight on from the shared player engine a couple of weeks back.
+    </p>
+    <ul class="reasons">
+      <li><strong>The separate pop-up player is gone.</strong> It was always a desktop-only thing &mdash; a phone opens a tab, not a pop-up, and a backgrounded tab stops playing audio anyway &mdash; so it was quietly serving fewer and fewer visitors. The bottom mini-player bar now does that job everywhere, on every kind of screen. An old link to the pop-up still lands you on the Playlist page with the right songs queued up.</li>
+      <li><strong>Two experiments were tried and taken back out, honestly.</strong> For about a day, the currently-playing row on a show page stuck to the top of the screen as you scrolled, and the Playlist page did the same with its now-playing card. Both worked, and both were removed once it was clear that having a song pinned in two places at once &mdash; the sticky row <em>and</em> the bar &mdash; read as a bug rather than a feature.</li>
+      <li><strong>Show and song pages had grown two separate rows of controls</strong> &mdash; one for streaming quality, one for select-and-download &mdash; in two different visual styles. They&rsquo;re now a single row of matching buttons. Along the way, 23 show descriptions lost a paragraph of processing boilerplate that had been repeating itself on every one of them, continuing the trim from a couple of weeks back.</li>
+      <li>The <a href="/playlist/"><strong>Playlist</strong></a> builder&rsquo;s filter list got shorter: the Songwriter filter and four thinly-used genre tags (folk, country, blues, rock &mdash; 94 tracks between them across the whole archive) are off the visible list. Nothing was deleted from the catalog or from <a href="/search/"><strong>Search</strong></a> &mdash; the &ldquo;Traditional &amp; Irish&rdquo; preset still works exactly as before.</li>
+    </ul>
+
+    <h2>Week twenty &mdash; easier to find your way around (August&nbsp;21, 2026)</h2>
+    <p>
+      A run of smaller usability fixes, most of them things Rene ran into using the site himself.
+    </p>
+    <ul class="reasons">
+      <li><strong>&ldquo;Select all&rdquo; finally toggles.</strong> Press it once and every track on the page is selected and the button now reads &ldquo;Unselect all&rdquo;; press it again and the selection clears. Before this, a second press simply did nothing.</li>
+      <li><strong>A song&rsquo;s own page now lists its past performances as proper track rows</strong> &mdash; the same compact look as a show page &mdash; instead of a taller, differently-styled player card for each one. On a phone that&rsquo;s roughly 15 performances visible on screen at once, where it used to be about 6.</li>
+      <li>The <a href="/search/"><strong>Search</strong></a> page can now be browsed by filter alone &mdash; pick an artist or a venue and see results without typing a word first. The <a href="/songs/"><strong>Songs</strong></a> page also gained the &ldquo;Sean &amp; Jerry&rdquo; switch its own legend had been showing all along, which the artist filter had quietly left out.</li>
+      <li>The password-protected download window now names the file size next to each version you can choose &mdash; the lossless archive file and the louder MP3 &mdash; instead of one size sitting on the button that used to describe two differently-sized files.</li>
+      <li>Fixed a bug going back to when song-picking first launched in July: clearing your selection, or removing every track by hand, left the &ldquo;N songs selected&rdquo; bar sitting on screen anyway. A leftover style rule had been overriding the one meant to hide it.</li>
+    </ul>
+
+    <h2>Week twenty-one &mdash; a link for one song (August&nbsp;22, 2026)</h2>
+    <p>
+      Sharing used to mean sending someone a whole show and telling them which track to skip to. Every one of the archive&rsquo;s 680 curated tracks now has its own short link that opens straight to that one song, already queued and ready to play.
+    </p>
+    <ul class="reasons">
+      <li><strong>Getting that link to actually work outside the site took a couple of tries.</strong> The link itself first needed its exact address settled, closing a needless extra hop that had passed every check while quietly doing nothing on the live site. Then, trying the whole point of the feature &mdash; pasting a link into a Facebook reply &mdash; Facebook refused to treat it as a real link at all, for two separate reasons hiding in the page itself: a leftover tag was pointing Facebook at the wrong address, and a &ldquo;don&rsquo;t index this&rdquo; tag meant only for search engines turned out to also tell Facebook&rsquo;s own crawler to refuse to read the page.</li>
+      <li>The share pop-up used to hand over a block of text &mdash; song title, artist, venue, date &mdash; glued to the link. It now copies just the link; a rebuilt preview card does the describing instead, the way a shared link actually renders in Facebook, iMessage, and the rest.</li>
+      <li><strong>Tapping anywhere on a track row now plays it</strong>, not only the small play button &mdash; matching what every phone music app already trains a thumb to expect. The song title, which used to look tappable but wasn&rsquo;t, is the biggest part of that fix.</li>
+      <li>Fixed the browser-tab icon and the image your phone&rsquo;s lock screen shows while a track plays, both of which still read &ldquo;The Hannan Recordings&rdquo; long after the site itself became &ldquo;The Hannan Tapes&rdquo; &mdash; and finished retiring the old name from the last couple of places it was still hiding.</li>
+      <li>Caught and fixed a two-hour bug where an earlier edit left a stray scrap of code visible at the very top of every single page on the site.</li>
+    </ul>
+
+    <h2>Week twenty-two &mdash; one button instead of four (August&nbsp;23, 2026)</h2>
+    <p>
+      Every track row had been carrying four separate small controls &mdash; download, share, add to playlist, and a link back to the show &mdash; crowding the row and drifting out of alignment with each other. They&rsquo;re now one &ldquo;&hellip;&rdquo; menu: a sheet that rises from the bottom on a phone, a small pop-up next to your cursor on a computer. The mini-player bar picked up the same menu, folding in its own separate share button alongside it.
+    </p>
+    <ul class="reasons">
+      <li><strong>Two bugs only showed up on an actual iPhone</strong>, after every automated check had passed. The &ldquo;&hellip;&rdquo; button itself was invisible &mdash; present, correctly placed, and tappable, just drawing nothing, a quirk of how Safari sizes an icon with no explicit dimensions. And the Download row inside the open menu was shorter than every row beside it, a left-over style collision from an older button. Both are fixed, and both are now specifically checked for before anything ships.</li>
+      <li><strong>A fresh outside review turned up four real, if quiet, bugs.</strong> &ldquo;Select all&rdquo; had gone dead on show and song pages &mdash; it was reading off a button the row-menu clean-up had just deleted. Song-page performance rows could show a blank play icon with nothing in it. The <a href="/search/"><strong>Search</strong></a> page mislabeled its own results as &ldquo;680 songs&rdquo; when that number actually counts individual performances of 136 distinct songs &mdash; and it had been calculating a match-quality score for each result without ever using that score to sort them, so the best match wasn&rsquo;t necessarily shown first.</li>
+      <li><strong>&ldquo;Play random tape,&rdquo; on the homepage, wasn&rsquo;t actually picking a random tape.</strong> It picked a random <em>track</em> out of all 680, so it would land you mid-set on a guitar solo or a between-song aside, and it quietly favored whichever shows happened to have the most songs. It now genuinely picks a random show and starts it from the first track, the way it always should have.</li>
+      <li>A batch of accessibility fixes came out of the same review: the password download window now properly traps keyboard focus while it&rsquo;s open and hands focus back to whatever you clicked when it closes; pages that update their own result counts announce the change to a screen reader; and several controls that were missing real labels got them.</li>
+      <li><strong>One more bug worth naming, because it took two tries to actually fix.</strong> The round handle on a track&rsquo;s progress bar was visibly sliced in half by the row&rsquo;s own rounded corner &mdash; on the very first and last row of any track list, most noticeable on song pages. The first attempt only moved the handle sideways; the clipping was happening vertically too, and it took a second pass to actually clear it.</li>
+    </ul>
+
     <p class="about-note">The work continues &mdash; more shows, better audio, and small fixes are always in progress.</p>
   </section>
