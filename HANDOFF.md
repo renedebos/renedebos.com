@@ -1,12 +1,22 @@
 # Session Handoff — The Hannan Tapes (renedebos.com)
-**Date:** 2026-08-24 (ninth pass) · **Branch:** `main` — everything merged, deployed, verified live
+**Date:** 2026-08-30/31 (tenth pass) · **Branch:** `main` — everything merged, deployed, verified live
 
 ## ⛔ READ THIS FIRST
 
-**Nothing is open.** `main` = `origin/main` = `842180cf`. Six commits shipped
-this pass, all deployed and each verified against production. The working
-branch `row-menu` is fully contained in `main` and can be deleted whenever;
-`codex-notes.md` stays untracked and is not ours.
+**Nothing is open.** `main` = `origin/main` = `a563c762`. Three commits shipped
+this pass, each deployed and verified against production (not just against a
+green Action). The working branch `row-menu` is still fully contained in `main`
+and can be deleted whenever; `miniplayer-parked` correctly shows as unmerged and
+stays that way; `codex-notes.md` stays untracked and is not ours.
+
+**This pass was a show publish, not site work** — the first one in this
+file's history. `jerry-inn-at-occidental-2026-08-30`, 21 tracks, the first
+recording in the archive from outside the 1998–2001 Marin County run. The
+runbook in `CLAUDE.md` is accurate and was followed end to end; the notes below
+are only the places it did not already cover.
+
+**The archive is now 701 curated tracks across 31 track-listed shows.** Any
+hard-coded 680 you meet in a plan or comment predates this pass.
 
 **Python Playwright is now installed**, because the `webapp-testing` skill
 wants it: venv at `~/.venvs/playwright`, created with `uv` (Debian's system
@@ -72,7 +82,53 @@ localStorage (private, invisible, gone with site data) or KV with an anonymous
 id (rate limiting, abuse, moderation). Either way it needs a "your likes"
 surface or it is a button with no perceptible effect. Do not add a heart.
 
-## ⚠️ THE LESSON OF THIS PASS: shipped is not the same as arrived
+## ⚠️ THE LESSON OF THIS PASS: green checks cannot see a false sentence
+
+**Rene read the new show's description and said "Perfect Autumn Day shows up
+four times."** I had written, in the show description AND in `/history/`, that
+it had a single prior appearance. He was right and I was wrong, in text that
+was already live on renedebos.com.
+
+The cause is worth naming precisely, because nothing was broken:
+
+```python
+hits = [t for t in tracks if t["title"] == "Perfect Autumn Day"]   # 1 hit
+```
+
+Three of the four priors are titled **`Perfect Autumn Day (early version)`**.
+`song_norm()` (`scripts/sitegen/core.py:556`) strips parentheticals — which is
+exactly why `/songs/perfect-autumn-day/` groups all four and shows the truth on
+the page while my sentence beside it said otherwise. The catalog uses these
+qualifiers routinely; `QUALIFIER` in `scripts/draft_tracks.py` lists them:
+`(incomplete|early version|cut|partial|reprise)`.
+
+**Every check in this repo passed, and passed honestly.** `build.py --check`
+validates schema, keys, peaks and orphans. `verify_markup.py` checks 873 pages.
+`browser_check.mjs` went 227/227 including WebKit. Not one of them has any
+opinion about whether a claim in a prose field is *true* — and no test can be
+written that would. The three earlier lessons in this file are all "the tests
+were green and the user was right"; this is the fourth, and the first where the
+defect was a **fact** rather than a behaviour.
+
+**Generalise it:** editorial claims are unverifiable by CI, so they must be
+verified at the moment of writing. Before any "first / only / rarest / Nth
+appearance" sentence reaches a description, an updates note or `history.html`,
+count with the site's own normalizer, never with `==`:
+
+```python
+import sys; sys.path.insert(0, 'scripts')
+from sitegen.core import song_norm
+key = song_norm(title)   # match every track whose song_norm() equals key
+```
+
+A second, quieter instance of the same class in the same pass:
+`labels_present()` compared a filename with `==` and so declared a
+legitimately-split `labels pt1.txt`/`labels pt2.txt` pair to be a MISSING raw
+archive. `CLAUDE.md`'s own gotchas already record an over-strict match missing
+that exact pair once before. **When this repo disagrees with itself about a
+string, the normalizer is right and the literal is wrong.**
+
+## ⚠️ THE LESSON OF THE NINTH PASS: shipped is not the same as arrived
 
 **Rene shared a song on 2026-08-24 and the preview card still said "The Hannan
 Recordings — Live recordings of Jerry, Mad and Sean Hannan".** That file was
@@ -178,7 +234,17 @@ Rendering it and looking is not optional.
 
 ## ▶️ Next session — start here
 
-**Nothing is required.** Pick from:
+**Nothing is required.** One thing is promised, though:
+
+0. **Fade-outs for `jerry-inn-at-occidental-2026-08-30`.** The show page tells
+   readers, in Rene's own words, that "fade-outs will be applied at some point
+   in the future" — so this is a commitment already made in public, not an
+   idea. Fresh exports land on identical R2 keys **as long as no track is
+   renumbered or retitled**, so no `/t/{code}` retires and no orphan share page
+   appears. Re-running `prepare` hard-deletes `~/work/<slug>/tracks/`; Rene's
+   edits live in the Drive Work Folder, so that is safe here, but check first.
+
+Then pick from:
 
 1. **The visible-queue decision**, which unblocks Play next / Add to queue.
    The bar is the natural home for a queue list. Design question first, code
@@ -199,7 +265,106 @@ Rendering it and looking is not optional.
    shipped one (bar-gating + the squeeze fix) and declined the hero. Do not
    add it without him asking again.
 
-## ✅ Done this session (2026-08-24, ninth pass)
+## ✅ Done this session (2026-08-30/31, tenth pass)
+
+A show publish, start to finish, plus two bugs and one editorial correction
+found along the way. Commits `d066adfc`, `b50ca396`, `a563c762`.
+
+### The show: `jerry-inn-at-occidental-2026-08-30` (`d066adfc`)
+
+Jerry solo, Inn at Occidental, 21 tracks, AUD. **The first recording in the
+archive from outside the 1998–2001 Marin County run** — everything else here is
+a 25-year-old tape; this one was recorded the evening it was published.
+
+**It arrived as two Work Folders and had to become one.** Rene recorded two
+sets as two `.aup3` projects and asked for part 1 only, "part 2 later, on the
+same show page." That is not possible as two folders:
+`scripts/sitegen/core.py` rejects a show whose tracks span more than one R2
+folder (`tracks span multiple R2 folders`), and the R2 folder comes from
+`publish.json["folder"]`. When part 2 landed mid-session the folders were
+merged — `... part1` renamed to `JerryHannan - Occidental 2026-08-30`, part 2's
+9 FLACs moved in, labels split as `labels pt1.txt`/`labels pt2.txt` (the shape
+`CLAUDE.md` already documents), both `.aup3`s and both recorder WAVs alongside.
+All server-side on Drive; nothing re-uploaded.
+
+**Worth carrying forward for the next two-part show:** ask for continuous track
+numbering *before* the labels are exported. Rene numbered part 2's labels 13–21
+himself, which avoided the whole problem — had they come in as 01–09, the build
+would have failed on `file basename '01 …' doesn't start with 13`, and
+renumbering afterwards retires every `/t/{code}` for those tracks and strands
+orphan share pages the build then also fails on.
+
+**`preflight_catalog_titles()` is silent on a first-time publish.** It returns
+early when a show has no prior `tracks[]` to diff against — so on a brand-new
+show it flags *nothing*. Three filename problems had to be caught by hand and
+fixed with `rename-track`: `09 Good Life` → `The Good Life` (14 prior
+appearances under that name, `songs/good-life/` already existed), and trailing
+spaces on `10 Never Know Love  ` and `17 Never Be the Same `.
+
+**Audio.** All 21 land within 1.5 dB of −20 LUFS: 5 linear, 8 sparse-transient
+cap, 4 applause-limiter, 3 linear-reduced, 1 partial cap. Strict −1.00 dBTP
+held on all 21; R2 MD5 verify 21/21; Drive `Processed/` independently
+content-checked at 42/42.
+
+Two things about the run are worth knowing:
+
+- **The `plan` output is not the whole gate.** `10 Never Know Love` needed
+  6.3 dB — over the 6 dB ceiling — so `plan` reported it *declined* and
+  computed no cap, and therefore no listen-flag. Rene opted it into
+  `--transient-cap-partial`, which made it eligible, and the render then
+  produced a **new** review-tier flag (0.25 s at 2:55.3) that aborted the
+  publish mid-run. Nothing was uploaded and tracks 1–9 resumed from cache. So:
+  `--transient-cap-partial` can surface listen-flags that `plan` structurally
+  could not show you. Budget for a second run.
+- **The applause-limiter did the heavy lifting**, on 4 tracks. On
+  `The Parting Glass` the music peaks at −17.0 dB and the applause tops the
+  file; limiting only the applause window lands it at −20.8 instead of the
+  −26.6 pure linear reduction would have forced.
+
+The −14 loud variant was rendered from the published archive FLACs and
+uploaded, `src_md5 == archive md5` asserted on all 21. **LRA movement median
+0.70 LU, worst 1.50 LU** — inside the envelope the August blind tests
+validated (median 0.50 / worst 3.10, detection demonstrated at 6.1 LU), so no
+new listening test was warranted.
+
+### `labels_present()` matched a filename with `==` (`d066adfc`)
+
+It required exactly `labels.txt`, so the split `labels pt1.txt` /
+`labels pt2.txt` pair — which `CLAUDE.md`'s runbook documents for a show
+spanning two `.aup3` projects — was reported as a MISSING raw archive, nagging
+for a file that should not exist. Now accepts either form, verified against the
+real Drive folder rather than only against the regex. See the lesson at the top.
+
+### `Jerry Hannan` alone is now a default writer (`b50ca396`)
+
+Rene credits `Society` to Jerry solo (the *Into the Wild* song), not to the
+archive's usual `Jerry Hannan & Sean Hannan`. The "don't draw a songwriter
+chip on an original" rule was an **exact string match in three places**, so
+Society rendered a `Jerry Hannan` chip in the slot `John Prine` and
+`Bruce Springsteen` occupy — the only one of 683 credited tracks to do so — and
+`SONGWRITER_MAP` did not classify it as an original. All four sites now route
+through one `HANNAN_DEFAULT_WRITERS` constant
+(`search.js`, `playlist-views.js` ×2, `playlist-boot.js`), so a third Hannan
+credit is a one-line change rather than a four-file hunt.
+
+### 12 titles carried stray whitespace (`b50ca396`)
+
+Found while checking the Perfect Autumn Day claim. Includes
+`'  Smoke in Heaven'` (New George's 1999-10-13 #2) with two *leading* spaces,
+which rendered visibly indented. All stripped. `song_norm()` was already
+ignoring it, so no song slug, share code or grouping moved — still 141 song
+pages, no orphans.
+
+### Housekeeping
+
+`0717afa3` (the Sweetwater "Luxury of Murder" title fix) had been committed
+locally in an earlier session but **never pushed**; it went out with this
+pass's first push. Still outstanding and deliberately untouched: that show's
+Drive source filename is still `03 Truck.flac` against catalog title
+`Luxury of Murder` (`make sync-titles` reviews, `APPLY=1` renames on Drive) —
+renaming Rene's source files is his call, not ours.
+
+## ✅ Done in the ninth pass (2026-08-24)
 
 One report from Rene — a shared song still showing the retired name — which
 turned out not to be a content bug at all. The words had been right for two
@@ -2059,6 +2224,25 @@ Added 2026-08-19 (third pass):
   hidden. Use both.
 
 ## Durable facts (don't undo)
+
+- **A show's tracks must all live under ONE R2 folder.** `core.py` fails the
+  build on `tracks span multiple R2 folders`, and that folder comes from
+  `publish.json["folder"]`. A multi-part night therefore has to be merged into
+  a single Work Folder *before* publishing — there is no exemption, and
+  `LEGACY_KEY_NAMING` relaxes only the basename-number check, not this.
+- **`preflight_catalog_titles()` returns early on a first-time publish.** With
+  no prior `tracks[]` to diff against it flags nothing at all, so title drift
+  and trailing spaces on a brand-new show must be caught by hand. Do not read a
+  silent preflight as a clean one.
+- **Count song appearances with `song_norm()`, never `==`.** The catalog uses
+  `(early version)`, `(incomplete)`, `(cut)`, `(partial)`, `(reprise)`; the
+  normalizer strips them and the song pages group on it. An exact-match count
+  will disagree with the page beside it. This is what produced the false
+  rarity claim in this pass's lesson.
+- **`--transient-cap-partial` can surface listen-flags `plan` never showed.**
+  A track `plan` declines for exceeding the 6 dB ceiling has no cap computed
+  and therefore no flag; opting it into partial capping makes it eligible and
+  the render can then hard-block. Expect a second publish run, not a surprise.
 
 - **The download version chooser never remembers the last choice.** It resets
   to Archive on every open. The two options are different *formats*, so a
