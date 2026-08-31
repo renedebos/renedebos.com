@@ -16,6 +16,15 @@ import { PLAY_ICON, PAUSE_ICON, LOADING_ICON, formatTime } from '/assets/player-
 
 const RANGE_MAX = 1000;
 
+// Hannan originals whose writer credit is the archive default and would be noise
+// on every row. 'Jerry Hannan' alone joined the pair on 2026-08-31, when
+// "Society" was credited to Jerry solo — still a Hannan original, and it should
+// read like one rather than like a cover.
+const HANNAN_DEFAULT_WRITERS = new Set([
+  'Jerry Hannan & Sean Hannan',
+  'Jerry Hannan',
+]);
+
 export const ARTIST_NAMES = {
   jerry: 'Jerry Hannan', sean: 'Sean Hannan', mad: 'Mad Hannans', seanjerry: 'Sean & Jerry Hannan',
 };
@@ -212,7 +221,7 @@ export class PlaylistQueueView extends QueueView {
       ['Duration', formatTime(item.durationSec)],
       ['Process version', cat.procVer ? ('v' + cat.procVer) : 'Not yet processed'],
     ];
-    if (cat.songwriter && cat.songwriter !== 'Jerry Hannan & Sean Hannan') pairs.push(['Songwriter', cat.songwriter]);
+    if (cat.songwriter && !HANNAN_DEFAULT_WRITERS.has(cat.songwriter)) pairs.push(['Songwriter', cat.songwriter]);
     return pairs;
   }
 
@@ -296,7 +305,7 @@ export class PlaylistNowPlayingView extends QueueView {
     const cat = this.catalogById.get(item.id) || {};
     this.root.hidden = false;
     const meta = trackMeta(item);
-    const swChip = cat.songwriter && cat.songwriter !== 'Jerry Hannan & Sean Hannan'
+    const swChip = cat.songwriter && !HANNAN_DEFAULT_WRITERS.has(cat.songwriter)
       ? ' <span class="sr-tag">' + esc(cat.songwriter) + '</span>' : '';
     this.root.innerHTML =
       '<div class="pl-now-info"><a class="pl-now-title" href="' + esc(item.pageUrl) + '">' + esc(item.title) + '</a>'

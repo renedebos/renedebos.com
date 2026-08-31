@@ -66,6 +66,8 @@ const TAG_ORDER = ['original', 'cover', 'irish', 'ballad',
 // inconsistency it papers over, not fixed here.
 const SONGWRITER_MAP = {
   'Jerry Hannan & Sean Hannan': 'original',
+  // "Society" is credited to Jerry alone (2026-08-31) — still an original.
+  'Jerry Hannan': 'original',
   'Traditional': 'traditional',
   'Lennon & McCartney': 'lennon-mccartney',
   'Lennon-McCartney': 'lennon-mccartney',

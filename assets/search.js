@@ -10,6 +10,12 @@
 // ?artist=, ?source=) so a browse view is a link. Empty box + no filters
 // still shows nothing but the counts; the index is 700+ rows and nobody
 // asked for them yet.
+// Hannan originals whose writer credit is the archive default and would be noise
+// on every row. 'Jerry Hannan' alone joined the pair on 2026-08-31, when
+// "Society" was credited to Jerry solo — still a Hannan original, and it should
+// read like one rather than like a cover.
+var HANNAN_DEFAULT_WRITERS = ["Jerry Hannan & Sean Hannan", "Jerry Hannan"];
+
 (function () {
   var qEl = document.getElementById("q");
   var filtersEl = document.getElementById("filters");
@@ -80,7 +86,7 @@
         return '<span class="sr-tag">' + esc(t) + "</span>";
       }).join("");
       // covers/trad get a songwriter chip; the Hannan default on every original would be noise
-      if (r.songwriter && r.songwriter !== "Jerry Hannan & Sean Hannan") {
+      if (r.songwriter && HANNAN_DEFAULT_WRITERS.indexOf(r.songwriter) === -1) {
         tags = '<span class="sr-tag">' + esc(r.songwriter) + "</span>" + tags;
       }
       return '<a class="sr" href="' + esc(r.url) + '">'
