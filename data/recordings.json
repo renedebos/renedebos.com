@@ -11535,6 +11535,332 @@
       "processing_status": "done",
       "added": "2026-07-15",
       "added_ts": "2026-07-15T12:51:28.134754"
+    },
+    {
+      "slug": "jerry-inn-at-occidental-2026-08-30",
+      "artist": "jerry",
+      "venue": "Inn at Occidental",
+      "venue_short": "Inn at Occidental",
+      "date": "2026-08-30",
+      "date_display": "August 30, 2026",
+      "subtitle": null,
+      "source": "AUD",
+      "recordings": [],
+      "tracks": [
+        {
+          "num": 1,
+          "title": "Blind Man",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:23",
+          "size_mb": 8,
+          "file": "MP3/JerryHannan - Occidental 2026-08-30/01 Blind Man.mp3",
+          "flac": "FLAC/JerryHannan - Occidental 2026-08-30/01 Blind Man.flac",
+          "flac_size_mb": 41,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 2,
+          "title": "Truck",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:47",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - Occidental 2026-08-30/02 Truck.mp3",
+          "flac": "FLAC/JerryHannan - Occidental 2026-08-30/02 Truck.flac",
+          "flac_size_mb": 45,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 3,
+          "title": "Recycle",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:13",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - Occidental 2026-08-30/03 Recycle.mp3",
+          "flac": "FLAC/JerryHannan - Occidental 2026-08-30/03 Recycle.flac",
+          "flac_size_mb": 52,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 4,
+          "title": "Friend",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:50",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - Occidental 2026-08-30/04 Friend.mp3",
+          "flac": "FLAC/JerryHannan - Occidental 2026-08-30/04 Friend.flac",
+          "flac_size_mb": 48,
+          "processed": true,
+          "tags": [
+            "original",
+            "rock"
+          ]
+        },
+        {
+          "num": 5,
+          "title": "ABC",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:00",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - Occidental 2026-08-30/05 ABC.mp3",
+          "flac": "FLAC/JerryHannan - Occidental 2026-08-30/05 ABC.flac",
+          "flac_size_mb": 36,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 6,
+          "title": "Getaway Blues",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:10",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - Occidental 2026-08-30/06 Getaway Blues.mp3",
+          "flac": "FLAC/JerryHannan - Occidental 2026-08-30/06 Getaway Blues.flac",
+          "flac_size_mb": 48,
+          "processed": true,
+          "tags": [
+            "original",
+            "blues"
+          ]
+        },
+        {
+          "num": 7,
+          "title": "Clear Headed",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:24",
+          "size_mb": 11,
+          "file": "MP3/JerryHannan - Occidental 2026-08-30/07 Clear Headed.mp3",
+          "flac": "FLAC/JerryHannan - Occidental 2026-08-30/07 Clear Headed.flac",
+          "flac_size_mb": 54,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 8,
+          "title": "Anna May",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "6:32",
+          "size_mb": 16,
+          "file": "MP3/JerryHannan - Occidental 2026-08-30/08 Anna May.mp3",
+          "flac": "FLAC/JerryHannan - Occidental 2026-08-30/08 Anna May.flac",
+          "flac_size_mb": 73,
+          "processed": true,
+          "tags": [
+            "original",
+            "ballad"
+          ]
+        },
+        {
+          "num": 9,
+          "title": "The Good Life",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:04",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - Occidental 2026-08-30/09 The Good Life.mp3",
+          "flac": "FLAC/JerryHannan - Occidental 2026-08-30/09 The Good Life.flac",
+          "flac_size_mb": 36,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 10,
+          "title": "Never Know Love",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:50",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - Occidental 2026-08-30/10 Never Know Love.mp3",
+          "flac": "FLAC/JerryHannan - Occidental 2026-08-30/10 Never Know Love.flac",
+          "flac_size_mb": 45,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 11,
+          "title": "I Thought I Was You",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:47",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - Occidental 2026-08-30/11 I Thought I Was You.mp3",
+          "flac": "FLAC/JerryHannan - Occidental 2026-08-30/11 I Thought I Was You.flac",
+          "flac_size_mb": 41,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 12,
+          "title": "Hard Drinkin'",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:39",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - Occidental 2026-08-30/12 Hard Drinkin'.mp3",
+          "flac": "FLAC/JerryHannan - Occidental 2026-08-30/12 Hard Drinkin'.flac",
+          "flac_size_mb": 45,
+          "processed": true,
+          "tags": [
+            "original",
+            "upbeat"
+          ]
+        },
+        {
+          "num": 13,
+          "title": "Society",
+          "songwriter": "Jerry Hannan",
+          "duration": "4:04",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - Occidental 2026-08-30/13 Society.mp3",
+          "flac": "FLAC/JerryHannan - Occidental 2026-08-30/13 Society.flac",
+          "flac_size_mb": 46,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 14,
+          "title": "Blahana",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "3:56",
+          "size_mb": 9,
+          "file": "MP3/JerryHannan - Occidental 2026-08-30/14 Blahana.mp3",
+          "flac": "FLAC/JerryHannan - Occidental 2026-08-30/14 Blahana.flac",
+          "flac_size_mb": 47,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 15,
+          "title": "Girl Shoes",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:08",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - Occidental 2026-08-30/15 Girl Shoes.mp3",
+          "flac": "FLAC/JerryHannan - Occidental 2026-08-30/15 Girl Shoes.flac",
+          "flac_size_mb": 48,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 16,
+          "title": "Perfect Autumn Day",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:32",
+          "size_mb": 11,
+          "file": "MP3/JerryHannan - Occidental 2026-08-30/16 Perfect Autumn Day.mp3",
+          "flac": "FLAC/JerryHannan - Occidental 2026-08-30/16 Perfect Autumn Day.flac",
+          "flac_size_mb": 51,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 17,
+          "title": "Never Be the Same",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:24",
+          "size_mb": 11,
+          "file": "MP3/JerryHannan - Occidental 2026-08-30/17 Never Be the Same.mp3",
+          "flac": "FLAC/JerryHannan - Occidental 2026-08-30/17 Never Be the Same.flac",
+          "flac_size_mb": 48,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 18,
+          "title": "Brother Know",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:02",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - Occidental 2026-08-30/18 Brother Know.mp3",
+          "flac": "FLAC/JerryHannan - Occidental 2026-08-30/18 Brother Know.flac",
+          "flac_size_mb": 43,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 19,
+          "title": "Love is All",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "5:51",
+          "size_mb": 14,
+          "file": "MP3/JerryHannan - Occidental 2026-08-30/19 Love is All.mp3",
+          "flac": "FLAC/JerryHannan - Occidental 2026-08-30/19 Love is All.flac",
+          "flac_size_mb": 67,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 20,
+          "title": "Hollywood",
+          "songwriter": "Jerry Hannan & Sean Hannan",
+          "duration": "4:01",
+          "size_mb": 10,
+          "file": "MP3/JerryHannan - Occidental 2026-08-30/20 Hollywood.mp3",
+          "flac": "FLAC/JerryHannan - Occidental 2026-08-30/20 Hollywood.flac",
+          "flac_size_mb": 45,
+          "processed": true,
+          "tags": [
+            "original"
+          ]
+        },
+        {
+          "num": 21,
+          "title": "The Parting Glass",
+          "songwriter": "Traditional",
+          "duration": "3:00",
+          "size_mb": 7,
+          "file": "MP3/JerryHannan - Occidental 2026-08-30/21 The Parting Glass.mp3",
+          "flac": "FLAC/JerryHannan - Occidental 2026-08-30/21 The Parting Glass.flac",
+          "flac_size_mb": 33,
+          "processed": true,
+          "tags": [
+            "irish",
+            "ballad"
+          ]
+        }
+      ],
+      "description": [
+        "Jerry Hannan solo at the Inn at Occidental, two sets on a Sunday evening in Sonoma County. Every other recording in this archive comes from a run of Marin County clubs between 1998 and 2001; this one was taped twenty-five years later.",
+        "Five songs here appear nowhere else in the archive: “Society,” “Girl Shoes,” “Never Be the Same,” “Brother Know,” and “Love is All.” “Society” is the song Eddie Vedder recorded for the Into the Wild soundtrack, and this is its first appearance on any tape in the collection.",
+        "Two more are near-rarities. “Never Know Love” turns up only once elsewhere, in Sean Hannan’s 19 Broadway set of January 24, 2000, which makes this the only recording here of Jerry playing it. “Perfect Autumn Day” had a single prior appearance, at 19 Broadway on February 1, 1999. The night closes on “The Parting Glass.”"
+      ],
+      "page": null,
+      "added": "2026-08-30",
+      "added_ts": "2026-08-30T00:00:00",
+      "processing_status": "done"
     }
   ],
   "singles": [
@@ -12458,6 +12784,13 @@
       "slug": "sean-19-broadway-unknown",
       "report": true,
       "text": "Re-normalized all 18 tracks to −20 LUFS on the current audio engineering workflow, replacing an older processing pass; also corrected track 3's title to \"Don't Think Twice It's All Right\" and track 14's to \"Angel from Montgomery,\" using the automated audio engineering workflow with ffmpeg"
+    },
+    {
+      "date": "2026-08-30",
+      "ts": "2026-08-30T23:55:00",
+      "slug": "jerry-inn-at-occidental-2026-08-30",
+      "report": true,
+      "text": "Published as one 21-song show from two Audacity projects. Every track lands within 1.5 dB of the −20 LUFS archive target: five normalize linearly with no compromise, eight through the sparse-transient cap, four by limiting only the end-of-song applause that out-peaked the music, and three at a slightly reduced linear target. “Never Know Love” needed 6.3 dB of capping — more than the 6 dB ceiling allows — and was opted into partial capping, landing at −20.9 LUFS instead of −26.3, using the automated audio engineering workflow with ffmpeg"
     }
   ],
   "playlists": []

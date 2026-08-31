@@ -161,8 +161,15 @@ def fetch_tracks(folder, sub, expected, dest):
 
 def labels_present(folder):
     """The Audacity label export (labels.txt at the Work Folder root) is the
-    raw archive's split recipe — warn whenever it's missing, never block."""
-    return any(f.lower() == "labels.txt" for f in rclone_lsf(f"{DRIVE_WORK}/{folder}"))
+    raw archive's split recipe — warn whenever it's missing, never block.
+
+    A show spanning two .aup3 projects exports its labels as the pair
+    'labels pt1.txt' + 'labels pt2.txt' (CLAUDE.md's runbook). An exact-name
+    check calls that shape MISSING and nags for a labels.txt that should not
+    exist — the same over-strict-match false negative already recorded in
+    CLAUDE.md's gotchas for this very filename pair."""
+    return any(re.fullmatch(r"labels(\s+pt\d+)?\.txt", f.strip(), re.I)
+               for f in rclone_lsf(f"{DRIVE_WORK}/{folder}"))
 
 
 LABELS_NAG = ("⚠ labels.txt is MISSING from the Work Folder — the raw archive is "
